@@ -107,8 +107,8 @@ export const EntityList: React.FC<EntityListProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-        <h3 className="text-sm font-semibold">
+      <div className="px-3 py-2 bg-muted border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground">
           {type === "client" ? "Clients" : "Carers"}
         </h3>
       </div>
@@ -128,9 +128,9 @@ export const EntityList: React.FC<EntityListProps> = ({
                   ${
                     entity.id === selectedEntityId
                       ? type === "client"
-                        ? "bg-blue-50 border-blue-200"
-                        : "bg-purple-50 border-purple-200"
-                      : "bg-white hover:bg-gray-50"
+                        ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+                        : "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
+                      : "bg-card hover:bg-muted"
                   } 
                   border`}
                 onClick={() => onSelect(entity.id)}
@@ -140,16 +140,16 @@ export const EntityList: React.FC<EntityListProps> = ({
                     className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium mr-2 
                       ${
                         type === "client"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-purple-100 text-purple-600"
+                          ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                          : "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"
                       }`}
                   >
                     {entity.initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{entity.name}</div>
+                    <div className="text-sm font-medium truncate text-foreground">{entity.name}</div>
                     {type === "client" && 'pin_code' in entity && (entity as any).pin_code && (
-                      <div className="text-xs text-blue-600 font-mono bg-blue-50 px-1 py-0.5 rounded w-fit mt-0.5">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-950/30 px-1 py-0.5 rounded w-fit mt-0.5">
                         {(entity as any).pin_code}
                       </div>
                     )}
@@ -157,8 +157,8 @@ export const EntityList: React.FC<EntityListProps> = ({
                       <Badge
                         className={`${
                           type === "client"
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-purple-50 text-purple-700"
+                            ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
+                            : "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
                         } text-xs`}
                       >
                         {filteredBookingCount} booking{filteredBookingCount !== 1 ? "s" : ""}
@@ -171,8 +171,8 @@ export const EntityList: React.FC<EntityListProps> = ({
                               variant="outline" 
                               className={`text-xs ${
                                 type === "client" 
-                                  ? "bg-green-50 text-green-700 border-green-200" 
-                                  : "bg-violet-50 text-violet-700 border-violet-200"
+                                  ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" 
+                                  : "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800"
                               } cursor-pointer flex items-center gap-1`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -185,14 +185,14 @@ export const EntityList: React.FC<EntityListProps> = ({
                           </HoverCardTrigger>
                           <HoverCardContent className="w-60 p-4">
                             <div className="space-y-2">
-                              <h4 className="text-sm font-semibold">{entity.name}</h4>
-                              <div className="text-xs text-gray-500">Total Hours: {totalHours}</div>
+                              <h4 className="text-sm font-semibold text-foreground">{entity.name}</h4>
+                              <div className="text-xs text-muted-foreground">Total Hours: {totalHours}</div>
                               
                               {Object.entries(bookingsByStatus).length > 0 && (
                                 <div className="space-y-1 pt-2">
-                                  <div className="text-xs font-medium">Hours by status:</div>
+                                  <div className="text-xs font-medium text-foreground">Hours by status:</div>
                                   {Object.entries(bookingsByStatus).map(([status, data]) => (
-                                    <div key={status} className="flex justify-between text-xs">
+                                    <div key={status} className="flex justify-between text-xs text-muted-foreground">
                                       <span className="capitalize">{status}:</span>
                                       <span>{Math.round(data.hours * 10) / 10} hours ({data.count})</span>
                                     </div>

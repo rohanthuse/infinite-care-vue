@@ -132,15 +132,15 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
   // Get status color for booking
   const getStatusColor = (status: Booking["status"]): string => {
     const colors = {
-      assigned: "bg-blue-500 border-blue-600",
-      unassigned: "bg-gray-400 border-gray-500",
-      done: "bg-green-500 border-green-600",
-      "in-progress": "bg-amber-500 border-amber-600",
-      cancelled: "bg-red-500 border-red-600",
-      departed: "bg-purple-500 border-purple-600",
-      suspended: "bg-orange-500 border-orange-600",
+      assigned: "bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500",
+      unassigned: "bg-gray-400 dark:bg-gray-500 border-gray-500 dark:border-gray-400",
+      done: "bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-500",
+      "in-progress": "bg-amber-500 dark:bg-amber-600 border-amber-600 dark:border-amber-500",
+      cancelled: "bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-500",
+      departed: "bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-500",
+      suspended: "bg-orange-500 dark:bg-orange-600 border-orange-600 dark:border-orange-500",
     };
-    return colors[status] || "bg-gray-500 border-gray-600";
+    return colors[status] || "bg-gray-500 dark:bg-gray-600 border-gray-600 dark:border-gray-500";
   };
 
   // Handle showing more bookings for a day

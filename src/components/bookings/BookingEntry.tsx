@@ -50,13 +50,13 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
 
   // Determine background color based on status
   const statusColors = {
-    assigned: "bg-green-100 border-green-300 text-green-800",
-    unassigned: "bg-amber-100 border-amber-400 border-2 text-amber-900",
-    done: "bg-blue-100 border-blue-300 text-blue-800",
-    "in-progress": "bg-purple-100 border-purple-300 text-purple-800",
-    cancelled: "bg-red-100 border-red-300 text-red-800",
-    departed: "bg-teal-100 border-teal-300 text-teal-800",
-    suspended: "bg-gray-100 border-gray-300 text-gray-800"
+    assigned: "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200",
+    unassigned: "bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 border-2 text-amber-900 dark:text-amber-200",
+    done: "bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200",
+    "in-progress": "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200",
+    cancelled: "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200",
+    departed: "bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200",
+    suspended: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
   };
   
   // Color coding for change requests with prominent left borders
@@ -128,18 +128,18 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     return (
       <div className="space-y-3 min-w-0">
         {/* Header with primary person */}
-        <div className="border-b border-gray-100 pb-2">
+        <div className="border-b border-border pb-2">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
               isClientView 
-                ? (isUnassigned ? 'bg-amber-100 text-amber-700' : (hasMultipleCarers ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'))
-                : 'bg-blue-100 text-blue-700'
+                ? (isUnassigned ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : (hasMultipleCarers ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'))
+                : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
             }`}>
               {primaryInitials}
             </div>
             <div>
-              <div className="font-semibold text-sm text-gray-900">{primaryPerson}</div>
-              <div className="text-xs text-gray-500">
+              <div className="font-semibold text-sm text-foreground">{primaryPerson}</div>
+              <div className="text-xs text-muted-foreground">
                 {isClientView 
                   ? (isUnassigned ? 'Carer Status' : (hasMultipleCarers ? 'Assigned Carers' : 'Assigned Carer')) 
                   : 'Client'
@@ -155,7 +155,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 <Badge 
                   key={idx} 
                   variant="outline" 
-                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                  className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
                 >
                   {name}
                 </Badge>
@@ -167,17 +167,17 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         {/* Appointment Details */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs">
-            <Clock className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-            <div className="font-medium text-gray-700">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="font-medium text-foreground">
               {booking.startTime} - {booking.endTime}
             </div>
-            <div className="text-gray-500">({calculateDuration()})</div>
+            <div className="text-muted-foreground">({calculateDuration()})</div>
           </div>
           
           <div className="flex items-center gap-2 text-xs">
-            <User className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-            <div className="text-gray-600">
-              {isClientView ? 'Client' : 'Carer'}: <span className="font-medium">{secondaryPerson}</span>
+            <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <div className="text-muted-foreground">
+              {isClientView ? 'Client' : 'Carer'}: <span className="font-medium text-foreground">{secondaryPerson}</span>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             <div className="w-3.5 h-3.5 flex items-center justify-center">
               📅
             </div>
-            <div className="text-gray-600">{formatDate(booking.date)}</div>
+            <div className="text-muted-foreground">{formatDate(booking.date)}</div>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 text-xs py-1 px-2 rounded-full ${statusColors[booking.status]}`}>
             {booking.status === 'in-progress' && <div className="w-2 h-2 bg-current rounded-full animate-pulse" />}
-            {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 text-amber-600" />}
+            {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
             {booking.status === 'cancelled' && <AlertCircle className="h-3 w-3" />}
             {booking.status === 'done' && <div className="w-2 h-2 bg-current rounded-full" />}
             <span className="font-medium">
@@ -207,20 +207,20 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
 
         {/* Request Status */}
         {(hasPendingCancellation || hasPendingReschedule) && (
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-border">
             <div className="flex items-center gap-2">
               {hasPendingCancellation && (
                 <>
-                  <XCircle className="h-3.5 w-3.5 text-red-500" />
-                  <span className="text-xs font-medium text-red-700">
+                  <XCircle className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                  <span className="text-xs font-medium text-red-700 dark:text-red-300">
                     Client requested cancellation
                   </span>
                 </>
               )}
               {hasPendingReschedule && (
                 <>
-                  <RefreshCw className="h-3.5 w-3.5 text-orange-500" />
-                  <span className="text-xs font-medium text-orange-700">
+                  <RefreshCw className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
+                  <span className="text-xs font-medium text-orange-700 dark:text-orange-300">
                     Client requested reschedule
                   </span>
                 </>
@@ -231,17 +231,17 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
 
         {/* Additional Information */}
         {booking.notes && (
-          <div className="border-t border-gray-100 pt-2">
+          <div className="border-t border-border pt-2">
             <div className="flex items-start gap-2 text-xs">
-              <FileText className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div className="text-gray-600 leading-relaxed">{booking.notes}</div>
+              <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div className="text-muted-foreground leading-relaxed">{booking.notes}</div>
             </div>
           </div>
         )}
 
         {/* Action Hint */}
-        <div className="border-t border-gray-100 pt-2">
-          <div className="text-xs text-gray-400 flex items-center gap-1">
+        <div className="border-t border-border pt-2">
+          <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Info className="h-3 w-3" />
             Click to view • Shift+Click to edit
           </div>
