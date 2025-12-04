@@ -10,10 +10,8 @@ import { NotificationDropdown } from "@/components/notifications/NotificationDro
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
-import { useCarerContext } from "@/hooks/useCarerContext";
-import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
+import { CarerSearchDropdown } from "@/components/search/CarerSearchDropdown";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-
 export const CarerHeader: React.FC = () => {
   const navigate = useNavigate();
   const { signOut } = useUnifiedCarerAuth();
@@ -22,11 +20,6 @@ export const CarerHeader: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { data: carerContext } = useCarerContext();
-  
-  // Get branch ID and name from carer context
-  const branchId = carerContext?.branchInfo?.id || carerProfile?.branch_id || '';
-  const branchName = carerContext?.branchInfo?.name || 'Branch';
 
   const handleLogout = async () => {
     console.log('[CarerHeader] Logout button clicked');
@@ -89,16 +82,14 @@ export const CarerHeader: React.FC = () => {
             />
             
             {/* Search Results Dropdown */}
-            {searchDropdownOpen && searchValue.trim().length >= 2 && branchId && (
-              <BranchSearchDropdown
+            {searchDropdownOpen && searchValue.trim().length >= 2 && (
+              <CarerSearchDropdown
                 searchValue={searchValue}
                 onClose={() => setSearchDropdownOpen(false)}
                 onResultClick={() => {
                   setSearchValue("");
                   setSearchDropdownOpen(false);
                 }}
-                branchId={branchId}
-                branchName={branchName}
                 anchorRef={searchInputRef}
               />
             )}
