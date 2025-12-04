@@ -6,6 +6,7 @@ import {
   TooltipContent, 
   TooltipTrigger 
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Draggable } from "react-beautiful-dnd";
 
@@ -110,11 +111,16 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     const isClientView = type === "client";
     // Handle unassigned bookings - show "Not Assigned" instead of "(Unknown Carer)"
     const isUnassigned = !booking.carerId || booking.status === 'unassigned';
+    
+    // Check for multiple carers (from merged booking data)
+    const allCarerNames = (booking as any).allCarerNames as string[] | undefined;
+    const hasMultipleCarers = allCarerNames && allCarerNames.length > 1;
+    
     const primaryPerson = isClientView 
-      ? (isUnassigned ? 'Not Assigned' : booking.carerName) 
+      ? (isUnassigned ? 'Not Assigned' : (hasMultipleCarers ? `${allCarerNames.length} Carers` : booking.carerName)) 
       : booking.clientName;
     const primaryInitials = isClientView 
-      ? (isUnassigned ? '—' : booking.carerInitials) 
+      ? (isUnassigned ? '—' : (hasMultipleCarers ? `${allCarerNames.length}` : booking.carerInitials)) 
       : booking.clientInitials;
     const secondaryPerson = isClientView ? booking.clientName : (isUnassigned ? 'Not Assigned' : booking.carerName);
     const secondaryInitials = isClientView ? booking.clientInitials : (isUnassigned ? '—' : booking.carerInitials);
@@ -126,7 +132,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
               isClientView 
-                ? (isUnassigned ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700')
+                ? (isUnassigned ? 'bg-amber-100 text-amber-700' : (hasMultipleCarers ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'))
                 : 'bg-blue-100 text-blue-700'
             }`}>
               {primaryInitials}
@@ -135,12 +141,27 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
               <div className="font-semibold text-sm text-gray-900">{primaryPerson}</div>
               <div className="text-xs text-gray-500">
                 {isClientView 
-                  ? (isUnassigned ? 'Carer Status' : 'Assigned Carer') 
+                  ? (isUnassigned ? 'Carer Status' : (hasMultipleCarers ? 'Assigned Carers' : 'Assigned Carer')) 
                   : 'Client'
                 }
               </div>
             </div>
           </div>
+          
+          {/* Show all carers if multiple */}
+          {hasMultipleCarers && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {allCarerNames.map((name, idx) => (
+                <Badge 
+                  key={idx} 
+                  variant="outline" 
+                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                >
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Appointment Details */}

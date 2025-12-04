@@ -211,9 +211,10 @@ export function ViewBookingDialog({
       }
       
       try {
-        // Fetch all bookings for same client, time slot, and service
+        // Fetch all bookings for same client and time slot
         // This will capture all staff assigned to this appointment
-        const { data: sameTimeBookings, error: staffError } = await supabase
+        // Note: We handle null service_id separately to avoid query issues
+        let query = supabase
           .from('bookings')
           .select(`
             id,
@@ -226,8 +227,22 @@ export function ViewBookingDialog({
           `)
           .eq('client_id', booking.clientId || booking.client_id)
           .eq('start_time', booking.start_time)
-          .eq('end_time', booking.end_time)
-          .eq('service_id', booking.service_id);
+          .eq('end_time', booking.end_time);
+        
+        // Handle null service_id properly - eq() doesn't work with null
+        if (booking.service_id) {
+          query = query.eq('service_id', booking.service_id);
+        } else {
+          query = query.is('service_id', null);
+        }
+        
+        const { data: sameTimeBookings, error: staffError } = await query;
+        
+        console.log('[ViewBookingDialog] Query result:', { 
+          bookingCount: sameTimeBookings?.length, 
+          error: staffError,
+          serviceId: booking.service_id 
+        });
         
         if (!staffError && sameTimeBookings) {
           // Extract all unique staff members
