@@ -80,10 +80,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch organization_id from branch for proper notification separation
+    let branchOrganizationId: string | null = null;
+    const { data: branchData, error: branchOrgError } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branch_id)
+      .single();
+
+    if (branchOrgError) {
+      console.warn('[create-agreement-notifications] Error fetching branch organization:', branchOrgError);
+    } else {
+      branchOrganizationId = branchData?.organization_id || null;
+    }
+    console.log('[create-agreement-notifications] Branch organization_id:', branchOrganizationId);
+
     // Create notifications - using 'pending_agreement' type since it's in the valid types
     const notifications = validUserIds.map(userId => ({
       user_id: userId,
       branch_id: branch_id,
+      organization_id: branchOrganizationId,
       type: 'pending_agreement',
       category: 'info',
       priority: 'medium',

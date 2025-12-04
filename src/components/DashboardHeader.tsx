@@ -15,6 +15,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
 import { SuperAdminSearchDropdown } from "@/components/search/SuperAdminSearchDropdown";
 import { SystemPortalSearchDropdown } from "@/components/search/SystemPortalSearchDropdown";
+import { supabase } from "@/integrations/supabase/client";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export function DashboardHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   
@@ -83,6 +85,40 @@ export function DashboardHeader() {
   
   // Detect if we're in the System Portal
   const isSystemPortal = location.pathname.startsWith('/system-dashboard');
+
+  // Fetch organization ID when in organization context (not branch context)
+  useEffect(() => {
+    const fetchOrganizationId = async () => {
+      // Only fetch if we're NOT in a branch context and have a tenant slug
+      if (isBranchContext || !tenantSlug) {
+        setOrganizationId(null);
+        return;
+      }
+
+      try {
+        const { data: org, error } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('slug', tenantSlug)
+          .single();
+
+        if (error) {
+          console.warn('[DashboardHeader] Error fetching organization:', error);
+          setOrganizationId(null);
+          return;
+        }
+
+        if (org) {
+          setOrganizationId(org.id);
+        }
+      } catch (error) {
+        console.error('[DashboardHeader] Error in fetchOrganizationId:', error);
+        setOrganizationId(null);
+      }
+    };
+
+    fetchOrganizationId();
+  }, [tenantSlug, isBranchContext]);
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -306,7 +342,8 @@ export function DashboardHeader() {
         {/* Bell notification, theme switcher and sidebar trigger on right for desktop view */}
         <div className="hidden md:flex items-center gap-2">
           <NotificationDropdown 
-            branchId={branchId} 
+            branchId={branchId || undefined} 
+            organizationId={!isBranchContext ? organizationId || undefined : undefined}
             onViewAll={handleViewAllNotifications}
           />
           <ThemeSwitcher />
@@ -401,7 +438,8 @@ export function DashboardHeader() {
             </div>
             <div className="ml-2 flex items-center gap-2">
               <NotificationDropdown 
-                branchId={branchId} 
+                branchId={branchId || undefined} 
+                organizationId={!isBranchContext ? organizationId || undefined : undefined}
                 onViewAll={handleViewAllNotifications}
               />
               <ThemeSwitcher />
