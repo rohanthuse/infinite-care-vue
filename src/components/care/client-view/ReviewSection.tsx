@@ -62,7 +62,7 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
         <div>
           <h3 className="font-semibold text-base mb-3">Current Status</h3>
           <div className="flex items-center gap-3">
-            <Badge className={getStatusColor(data.status)}>
+            <Badge variant="custom" className={getStatusColor(data.status)}>
               {data.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
             </Badge>
             {data.client_acknowledged_at && (

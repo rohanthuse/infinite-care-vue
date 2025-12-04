@@ -80,7 +80,7 @@ export const ServicePlanTab: React.FC<ServicePlanTabProps> = ({
                               <h4 className="font-medium text-gray-900">{action.service_name}</h4>
                               <p className="text-sm text-gray-600">Provider: {action.provider_name}</p>
                             </div>
-                            <Badge className={getStatusColor(action.progress_status)}>
+                            <Badge variant="custom" className={getStatusColor(action.progress_status)}>
                               {action.progress_status}
                             </Badge>
                           </div>

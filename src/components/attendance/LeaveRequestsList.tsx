@@ -66,13 +66,13 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-800 border-green-200">Approved</Badge>;
       case "rejected":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>;
       case "pending":
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Pending</Badge>;
+        return <Badge variant="custom" className="bg-orange-100 text-orange-800 border-orange-200">Pending</Badge>;
       case "cancelled":
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Cancelled</Badge>;
+        return <Badge variant="custom" className="bg-gray-100 text-gray-800 border-gray-200">Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -89,7 +89,7 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
     };
 
     return (
-      <Badge className={colors[type] || "bg-gray-100 text-gray-800 border-gray-200"}>
+      <Badge variant="custom" className={colors[type] || "bg-gray-100 text-gray-800 border-gray-200"}>
         {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     );

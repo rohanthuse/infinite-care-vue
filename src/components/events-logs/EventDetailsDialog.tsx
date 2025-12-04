@@ -86,10 +86,10 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
             <div>
               <h3 className="text-lg font-semibold">{event.title}</h3>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <Badge className={getSeverityColor(event.severity)}>
+                <Badge variant="custom" className={getSeverityColor(event.severity)}>
                   {event.severity}
                 </Badge>
-                <Badge className={getStatusColor(event.status)}>
+                <Badge variant="custom" className={getStatusColor(event.status)}>
                   {event.status}
                 </Badge>
                 <Badge variant="outline">

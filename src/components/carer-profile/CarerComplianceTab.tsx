@@ -45,15 +45,15 @@ export const CarerComplianceTab: React.FC<CarerComplianceTabProps> = ({ carerId 
     switch (status) {
       case 'compliant':
       case 'valid':
-        return <Badge className="bg-green-100 text-green-800">Compliant</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-800">Compliant</Badge>;
       case 'expiring-soon':
-        return <Badge className="bg-yellow-100 text-yellow-800">Expiring Soon</Badge>;
+        return <Badge variant="custom" className="bg-yellow-100 text-yellow-800">Expiring Soon</Badge>;
       case 'expired':
-        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800">Expired</Badge>;
       case 'not-started':
-        return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>;
+        return <Badge variant="custom" className="bg-gray-100 text-gray-800">Not Started</Badge>;
       case 'missing':
-        return <Badge className="bg-red-100 text-red-800">Missing</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800">Missing</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }

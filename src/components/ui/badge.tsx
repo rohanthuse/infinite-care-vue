@@ -23,6 +23,7 @@ const badgeVariants = cva(
         outline: "text-foreground border-border/50",
         premium:
           "border-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white shadow-sm shadow-purple-200/30",
+        custom: "border-transparent",
       },
     },
     defaultVariants: {

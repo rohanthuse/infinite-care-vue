@@ -539,7 +539,7 @@ function ReportCard({
             <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               {format(new Date(report.service_date), 'EEEE, MMMM d, yyyy')}
-              <Badge className={getStatusColor(report.status)} variant="outline">
+              <Badge variant="custom" className={getStatusColor(report.status)}>
                 {getStatusIcon(report.status)}
                 {report.status.replace('_', ' ').toUpperCase()}
               </Badge>

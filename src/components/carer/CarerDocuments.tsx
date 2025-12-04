@@ -370,7 +370,7 @@ export const CarerDocuments: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(doc.status)}>
+                    <Badge variant="custom" className={getStatusColor(doc.status)}>
                       {doc.status}
                     </Badge>
                     <Button 

@@ -74,7 +74,7 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge className={getSeverityColor(area.severity)} variant="outline">
+                    <Badge variant="custom" className={getSeverityColor(area.severity)}>
                       <span className="flex items-center gap-1">
                         {getSeverityIcon(area.severity)}
                         {area.severity}

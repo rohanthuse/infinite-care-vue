@@ -73,7 +73,7 @@ export const RiskAssessmentsTab: React.FC<RiskAssessmentsTabProps> = ({
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">{assessment.risk_type}</h3>
                       <div className="flex gap-2">
-                        <Badge className={getRiskLevelColor(assessment.risk_level)}>
+                        <Badge variant="custom" className={getRiskLevelColor(assessment.risk_level)}>
                           {assessment.risk_level} Risk
                         </Badge>
                         <Badge variant="outline" className={getStatusColor(assessment.status)}>
@@ -131,6 +131,7 @@ export const RiskAssessmentsTab: React.FC<RiskAssessmentsTabProps> = ({
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium">RAG Status:</span>
                               <Badge 
+                                variant="custom"
                                 className={
                                   assessment.rag_status === 'red' ? 'bg-red-100 text-red-800' :
                                   assessment.rag_status === 'amber' ? 'bg-amber-100 text-amber-800' :

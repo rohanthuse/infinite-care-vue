@@ -164,7 +164,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{plan.title}</h3>
-                        <Badge className={getStatusColor(plan.status)}>
+                        <Badge variant="custom" className={getStatusColor(plan.status)}>
                           {plan.status}
                         </Badge>
                         {plan.display_id && (

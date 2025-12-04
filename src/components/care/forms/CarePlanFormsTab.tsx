@@ -225,7 +225,7 @@ export const CarePlanFormsTab: React.FC<CarePlanFormsTabProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(carePlanForm.status)}>
+                    <Badge variant="custom" className={getStatusColor(carePlanForm.status)}>
                       {carePlanForm.status.replace('_', ' ')}
                     </Badge>
                     {(userRole === 'admin') && (

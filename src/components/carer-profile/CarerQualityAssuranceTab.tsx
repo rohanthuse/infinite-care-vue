@@ -61,13 +61,13 @@ export const CarerQualityAssuranceTab: React.FC<CarerQualityAssuranceTabProps> =
   const getTrendBadge = () => {
     switch (qualityData.performanceTrend) {
       case 'improving':
-        return <Badge className="bg-green-100 text-green-800">Improving</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-800">Improving</Badge>;
       case 'stable':
-        return <Badge className="bg-blue-100 text-blue-800">Stable</Badge>;
+        return <Badge variant="custom" className="bg-blue-100 text-blue-800">Stable</Badge>;
       case 'declining':
-        return <Badge className="bg-orange-100 text-orange-800">Declining</Badge>;
+        return <Badge variant="custom" className="bg-orange-100 text-orange-800">Declining</Badge>;
       case 'needs_attention':
-        return <Badge className="bg-red-100 text-red-800">Needs Attention</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800">Needs Attention</Badge>;
     }
   };
   

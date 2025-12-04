@@ -119,7 +119,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                       <div className="flex items-center gap-2">
                         {getEventTypeIcon(event.event_type)}
                         <h3 className="font-medium">{event.title}</h3>
-                        <Badge className={getSeverityColor(event.severity)}>
+                        <Badge variant="custom" className={getSeverityColor(event.severity)}>
                           {event.severity}
                         </Badge>
                         <Badge variant="outline" className="text-xs">

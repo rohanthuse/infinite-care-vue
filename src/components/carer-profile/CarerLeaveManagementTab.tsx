@@ -121,7 +121,7 @@ export const CarerLeaveManagementTab: React.FC<CarerLeaveManagementTabProps> = (
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <Badge className={getLeaveTypeColor(request.leave_type)}>
+                        <Badge variant="custom" className={getLeaveTypeColor(request.leave_type)}>
                           {request.leave_type.charAt(0).toUpperCase() + request.leave_type.slice(1)}
                         </Badge>
                       </div>
@@ -155,7 +155,7 @@ export const CarerLeaveManagementTab: React.FC<CarerLeaveManagementTabProps> = (
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      <Badge className={getStatusColor(request.status)}>
+                      <Badge variant="custom" className={getStatusColor(request.status)}>
                         {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </Badge>
 

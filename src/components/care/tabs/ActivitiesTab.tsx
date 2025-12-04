@@ -70,7 +70,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ carePlanId, onAddA
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900 mb-1">{activity.name}</h3>
                         <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(activity.status)}>
+                          <Badge variant="custom" className={getStatusColor(activity.status)}>
                             {activity.status}
                           </Badge>
                           <span className="text-xs text-gray-500 flex items-center">

@@ -140,7 +140,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                       <div className="flex items-center gap-2">
                         {getEventTypeIcon(event.event_type)}
                         <h3 className="font-medium">{event.title}</h3>
-                        <Badge className={getSeverityColor(event.severity)}>
+                        <Badge variant="custom" className={getSeverityColor(event.severity)}>
                           {event.severity}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
@@ -148,7 +148,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                         </Badge>
                         {(event.follow_up_assigned_to === carerProfile?.id || 
                           event.investigation_assigned_to === carerProfile?.id) && (
-                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                          <Badge variant="custom" className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
                             Assigned to you
                           </Badge>
                         )}

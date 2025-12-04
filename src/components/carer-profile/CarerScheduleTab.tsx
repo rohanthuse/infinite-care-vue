@@ -85,7 +85,7 @@ export const CarerScheduleTab: React.FC<CarerScheduleTabProps> = ({ carerId }) =
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge className="bg-green-100 text-green-800 border-green-200">
+            <Badge variant="custom" className="bg-green-100 text-green-800 border-green-200">
               Available
             </Badge>
             <p className="text-xs text-gray-500 mt-2">Current week availability</p>

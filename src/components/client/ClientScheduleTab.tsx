@@ -98,7 +98,7 @@ export const ClientScheduleTab: React.FC<ClientScheduleTabProps> = ({ clientId }
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge className={getStatusColor(scheduleData.careStatus)}>
+            <Badge variant="custom" className={getStatusColor(scheduleData.careStatus)}>
               {scheduleData.careStatus}
             </Badge>
             <p className="text-xs text-muted-foreground mt-2">Current care plan status</p>

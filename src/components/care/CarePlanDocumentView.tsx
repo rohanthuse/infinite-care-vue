@@ -156,7 +156,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   <div>
                     <CardTitle className="text-2xl">{carePlan.patientName}</CardTitle>
                     <div className="flex items-center gap-3 mt-2">
-                      <Badge className={getStatusColor(carePlan.status)}>
+                      <Badge variant="custom" className={getStatusColor(carePlan.status)}>
                         {carePlan.status}
                       </Badge>
                       <span className="text-sm text-gray-600">ID: {carePlan.id}</span>
@@ -389,7 +389,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                     <div key={goal.id} className="border rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
                         <h4 className="font-medium">{goal.description}</h4>
-                        <Badge className={getStatusColor(goal.status)}>
+                        <Badge variant="custom" className={getStatusColor(goal.status)}>
                           {goal.status}
                         </Badge>
                       </div>
