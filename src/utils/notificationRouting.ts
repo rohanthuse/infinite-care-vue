@@ -16,6 +16,7 @@ const EXTENDED_TYPES: Record<string, string> = {
   'agreement_shared': 'agreement',
   'pending_agreement': 'agreement',
   'agreement_signed': 'agreement_signed',
+  'tenant_agreement': 'tenant_agreement',
   'training_assignment': 'training',
   'training_status_update': 'training',
   'form_assignment': 'form',
@@ -39,6 +40,11 @@ const EXTENDED_TYPES: Record<string, string> = {
   'event_shared': 'events_logs',
   'task_assigned': 'task',
   'event_log': 'events_logs',
+};
+
+// Organization dashboard route mappings
+const ORG_ROUTES: Record<string, string> = {
+  tenant_agreement: '/agreement',
 };
 
 // Client portal route mappings
@@ -86,7 +92,14 @@ const CARER_ROUTES: Record<string, string> = {
   info: '', // Generic info type - no specific route
 };
 
-export type UserContext = 'client' | 'carer' | 'branch' | 'unknown';
+export type UserContext = 'client' | 'carer' | 'branch' | 'organization' | 'unknown';
+
+/**
+ * Get organization route for a notification type
+ */
+export const getOrgNotificationRoute = (notificationType: string): string => {
+  return ORG_ROUTES[notificationType] || '';
+};
 
 /**
  * Detect user context from the current URL path
@@ -95,6 +108,8 @@ export const detectUserContext = (pathname: string): UserContext => {
   if (pathname.includes('/client-dashboard')) return 'client';
   if (pathname.includes('/carer-dashboard')) return 'carer';
   if (pathname.includes('/branch-dashboard')) return 'branch';
+  // Check for organization dashboard (tenant slug pattern without specific dashboards)
+  if (pathname.match(/^\/[^/]+\/dashboard/) || pathname.match(/^\/[^/]+\/agreement/)) return 'organization';
   return 'unknown';
 };
 
