@@ -230,6 +230,12 @@ export function useBookingData(branchId?: string) {
             date: startDate,
             status: bk.status || "assigned",
             notes: bk.notes || "",
+            // Raw database fields for EditBookingDialog compatibility
+            start_time: bk.start_time,
+            end_time: bk.end_time,
+            service_id: bk.service_id,
+            branch_id: bk.branch_id,
+            client_id: bk.client_id,
             unavailability_request: bk.booking_unavailability_requests?.[0] || null,
             cancellation_request_status: bk.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
             reschedule_request_status: bk.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,

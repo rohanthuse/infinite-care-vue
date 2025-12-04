@@ -209,6 +209,21 @@ export function EditBookingDialog({
       
       console.log('[EditBookingDialog] Fetching related booking records');
       
+      // Determine the correct time values (handle both formats)
+      const startTimeValue = booking.start_time || 
+        (booking.date && booking.startTime ? `${booking.date}T${booking.startTime}:00Z` : null);
+      const endTimeValue = booking.end_time || 
+        (booking.date && booking.endTime ? `${booking.date}T${booking.endTime}:00Z` : null);
+      const branchIdValue = booking.branch_id || branchId;
+      const clientIdValue = booking.clientId || booking.client_id;
+      
+      if (!startTimeValue || !endTimeValue || !branchIdValue || !clientIdValue) {
+        console.warn('[EditBookingDialog] Missing required booking data for query:', {
+          startTimeValue, endTimeValue, branchIdValue, clientIdValue
+        });
+        return;
+      }
+      
       try {
         // Fetch all bookings with same client, time, and service
         const { data: sameTimeBookings, error } = await supabase
@@ -223,10 +238,10 @@ export function EditBookingDialog({
               last_name
             )
           `)
-          .eq('client_id', booking.clientId || booking.client_id)
-          .eq('branch_id', booking.branch_id)
-          .eq('start_time', booking.start_time)
-          .eq('end_time', booking.end_time);
+          .eq('client_id', clientIdValue)
+          .eq('branch_id', branchIdValue)
+          .eq('start_time', startTimeValue)
+          .eq('end_time', endTimeValue);
         
         if (error) {
           console.error('[EditBookingDialog] Error fetching related bookings:', error);
@@ -269,19 +284,37 @@ export function EditBookingDialog({
     };
     
     fetchRelatedBookings();
-  }, [open, booking?.id, booking?.start_time, booking?.end_time, booking?.service_id]);
+  }, [open, booking?.id]);
   
   // Update form when booking changes and reset validation state
   useEffect(() => {
     if (booking && booking.id && open) {
-      const startStr = toLocalInput(booking.start_time);
-      const endStr = toLocalInput(booking.end_time);
+      // Handle both ISO format (start_time) and local format (date + startTime)
+      let startStr = "";
+      let endStr = "";
+      
+      if (booking.start_time) {
+        // ISO format from raw database
+        startStr = toLocalInput(booking.start_time);
+        endStr = toLocalInput(booking.end_time);
+      } else if (booking.date && booking.startTime) {
+        // Local format from grid/list view
+        startStr = toLocalInput(`${booking.date}T${booking.startTime}:00`);
+        endStr = toLocalInput(`${booking.date}T${booking.endTime}:00`);
+      }
       
       // Only set values if we have valid data
       if (startStr) form.setValue("start_time", startStr);
       if (endStr) form.setValue("end_time", endStr);
       form.setValue("service_id", booking.service_id || "");
       form.setValue("notes", booking.notes || "");
+      
+      console.log('[EditBookingDialog] Form initialized:', {
+        bookingId: booking.id,
+        start_time: startStr,
+        end_time: endStr,
+        service_id: booking.service_id
+      });
       
       // Reset validation state when dialog opens
       setValidationResult(null);
