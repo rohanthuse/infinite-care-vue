@@ -108,10 +108,16 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   // Enhanced tooltip content
   const renderTooltipContent = () => {
     const isClientView = type === "client";
-    const primaryPerson = isClientView ? booking.carerName : booking.clientName;
-    const primaryInitials = isClientView ? booking.carerInitials : booking.clientInitials;
-    const secondaryPerson = isClientView ? booking.clientName : booking.carerName;
-    const secondaryInitials = isClientView ? booking.clientInitials : booking.carerInitials;
+    // Handle unassigned bookings - show "Not Assigned" instead of "(Unknown Carer)"
+    const isUnassigned = !booking.carerId || booking.status === 'unassigned';
+    const primaryPerson = isClientView 
+      ? (isUnassigned ? 'Not Assigned' : booking.carerName) 
+      : booking.clientName;
+    const primaryInitials = isClientView 
+      ? (isUnassigned ? '—' : booking.carerInitials) 
+      : booking.clientInitials;
+    const secondaryPerson = isClientView ? booking.clientName : (isUnassigned ? 'Not Assigned' : booking.carerName);
+    const secondaryInitials = isClientView ? booking.clientInitials : (isUnassigned ? '—' : booking.carerInitials);
 
     return (
       <div className="space-y-3 min-w-0">
@@ -119,13 +125,20 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         <div className="border-b border-gray-100 pb-2">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              isClientView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+              isClientView 
+                ? (isUnassigned ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700')
+                : 'bg-blue-100 text-blue-700'
             }`}>
               {primaryInitials}
             </div>
             <div>
               <div className="font-semibold text-sm text-gray-900">{primaryPerson}</div>
-              <div className="text-xs text-gray-500">{isClientView ? 'Assigned Carer' : 'Client'}</div>
+              <div className="text-xs text-gray-500">
+                {isClientView 
+                  ? (isUnassigned ? 'Carer Status' : 'Assigned Carer') 
+                  : 'Client'
+                }
+              </div>
             </div>
           </div>
         </div>

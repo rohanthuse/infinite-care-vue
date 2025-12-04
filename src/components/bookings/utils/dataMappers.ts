@@ -68,6 +68,17 @@ export function getOrCreatePlaceholderClient(id: any): Client {
 }
 
 export function getOrCreatePlaceholderCarer(id: any): Carer {
+  // If id is null/undefined, this is an intentionally unassigned booking
+  if (!id) {
+    return {
+      id: null,
+      name: "Not Assigned",
+      initials: "—",
+      bookingCount: 0,
+      bookings: [],
+    };
+  }
+  // If id exists but carer not found, it's a data issue
   return {
     id,
     name: "(Unknown Carer)",

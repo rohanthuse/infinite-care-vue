@@ -133,6 +133,9 @@ export function EditBookingDialog({
   
   // Track original staff IDs to calculate diff
   const [originalStaffIds, setOriginalStaffIds] = React.useState<string[]>([]);
+  
+  // Track unassigned booking ID separately (for "Assign Carer Later" bookings)
+  const [unassignedBookingId, setUnassignedBookingId] = React.useState<string | null>(null);
 
   const form = useForm<EditBookingFormData>({
     resolver: zodResolver(editBookingSchema),
@@ -230,7 +233,13 @@ export function EditBookingDialog({
           return;
         }
         
-        // Extract staff records (filter out unassigned bookings)
+        // Find and track unassigned booking (staff_id is null)
+        const unassignedBooking = (sameTimeBookings || []).find(b => !b.staff_id);
+        setUnassignedBookingId(unassignedBooking?.id || null);
+        
+        console.log('[EditBookingDialog] Unassigned booking found:', unassignedBooking?.id);
+        
+        // Extract staff records (assigned bookings only)
         const staffRecords = (sameTimeBookings || [])
           .filter(b => b.staff_id && b.staff)
           .map(b => ({
@@ -239,7 +248,10 @@ export function EditBookingDialog({
             staff_name: `${b.staff.first_name} ${b.staff.last_name}`
           }));
         
-        console.log('[EditBookingDialog] Found related bookings:', staffRecords);
+        console.log('[EditBookingDialog] Found related bookings:', {
+          staffRecords,
+          unassignedBookingId: unassignedBooking?.id
+        });
         
         setRelatedBookingRecords(staffRecords);
         
@@ -249,7 +261,7 @@ export function EditBookingDialog({
         
         // Pre-fill form with current staff
         form.setValue('staff_ids', staffIds);
-        form.setValue('assign_later', staffIds.length === 0);
+        form.setValue('assign_later', staffIds.length === 0 && !!unassignedBooking);
         
       } catch (error) {
         console.error('[EditBookingDialog] Error:', error);
@@ -421,8 +433,37 @@ export function EditBookingDialog({
         }
       }
       
-      // STEP 3: Create new bookings for added staff
-      for (const staffId of staffToAdd) {
+      // STEP 3: Create new bookings for added staff (or update unassigned booking first)
+      let remainingStaffToAdd = [...staffToAdd];
+
+      // If there's an unassigned booking and we're adding staff, UPDATE it first instead of creating new
+      if (unassignedBookingId && remainingStaffToAdd.length > 0) {
+        const firstStaffId = remainingStaffToAdd[0];
+        console.log('[EditBookingDialog] Updating unassigned booking with first staff:', {
+          bookingId: unassignedBookingId,
+          staffId: firstStaffId
+        });
+        
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            ...commonUpdates,
+            staff_id: firstStaffId,
+            status: 'assigned',
+          })
+          .eq('id', unassignedBookingId);
+        
+        if (error) {
+          console.error('[EditBookingDialog] Error updating unassigned booking:', error);
+          throw error;
+        }
+        
+        // Remove from list since we used the existing booking
+        remainingStaffToAdd = remainingStaffToAdd.slice(1);
+      }
+
+      // Create new bookings only for remaining staff
+      for (const staffId of remainingStaffToAdd) {
         const { error } = await supabase.from('bookings').insert({
           branch_id: booking.branch_id,
           client_id: booking.clientId || booking.client_id,
@@ -601,7 +642,7 @@ export function EditBookingDialog({
                                   ? field.value.length === 1
                                     ? (() => {
                                         const carer = carers.find(c => c.id === field.value[0]);
-                                        return carer?.name || "Unknown Carer";
+                                        return carer?.name || "Select carer";
                                       })()
                                     : `${field.value.length} carers selected`
                                   : "Select carers..."
@@ -689,7 +730,7 @@ export function EditBookingDialog({
                             <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                               {field.value.map((carerId) => {
                                 const carer = carers.find(c => c.id === carerId);
-                                const carerName = carer?.name || 'Unknown';
+                                const carerName = carer?.name || 'Not found';
                                 
                                 return (
                                   <Badge
