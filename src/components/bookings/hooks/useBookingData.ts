@@ -147,11 +147,13 @@ export function useBookingData(branchId?: string) {
       (bookingsDB || []).forEach((bk: any, index: number) => {
         try {
           let client = clientsMap[bk.client_id];
-          let carer = carersMap[bk.staff_id];
+          let carer = bk.staff_id ? carersMap[bk.staff_id] : null;
           if (!client && bk.client_id)
             client = getOrCreatePlaceholderClient(bk.client_id);
-          if (!carer && bk.staff_id)
+          // Handle unassigned bookings (staff_id is null) - show "Not Assigned"
+          if (!carer) {
             carer = getOrCreatePlaceholderCarer(bk.staff_id);
+          }
 
           // Enhanced date/time extraction with timezone-aware conversion
           const extractDateSafe = (isoString: string) => {
