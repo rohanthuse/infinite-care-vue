@@ -11,7 +11,8 @@ import { ViewBookingDialog } from "@/components/bookings/dialogs/ViewBookingDial
 import { useClientBookings } from "@/hooks/useClientBookings";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
-import { useCreateBooking } from "@/data/hooks/useCreateBooking";
+import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
+import { CreateBookingInput } from "@/data/hooks/useCreateBooking";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,8 +43,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const { data: carers = [] } = useBranchCarers(branchId);
   const { data: services = [] } = useBranchServices(branchId, organization?.id);
   
-  // Create booking mutation - will use client's actual branch_id in handleCreateBooking
-  const createBookingMutation = useCreateBooking();
+  // Use batch booking creation mutation for consolidated notifications
+  const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
 
   const handleScheduleAppointment = () => {
     setIsScheduleDialogOpen(true);
@@ -111,8 +112,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       const client = clientResponse.data;
       console.log('[handleCreateBooking] Using client data:', client);
 
-      // Track created bookings for navigation
-      let firstCreatedBooking = null;
+      // Collect all bookings into an array first (batch approach)
+      const bookingsToCreate: CreateBookingInput[] = [];
       
       // Create bookings for each schedule and each day within the date range
       for (const schedule of bookingData.schedules) {
@@ -151,67 +152,66 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
               continue;
             }
 
-            // ✅ Create a separate booking for EACH selected service
-            console.log(`[handleCreateBooking] Creating ${schedule.services.length} booking(s) for services:`, schedule.services);
-            
+            // Collect a separate booking for EACH selected service
             for (const serviceId of schedule.services) {
-              const bookingInput = {
-                branch_id: client.branch_id, // Use client's actual branch_id
-                client_id: actualClientId,   // Use the correct client_id from props
-                staff_id: bookingData.carerId || undefined, // Pass undefined if no carer - useCreateBooking will auto-set status
+              bookingsToCreate.push({
+                branch_id: client.branch_id,
+                client_id: actualClientId,
+                staff_id: bookingData.carerId || undefined,
                 start_time: bookingStartTime.toISOString(),
                 end_time: bookingEndTime.toISOString(),
-                service_id: serviceId, // ✅ Each service gets its own booking
-                // Status is auto-determined by useCreateBooking based on staff_id presence
+                service_id: serviceId,
                 notes: bookingData.notes || null,
-              };
-
-              console.log('[handleCreateBooking] Creating booking for service:', serviceId, bookingInput);
-              const createdBooking = await createBookingMutation.mutateAsync(bookingInput);
-              
-              // Store the first created booking for navigation
-              if (!firstCreatedBooking) {
-                firstCreatedBooking = createdBooking;
-              }
+              });
             }
           }
         }
       }
 
-      // Calculate total bookings created
-      const totalServices = bookingData.schedules.reduce((sum: number, schedule: any) => 
-        sum + (schedule.services?.length || 0), 0
-      );
-      const totalDays = bookingData.schedules.reduce((sum: number, schedule: any) => {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        const selectedDays = days.filter(day => schedule[day]);
-        
-        const startDate = new Date(bookingData.fromDate);
-        const endDate = new Date(bookingData.untilDate);
-        let dayCount = 0;
-        
-        for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
-          const dayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][currentDate.getDay()];
-          if (selectedDays.includes(dayOfWeek)) {
-            dayCount++;
-          }
-        }
-        
-        return sum + dayCount;
-      }, 0);
+      // If no bookings to create, show error
+      if (bookingsToCreate.length === 0) {
+        toast.error("No bookings to create. Please check your schedule configuration.");
+        return;
+      }
+
+      console.log('[handleCreateBooking] Creating', bookingsToCreate.length, 'bookings in batch');
+
+      // Create all bookings in a single batch call
+      const createdBookings = await createMultipleBookingsMutation.mutateAsync(bookingsToCreate);
       
-      const totalBookings = totalServices * totalDays;
+      // Calculate date range for consolidated notification
+      const hasCarerAssigned = Boolean(bookingData.carerId);
+      const actualCount = createdBookings?.length || bookingsToCreate.length;
       
-      toast.success(
-        totalBookings > 1 
-          ? `${totalBookings} bookings created successfully!` 
-          : "Booking created successfully!",
-        {
-          description: totalServices > 1 
-            ? `Created separate bookings for each service and time slot.`
-            : undefined
-        }
-      );
+      let dateRangeText = '';
+      if (createdBookings && createdBookings.length > 0) {
+        const dates = createdBookings
+          .map((b: any) => new Date(b.start_time))
+          .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+        const firstDate = format(dates[0], 'dd MMM yyyy');
+        const lastDate = format(dates[dates.length - 1], 'dd MMM yyyy');
+        dateRangeText = firstDate === lastDate ? firstDate : `${firstDate} to ${lastDate}`;
+      }
+
+      // Build consolidated summary
+      const summaryParts: string[] = [];
+      summaryParts.push(`${actualCount} appointment${actualCount > 1 ? 's' : ''} added`);
+      if (dateRangeText) {
+        summaryParts.push(dateRangeText);
+      }
+
+      // Show SINGLE consolidated toast notification
+      if (hasCarerAssigned) {
+        toast.success("Recurring Booking Created Successfully!", {
+          description: summaryParts.join(' • '),
+          duration: 5000
+        });
+      } else {
+        toast.success("Recurring booking series created without assigned carers", {
+          description: summaryParts.join(' • '),
+          duration: 5000
+        });
+      }
       
       // Refresh bookings for this client
       refetch();
@@ -222,6 +222,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
       
       // Navigate to bookings tab with the first created booking highlighted
+      const firstCreatedBooking = createdBookings?.[0];
       if (firstCreatedBooking && branchId && branchName) {
         const bookingDate = new Date(firstCreatedBooking.start_time);
         navigateToBookings({
@@ -239,10 +240,10 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         }, 100);
       }
       
-      console.log('[handleCreateBooking] Booking creation completed');
+      console.log('[handleCreateBooking] Batch booking creation completed');
     } catch (error) {
-      console.error("Error creating booking:", error);
-      toast.error("Failed to create booking");
+      console.error("Error creating bookings:", error);
+      toast.error("Failed to create bookings");
     }
   };
 
