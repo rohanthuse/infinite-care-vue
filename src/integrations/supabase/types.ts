@@ -9241,6 +9241,95 @@ export type Database = {
           },
         ]
       }
+      system_template_elements: {
+        Row: {
+          created_at: string
+          element_type: string
+          id: string
+          label: string
+          order_index: number
+          properties: Json | null
+          required: boolean
+          template_id: string
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          element_type: string
+          id?: string
+          label: string
+          order_index: number
+          properties?: Json | null
+          required?: boolean
+          template_id: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          element_type?: string
+          id?: string
+          label?: string
+          order_index?: number
+          properties?: Json | null
+          required?: boolean
+          template_id?: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_template_elements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "system_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          published: boolean
+          requires_review: boolean
+          settings: Json | null
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          requires_review?: boolean
+          settings?: Json | null
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          requires_review?: boolean
+          settings?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       system_tenant_agreement_files: {
         Row: {
           agreement_id: string | null
