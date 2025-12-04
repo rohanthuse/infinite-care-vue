@@ -67,8 +67,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   
   return (
     <header 
-      className="bg-gradient-to-r from-white via-white to-indigo-50/40 dark:from-card dark:via-card dark:to-indigo-950/20 shadow-sm shadow-indigo-100/20 dark:shadow-indigo-900/10 border-b border-gray-100 dark:border-border sticky top-0 z-50 w-full flex items-center relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500 after:via-indigo-500 after:to-purple-500"
-      style={{ height: '64px' }}
+      className="bg-gradient-to-r from-white via-white to-indigo-50/40 dark:from-card dark:via-card dark:to-indigo-950/20 shadow-sm shadow-indigo-100/20 dark:shadow-indigo-900/10 border-b border-gray-100 dark:border-border fixed top-0 left-0 right-0 z-50 h-[72px] flex items-center after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500 after:via-indigo-500 after:to-purple-500"
     >
       <div className="w-full px-4 md:px-6 lg:px-8 flex justify-between items-center">
         {/* Logo and Sidebar Trigger */}
