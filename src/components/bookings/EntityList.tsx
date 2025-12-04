@@ -154,13 +154,14 @@ export const EntityList: React.FC<EntityListProps> = ({
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      <Badge
-                        className={`${
-                          type === "client"
-                            ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
-                            : "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
-                        } text-xs`}
-                      >
+                <Badge
+                  variant="custom"
+                  className={`${
+                    type === "client"
+                      ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
+                      : "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
+                  } text-xs`}
+                >
                         {filteredBookingCount} booking{filteredBookingCount !== 1 ? "s" : ""}
                       </Badge>
                       
