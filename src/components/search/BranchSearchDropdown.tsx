@@ -188,24 +188,24 @@ export function BranchSearchDropdown({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, allResults, onClose]);
 
-  // Click outside to close - use timeout to allow click handlers to fire first
+  // Click outside to close - using 'click' event to not interfere with item clicks
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // Use longer timeout to allow click handlers on dropdown items to fire first
-      setTimeout(() => {
-        if (
-          dropdownRef.current && 
-          !dropdownRef.current.contains(e.target as Node) &&
-          anchorRef.current &&
-          !anchorRef.current.contains(e.target as Node)
-        ) {
-          onClose();
-        }
-      }, 100);
+      const target = e.target as Node;
+      // Check immediately if click is outside both dropdown and anchor
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(target) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(target)
+      ) {
+        onClose();
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // Use 'click' instead of 'mousedown' to allow item click handlers to complete first
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [onClose, anchorRef]);
 
   // Calculate position

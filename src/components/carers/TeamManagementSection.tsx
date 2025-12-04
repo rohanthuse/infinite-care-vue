@@ -60,11 +60,12 @@ import { toast } from "sonner";
 interface TeamManagementSectionProps {
   branchId: string;
   branchName?: string;
+  selectedStaffId?: string | null;
 }
 
 const ITEMS_PER_PAGE = 10;
 
-export function TeamManagementSection({ branchId, branchName }: TeamManagementSectionProps) {
+export function TeamManagementSection({ branchId, branchName, selectedStaffId }: TeamManagementSectionProps) {
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
   const { closeAllDropdowns } = useDialogManager();
@@ -104,6 +105,14 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       }
     };
   }, []);
+
+  // Auto-open profile dialog when selectedStaffId is passed from search
+  useEffect(() => {
+    if (selectedStaffId && !isLoading) {
+      console.log('[TeamManagementSection] Auto-opening profile for staff:', selectedStaffId);
+      setViewingFullProfile({ carerId: selectedStaffId });
+    }
+  }, [selectedStaffId, isLoading]);
 
   // Global cleanup safeguard - remove stuck overlays when dialogs close
   useEffect(() => {
