@@ -17,6 +17,7 @@ import { useDeleteMultipleBookings } from "@/hooks/useDeleteMultipleBookings";
 import { useUserRole } from "@/hooks/useUserRole";
 import { BookingBulkActionsBar } from "./BookingBulkActionsBar";
 import { cn } from "@/lib/utils";
+import { forceModalCleanup } from "@/lib/modal-cleanup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const itemsPerPage = 10;
   
   const deleteBooking = useDeleteBooking(branchId);
@@ -139,6 +141,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
 
   // Handle delete booking click
   const handleDeleteClick = (booking: Booking) => {
+    setOpenDropdownId(null); // Close dropdown immediately before opening dialog
     setDeleteBookingId(booking.id);
   };
 
@@ -174,13 +177,23 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       console.log('[BookingsList] Delete mutation and refetches completed successfully');
       clearTimeout(safetyTimeout);
       
-      // No artificial delay needed - refetch already completed
+      // Close dialog and ensure dropdown is fully closed
       setDeleteBookingId(null);
+      setOpenDropdownId(null);
+      
+      // Force cleanup of any lingering Radix UI state
+      setTimeout(() => {
+        forceModalCleanup();
+        console.log('[BookingsList] Modal cleanup executed');
+      }, 100);
+      
       console.log('[BookingsList] Dialog closed, delete complete');
     } catch (error) {
       console.error('[BookingsList] Delete mutation failed:', error);
       clearTimeout(safetyTimeout);
       setDeleteBookingId(null);
+      setOpenDropdownId(null);
+      forceModalCleanup();
     }
   };
 
@@ -514,7 +527,10 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                           <Edit className="h-4 w-4" />
                         </Button>
                         {canDelete && (
-                          <DropdownMenu>
+                          <DropdownMenu
+                            open={openDropdownId === booking.id}
+                            onOpenChange={(open) => setOpenDropdownId(open ? booking.id : null)}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button 
                                 variant="ghost" 
@@ -525,7 +541,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteClick(booking)}
                                 className="text-destructive focus:text-destructive"
