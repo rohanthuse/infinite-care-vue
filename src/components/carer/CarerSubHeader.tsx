@@ -46,36 +46,41 @@ export const CarerSubHeader: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-green-50/40 via-card to-teal-50/30 dark:from-green-950/20 dark:via-card dark:to-teal-950/20 border border-border border-l-4 border-l-green-500 px-4 py-3 mb-6 rounded-lg shadow-sm shadow-green-100/10 dark:shadow-green-900/10">
       <div className="flex items-center justify-between gap-3">
-        {/* Left side - Back to Dashboard button */}
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
-          <Link to={createCarerPath('')}>
-            <ArrowLeft className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Back</span>
-          </Link>
-        </Button>
-        
-        {/* Center - Branch & Org Info */}
-        <div className="flex items-center gap-3 min-w-0 flex-1 justify-center">
-          <Building2 className="h-5 w-5 text-primary shrink-0" />
-          <div className="min-w-0 text-center">
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <h2 className="font-semibold text-foreground truncate">
-                {branchName}
-              </h2>
-              {!showLoading && (
-                <Badge 
-                  variant={branchStatus?.toLowerCase() === 'active' ? 'success' : 'secondary'}
-                  className="shrink-0"
-                >
-                  {branchStatus}
-                </Badge>
+        {/* Left side - Back button + Branch & Org Info */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Button variant="outline" size="sm" className="shrink-0" asChild>
+            <Link to={createCarerPath('')}>
+              <ArrowLeft className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Back</span>
+            </Link>
+          </Button>
+          
+          {/* Divider */}
+          <div className="h-8 w-px bg-border shrink-0" />
+          
+          {/* Branch & Org Info */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Building2 className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-semibold text-foreground truncate">
+                  {branchName}
+                </h2>
+                {!showLoading && (
+                  <Badge 
+                    variant={branchStatus?.toLowerCase() === 'active' ? 'success' : 'secondary'}
+                    className="shrink-0"
+                  >
+                    {branchStatus}
+                  </Badge>
+                )}
+              </div>
+              {organizationName && (
+                <p className="text-sm text-muted-foreground truncate">
+                  {organizationName}
+                </p>
               )}
             </div>
-            {organizationName && (
-              <p className="text-sm text-muted-foreground truncate">
-                {organizationName}
-              </p>
-            )}
           </div>
         </div>
         
