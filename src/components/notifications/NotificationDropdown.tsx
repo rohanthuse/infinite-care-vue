@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar, MessageCircle } from "lucide-react";
+import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar, MessageCircle, FileText } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -41,10 +41,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const location = useLocation();
   const userContext = detectUserContext(location.pathname);
 
-  const getIcon = (type: Notification['type'], category: Notification['category']) => {
+  const getIcon = (type: Notification['type'], category: Notification['category'], notification?: Notification) => {
     const iconClass = "h-4 w-4";
     
     try {
+      // Check for tenant_agreement type from data.notification_type
+      const dataNotificationType = (notification?.data as any)?.notification_type;
+      if (dataNotificationType === 'tenant_agreement') {
+        return <FileText className={cn(iconClass, 'text-purple-500')} />;
+      }
+      
       switch (type) {
         case 'booking':
         case 'appointment':
@@ -318,7 +324,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex-shrink-0 mt-0.5">
-                    {getIcon(notification.type, notification.category)}
+                    {getIcon(notification.type, notification.category, notification)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
