@@ -1,8 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ClientHeader from "@/components/ClientHeader";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
+import { ClientSubHeader } from "@/components/client/ClientSubHeader";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
@@ -34,6 +34,7 @@ const ClientDashboard = () => {
       <div className="flex flex-1 w-full">
         <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
           <main className="w-full max-w-full min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <ClientSubHeader />
             <Outlet />
           </main>
         </SidebarInset>
