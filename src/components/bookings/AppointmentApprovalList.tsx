@@ -229,22 +229,28 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
         </Card>
       )}
       
-        {selectedAppointment && (
-          <>
-            <AppointmentApprovalDialog
-              open={showApprovalDialog}
-              onOpenChange={setShowApprovalDialog}
-              appointment={selectedAppointment}
-            />
-            
-            <ReallocateAppointmentDialog
-              open={showReallocationDialog}
-              onOpenChange={setShowReallocationDialog}
-              appointment={selectedAppointment}
-              onReallocate={handleReallocate}
-            />
-          </>
-        )}
+      {selectedAppointment && showApprovalDialog && (
+        <AppointmentApprovalDialog
+          open={showApprovalDialog}
+          onOpenChange={(open) => {
+            setShowApprovalDialog(open);
+            if (!open) setSelectedAppointment(null);
+          }}
+          appointment={selectedAppointment}
+        />
+      )}
+      
+      {selectedAppointment && showReallocationDialog && (
+        <ReallocateAppointmentDialog
+          open={showReallocationDialog}
+          onOpenChange={(open) => {
+            setShowReallocationDialog(open);
+            if (!open) setSelectedAppointment(null);
+          }}
+          appointment={selectedAppointment}
+          onReallocate={handleReallocate}
+        />
+      )}
     </div>
   );
 };
