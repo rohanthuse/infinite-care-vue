@@ -33,7 +33,6 @@ const ClientSupport = () => {
   const [activeTab, setActiveTab] = useState("send-message");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [isReplyMode, setIsReplyMode] = useState(false);
   const { toast } = useToast();
   const { navigateToClientPage } = useClientNavigation();
   
@@ -133,17 +132,10 @@ const ClientSupport = () => {
   const handleMessageSelect = (messageId: string) => {
     setSelectedMessageId(messageId);
     setShowComposer(false);
-    setIsReplyMode(false);
-  };
-
-  const handleReply = () => {
-    setIsReplyMode(true);
-    setShowComposer(true);
   };
 
   const handleSendMessage = () => {
     setShowComposer(false);
-    setIsReplyMode(false);
     // Refresh by clearing and resetting selected message
     const currentMessage = selectedMessageId;
     setSelectedMessageId(null);
@@ -342,14 +334,13 @@ const ClientSupport = () => {
                   {showComposer ? (
                     <ClientMessageComposer
                       selectedContactId={null}
-                      selectedThreadId={isReplyMode ? selectedMessageId : null}
+                      selectedThreadId={null}
                       onClose={() => setShowComposer(false)}
                       onSend={handleSendMessage}
                     />
                   ) : selectedMessageId ? (
                     <ClientMessageView
                       messageId={selectedMessageId}
-                      onReply={handleReply}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full bg-gray-50">

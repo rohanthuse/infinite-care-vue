@@ -12,7 +12,6 @@ const ClientMessages = () => {
   const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
-  const [isReplyMode, setIsReplyMode] = useState(false);
   
   // Enable real-time message notifications
   useClientMessageNotifications();
@@ -24,35 +23,26 @@ const ClientMessages = () => {
     // Reset selected message when changing contacts
     setSelectedMessageId(null);
     // Show composer for new message when selecting a contact
-    setIsReplyMode(false);
     setShowComposer(true);
   };
   
   const handleMessageSelect = (messageId: string) => {
     setSelectedMessageId(messageId);
-    // Close composer when selecting a message
+    // Close composer when selecting a message (now reply is inline)
     setShowComposer(false);
-    setIsReplyMode(false);
   };
   
   const handleComposeClick = () => {
     setShowComposer(true);
     setSelectedMessageId(null);
-    setIsReplyMode(false);
   };
   
   const handleSendMessage = () => {
     setShowComposer(false);
-    setIsReplyMode(false);
     // Refresh message list by clearing selected contact temporarily
     const currentContact = selectedContactId;
     setSelectedContactId(null);
     setTimeout(() => setSelectedContactId(currentContact), 100);
-  };
-
-  const handleReply = () => {
-    setIsReplyMode(true);
-    setShowComposer(true);
   };
   
   
@@ -87,14 +77,13 @@ const ClientMessages = () => {
           {showComposer ? (
             <ClientMessageComposer
               selectedContactId={selectedContactId}
-              selectedThreadId={isReplyMode ? selectedMessageId : null}
+              selectedThreadId={null}
               onClose={() => setShowComposer(false)}
               onSend={handleSendMessage}
             />
           ) : selectedMessageId ? (
             <ClientMessageView 
               messageId={selectedMessageId}
-              onReply={handleReply}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50">

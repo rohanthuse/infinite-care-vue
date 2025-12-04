@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, MoreHorizontal, Reply, Clock, AlertTriangle, Eye, Users, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, MoreHorizontal, Clock, AlertTriangle, Eye, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,13 +12,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { MessageAttachmentViewer } from "@/components/communications/MessageAttachmentViewer";
 import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 import { MessageReadReceipt } from "@/components/communications/MessageReadReceipt";
+import { ClientMessageInputBar } from "./ClientMessageInputBar";
 
 interface ClientMessageViewProps {
   messageId: string; // This is actually threadId
-  onReply: () => void;
 }
 
-export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessageViewProps) => {
+export const ClientMessageView = ({ messageId: threadId }: ClientMessageViewProps) => {
   const { data: messages = [], isLoading, error } = useClientThreadMessages(threadId);
   const { data: currentUser } = useUserRole();
   const markMessagesAsRead = useMarkMessagesAsRead();
@@ -65,14 +65,14 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-        <div className="text-gray-400 text-lg mb-2">No messages found</div>
-        <p className="text-sm text-gray-500 max-w-md text-center">
-          Start the conversation by sending a message.
-        </p>
-        <Button variant="outline" className="mt-4" onClick={onReply}>
-          Send Message
-        </Button>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+          <div className="text-gray-400 text-lg mb-2">No messages yet</div>
+          <p className="text-sm text-gray-500 max-w-md text-center">
+            Start the conversation by sending a message below.
+          </p>
+        </div>
+        <ClientMessageInputBar threadId={threadId} />
       </div>
     );
   }
@@ -285,18 +285,8 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
         })}
       </div>
       
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
-          </span>
-          <Button variant="default" onClick={onReply}>
-            <Reply className="h-4 w-4 mr-2" />
-            Reply to conversation
-          </Button>
-        </div>
-      </div>
+      {/* Inline Chat Input Bar */}
+      <ClientMessageInputBar threadId={threadId} />
     </div>
   );
 };
