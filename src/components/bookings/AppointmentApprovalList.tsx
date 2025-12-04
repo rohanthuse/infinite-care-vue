@@ -11,6 +11,16 @@ import { toast } from "sonner";
 import { useFetchPendingRequests } from "@/hooks/useBookingApprovalActions";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Safe date formatter to prevent crashes on null/undefined dates
+const formatDate = (date: string | null | undefined, formatStr: string): string => {
+  if (!date) return "N/A";
+  try {
+    return format(new Date(date), formatStr);
+  } catch {
+    return "Invalid date";
+  }
+};
+
 interface Appointment {
   id: string;
   clientName: string;
@@ -124,11 +134,11 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                           <div className="flex items-center text-sm text-gray-600">
                             <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{booking?.start_time ? format(new Date(booking.start_time), "EEE, MMM d, yyyy") : "N/A"}</span>
+                            <span>{formatDate(booking?.start_time, "EEE, MMM d, yyyy")}</span>
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
                             <Clock className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{booking?.start_time ? format(new Date(booking.start_time), "HH:mm") : "N/A"}</span>
+                            <span>{formatDate(booking?.start_time, "HH:mm")}</span>
                           </div>
                         </div>
                         
@@ -139,11 +149,11 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                           {request.notes && <div className="text-xs mt-1">{request.notes}</div>}
                           {request.request_type === 'reschedule' && request.new_date && (
                             <div className="text-xs mt-1 font-medium text-blue-600">
-                              New Date/Time: {format(new Date(request.new_date), "MMM d, yyyy")} at {request.new_time}
+                              New Date/Time: {formatDate(request.new_date, "MMM d, yyyy")} at {request.new_time || "N/A"}
                             </div>
                           )}
                           <div className="text-xs text-gray-500 mt-1">
-                            Requested {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}
+                            Requested {formatDate(request.created_at, "MMM d, yyyy 'at' h:mm a")}
                           </div>
                         </div>
                       </div>
@@ -155,9 +165,15 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                       onClick={() => {
+                        if (!booking?.id) {
+                          toast.error("Cannot process request", {
+                            description: "Booking data is missing or incomplete"
+                          });
+                          return;
+                        }
                         setSelectedAppointment({
                           ...request,
-                          booking_id: booking?.id,
+                          booking_id: booking.id,
                           client_name: getClientFullName(client),
                           staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
                           service_title: service?.title
@@ -173,9 +189,15 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                       variant="outline"
                       className="border-red-200 text-red-600 hover:bg-red-50"
                       onClick={() => {
+                        if (!booking?.id) {
+                          toast.error("Cannot process request", {
+                            description: "Booking data is missing or incomplete"
+                          });
+                          return;
+                        }
                         setSelectedAppointment({
                           ...request,
-                          booking_id: booking?.id,
+                          booking_id: booking.id,
                           client_name: getClientFullName(client),
                           staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
                           service_title: service?.title

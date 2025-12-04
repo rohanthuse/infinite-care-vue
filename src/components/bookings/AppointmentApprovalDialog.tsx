@@ -17,6 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useApproveChangeRequest, useRejectChangeRequest } from "@/hooks/useBookingApprovalActions";
 
+// Safe date formatter to prevent crashes on null/undefined dates
+const formatDate = (date: string | null | undefined, formatStr: string): string => {
+  if (!date) return "N/A";
+  try {
+    return format(new Date(date), formatStr);
+  } catch {
+    return "Invalid date";
+  }
+};
+
 interface AppointmentApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -133,11 +143,11 @@ const AppointmentApprovalDialog: React.FC<AppointmentApprovalDialogProps> = ({
               {appointment.notes && <div className="text-sm mt-1">{appointment.notes}</div>}
               {appointment.request_type === 'reschedule' && appointment.new_date && (
                 <div className="text-sm mt-2 p-2 bg-blue-50 rounded">
-                  <strong>Requested new time:</strong> {format(new Date(appointment.new_date), "MMM d, yyyy")} at {appointment.new_time}
+                  <strong>Requested new time:</strong> {formatDate(appointment.new_date, "MMM d, yyyy")} at {appointment.new_time || "N/A"}
                 </div>
               )}
               <div className="text-xs text-gray-500 mt-2">
-                Requested on {format(new Date(appointment.created_at), "MMM d, yyyy 'at' h:mm a")}
+                Requested on {formatDate(appointment.created_at, "MMM d, yyyy 'at' h:mm a")}
               </div>
             </div>
           </div>
