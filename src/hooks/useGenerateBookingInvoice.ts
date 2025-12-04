@@ -106,8 +106,16 @@ export const useGenerateBookingInvoice = () => {
       }
 
       if (!rateSchedules || rateSchedules.length === 0) {
-        console.warn('[generateInvoiceForBooking] No active rate schedule found for client');
-        throw new Error('No active rate schedule found for this client. Please set up a rate schedule first.');
+        console.log('[generateInvoiceForBooking] Skipping - No active rate schedule for client');
+        return {
+          success: false,
+          skipped: true,
+          message: 'No active rate schedule found for this client',
+          invoice: null,
+          invoiceNumber: null,
+          amount: null,
+          lineItemCount: null
+        };
       }
 
     // 4. Convert booking to Visit format
