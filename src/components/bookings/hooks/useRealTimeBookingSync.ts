@@ -59,23 +59,11 @@ export function useRealTimeBookingSync(branchId?: string) {
           (payload) => {
             console.log("[useRealTimeBookingSync] Real-time booking change detected:", payload);
             
-            // Invalidate and refetch booking data
+            // Invalidate and refetch booking data - keeps calendar in sync
             queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
             
-            // Show appropriate notifications
-            if (payload.eventType === 'INSERT') {
-              toast.success("New booking created", {
-                description: "Calendar updated automatically"
-              });
-            } else if (payload.eventType === 'UPDATE') {
-              toast.info("Booking updated", {
-                description: "Calendar refreshed"
-              });
-            } else if (payload.eventType === 'DELETE') {
-              toast.info("Booking removed", {
-                description: "Calendar updated"
-              });
-            }
+            // Note: Toast notifications removed to prevent spam during bulk operations
+            // The booking creation handlers already show appropriate success messages
           }
         )
         .subscribe((status) => {
