@@ -84,21 +84,21 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between h-10 bg-white border-gray-200"
+            className="w-full justify-between h-10 bg-background border-border"
             data-testid={`${type}-selector-trigger`}
           >
             {selected ? (
               <div className="flex items-center">
-                <div className={`h-6 w-6 rounded-full ${type === "client" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"} flex items-center justify-center text-xs font-medium mr-2`}>
+                <div className={`h-6 w-6 rounded-full ${type === "client" ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400" : "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"} flex items-center justify-center text-xs font-medium mr-2`}>
                   {(selected as any).initials}
                 </div>
-                <span className="truncate max-w-[180px]">{(selected as any).name}</span>
-                <Badge className={`ml-2 ${type === "client" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"} font-normal text-xs`} variant="outline">
+                <span className="truncate max-w-[180px] text-foreground">{(selected as any).name}</span>
+                <Badge className={`ml-2 ${type === "client" ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300" : "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"} font-normal text-xs`} variant="outline">
                   {(selected as any).bookingCount} booking{(selected as any).bookingCount !== 1 ? "s" : ""}
                 </Badge>
               </div>
             ) : (
-              <span className="text-gray-500">Select a {type}</span>
+              <span className="text-muted-foreground">Select a {type}</span>
             )}
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -125,25 +125,25 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                     className="flex items-center py-2"
                     data-testid={`${type}-option-${entity.id}`}
                   >
-                    <div className={`h-6 w-6 rounded-full ${type === "client" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"} flex items-center justify-center text-xs font-medium mr-2`}>
+                    <div className={`h-6 w-6 rounded-full ${type === "client" ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400" : "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400"} flex items-center justify-center text-xs font-medium mr-2`}>
                       {entity.initials}
                     </div>
-                    <span className="flex-1 truncate">{entity.name}</span>
-                    <Badge className={`ml-2 ${type === "client" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"} font-normal text-xs`} variant="outline">
+                    <span className="flex-1 truncate text-foreground">{entity.name}</span>
+                    <Badge className={`ml-2 ${type === "client" ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300" : "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"} font-normal text-xs`} variant="outline">
                       {entity.bookingCount}
                     </Badge>
-                    {entity.id === selectedEntity && <Check className="h-4 w-4 text-green-600 ml-1" />}
+                    {entity.id === selectedEntity && <Check className="h-4 w-4 text-green-600 dark:text-green-400 ml-1" />}
                   </CommandItem>
                 ))}
               </CommandGroup>
             </CommandList>
             {selectedEntity && (
-              <div className="p-2 border-t">
+              <div className="p-2 border-t border-border">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearSelection}
-                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
                   data-testid={`${type}-clear-selection`}
                 >
                   <X className="h-4 w-4 mr-2" />
