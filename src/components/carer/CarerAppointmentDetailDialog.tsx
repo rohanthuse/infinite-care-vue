@@ -100,7 +100,7 @@ export const CarerAppointmentDetailDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Appointment Details</span>
-            <Badge className={getStatusColor(appointment.status)}>
+            <Badge variant="custom" className={getStatusColor(appointment.status)}>
               {normalizeStatus(appointment.status)}
             </Badge>
           </DialogTitle>
@@ -211,7 +211,7 @@ export const CarerAppointmentDetailDialog = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge className={getUnavailabilityStatusBadge(appointment.unavailability_request.status)?.className}>
+                    <Badge variant="custom" className={getUnavailabilityStatusBadge(appointment.unavailability_request.status)?.className}>
                       {getUnavailabilityStatusBadge(appointment.unavailability_request.status)?.label}
                     </Badge>
                   </div>

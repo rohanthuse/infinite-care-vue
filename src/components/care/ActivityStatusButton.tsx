@@ -23,7 +23,7 @@ export const ActivityStatusButton = ({
 
   if (status === "completed") {
     return (
-      <Badge className="bg-green-500 hover:bg-green-600">
+      <Badge variant="custom" className="bg-green-500 hover:bg-green-600 text-white">
         <CheckCircle2 className="w-3 h-3 mr-1" />
         Completed
       </Badge>
@@ -33,7 +33,7 @@ export const ActivityStatusButton = ({
   if (status === "in-progress") {
     return (
       <div className="flex items-center gap-2">
-        <Badge className="bg-blue-500 hover:bg-blue-600">
+        <Badge variant="custom" className="bg-blue-500 hover:bg-blue-600 text-white">
           <PlayCircle className="w-3 h-3 mr-1" />
           In Progress
         </Badge>

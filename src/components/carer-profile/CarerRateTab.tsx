@@ -75,15 +75,15 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId, branchId })
     const end = endDate ? new Date(endDate) : null;
 
     if (!isActive) {
-      return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
+      return <Badge variant="custom" className="bg-gray-100 text-gray-800">Inactive</Badge>;
     }
     if (now < start) {
-      return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      return <Badge variant="custom" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
     if (end && now > end) {
-      return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+      return <Badge variant="custom" className="bg-red-100 text-red-800">Expired</Badge>;
     }
-    return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+    return <Badge variant="custom" className="bg-green-100 text-green-800">Active</Badge>;
   };
 
   const formatDate = (dateString: string | undefined) => {

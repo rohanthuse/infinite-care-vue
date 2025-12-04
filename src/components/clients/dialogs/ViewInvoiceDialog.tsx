@@ -240,7 +240,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={getStatusColor(invoice.status)}>
+                  <Badge variant="custom" className={getStatusColor(invoice.status)}>
                     {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                   </Badge>
                 </div>

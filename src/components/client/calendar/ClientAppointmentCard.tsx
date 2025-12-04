@@ -63,7 +63,7 @@ export const ClientAppointmentCard: React.FC<ClientAppointmentCardProps> = ({
             </div>
           </div>
           <div className="flex flex-col gap-1 items-end">
-            <Badge className={getAppointmentStatusColor(appointment.status)}>
+            <Badge variant="custom" className={getAppointmentStatusColor(appointment.status)}>
               {appointment.status}
             </Badge>
             <Badge variant="outline" className={getEventTypeBadgeColor(appointment._source || 'external')}>

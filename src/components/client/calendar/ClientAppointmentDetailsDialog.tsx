@@ -44,7 +44,7 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
           <div className="flex items-start justify-between">
             <DialogTitle className="text-2xl">{event.title}</DialogTitle>
             <div className="flex flex-col gap-2 items-end">
-              <Badge className={getAppointmentStatusColor(event.status)}>
+              <Badge variant="custom" className={getAppointmentStatusColor(event.status)}>
                 {event.status}
               </Badge>
               <Badge variant="outline" className={getEventTypeBadgeColor(event.type)}>

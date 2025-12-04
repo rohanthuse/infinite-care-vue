@@ -62,7 +62,7 @@ export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">{assessment.assessment_name}</h3>
-                      <Badge className={getStatusColor(assessment.status)}>
+                      <Badge variant="custom" className={getStatusColor(assessment.status)}>
                         {assessment.status}
                       </Badge>
                     </div>

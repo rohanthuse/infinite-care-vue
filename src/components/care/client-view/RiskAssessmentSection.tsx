@@ -59,7 +59,7 @@ export function RiskAssessmentSection({ riskAssessments }: RiskAssessmentSection
                     )}
                   </div>
                   {risk.risk_level && (
-                    <Badge className={getRiskColor(risk.risk_level)}>
+                    <Badge variant="custom" className={getRiskColor(risk.risk_level)}>
                       {risk.risk_level} Risk
                     </Badge>
                   )}

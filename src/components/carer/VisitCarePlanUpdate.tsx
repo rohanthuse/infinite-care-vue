@@ -176,7 +176,7 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
             </div>
             <div>
               <p className="text-sm text-gray-600">Status</p>
-              <Badge className={getStatusColor(carePlan.status)}>
+              <Badge variant="custom" className={getStatusColor(carePlan.status)}>
                 {carePlan.status}
               </Badge>
             </div>
@@ -210,7 +210,7 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{goal.description}</h4>
-                          <Badge className={getStatusColor(goal.status)}>
+                          <Badge variant="custom" className={getStatusColor(goal.status)}>
                             {goal.status}
                           </Badge>
                         </div>

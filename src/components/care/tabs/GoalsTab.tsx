@@ -110,7 +110,7 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ carePlanId, onAddGoal }) => 
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900 mb-1">{goal.description}</h3>
                         <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(goal.status)}>
+                          <Badge variant="custom" className={getStatusColor(goal.status)}>
                             {goal.status}
                           </Badge>
                           <span className="text-xs text-gray-500 flex items-center">

@@ -207,7 +207,7 @@ export function BodyMapViewer({ bodyMapPoints, frontImageUrl, backImageUrl }: Bo
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Severity:</span>
-              <Badge className={getSeverityColor(selectedPoint.severity)}>
+              <Badge variant="custom" className={getSeverityColor(selectedPoint.severity)}>
                 {selectedPoint.severity}
               </Badge>
             </div>

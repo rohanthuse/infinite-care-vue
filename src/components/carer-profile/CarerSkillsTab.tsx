@@ -173,7 +173,7 @@ export const CarerSkillsTab: React.FC<CarerSkillsTabProps> = ({ carerId }) => {
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{staffSkill.skills?.name}</h4>
                           {staffSkill.verified && (
-                            <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                            <Badge variant="custom" className="bg-green-100 text-green-800 text-xs">Verified</Badge>
                           )}
                         </div>
                         

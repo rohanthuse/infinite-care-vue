@@ -64,7 +64,7 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
                         <h3 className="font-medium text-gray-900">{action.service_name}</h3>
                         <p className="text-sm text-gray-600">{action.service_category}</p>
                       </div>
-                      <Badge className={getStatusColor(action.progress_status)}>
+                      <Badge variant="custom" className={getStatusColor(action.progress_status)}>
                         {action.progress_status}
                       </Badge>
                     </div>

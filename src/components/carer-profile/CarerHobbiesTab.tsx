@@ -47,11 +47,11 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
   const getProficiencyBadge = (level: string) => {
     switch (level) {
       case 'advanced':
-        return <Badge className="bg-blue-100 text-blue-800">Advanced</Badge>;
+        return <Badge variant="custom" className="bg-blue-100 text-blue-800">Advanced</Badge>;
       case 'intermediate':
-        return <Badge className="bg-amber-100 text-amber-800">Intermediate</Badge>;
+        return <Badge variant="custom" className="bg-amber-100 text-amber-800">Intermediate</Badge>;
       case 'beginner':
-        return <Badge className="bg-gray-100 text-gray-800">Beginner</Badge>;
+        return <Badge variant="custom" className="bg-gray-100 text-gray-800">Beginner</Badge>;
       default:
         return <Badge variant="secondary">{level}</Badge>;
     }
@@ -217,7 +217,7 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-semibold">{hobby.hobby?.title}</h4>
                           {hobby.enjoys_teaching && (
-                            <Badge className="bg-blue-100 text-blue-800 text-xs">
+                            <Badge variant="custom" className="bg-blue-100 text-blue-800 text-xs">
                               <Users className="h-3 w-3 mr-1" />
                               Can Teach
                             </Badge>

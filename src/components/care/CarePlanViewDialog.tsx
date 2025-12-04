@@ -589,7 +589,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
                   : 'View and manage care plan details'}
               </DialogDescription>
             <div className="flex items-center gap-2 mt-2">
-                <Badge className={getStatusColor(carePlan.status)} variant="outline">
+                <Badge variant="custom" className={getStatusColor(carePlan.status)}>
                   {carePlan.status?.replace('_', ' ')}
                 </Badge>
                 <span className="text-sm text-muted-foreground">

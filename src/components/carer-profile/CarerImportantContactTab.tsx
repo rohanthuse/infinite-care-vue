@@ -63,13 +63,13 @@ export const CarerImportantContactTab: React.FC<CarerImportantContactTabProps> =
   const getContactTypeBadge = (type: string) => {
     switch (type) {
       case 'emergency':
-        return <Badge className="bg-red-100 text-red-800">Emergency</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800">Emergency</Badge>;
       case 'medical':
-        return <Badge className="bg-blue-100 text-blue-800">Medical</Badge>;
+        return <Badge variant="custom" className="bg-blue-100 text-blue-800">Medical</Badge>;
       case 'personal':
-        return <Badge className="bg-green-100 text-green-800">Personal</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-800">Personal</Badge>;
       case 'professional':
-        return <Badge className="bg-purple-100 text-purple-800">Professional</Badge>;
+        return <Badge variant="custom" className="bg-purple-100 text-purple-800">Professional</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }

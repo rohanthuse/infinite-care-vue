@@ -284,10 +284,10 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                           <p className="text-sm text-blue-600 font-medium">Client: {event.client_name}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <Badge className={getSeverityColor(event.severity)}>
+                          <Badge variant="custom" className={getSeverityColor(event.severity)}>
                             {event.severity}
                           </Badge>
-                          <Badge className={getStatusColor(event.status)}>
+                          <Badge variant="custom" className={getStatusColor(event.status)}>
                             {event.status}
                           </Badge>
                           <Badge variant="outline">
@@ -301,7 +301,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                           {(event.follow_up_assigned_to === userRole?.staffId || 
                             event.investigation_assigned_to === userRole?.staffId || 
                             event.recorded_by_staff_id === userRole?.staffId) && (
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                            <Badge variant="custom" className="bg-blue-100 text-blue-800 border-blue-200">
                               Assigned
                             </Badge>
                           )}

@@ -110,15 +110,15 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-800">Completed</Badge>;
       case 'expired':
-        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-800">Expired</Badge>;
       case 'in-progress':
-        return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
+        return <Badge variant="custom" className="bg-blue-100 text-blue-800">In Progress</Badge>;
       case 'not-started':
-        return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>;
+        return <Badge variant="custom" className="bg-gray-100 text-gray-800">Not Started</Badge>;
       case 'renewal-required':
-        return <Badge className="bg-amber-100 text-amber-800">Renewal Required</Badge>;
+        return <Badge variant="custom" className="bg-amber-100 text-amber-800">Renewal Required</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -332,7 +332,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                         Assigned: {new Date(record.assigned_date).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>
+                    <Badge variant="custom" className="bg-blue-100 text-blue-800">Scheduled</Badge>
                   </div>
                 ))
             )}

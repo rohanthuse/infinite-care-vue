@@ -100,7 +100,7 @@ export function ViewCarerProfileDialog({
                   </h3>
                   <p className="text-muted-foreground">{carer.specialization || 'Care Assistant'}</p>
                 </div>
-                <Badge className={getStatusColor(carer.status)}>
+                <Badge variant="custom" className={getStatusColor(carer.status)}>
                   {carer.status}
                 </Badge>
               </div>

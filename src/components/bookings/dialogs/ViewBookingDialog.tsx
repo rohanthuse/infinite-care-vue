@@ -569,7 +569,7 @@ export function ViewBookingDialog({
           {/* Status */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-600">Status</span>
-            <Badge className={getStatusColor(booking.status)}>
+            <Badge variant="custom" className={getStatusColor(booking.status)}>
               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </Badge>
           </div>
