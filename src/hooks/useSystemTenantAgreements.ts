@@ -88,7 +88,7 @@ export const useCreateSystemTenantAgreement = () => {
       // Send notification to organization
       if (result.tenant_id) {
         try {
-          await supabase.functions.invoke('create-tenant-agreement-notifications', {
+          const { data: notifResponse, error: notifError } = await supabase.functions.invoke('create-tenant-agreement-notifications', {
             body: {
               agreement_id: result.id,
               agreement_title: result.title || 'Tenant Agreement',
@@ -96,9 +96,14 @@ export const useCreateSystemTenantAgreement = () => {
               action_type: 'new'
             }
           });
-          console.log('[useCreateSystemTenantAgreement] Notification sent successfully');
+          
+          if (notifError) {
+            console.error('[useCreateSystemTenantAgreement] Edge function error:', notifError);
+          } else {
+            console.log('[useCreateSystemTenantAgreement] Notification response:', notifResponse);
+          }
         } catch (notifError) {
-          console.error('[useCreateSystemTenantAgreement] Failed to send notification:', notifError);
+          console.error('[useCreateSystemTenantAgreement] Failed to invoke edge function:', notifError);
         }
       }
       
@@ -134,7 +139,7 @@ export const useUpdateSystemTenantAgreement = () => {
       // Send notification to organization
       if (result.tenant_id) {
         try {
-          await supabase.functions.invoke('create-tenant-agreement-notifications', {
+          const { data: notifResponse, error: notifError } = await supabase.functions.invoke('create-tenant-agreement-notifications', {
             body: {
               agreement_id: result.id,
               agreement_title: result.title || 'Tenant Agreement',
@@ -142,9 +147,14 @@ export const useUpdateSystemTenantAgreement = () => {
               action_type: 'updated'
             }
           });
-          console.log('[useUpdateSystemTenantAgreement] Notification sent successfully');
+          
+          if (notifError) {
+            console.error('[useUpdateSystemTenantAgreement] Edge function error:', notifError);
+          } else {
+            console.log('[useUpdateSystemTenantAgreement] Notification response:', notifResponse);
+          }
         } catch (notifError) {
-          console.error('[useUpdateSystemTenantAgreement] Failed to send notification:', notifError);
+          console.error('[useUpdateSystemTenantAgreement] Failed to invoke edge function:', notifError);
         }
       }
       

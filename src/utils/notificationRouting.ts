@@ -195,6 +195,12 @@ export const storeDeepLinkData = (notification: Notification): void => {
       sessionStorage.setItem('openAgreementId', data.agreement_id);
     }
   }
+  // Handle tenant agreement types (organization-level)
+  else if (effectiveType === 'tenant_agreement' || extendedType === 'tenant_agreement') {
+    if (data.agreement_id) {
+      sessionStorage.setItem('openTenantAgreementId', data.agreement_id);
+    }
+  }
   // Handle training types
   else if (effectiveType === 'training' || extendedType === 'training_assignment') {
     if (data.training_course_id || data.training_id || data.assignment_id) {
@@ -298,6 +304,7 @@ export const clearDeepLinkData = (): void => {
     'openFormId',
     'openFormAssignmentId',
     'openAgreementId',
+    'openTenantAgreementId',
     'openResourceId',
     'openTrainingId',
     'openTrainingAssignmentId',
