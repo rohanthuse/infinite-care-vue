@@ -78,7 +78,7 @@ const CarerDashboard: React.FC = () => {
       
       <div 
         className="flex flex-1 min-h-0 w-full"
-        style={{ marginTop: 'var(--carer-total-header-height, 120px)' }}
+        style={{ paddingTop: 'var(--carer-total-header-height, 128px)' }}
       >
         {/* Left Sidebar */}
         <CarerSidebar />
