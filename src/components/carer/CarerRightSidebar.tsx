@@ -110,7 +110,7 @@ export const CarerRightSidebar: React.FC = () => {
       side="right" 
       collapsible="icon"
       className={cn(
-        "hidden lg:flex border-l bg-sidebar z-40",
+        "hidden lg:flex border-l bg-sidebar z-30",
         sidebarOpen ? "w-64" : "w-14"
       )}
       style={{

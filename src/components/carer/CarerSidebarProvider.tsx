@@ -37,6 +37,7 @@ export const CarerSidebarProvider: React.FC<CarerSidebarProviderProps> = ({ chil
       style={{
         '--sidebar-width': '16rem',
         '--sidebar-width-icon': '3.5rem',
+        '--sidebar-top-offset': '72px',
       } as React.CSSProperties}
     >
       {children}
