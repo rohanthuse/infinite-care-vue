@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
 import { CarerSubHeader } from "@/components/carer/CarerSubHeader";
 import { CarerRightSidebar } from "@/components/carer/CarerRightSidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
@@ -69,9 +70,11 @@ const CarerDashboard: React.FC = () => {
       
       <div className="flex flex-1 w-full">
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 overflow-x-hidden w-full max-w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-          <Outlet />
-        </main>
+        <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
+          <main className="w-full max-w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <Outlet />
+          </main>
+        </SidebarInset>
         
         {/* Right Sidebar - Only sidebar */}
         <CarerRightSidebar />
