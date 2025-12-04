@@ -20,6 +20,24 @@ export async function createBooking(input: CreateBookingInput) {
   console.log('[createBooking] ========== BOOKING CREATION START ==========');
   console.log('[createBooking] Input data:', JSON.stringify(input, null, 2));
   
+  // CRITICAL: Ensure branch_id is set - fallback to client's branch_id if missing
+  let bookingBranchId = input.branch_id;
+  if (!bookingBranchId && input.client_id) {
+    console.log('[createBooking] branch_id missing, fetching from client...');
+    const { data: client } = await supabase
+      .from('clients')
+      .select('branch_id')
+      .eq('id', input.client_id)
+      .single();
+    
+    bookingBranchId = client?.branch_id || null;
+    console.log('[createBooking] Got branch_id from client:', bookingBranchId);
+  }
+  
+  if (!bookingBranchId) {
+    throw new Error('branch_id is required for booking creation. Could not determine from client.');
+  }
+  
   // CRITICAL: Check if client is suspended before creating booking
   console.log('[createBooking] Checking client suspension status...');
   const suspensionStatus = await checkClientSuspensionForBilling(input.client_id);
@@ -37,7 +55,7 @@ export async function createBooking(input: CreateBookingInput) {
     .from("bookings")
     .insert([
       {
-        branch_id: input.branch_id,
+        branch_id: bookingBranchId, // Use resolved branch_id (fallback applied if needed)
         client_id: input.client_id,
         staff_id: input.staff_id || null, // Handle null staff_id for unassigned bookings
         start_time: input.start_time,
