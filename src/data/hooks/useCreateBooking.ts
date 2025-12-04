@@ -159,19 +159,35 @@ export function useCreateBooking(branchId?: string) {
                 invalidateWithRetry(['branch-booking-invoices', bookingBranchId]),
                 invalidateWithRetry(['client-billing', data.client_id])
               ]);
+            } else if ((result as any).skipped) {
+              // No rate schedule - just show booking success, no error
+              console.log('[useCreateBooking] Invoice skipped - no rate schedule:', result.message);
+              toast({
+                title: 'Booking Created',
+                description: 'Booking saved successfully.',
+              });
             } else {
-              console.warn('[useCreateBooking] ⚠️ Invoice generation skipped:', result.message);
+              // Other non-success cases (e.g., invoice already exists)
+              console.log('[useCreateBooking] Invoice generation skipped:', result.message);
+              toast({
+                title: 'Booking Created',
+                description: 'Booking saved successfully.',
+              });
             }
           } else {
-            console.warn('[useCreateBooking] ⚠️ Could not get organization_id for invoice generation');
+            console.warn('[useCreateBooking] Could not get organization_id for invoice generation');
+            toast({
+              title: 'Booking Created',
+              description: 'Booking saved successfully.',
+            });
           }
         } catch (invoiceError: any) {
-          console.error('[useCreateBooking] ❌ Failed to auto-generate invoice:', invoiceError);
-          
+          // Only log the error, don't show destructive toast for invoice issues
+          console.error('[useCreateBooking] Invoice generation error:', invoiceError);
+          // Still show booking success since booking was created
           toast({
-            title: 'Invoice Generation Failed',
-            description: invoiceError.message || 'Failed to generate invoice. You can create it manually later.',
-            variant: 'destructive',
+            title: 'Booking Created',
+            description: 'Booking saved. Invoice can be created later.',
           });
         }
       } catch (error) {
