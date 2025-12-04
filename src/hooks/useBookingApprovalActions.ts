@@ -72,6 +72,11 @@ export const useApproveChangeRequest = () => {
     mutationFn: async (params: ApproveRequestParams) => {
       const { requestId, bookingId, requestType, adminNotes, newDate, newTime } = params;
 
+      // Validate required parameters
+      if (!requestId || !bookingId) {
+        throw new Error("Missing required request or booking ID");
+      }
+
       // Get request details for notification
       const { data: requestData } = await supabase
         .from('booking_change_requests')
@@ -201,6 +206,11 @@ export const useRejectChangeRequest = () => {
   return useMutation({
     mutationFn: async (params: RejectRequestParams) => {
       const { requestId, bookingId, requestType, adminNotes } = params;
+
+      // Validate required parameters
+      if (!requestId || !bookingId) {
+        throw new Error("Missing required request or booking ID");
+      }
 
       // Get request details for notification
       const { data: requestData } = await supabase
