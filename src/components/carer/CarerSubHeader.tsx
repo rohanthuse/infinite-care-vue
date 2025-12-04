@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Building2, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,6 @@ export const CarerSubHeader: React.FC = () => {
   const { data: carerContext, isLoading, isPending, isError, error } = useCarerContext();
   const { user, loading: authLoading } = useAuthSafe();
   const { createCarerPath } = useCarerNavigation();
-  const location = useLocation();
-  
-  // Don't show on the main dashboard (overview) page
-  const isDashboard = location.pathname.endsWith('/carer-dashboard') || 
-                      location.pathname.endsWith('/carer-dashboard/');
-  
-  if (isDashboard) return null;
 
   // Show loading if auth is loading OR if query is pending/loading with no data
   const showLoading = authLoading || isLoading || (isPending && !carerContext);
@@ -51,7 +44,7 @@ export const CarerSubHeader: React.FC = () => {
   const branchStatus = carerContext?.branchInfo?.status || 'active';
   
   return (
-    <div className="bg-gradient-to-br from-green-50/40 via-card to-teal-50/30 dark:from-green-950/20 dark:via-card dark:to-teal-950/20 border-b border-border border-l-4 border-l-green-500 px-4 sm:px-6 lg:px-8 py-2 shrink-0 sticky top-[72px] z-40 shadow-sm shadow-green-100/10 dark:shadow-green-900/10 w-full">
+    <div className="bg-gradient-to-br from-green-50/40 via-card to-teal-50/30 dark:from-green-950/20 dark:via-card dark:to-teal-950/20 border border-border border-l-4 border-l-green-500 px-4 py-3 mb-6 rounded-lg shadow-sm shadow-green-100/10 dark:shadow-green-900/10">
       <div className="flex items-center justify-between gap-3">
         {/* Left side - Branch & Org Info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">

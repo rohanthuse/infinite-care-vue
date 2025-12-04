@@ -63,7 +63,6 @@ const CarerDashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 w-full">
       <CarerHeader />
-      <CarerSubHeader />
       
       {/* Attendance Check-In Popup - shows only if not checked in today */}
       <CarerAttendanceCheckInModal />
@@ -72,6 +71,7 @@ const CarerDashboard: React.FC = () => {
         {/* Main Content Area */}
         <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
           <main className="w-full max-w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <CarerSubHeader />
             <Outlet />
           </main>
         </SidebarInset>
