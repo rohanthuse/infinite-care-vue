@@ -15,6 +15,16 @@ import { Calendar, Clock, MapPin, User, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
+// Safe date formatter to prevent crashes on null/undefined dates
+const formatDate = (date: string | Date | null | undefined, formatStr: string): string => {
+  if (!date) return "N/A";
+  try {
+    return format(date instanceof Date ? date : new Date(date), formatStr);
+  } catch {
+    return "Invalid date";
+  }
+};
+
 interface ReallocateAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -78,15 +88,15 @@ const ReallocateAppointmentDialog: React.FC<ReallocateAppointmentDialogProps> = 
         <div className="space-y-4 py-2">
           <div className="flex flex-col space-y-2 border rounded-lg p-3 bg-gray-50">
             <p className="text-sm font-medium">Appointment Details</p>
-            <p className="text-sm">{appointment.clientName}</p>
+            <p className="text-sm">{appointment.clientName || appointment.client_name || "Unknown Client"}</p>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div className="flex items-center text-xs text-gray-600">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                <span>{format(appointment.date, "EEE, MMM d, yyyy")}</span>
+                <span>{formatDate(appointment.date || appointment.new_date || appointment.bookings?.start_time, "EEE, MMM d, yyyy")}</span>
               </div>
               <div className="flex items-center text-xs text-gray-600">
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                <span>{appointment.time}</span>
+                <span>{appointment.time || appointment.new_time || formatDate(appointment.bookings?.start_time, "HH:mm") || "N/A"}</span>
               </div>
               <div className="flex items-center text-xs text-gray-600">
                 <MapPin className="h-3.5 w-3.5 mr-1.5" />
@@ -94,7 +104,7 @@ const ReallocateAppointmentDialog: React.FC<ReallocateAppointmentDialogProps> = 
               </div>
               <div className="flex items-center text-xs text-gray-600">
                 <User className="h-3.5 w-3.5 mr-1.5" />
-                <span>{appointment.type}</span>
+                <span>{appointment.type || appointment.service_title || "N/A"}</span>
               </div>
             </div>
           </div>
