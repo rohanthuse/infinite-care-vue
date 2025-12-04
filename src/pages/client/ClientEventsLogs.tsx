@@ -184,10 +184,10 @@ const ClientEventsLogs = () => {
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Badge className={getSeverityColor(event.severity)}>
+                      <Badge variant="custom" className={getSeverityColor(event.severity)}>
                         {event.severity}
                       </Badge>
-                      <Badge className={getStatusColor(event.status)}>
+                      <Badge variant="custom" className={getStatusColor(event.status)}>
                         {event.status}
                       </Badge>
                       <Badge variant="outline">
