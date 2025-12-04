@@ -80,10 +80,28 @@ export const useCreateSystemTenantAgreement = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-system-agreements'] });
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+      
+      // Send notification to organization
+      if (result.tenant_id) {
+        try {
+          await supabase.functions.invoke('create-tenant-agreement-notifications', {
+            body: {
+              agreement_id: result.id,
+              agreement_title: result.title || 'Tenant Agreement',
+              organization_id: result.tenant_id,
+              action_type: 'new'
+            }
+          });
+          console.log('[useCreateSystemTenantAgreement] Notification sent successfully');
+        } catch (notifError) {
+          console.error('[useCreateSystemTenantAgreement] Failed to send notification:', notifError);
+        }
+      }
+      
       toast.success('Agreement created successfully');
     },
     onError: (error: Error) => {
@@ -109,9 +127,27 @@ export const useUpdateSystemTenantAgreement = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-system-agreements'] });
+      
+      // Send notification to organization
+      if (result.tenant_id) {
+        try {
+          await supabase.functions.invoke('create-tenant-agreement-notifications', {
+            body: {
+              agreement_id: result.id,
+              agreement_title: result.title || 'Tenant Agreement',
+              organization_id: result.tenant_id,
+              action_type: 'updated'
+            }
+          });
+          console.log('[useUpdateSystemTenantAgreement] Notification sent successfully');
+        } catch (notifError) {
+          console.error('[useUpdateSystemTenantAgreement] Failed to send notification:', notifError);
+        }
+      }
+      
       toast.success('Agreement updated successfully');
     },
     onError: (error: Error) => {

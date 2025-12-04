@@ -6,6 +6,7 @@ export const ORG_LEVEL_NOTIFICATION_TYPES = [
   'organization_member',
   'training_metrics',
   'org_announcement',
+  'tenant_agreement',
 ];
 
 // Branch-level notification types (visible only in branch context)

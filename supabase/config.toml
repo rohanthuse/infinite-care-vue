@@ -120,3 +120,6 @@ verify_jwt = false
 
 [functions.create-training-status-update-notifications]
 verify_jwt = false
+
+[functions.create-tenant-agreement-notifications]
+verify_jwt = false

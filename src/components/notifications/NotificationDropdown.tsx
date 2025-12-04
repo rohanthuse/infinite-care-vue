@@ -21,6 +21,7 @@ import {
   getNotificationRoute, 
   storeDeepLinkData,
   getEffectiveNotificationType,
+  getOrgNotificationRoute,
   UserContext,
 } from "@/utils/notificationRouting";
 
@@ -215,6 +216,24 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           navigate(fullPath);
         }
         return;
+      }
+      
+      // Handle organization dashboard context
+      if (userContext === 'organization') {
+        const tenantMatch = currentPath.match(/^\/([^/]+)\//);
+        const tenantSlug = tenantMatch ? tenantMatch[1] : '';
+        
+        console.log('[NotificationDropdown] Organization context:', { tenantSlug, effectiveType });
+        
+        // Get organization-specific route
+        const orgRoute = getOrgNotificationRoute(effectiveType);
+        
+        if (orgRoute) {
+          const fullPath = tenantSlug ? `/${tenantSlug}${orgRoute}` : orgRoute;
+          console.log('[NotificationDropdown] Navigating to org route:', fullPath);
+          navigate(fullPath);
+          return;
+        }
       }
       
       // Unknown context - just mark as read
