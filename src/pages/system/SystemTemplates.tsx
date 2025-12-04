@@ -22,6 +22,7 @@ export default function SystemTemplates() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const { data: templates = [], isLoading } = useSystemTemplates();
   const createTemplate = useCreateSystemTemplate();
@@ -58,15 +59,18 @@ export default function SystemTemplates() {
   };
 
   const handleEditTemplate = (templateId: string) => {
+    setOpenDropdownId(null);
     navigate(`/system-dashboard/system-templates/${templateId}`);
   };
 
   const handleDuplicateTemplate = (templateId: string) => {
+    setOpenDropdownId(null);
     if (!user?.id) return;
     duplicateTemplate.mutate({ templateId, userId: user.id });
   };
 
   const handleConfirmDelete = (templateId: string) => {
+    setOpenDropdownId(null);
     setTemplateToDelete(templateId);
     setDeleteDialogOpen(true);
   };
@@ -199,13 +203,16 @@ export default function SystemTemplates() {
                           {format(new Date(template.updated_at), 'dd MMM yyyy')}
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
+                          <DropdownMenu 
+                            open={openDropdownId === template.id}
+                            onOpenChange={(open) => setOpenDropdownId(open ? template.id : null)}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="bg-popover">
                               <DropdownMenuItem onClick={() => handleEditTemplate(template.id)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View / Edit
