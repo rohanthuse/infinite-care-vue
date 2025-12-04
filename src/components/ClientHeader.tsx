@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -10,6 +10,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useClientAuth } from "@/hooks/useClientAuth";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useClientNavigation } from "@/hooks/useClientNavigation";
+import { ClientSearchDropdown } from "@/components/search/ClientSearchDropdown";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     (user?.email ? user.email.split('@')[0] : "Client");
     
   const [searchValue, setSearchValue] = useState("");
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleViewAllNotifications = () => {
     navigate(createClientPath('/notifications'));
@@ -87,11 +90,37 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
-              placeholder="Search..." 
-              className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-full transition-all duration-300"
+              ref={searchInputRef}
+              placeholder="Search modules, appointments, documents..." 
+              className="pl-10 pr-4 py-2 rounded-full bg-white dark:bg-card border-gray-200 dark:border-border w-full transition-all duration-300"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={(e) => {
+                setSearchValue(e.target.value);
+                if (e.target.value.trim().length >= 2) {
+                  setSearchDropdownOpen(true);
+                } else {
+                  setSearchDropdownOpen(false);
+                }
+              }}
+              onFocus={() => {
+                if (searchValue.trim().length >= 2) {
+                  setSearchDropdownOpen(true);
+                }
+              }}
             />
+            
+            {/* Search Results Dropdown */}
+            {searchDropdownOpen && searchValue.trim().length >= 2 && (
+              <ClientSearchDropdown
+                searchValue={searchValue}
+                onClose={() => setSearchDropdownOpen(false)}
+                onResultClick={() => {
+                  setSearchValue("");
+                  setSearchDropdownOpen(false);
+                }}
+                anchorRef={searchInputRef}
+              />
+            )}
           </div>
         </div>
 
