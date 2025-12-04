@@ -32,10 +32,10 @@ export function SearchDropdownItem({
     <button
       onClick={handleClick}
       className={cn(
-        "w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
+        "w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all text-left",
         "hover:bg-accent hover:text-accent-foreground cursor-pointer",
-        "focus:bg-accent focus:outline-none",
-        isSelected && "bg-accent text-accent-foreground"
+        "focus:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
+        isSelected && "bg-accent text-accent-foreground ring-2 ring-primary ring-offset-1"
       )}
     >
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />

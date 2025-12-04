@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Briefcase } from "lucide-react";
 import RecruitmentSection from "./RecruitmentSection";
@@ -9,7 +9,6 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useSystemHealth } from "@/hooks/useSystemHealth";
-import { useTenant } from "@/contexts/TenantContext";
 
 interface CarersTabProps {
   branchId?: string;
@@ -18,37 +17,21 @@ interface CarersTabProps {
 
 export function CarersTab({ branchId, branchName }: CarersTabProps) {
   const [activeTab, setActiveTab] = useState("team");
-  const { degradedMode, isHealthy, forceHealthCheck } = useSystemHealth();
+  const { degradedMode, forceHealthCheck } = useSystemHealth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { tenantSlug } = useTenant();
 
-  // Handle auto-navigation to staff profile from search
+  // Get selected staff ID from search params and pass to TeamManagementSection
+  const selectedStaffId = searchParams.get('selected');
+  
+  // Clear the search param after reading it
   useEffect(() => {
-    const selectedStaffId = searchParams.get('selected');
-    console.log('[CarersTab] useEffect triggered:', {
-      selectedStaffId,
-      branchId,
-      branchName,
-      tenantSlug
-    });
-    
-    if (selectedStaffId && branchId && branchName) {
-      // Navigate to the staff profile page
-      const basePath = tenantSlug 
-        ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`
-        : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
-      
-      const staffProfilePath = `${basePath}/carers/${selectedStaffId}`;
-      
-      console.log('[CarersTab] Navigating to staff profile:', staffProfilePath);
-      
-      // Clean up query param and navigate
+    if (selectedStaffId) {
+      console.log('[CarersTab] Staff selected from search:', selectedStaffId);
+      // Clear the query param after it's been read
       searchParams.delete('selected');
       setSearchParams(searchParams, { replace: true });
-      navigate(staffProfilePath, { replace: true });
     }
-  }, [searchParams, branchId, branchName, tenantSlug, navigate, setSearchParams]);
+  }, [selectedStaffId, searchParams, setSearchParams]);
 
   if (!branchId) {
     return (
@@ -102,7 +85,11 @@ export function CarersTab({ branchId, branchName }: CarersTabProps) {
 
           <TabsContent value="team" className="mt-6">
             <ErrorBoundary>
-              <TeamManagementSection branchId={branchId} branchName={branchName} />
+              <TeamManagementSection 
+                branchId={branchId} 
+                branchName={branchName} 
+                selectedStaffId={selectedStaffId}
+              />
             </ErrorBoundary>
           </TabsContent>
 
