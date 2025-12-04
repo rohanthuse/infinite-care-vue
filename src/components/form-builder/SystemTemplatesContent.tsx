@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { FormBuilderPreview } from './FormBuilderPreview';
 import { Form, FormSettings } from '@/types/form-builder';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SystemTemplatesContentProps {
   branchId: string;
@@ -80,13 +81,60 @@ export const SystemTemplatesContent: React.FC<SystemTemplatesContentProps> = ({ 
       // The createForm will handle the navigation
       createForm(newFormData, {
         onSuccess: async (newForm: any) => {
-          // After form is created, we need to copy the elements
-          // This would require fetching elements and inserting them
-          // For now, navigate to the new form for manual setup
-          toast({
-            title: 'Form Created',
-            description: 'A new form has been created from the system template. You can now customize it.',
-          });
+          try {
+            // Fetch template elements
+            const { data: templateElements, error: fetchError } = await supabase
+              .from('system_template_elements')
+              .select('*')
+              .eq('template_id', templateId)
+              .order('order_index', { ascending: true });
+
+            if (fetchError) {
+              console.error('Error fetching template elements:', fetchError);
+            }
+
+            // Copy elements to the new form
+            if (templateElements && templateElements.length > 0) {
+              const formElements = templateElements.map(el => ({
+                form_id: newForm.id,
+                element_type: el.element_type,
+                label: el.label,
+                required: el.required,
+                order_index: el.order_index,
+                properties: el.properties,
+                validation_rules: el.validation_rules,
+              }));
+
+              const { error: insertError } = await supabase
+                .from('form_elements')
+                .insert(formElements);
+
+              if (insertError) {
+                console.error('Error copying template elements:', insertError);
+                toast({
+                  title: 'Partial Success',
+                  description: 'Form created but some elements could not be copied. Please add them manually.',
+                  variant: 'default',
+                });
+              } else {
+                toast({
+                  title: 'Form Created',
+                  description: `A new form with ${templateElements.length} element(s) has been created from the system template.`,
+                });
+              }
+            } else {
+              toast({
+                title: 'Form Created',
+                description: 'A new form has been created from the system template. You can now customize it.',
+              });
+            }
+          } catch (copyError) {
+            console.error('Error copying elements:', copyError);
+            toast({
+              title: 'Form Created',
+              description: 'Form created but elements could not be copied. Please add them manually.',
+            });
+          }
           
           const fullPath = tenantSlug 
             ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${newForm.id}?source=forms`
