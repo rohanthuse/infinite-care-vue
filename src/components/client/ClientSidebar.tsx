@@ -95,9 +95,6 @@ export const ClientSidebar: React.FC = () => {
         "border-l transition-all duration-300 ease-in-out shrink-0",
         sidebarOpen ? "w-64 lg:w-72" : "w-14"
       )}
-      style={{
-        '--sidebar-top-offset': 'var(--client-header-height, 64px)'
-      } as React.CSSProperties}
     >
       <SidebarHeader className="border-b p-4 bg-gradient-to-br from-indigo-50/50 via-transparent to-purple-50/30 dark:from-indigo-950/30 dark:to-purple-950/20">
         {sidebarOpen ? (

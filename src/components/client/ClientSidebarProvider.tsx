@@ -16,10 +16,8 @@ export const ClientSidebarProvider: React.FC<ClientSidebarProviderProps> = ({ ch
         open={open} 
         onOpenChange={setOpen}
         style={{
-          '--client-header-height': '64px',
           '--sidebar-width': '16rem',
           '--sidebar-width-icon': '3.5rem',
-          '--sidebar-top-offset': '64px',
         } as React.CSSProperties}
       >
         {children}
