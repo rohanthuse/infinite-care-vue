@@ -281,7 +281,11 @@ const ClientAppointments = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {appointment._booking_data?.service_names?.length > 0 
+                            ? appointment._booking_data.service_names.join(', ')
+                            : appointment.appointment_type}
+                        </CardTitle>
                         {appointment._source === 'booking' && (
                           <Badge variant="outline" className="text-xs">Care Service</Badge>
                         )}

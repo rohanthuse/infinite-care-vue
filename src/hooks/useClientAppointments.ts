@@ -234,6 +234,10 @@ export const useClientAllAppointments = (clientId: string) => {
             id,
             title
           ),
+          booking_services(
+            service_id,
+            services(id, title)
+          ),
           staff (
             id,
             first_name,
@@ -257,6 +261,16 @@ export const useClientAllAppointments = (clientId: string) => {
           ? `${booking.staff.first_name} ${booking.staff.last_name}`.trim()
           : 'Unassigned';
         
+        // Extract service names from booking_services junction table
+        const bookingServices = booking.booking_services || [];
+        const serviceNames = bookingServices
+          .map((bs: any) => bs.services?.title)
+          .filter(Boolean);
+        
+        const serviceName = serviceNames.length > 0 
+          ? serviceNames.join(', ') 
+          : (booking.services?.title || 'Care Service');
+        
         return {
           id: booking.id,
           client_id: booking.client_id,
@@ -264,7 +278,7 @@ export const useClientAllAppointments = (clientId: string) => {
           organization_id: booking.organization_id,
           appointment_date: startTime.toISOString().split('T')[0],
           appointment_time: startTime.toTimeString().slice(0, 5),
-          appointment_type: booking.services?.title || 'Care Service',
+          appointment_type: serviceName,
           provider_name: staffName,
           location: booking.branches?.name || 'Branch Location',
           status: booking.status || 'scheduled',
@@ -279,7 +293,8 @@ export const useClientAllAppointments = (clientId: string) => {
             staff_id: booking.staff_id,
             start_time: booking.start_time,
             end_time: booking.end_time,
-            revenue: booking.revenue
+            revenue: booking.revenue,
+            service_names: serviceNames.length > 0 ? serviceNames : (booking.services?.title ? [booking.services.title] : [])
           }
         };
       });
@@ -366,6 +381,10 @@ export const useCompletedAppointments = (clientId?: string) => {
             id,
             title
           ),
+          booking_services(
+            service_id,
+            services(id, title)
+          ),
           staff (
             id,
             first_name,
@@ -395,13 +414,23 @@ export const useCompletedAppointments = (clientId?: string) => {
           ? `${booking.staff.first_name} ${booking.staff.last_name}`.trim()
           : 'Unassigned';
         
+        // Extract service names from booking_services junction table
+        const bookingServices = booking.booking_services || [];
+        const serviceNames = bookingServices
+          .map((bs: any) => bs.services?.title)
+          .filter(Boolean);
+        
+        const serviceName = serviceNames.length > 0 
+          ? serviceNames.join(', ') 
+          : (booking.services?.title || 'Care Service');
+        
         return {
           id: booking.id,
           client_id: booking.client_id,
           branch_id: booking.branch_id,
           appointment_date: startTime.toISOString().split('T')[0],
           appointment_time: startTime.toTimeString().slice(0, 5),
-          appointment_type: booking.services?.title || 'Care Service',
+          appointment_type: serviceName,
           provider_name: staffName,
           location: booking.branches?.name || 'Branch Location',
           status: booking.status,
@@ -413,7 +442,8 @@ export const useCompletedAppointments = (clientId?: string) => {
             service_id: booking.service_id,
             staff_id: booking.staff_id,
             start_time: booking.start_time,
-            end_time: booking.end_time
+            end_time: booking.end_time,
+            service_names: serviceNames.length > 0 ? serviceNames : (booking.services?.title ? [booking.services.title] : [])
           }
         };
       });
