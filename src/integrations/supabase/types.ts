@@ -11819,6 +11819,10 @@ export type Database = {
         Args: { org_role: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      mark_system_notifications_read: {
+        Args: { p_notification_ids: string[]; p_session_token?: string }
+        Returns: Json
+      }
       notify_unassigned_bookings: { Args: never; Returns: undefined }
       process_expiring_agreements: { Args: never; Returns: Json }
       process_subscription_expiry: { Args: never; Returns: Json }
