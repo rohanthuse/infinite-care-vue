@@ -55,7 +55,7 @@ export const BranchLayout: React.FC<BranchLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background w-full">
+    <div className="min-h-screen flex flex-col bg-background w-full pt-16">
       <DashboardHeader />
       
       <div className="flex flex-1 w-full relative">
