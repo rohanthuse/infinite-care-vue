@@ -40,6 +40,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -943,20 +944,17 @@ export function NewBookingDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Services</FormLabel>
-                          <Select onValueChange={(value) => field.onChange([value])} defaultValue={field.value?.[0]}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a service" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {services.map((service) => (
-                                <SelectItem key={service.id} value={service.id}>
-                                  {service.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <MultiSelect
+                              options={services.map((service) => ({
+                                label: service.title,
+                                value: service.id,
+                              }))}
+                              selected={field.value || []}
+                              onSelectionChange={field.onChange}
+                              placeholder="Select services..."
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

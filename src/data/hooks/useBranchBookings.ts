@@ -11,6 +11,7 @@ export interface BookingDB {
   end_time: string;
   revenue: number | null;
   service_id: string | null;
+  service_ids?: string[]; // New: array of service IDs from junction table
   created_at: string | null;
   status: string | null;
   notes: string | null;
@@ -24,6 +25,10 @@ export interface BookingDB {
     requested_at: string;
     reviewed_at?: string;
     admin_notes?: string;
+  }>;
+  booking_services?: Array<{
+    service_id: string;
+    services: { id: string; title: string } | null;
   }>;
 }
 
@@ -50,6 +55,13 @@ export async function fetchBranchBookings(branchId?: string) {
         requested_at,
         reviewed_at,
         admin_notes
+      ),
+      booking_services (
+        service_id,
+        services (
+          id,
+          title
+        )
       )
     `)
     .eq("branch_id", branchId)
@@ -60,8 +72,15 @@ export async function fetchBranchBookings(branchId?: string) {
     throw error;
   }
   
-  console.log("[fetchBranchBookings] Successfully fetched", data?.length || 0, "bookings");
-  return data || [];
+  // Map bookings to include service_ids array
+  const mappedData = (data || []).map((booking: any) => ({
+    ...booking,
+    service_ids: booking.booking_services?.map((bs: any) => bs.service_id) || 
+                 (booking.service_id ? [booking.service_id] : []),
+  }));
+  
+  console.log("[fetchBranchBookings] Successfully fetched", mappedData.length, "bookings");
+  return mappedData;
 }
 
 export function useBranchBookings(branchId?: string) {
