@@ -391,7 +391,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     return (
       <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
-        <div className="flex-1 min-w-0 px-4 md:px-8 pt-20 pb-20 md:pt-20 md:pb-6">
+        <div className="flex-1 min-w-0 px-4 md:px-8 mt-20 pb-20 md:mt-20 md:pb-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <div className="flex items-center">
               <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
@@ -555,7 +555,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
         
-        <div className="flex flex-1 w-full pt-16">
+        <div className="flex flex-1 w-full mt-16">
           <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
             <main className="px-4 md:px-8 pt-4 pb-20 md:py-6">
               <BranchInfoHeader 
