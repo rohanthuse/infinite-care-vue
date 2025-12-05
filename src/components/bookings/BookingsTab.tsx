@@ -30,6 +30,7 @@ import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
+import { useTenant } from "@/contexts/TenantContext";
 import { BookingValidationAlert } from "./BookingValidationAlert";
 import { useSearchParams } from "react-router-dom";
 import { parseISO, isValid } from "date-fns";
@@ -42,6 +43,7 @@ interface BookingsTabProps {
 
 export function BookingsTab({ branchId }: BookingsTabProps) {
   const { user, loading: authLoading, error: authError } = useAuthSafe();
+  const { organization } = useTenant();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial values from URL parameters
@@ -92,7 +94,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     }
   }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams]);
 
-  const { data: services = [], isLoading: isLoadingServices } = useServices();
+  const { data: services = [], isLoading: isLoadingServices } = useServices(organization?.id);
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);

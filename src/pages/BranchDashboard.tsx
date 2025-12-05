@@ -64,7 +64,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Always call all hooks unconditionally at the top level
   const { session, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, organization } = useTenant();
   const {
     id,
     branchName,
@@ -117,7 +117,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   // Always call booking data hooks
   const { clients: bookingClients, carers: bookingCarers } = useBookingData(id);
-  const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices();
+  const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices(organization?.id);
 
   // Dialog states
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);

@@ -10,16 +10,18 @@ import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 import { useServices } from "@/data/hooks/useServices";
+import { useTenant } from "@/contexts/TenantContext";
 
 const Attendance = () => {
   const [activeTab, setActiveTab] = useState("record");
   const { id, branchName } = useParams<{ id: string; branchName: string }>();
   const branchId = id || "";
+  const { organization } = useTenant();
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   
   const { clients, carers } = useBookingData(branchId);
-  const { data: services = [] } = useServices();
+  const { data: services = [] } = useServices(organization?.id);
   
   const handleNewClient = () => setAddClientDialogOpen(true);
   const handleNewBooking = () => setNewBookingDialogOpen(true);
