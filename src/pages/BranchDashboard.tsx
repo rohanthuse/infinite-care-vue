@@ -389,7 +389,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Show fallback UI for partial failures
   if (showFallbackUI && !accessDenied) {
     return (
-      <div className="min-h-screen flex flex-col bg-background w-full">
+      <div className="min-h-screen flex flex-col bg-background w-full pt-16">
         <DashboardHeader />
         <div className="flex-1 min-w-0 px-4 md:px-8 pt-4 pb-20 md:py-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
@@ -552,7 +552,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background w-full">
+    <div className="min-h-screen flex flex-col bg-background w-full pt-16">
         <DashboardHeader />
         
         <div className="flex flex-1 w-full">
