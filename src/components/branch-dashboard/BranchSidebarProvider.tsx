@@ -16,6 +16,9 @@ export const BranchSidebarProvider: React.FC<BranchSidebarProviderProps> = ({ ch
       open={open} 
       onOpenChange={setOpen}
       defaultOpen={false}
+      style={{
+        '--sidebar-top-offset': '64px'
+      } as React.CSSProperties}
     >
       {children}
     </SidebarProvider>
