@@ -48,6 +48,18 @@ import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
 import { SharedClientProfile } from "./pages/shared/SharedClientProfile";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import CaseStudies from "./pages/CaseStudies";
+import Resources from "./pages/Resources";
+import AboutUs from "./pages/AboutUs";
+import Careers from "./pages/Careers";
+import News from "./pages/News";
+import Partners from "./pages/Partners";
+import HelpCenter from "./pages/HelpCenter";
+import ContactUs from "./pages/ContactUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import ThirdPartyWorkspace from "./pages/ThirdPartyWorkspace";
 import ThirdPartyLoginPage from "./pages/ThirdPartyLoginPage";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -189,7 +201,19 @@ const AppContent = () => {
     '/carer-invitation', 
     '/carer-onboarding',
     '/tenant-setup',
-    '/system-login'
+    '/system-login',
+    '/features',
+    '/pricing',
+    '/case-studies',
+    '/resources',
+    '/about',
+    '/careers',
+    '/news',
+    '/partners',
+    '/help-center',
+    '/contact',
+    '/privacy-policy',
+    '/terms-of-service'
   ].includes(window.location.pathname) ||
   window.location.pathname.includes('/login') ||
   window.location.pathname.startsWith('/shared/client/');
@@ -219,6 +243,18 @@ const AppContent = () => {
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
               <Route path="/demo-request" element={<DemoRequest />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/case-studies" element={<CaseStudies />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/partners" element={<Partners />} />
+              <Route path="/help-center" element={<HelpCenter />} />
+              <Route path="/contact" element={<ContactUs />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/login" element={
                 <ErrorBoundary fallback={
                   <div className="min-h-screen flex items-center justify-center bg-background">
