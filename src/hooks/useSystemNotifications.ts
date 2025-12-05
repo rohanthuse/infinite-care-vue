@@ -120,58 +120,101 @@ export const useSystemNotifications = () => {
   // Get unread count
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
-  // Mark notification as read
+  // Mark notification as read - with optimistic update
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', notificationId);
+      const sessionToken = localStorage.getItem('system_session_token');
+      
+      const { data, error } = await supabase
+        .rpc('mark_system_notifications_read', { 
+          p_notification_ids: [notificationId],
+          p_session_token: sessionToken
+        });
 
       if (error) throw error;
+      const result = data as { success: boolean; error?: string; updated_count?: number } | null;
+      if (!result?.success) throw new Error(result?.error || 'Failed to mark as read');
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
+    onMutate: async (notificationId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['system-notifications', systemUser?.id] });
+      
+      // Snapshot previous value
+      const previousNotifications = queryClient.getQueryData<SystemNotification[]>(['system-notifications', systemUser?.id]);
+      
+      // Optimistically update
+      queryClient.setQueryData<SystemNotification[]>(['system-notifications', systemUser?.id], (old = []) =>
+        old.map(n => n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n)
+      );
+      
+      return { previousNotifications };
     },
-    onError: () => {
+    onError: (_err, _id, context) => {
+      // Rollback on error
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['system-notifications', systemUser?.id], context.previousNotifications);
+      }
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
+    },
   });
 
-  // Mark all as read
+  // Mark all as read - with optimistic update
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      if (!systemUser?.id) throw new Error('Not authenticated');
-
-      // Get all unread notification IDs for this user
       const unreadIds = notifications.filter(n => !n.read_at).map(n => n.id);
+      if (unreadIds.length === 0) return { success: true, updated_count: 0 };
       
-      if (unreadIds.length === 0) return;
-
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .in('id', unreadIds);
+      const sessionToken = localStorage.getItem('system_session_token');
+      
+      const { data, error } = await supabase
+        .rpc('mark_system_notifications_read', { 
+          p_notification_ids: unreadIds,
+          p_session_token: sessionToken
+        });
 
       if (error) throw error;
+      const result = data as { success: boolean; error?: string; updated_count?: number } | null;
+      if (!result?.success) throw new Error(result?.error || 'Failed to mark all as read');
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
-      toast({
-        title: "Success",
-        description: "All notifications marked as read",
-      });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['system-notifications', systemUser?.id] });
+      
+      const previousNotifications = queryClient.getQueryData<SystemNotification[]>(['system-notifications', systemUser?.id]);
+      
+      // Optimistically mark all as read
+      queryClient.setQueryData<SystemNotification[]>(['system-notifications', systemUser?.id], (old = []) =>
+        old.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
+      
+      return { previousNotifications };
     },
-    onError: () => {
+    onError: (_err, _, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['system-notifications', systemUser?.id], context.previousNotifications);
+      }
       toast({
         title: "Error",
         description: "Failed to mark all notifications as read",
         variant: "destructive",
       });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
     },
   });
 
