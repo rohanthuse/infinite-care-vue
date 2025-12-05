@@ -213,7 +213,7 @@ export function DashboardNavbar() {
   }, [location.pathname, tenantSlug]);
 
   return (
-    <div className="sticky top-[4.5rem] z-10">
+    <div className="sticky top-16 z-40">
       <nav className="bg-gradient-to-r from-card/90 via-card/80 to-blue-50/30 dark:to-blue-950/20 backdrop-blur-md border-b border-border/40 py-6 shadow-sm shadow-blue-100/10 dark:shadow-blue-900/10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

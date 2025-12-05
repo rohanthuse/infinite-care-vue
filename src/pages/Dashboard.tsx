@@ -19,7 +19,7 @@ const Dashboard = () => {
   // The old loading and auth check logic is now handled by the AuthProvider and protected route.
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30 pt-16">
       <DashboardHeader />
       <DashboardNavbar />
       
