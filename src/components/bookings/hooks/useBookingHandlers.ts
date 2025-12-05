@@ -446,7 +446,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         staff_id: bookingData.carerId || null,
         start_time: createBookingDateTime(bookingDateStr, schedule.startTime),
         end_time: createBookingEndDateTime(bookingDateStr, schedule.startTime, schedule.endTime),
-        service_id: schedule.services[0],
+        service_id: schedule.services?.[0] || null,
+        service_ids: schedule.services || [],
         status: bookingData.carerId ? "assigned" : "unassigned",
         notes: bookingData.notes || null,
       };
@@ -468,10 +469,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
     // Use multiple bookings creation hook to ensure same created_at timestamp
     createMultipleBookingsMutation.mutate(bookingsToCreate, {
-      onSuccess: (createdBookings) => {
-        console.log(`[useBookingHandlers] ✅ Created ${createdBookings?.length || 0} bookings successfully`);
+      onSuccess: (result) => {
+        const createdBookings = result?.bookings || [];
+        console.log(`[useBookingHandlers] ✅ Created ${createdBookings.length} bookings successfully`);
         
-        if (createdBookings && Array.isArray(createdBookings)) {
+        if (createdBookings.length > 0) {
           console.log("[useBookingHandlers] ✅ Sample created booking:", createdBookings[0]);
           createdBookings.forEach((booking, index) => {
             console.log(`[useBookingHandlers] ✅ Booking ${index + 1} ID:`, booking.id);
@@ -480,8 +482,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         
         setNewBookingDialogOpen(false);
         
-        toast.success(`${createdBookings?.length || 0} Booking(s) Created! ✅`, {
-          description: `Created ${createdBookings?.length || 0} schedule(s) for ${format(bookingData.fromDate, "PPP")}`,
+        toast.success(`${createdBookings.length} Booking(s) Created! ✅`, {
+          description: `Created ${createdBookings.length} schedule(s) for ${format(bookingData.fromDate, "PPP")}`,
           duration: 3000
         });
 
@@ -490,7 +492,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
         
         // Navigate to the first booking
-        if (createdBookings && createdBookings.length > 0) {
+        if (createdBookings.length > 0) {
           const navigationDateStr = formatDateForBooking(bookingData.fromDate);
           navigateToBookingDate(navigationDateStr, createdBookings[0].id);
 

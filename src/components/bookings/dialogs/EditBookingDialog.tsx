@@ -49,6 +49,7 @@ import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { updateBookingServices, useBookingServices } from "@/hooks/useBookingServices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -548,6 +549,16 @@ export function EditBookingDialog({
         : "Appointment updated successfully";
       
       toast.success(message);
+      
+      // Update services in junction table
+      if (data.service_ids && data.service_ids.length > 0) {
+        try {
+          await updateBookingServices(booking.id, data.service_ids);
+          console.log('[EditBookingDialog] Services updated in junction table');
+        } catch (serviceError) {
+          console.error('[EditBookingDialog] Failed to update services:', serviceError);
+        }
+      }
       
       // Invalidate queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
