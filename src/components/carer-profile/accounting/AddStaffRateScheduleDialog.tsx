@@ -61,7 +61,7 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
   branchId,
 }) => {
   const { organization } = useTenant();
-  const { data: services = [] } = useServices();
+  const { data: services = [] } = useServices(organization?.id);
   const createSchedule = useCreateStaffRateSchedule();
 
   const serviceTypeOptions: MultiSelectOption[] = services.map(service => ({

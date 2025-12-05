@@ -7,15 +7,17 @@ import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 import { useServices } from "@/data/hooks/useServices";
+import { useTenant } from "@/contexts/TenantContext";
 
 const Accounting = () => {
   const { id } = useParams();
   const branchId = id || "";
+  const { organization } = useTenant();
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   
   const { clients, carers } = useBookingData(branchId);
-  const { data: services = [] } = useServices();
+  const { data: services = [] } = useServices(organization?.id);
   
   console.log('[Accounting] Component rendered successfully');
   

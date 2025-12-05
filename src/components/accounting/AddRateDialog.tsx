@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ServiceRate, useServiceRates } from "@/hooks/useAccountingData";
 import { useServices } from "@/data/hooks/useServices";
+import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -103,6 +104,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
   console.log('[AddRateDialog] Received props:', { branchId, open, initialRate });
   const isEditing = Boolean(initialRate);
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   const {
     register,
@@ -262,7 +264,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     const { data: availableRates = [] } = useServiceRates(branchId);
     
     // Get available services for the services dropdown
-    const { data: availableServices = [] } = useServices();
+    const { data: availableServices = [] } = useServices(organization?.id);
 
     // Get unique authorities from available rates
     const authorities = React.useMemo(() => {

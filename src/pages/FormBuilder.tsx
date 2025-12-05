@@ -122,7 +122,7 @@ const FormBuilder = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthSafe();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, organization } = useTenant();
   
   // Move all hooks to the top before any conditional logic
   const { 
@@ -193,7 +193,7 @@ const FormBuilder = () => {
   
   // Data for dialogs
   const { clients, carers } = useBookingData(branchId || '');
-  const { data: services = [] } = useServices();
+  const { data: services = [] } = useServices(organization?.id);
 
   // Memoize the conversion function to prevent recreating on every render
   const convertDatabaseFormToForm = useCallback((dbForm: DatabaseForm, elements: FormElement[] = []): Form => {
