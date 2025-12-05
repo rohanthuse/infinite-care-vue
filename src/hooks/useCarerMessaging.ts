@@ -248,7 +248,7 @@ export interface InternalContact {
   name: string;
   auth_user_id: string;
   email?: string;
-  type: 'carer' | 'staff' | 'admin' | 'branch_admin' | 'super_admin';
+  type: 'admin' | 'branch_admin' | 'super_admin';
   groupLabel: string;
 }
 
@@ -271,40 +271,7 @@ export const useCarerInternalContacts = () => {
         const recipients: InternalContact[] = [];
         const organizationId = carerContext.branchInfo.organization_id;
 
-        // 1. Fetch all active staff/carers from the same organization (excluding current carer)
-        console.log('[useCarerInternalContacts] Fetching staff/carers...');
-        const { data: orgStaff, error: staffError } = await supabase
-          .from('staff')
-          .select('id, first_name, last_name, email, auth_user_id, status')
-          .eq('organization_id', organizationId)
-          .eq('status', 'active')
-          .not('auth_user_id', 'is', null)
-          .neq('id', carerContext.staffId); // Exclude self
-
-        if (staffError) {
-          console.error('[useCarerInternalContacts] Error fetching staff:', staffError);
-        } else if (orgStaff && orgStaff.length > 0) {
-          console.log('[useCarerInternalContacts] Found staff:', orgStaff.length);
-          
-          orgStaff.forEach((staff) => {
-            const firstName = staff.first_name || '';
-            const lastName = staff.last_name || '';
-            const displayName = `${firstName} ${lastName}`.trim() || 
-                              staff.email?.split('@')[0] || 
-                              'Staff Member';
-            
-            recipients.push({
-              id: staff.id,
-              auth_user_id: staff.auth_user_id,
-              name: displayName,
-              email: staff.email || undefined,
-              type: 'carer',
-              groupLabel: 'Carers / Staff'
-            });
-          });
-        }
-
-        // 2. Fetch all branches in the organization
+        // 1. Fetch all branches in the organization (only admins, no carers/staff)
         const { data: orgBranches, error: orgBranchesError } = await supabase
           .from('branches')
           .select('id')
@@ -398,9 +365,7 @@ export const useCarerInternalContacts = () => {
         const typeOrder = { 
           'super_admin': 1, 
           'admin': 2, 
-          'branch_admin': 3, 
-          'carer': 4, 
-          'staff': 5 
+          'branch_admin': 3
         };
         
         return recipients.sort((a, b) => {
