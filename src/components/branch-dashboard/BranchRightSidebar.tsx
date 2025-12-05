@@ -346,6 +346,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
         collapsed ? "w-[72px]" : "w-80"
       )}
       collapsible="icon"
+      style={{ '--sidebar-top-offset': '64px' } as React.CSSProperties}
     >
       <SidebarHeader className="border-b border-border p-4 bg-background">
         {!collapsed && (
