@@ -19,8 +19,34 @@ interface SystemAuthContextType {
 
 const SystemAuthContext = createContext<SystemAuthContextType | undefined>(undefined);
 
+const SYSTEM_USER_STORAGE_KEY = 'system_auth_user';
+
+// Helper to persist user to localStorage
+const persistUser = (user: SystemUser | null) => {
+  if (user) {
+    localStorage.setItem(SYSTEM_USER_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(SYSTEM_USER_STORAGE_KEY);
+  }
+};
+
+// Helper to restore user from localStorage
+const getStoredUser = (): SystemUser | null => {
+  try {
+    const stored = localStorage.getItem(SYSTEM_USER_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('[SystemAuth] Failed to parse stored user:', e);
+    localStorage.removeItem(SYSTEM_USER_STORAGE_KEY);
+  }
+  return null;
+};
+
 export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<SystemUser | null>(null);
+  // Initialize user from localStorage for immediate hydration
+  const [user, setUser] = useState<SystemUser | null>(() => getStoredUser());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +129,7 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
         console.log('[SystemAuth] Session validated for system admin:', systemUser.email);
         if (mounted) {
           setUser(systemUser);
+          persistUser(systemUser);
           setIsLoading(false);
         }
       } catch (err) {
@@ -265,15 +292,16 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           // Don't fail the login, but log the warning
         }
 
-        const user = {
+        const systemUser = {
           id: authData.user.id,
           email: authData.user.email || '',
           name: authData.user.email || '',
           roles: [userRole]
         };
 
-        console.log('[SystemAuth] System admin login successful:', user.email);
-        setUser(user);
+        console.log('[SystemAuth] System admin login successful:', systemUser.email);
+        setUser(systemUser);
+        persistUser(systemUser);
         return {};
       }
 
@@ -307,10 +335,12 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
       localStorage.removeItem('system_session_token');
       localStorage.removeItem('systemSessionToken');
       localStorage.removeItem('system-session-token');
+      localStorage.removeItem(SYSTEM_USER_STORAGE_KEY);
       sessionStorage.removeItem('system_session_token');
       sessionStorage.removeItem('systemSessionToken');
       sessionStorage.removeItem('system-session-token');
       setUser(null);
+      persistUser(null);
       setError(null);
     }
   };

@@ -39,7 +39,7 @@ import TenantLogin from "./pages/TenantLogin";
 import TenantClientLogin from "./pages/TenantClientLogin";
 import TenantDashboard from "./pages/TenantDashboard";
 import { SystemGuard } from "@/components/system/SystemGuard";
-import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
+import { SystemRoutesLayout } from "@/components/system/SystemRoutesLayout";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
@@ -283,11 +283,21 @@ const AppContent = () => {
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/tenant-setup" element={<TenantSetup />} />
               <Route path="/tenant-error" element={<TenantError />} />
-              <Route path="/system-login" element={
-                <SystemAuthProvider>
-                  <SystemLogin />
-                </SystemAuthProvider>
-              } />
+              {/* System Routes - All wrapped in single SystemAuthProvider via layout */}
+              <Route element={<SystemRoutesLayout />}>
+                <Route path="/system-login" element={<SystemLogin />} />
+                <Route path="/system-dashboard" element={<SystemGuard><SystemDashboard /></SystemGuard>} />
+                <Route path="/system-dashboard/tenants" element={<SystemGuard><SystemTenants /></SystemGuard>} />
+                <Route path="/system-dashboard/users" element={<SystemGuard><SystemUsers /></SystemGuard>} />
+                <Route path="/system-dashboard/tenant-agreements" element={<SystemGuard><SystemTenantAgreements /></SystemGuard>} />
+                <Route path="/system-dashboard/subscription-plans" element={<SystemGuard><SystemSubscriptionPlans /></SystemGuard>} />
+                <Route path="/system-dashboard/system-templates" element={<SystemGuard><SystemTemplates /></SystemGuard>} />
+                <Route path="/system-dashboard/system-templates/:templateId" element={<SystemGuard><SystemTemplateBuilder /></SystemGuard>} />
+                <Route path="/system-dashboard/analytics" element={<SystemGuard><SystemAnalytics /></SystemGuard>} />
+                <Route path="/system-dashboard/settings" element={<SystemGuard><SystemSettings /></SystemGuard>} />
+                <Route path="/system-dashboard/audit" element={<SystemGuard><SystemAnalytics /></SystemGuard>} />
+                <Route path="/system-dashboard/database" element={<SystemGuard><SystemAnalytics /></SystemGuard>} />
+              </Route>
               
               {/* Shared Client Profile Route - Must be before tenant routes */}
               <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
@@ -295,85 +305,6 @@ const AppContent = () => {
               {/* Third-Party Routes */}
               <Route path="/third-party/login" element={<ThirdPartyLoginPage />} />
               <Route path="/third-party/workspace" element={<ThirdPartyWorkspace />} />
-              
-              {/* System Dashboard Routes */}
-              <Route path="/system-dashboard" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemDashboard />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/tenants" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemTenants />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/users" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemUsers />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/tenant-agreements" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemTenantAgreements />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/subscription-plans" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemSubscriptionPlans />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/system-templates" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemTemplates />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/system-templates/:templateId" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemTemplateBuilder />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/analytics" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemAnalytics />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/settings" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemSettings />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/audit" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemAnalytics />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
-              <Route path="/system-dashboard/database" element={
-                <SystemAuthProvider>
-                  <SystemGuard>
-                    <SystemAnalytics />
-                  </SystemGuard>
-                </SystemAuthProvider>
-              } />
               
               {/* Main Admin Dashboard Route for Super Admins */}
               <Route path="/dashboard" element={
