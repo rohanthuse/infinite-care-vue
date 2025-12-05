@@ -73,6 +73,10 @@ const CarerAppointments: React.FC = () => {
           *,
           clients(first_name, last_name, phone, address),
           services(title, description),
+          booking_services(
+            service_id,
+            services(id, title)
+          ),
           visit_records(
             id,
             visit_start_time,
@@ -95,8 +99,26 @@ const CarerAppointments: React.FC = () => {
         throw error;
       }
       
-      console.log('[CarerAppointments] Fetched', data?.length || 0, 'appointments for staff ID:', carerContext.staffId);
-      return data || [];
+      // Transform data to include service_names array from booking_services junction
+      const transformedData = (data || []).map(booking => {
+        const bookingServices = booking.booking_services || [];
+        const serviceNames = bookingServices
+          .map((bs: any) => bs.services?.title)
+          .filter(Boolean);
+        
+        return {
+          ...booking,
+          service_names: serviceNames.length > 0 
+            ? serviceNames 
+            : (booking.services?.title ? [booking.services.title] : []),
+          service_name: serviceNames.length > 0 
+            ? serviceNames.join(', ') 
+            : (booking.services?.title || 'No Service')
+        };
+      });
+      
+      console.log('[CarerAppointments] Fetched', transformedData.length, 'appointments for staff ID:', carerContext.staffId);
+      return transformedData;
     },
     enabled: !!carerContext?.staffId && !isContextLoading,
     staleTime: 0, // Data is immediately stale - always fetch fresh
@@ -148,6 +170,22 @@ const CarerAppointments: React.FC = () => {
           console.log('[CarerAppointments] Real-time visit_record update received:', payload);
           
           // Refetch appointments when visit records change
+          queryClient.invalidateQueries({ 
+            queryKey: ['carer-appointments-full', carerContext.staffId] 
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'booking_services'
+        },
+        (payload) => {
+          console.log('[CarerAppointments] Real-time booking_services update received:', payload);
+          
+          // Refetch appointments when booking services change
           queryClient.invalidateQueries({ 
             queryKey: ['carer-appointments-full', carerContext.staffId] 
           });
@@ -762,8 +800,19 @@ const CarerAppointments: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="text-sm text-gray-600 mb-2">
-                    <strong>Service:</strong> {appointment.services?.title || 'N/A'}
+                  <div className="text-sm text-muted-foreground mb-2">
+                    <strong className="text-foreground">{appointment.service_names && appointment.service_names.length > 1 ? 'Services:' : 'Service:'}</strong>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {appointment.service_names && appointment.service_names.length > 0 ? (
+                        appointment.service_names.map((name: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                            {name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span>{appointment.services?.title || 'N/A'}</span>
+                      )}
+                    </div>
                   </div>
                   
                   {appointment.clients?.address && (

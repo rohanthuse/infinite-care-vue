@@ -56,7 +56,11 @@ export const ClientAppointmentCard: React.FC<ClientAppointmentCardProps> = ({
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
-            <h4 className="font-semibold text-foreground">{appointment.appointment_type}</h4>
+            <h4 className="font-semibold text-foreground">
+              {appointment._booking_data?.service_names?.length > 0 
+                ? appointment._booking_data.service_names.join(', ')
+                : appointment.appointment_type}
+            </h4>
             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
               <span>{appointment.provider_name}</span>
