@@ -91,11 +91,9 @@ export function generateRecurringBookings(
       continue;
     }
 
-    // Get service ID if provided
-    let serviceId: string | null = null;
-    if (services && services.length > 0 && /^[0-9a-fA-F-]{36}$/.test(services[0])) {
-      serviceId = services[0];
-    }
+    // Get service IDs if provided
+    const serviceIds: string[] = (services || []).filter((s: string) => /^[0-9a-fA-F-]{36}$/.test(s));
+    const primaryServiceId: string | null = serviceIds.length > 0 ? serviceIds[0] : null;
 
     // Convert day selection to numbers
     const selectedDays = days ? convertDaySelectionToNumbers(days) : [0, 1, 2, 3, 4, 5, 6];
@@ -173,7 +171,8 @@ export function generateRecurringBookings(
             staff_id: bookingData.carerId || undefined,
             start_time: startDateTime,
             end_time: endDateTime,
-            service_id: serviceId || null,
+            service_id: primaryServiceId,
+            service_ids: serviceIds,
             revenue: null,
             status: bookingData.carerId ? "assigned" : "unassigned",
             notes: bookingData.notes || null,

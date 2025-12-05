@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateBookingInput } from "./useCreateBooking";
 import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
+import { createBookingServices } from "@/hooks/useBookingServices";
 import { toast } from "sonner";
 
 async function createMultipleBookings(inputs: CreateBookingInput[]) {
@@ -11,12 +12,20 @@ async function createMultipleBookings(inputs: CreateBookingInput[]) {
   // Insert all bookings in one API call (if possible), else fallback to multiple
   if (!Array.isArray(inputs) || inputs.length === 0) {
     console.log("[createMultipleBookings] No bookings to create");
-    return [];
+    return { bookings: [], serviceInputs: [] };
   }
+
+  // Store service_ids for each booking before inserting (since service_ids is not in DB schema)
+  const serviceInputs = inputs.map(input => ({
+    service_ids: input.service_ids || (input.service_id ? [input.service_id] : [])
+  }));
+
+  // Remove service_ids from inputs since it's not in the bookings table schema
+  const dbInputs = inputs.map(({ service_ids, ...rest }) => rest);
 
   const { data, error } = await supabase
     .from("bookings")
-    .insert(inputs)
+    .insert(dbInputs)
     .select();
 
   if (error) {
@@ -25,7 +34,9 @@ async function createMultipleBookings(inputs: CreateBookingInput[]) {
   }
   
   console.log("[createMultipleBookings] Successfully created bookings:", data?.length || 0);
-  return data;
+  
+  // Return both bookings and service inputs for junction table population
+  return { bookings: data || [], serviceInputs };
 }
 
 export function useCreateMultipleBookings(branchId?: string) {
@@ -34,12 +45,28 @@ export function useCreateMultipleBookings(branchId?: string) {
   
   return useMutation({
     mutationFn: createMultipleBookings,
-    onSuccess: async (data) => {
+    onSuccess: async (result) => {
+      const { bookings: data, serviceInputs } = result;
       console.log('[useCreateMultipleBookings] ===== BOOKING CREATION SUCCESS =====');
       console.log('Successfully created bookings:', data?.length || 0);
       
       if (data && Array.isArray(data)) {
         console.log('Sample created booking:', data[0]);
+        
+        // Save services to junction table for each booking
+        console.log('[useCreateMultipleBookings] Saving services to junction table...');
+        for (let i = 0; i < data.length; i++) {
+          const booking = data[i];
+          const serviceIds = serviceInputs[i]?.service_ids || [];
+          if (serviceIds.length > 0) {
+            try {
+              await createBookingServices(booking.id, serviceIds);
+              console.log(`[useCreateMultipleBookings] Saved ${serviceIds.length} services for booking ${booking.id}`);
+            } catch (err) {
+              console.error(`[useCreateMultipleBookings] Failed to save services for booking ${booking.id}:`, err);
+            }
+          }
+        }
       }
       
       // Invalidate and refetch all relevant queries with enhanced verification

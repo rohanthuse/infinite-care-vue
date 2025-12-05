@@ -177,14 +177,15 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       console.log('[handleCreateBooking] Creating', bookingsToCreate.length, 'bookings in batch');
 
       // Create all bookings in a single batch call
-      const createdBookings = await createMultipleBookingsMutation.mutateAsync(bookingsToCreate);
+      const result = await createMultipleBookingsMutation.mutateAsync(bookingsToCreate);
+      const createdBookings = result?.bookings || [];
       
       // Calculate date range for consolidated notification
       const hasCarerAssigned = Boolean(bookingData.carerId);
-      const actualCount = createdBookings?.length || bookingsToCreate.length;
+      const actualCount = createdBookings.length || bookingsToCreate.length;
       
       let dateRangeText = '';
-      if (createdBookings && createdBookings.length > 0) {
+      if (createdBookings.length > 0) {
         const dates = createdBookings
           .map((b: any) => new Date(b.start_time))
           .sort((a: Date, b: Date) => a.getTime() - b.getTime());

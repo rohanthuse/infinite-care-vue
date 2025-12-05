@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useBookingServices } from "@/hooks/useBookingServices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +61,9 @@ export function ViewBookingDialog({
   const [showApprovalForReschedule, setShowApprovalForReschedule] = React.useState(false);
   const [changeRequest, setChangeRequest] = React.useState<any>(null);
   
+  // Fetch services from junction table
+  const { data: bookingServices } = useBookingServices(booking?.id || '');
+  
   // Early validation - prevent dialog from opening with invalid data
   React.useEffect(() => {
     console.log('[ViewBookingDialog] Dialog state changed:', { 
@@ -81,7 +85,26 @@ export function ViewBookingDialog({
     }
   }, [open, booking, onOpenChange]);
 
-  // Safe calculations that handle null booking (moved AFTER hooks to prevent violations)
+  // Get services - prefer junction table, fallback to single service_id
+  const bookingServicesList = React.useMemo(() => {
+    // If we have services from junction table, use those
+    if (bookingServices && bookingServices.length > 0) {
+      return bookingServices.map(bs => ({
+        id: bs.service?.id || bs.service_id,
+        title: bs.service?.title || services.find(s => s.id === bs.service_id)?.title || 'Unknown Service'
+      }));
+    }
+    // Fallback to single service_id for backward compatibility
+    if (booking?.service_id) {
+      const singleService = services.find(s => s.id === booking.service_id);
+      if (singleService) {
+        return [singleService];
+      }
+    }
+    return [];
+  }, [bookingServices, booking?.service_id, services]);
+  
+  // Keep backward compat for single service reference
   const service = booking ? services.find((s) => s.id === booking.service_id) : null;
   
   // Extract time strings in UTC to avoid timezone conversion issues
@@ -775,27 +798,39 @@ export function ViewBookingDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <FileText className="h-4 w-4" />
-              {relatedBookings.length > 0 ? 'Services Scheduled' : 'Service'}
+              {bookingServicesList.length > 1 ? 'Services' : 'Service'}
             </div>
             <div className="pl-6 space-y-2">
-              {/* Current booking's service */}
-              <div className="p-2 bg-blue-50 rounded-md">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-blue-900">
-                      {service?.title || "No service selected"}
-                    </span>
-                    <div className="text-xs text-blue-700 mt-1">
-                      {startTimeStr || ''} - {endTimeStr || ''}
+              {/* All services for this booking */}
+              {bookingServicesList.length > 0 ? (
+                bookingServicesList.map((svc, index) => (
+                  <div key={svc.id || index} className="p-2 bg-blue-50 rounded-md">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-blue-900">
+                          {svc.title}
+                        </span>
+                        {index === 0 && (
+                          <div className="text-xs text-blue-700 mt-1">
+                            {startTimeStr || ''} - {endTimeStr || ''}
+                          </div>
+                        )}
+                      </div>
+                      {bookingServicesList.length > 1 && (
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                          {index === 0 ? 'Primary' : `Service ${index + 1}`}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                    Current
-                  </Badge>
+                ))
+              ) : (
+                <div className="p-2 bg-gray-50 rounded-md">
+                  <span className="text-sm text-gray-500">No service selected</span>
                 </div>
-              </div>
+              )}
               
-              {/* Related services */}
+              {/* Related services from other bookings in same session */}
               {relatedBookings.length > 0 && (
                 <>
                   <div className="text-xs text-gray-500 font-medium mt-2">
