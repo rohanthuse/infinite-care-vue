@@ -566,17 +566,19 @@ export function EditBookingDialog({
       
       toast.success(message);
       
-      // Update services in junction table
-      if (data.service_ids && data.service_ids.length > 0) {
-        try {
-          await updateBookingServices(booking.id, data.service_ids);
-          console.log('[EditBookingDialog] Services updated in junction table');
-        } catch (serviceError) {
-          console.error('[EditBookingDialog] Failed to update services:', serviceError);
-        }
+      // Update services in junction table (always call, even when empty to clear services)
+      try {
+        await updateBookingServices(booking.id, data.service_ids || []);
+        console.log('[EditBookingDialog] Services updated in junction table:', data.service_ids || []);
+        
+        // Invalidate booking-services queries to refresh UI immediately
+        queryClient.invalidateQueries({ queryKey: ["booking-services", booking.id] });
+        queryClient.invalidateQueries({ queryKey: ["booking-services-batch"] });
+      } catch (serviceError) {
+        console.error('[EditBookingDialog] Failed to update services:', serviceError);
       }
       
-      // Invalidate queries to refresh UI
+      // Invalidate other queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
       queryClient.invalidateQueries({ queryKey: ["client-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["carer-bookings"] });
