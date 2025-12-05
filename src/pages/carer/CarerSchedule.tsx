@@ -419,7 +419,11 @@ const CarerSchedule: React.FC = () => {
                       </div>
                       <div className="text-sm">
                         <div className="font-medium">{appointment.client_name}</div>
-                        <div className="text-gray-600">{appointment.service_name}</div>
+                        <div className="text-gray-600">
+                          {appointment.service_names && appointment.service_names.length > 1 
+                            ? `${appointment.service_names[0]} +${appointment.service_names.length - 1} more`
+                            : appointment.service_name}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
