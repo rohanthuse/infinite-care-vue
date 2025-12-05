@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,7 +77,7 @@ const isValidDate = (d: Date) => !isNaN(d.getTime());
 const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
-  service_id: z.string().optional().transform(val => val === "" ? undefined : val),
+  service_ids: z.array(z.string()).optional(),
   staff_ids: z.array(z.string()).optional(),
   assign_later: z.boolean().optional(),
   notes: z.string().optional(),
@@ -142,7 +143,7 @@ export function EditBookingDialog({
     defaultValues: {
       start_time: "",
       end_time: "",
-      service_id: "",
+      service_ids: [],
       staff_ids: [],
       assign_later: false,
       notes: "",
@@ -306,14 +307,16 @@ export function EditBookingDialog({
       // Only set values if we have valid data
       if (startStr) form.setValue("start_time", startStr);
       if (endStr) form.setValue("end_time", endStr);
-      form.setValue("service_id", booking.service_id || "");
+      // Handle both old service_id and new service_ids for backwards compatibility
+      const existingServiceIds = booking.service_ids || (booking.service_id ? [booking.service_id] : []);
+      form.setValue("service_ids", existingServiceIds);
       form.setValue("notes", booking.notes || "");
       
       console.log('[EditBookingDialog] Form initialized:', {
         bookingId: booking.id,
         start_time: startStr,
         end_time: endStr,
-        service_id: booking.service_id
+        service_ids: existingServiceIds
       });
       
       // Reset validation state when dialog opens
@@ -412,11 +415,12 @@ export function EditBookingDialog({
         keep: staffToKeep
       });
       
-      // Common booking data
+      // Common booking data - use first service_id for backwards compatibility
+      const primaryServiceId = data.service_ids?.[0] || null;
       const commonUpdates = {
         start_time: start.toISOString(),
         end_time: end.toISOString(),
-        service_id: data.service_id || null,
+        service_id: primaryServiceId,
         notes: data.notes,
         status: newStaffIds.length > 0 ? 'assigned' : 'unassigned',
         reschedule_request_status: null,
@@ -503,7 +507,7 @@ export function EditBookingDialog({
           staff_id: staffId,
           start_time: start.toISOString(),
           end_time: end.toISOString(),
-          service_id: data.service_id || null,
+          service_id: primaryServiceId,
           status: 'assigned',
           notes: data.notes,
         });
@@ -529,7 +533,7 @@ export function EditBookingDialog({
           staff_id: null,
           start_time: start.toISOString(),
           end_time: end.toISOString(),
-          service_id: data.service_id || null,
+          service_id: primaryServiceId,
           status: 'unassigned',
           notes: data.notes,
         });
@@ -613,24 +617,21 @@ export function EditBookingDialog({
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                   control={form.control}
-                  name="service_id"
+                  name="service_ids"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Service</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a service" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {services.map((service) => (
-                            <SelectItem key={service.id} value={service.id}>
-                              {service.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Services</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={services.map((service) => ({
+                            label: service.title,
+                            value: service.id,
+                          }))}
+                          selected={field.value || []}
+                          onSelectionChange={field.onChange}
+                          placeholder="Select services..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkClientSuspensionForBilling } from "@/services/SuspensionAwareInvoiceService";
 import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
 import { toast } from "@/hooks/use-toast";
+import { createBookingServices } from "@/hooks/useBookingServices";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -10,7 +11,8 @@ export interface CreateBookingInput {
   staff_id?: string; // Made optional to support unassigned bookings
   start_time: string; // ISO string
   end_time: string;   // ISO string
-  service_id: string | null; // Optional service ID for unassigned bookings
+  service_id?: string | null; // Deprecated - kept for backwards compatibility
+  service_ids?: string[]; // New: array of service IDs
   revenue?: number;
   status?: string; // <-- ADDED
   notes?: string;
@@ -51,6 +53,10 @@ export async function createBooking(input: CreateBookingInput) {
     throw new Error(message);
   }
   
+  // Get primary service_id for backwards compatibility
+  const serviceIds = input.service_ids || (input.service_id ? [input.service_id] : []);
+  const primaryServiceId = serviceIds[0] || null;
+  
   const { data, error } = await supabase
     .from("bookings")
     .insert([
@@ -60,7 +66,7 @@ export async function createBooking(input: CreateBookingInput) {
         staff_id: input.staff_id || null, // Handle null staff_id for unassigned bookings
         start_time: input.start_time,
         end_time: input.end_time,
-        service_id: input.service_id,
+        service_id: primaryServiceId, // Keep for backwards compatibility
         revenue: input.revenue || null,
         status: input.status || (input.staff_id ? "assigned" : "unassigned"), // Auto-set status based on staff assignment
         notes: input.notes || null,
@@ -76,10 +82,21 @@ export async function createBooking(input: CreateBookingInput) {
     throw error;
   }
   
+  // Create entries in booking_services junction table for all services
+  if (serviceIds.length > 0 && data?.id) {
+    try {
+      await createBookingServices(data.id, serviceIds);
+      console.log('[createBooking] ✅ Services saved to junction table:', serviceIds);
+    } catch (serviceError) {
+      console.error('[createBooking] ⚠️ Error saving to booking_services:', serviceError);
+      // Don't fail the booking creation, just log the error
+    }
+  }
+  
   console.log('[createBooking] ✅ SUCCESS - Booking saved to database:', data);
   console.log('[createBooking] ✅ New booking ID:', data?.id);
   console.log('[createBooking] ========== BOOKING CREATION END ==========');
-  return data;
+  return { ...data, service_ids: serviceIds };
 }
 
 export function useCreateBooking(branchId?: string) {
