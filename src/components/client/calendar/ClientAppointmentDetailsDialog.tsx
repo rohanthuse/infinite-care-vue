@@ -105,6 +105,28 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
             )}
           </div>
 
+          {/* Services Section - Multiple Services Display */}
+          {(event._rawAppointmentData as any)?.service_names && (event._rawAppointmentData as any).service_names.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-foreground">
+                  <Heart className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Services</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 ml-8">
+                  {(event._rawAppointmentData as any).service_names.map((serviceName: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      {serviceName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           <Separator />
 
           {/* Additional Info for Care Services */}

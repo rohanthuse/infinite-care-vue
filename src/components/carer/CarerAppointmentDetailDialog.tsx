@@ -171,9 +171,24 @@ export const CarerAppointmentDetailDialog = ({
               Service Details
             </h3>
             <div className="space-y-2">
-              <p className="font-medium">{appointment.services?.title || 'No service specified'}</p>
+              {/* Multiple Services Display */}
+              {appointment.service_names && appointment.service_names.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {appointment.service_names.map((serviceName: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                      {serviceName}
+                    </Badge>
+                  ))}
+                </div>
+              ) : appointment.services?.title ? (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  {appointment.services.title}
+                </Badge>
+              ) : (
+                <p className="text-sm text-muted-foreground">No service specified</p>
+              )}
               {appointment.services?.description && (
-                <p className="text-sm text-muted-foreground">{appointment.services.description}</p>
+                <p className="text-sm text-muted-foreground mt-2">{appointment.services.description}</p>
               )}
               {appointment.revenue && (
                 <p className="text-sm text-muted-foreground">
