@@ -510,8 +510,21 @@ const CarerSchedule: React.FC = () => {
                         {booking.client_name}
                       </div>
                       
-                      <div className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                        {booking.service_name}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {booking.service_names && booking.service_names.length > 0 ? (
+                          <>
+                            {booking.service_names.slice(0, 2).map((name, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                {name}
+                              </Badge>
+                            ))}
+                            {booking.service_names.length > 2 && (
+                              <span className="text-xs text-muted-foreground">+{booking.service_names.length - 2} more</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No service</span>
+                        )}
                       </div>
                       
                       <div className="flex flex-col gap-1">
@@ -663,8 +676,19 @@ const CarerSchedule: React.FC = () => {
                         <span className="font-medium">{booking.client_name}</span>
                       </div>
                       
-                      <div className="text-sm text-gray-600 mb-2">
-                        <strong>Service:</strong> {booking.service_name}
+                      <div className="text-sm text-muted-foreground mb-2">
+                        <strong className="text-foreground">{booking.service_names && booking.service_names.length > 1 ? 'Services:' : 'Service:'}</strong>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {booking.service_names && booking.service_names.length > 0 ? (
+                            booking.service_names.map((name, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                {name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span>{booking.service_name || 'No service'}</span>
+                          )}
+                        </div>
                       </div>
                       
                       {booking.revenue && (
