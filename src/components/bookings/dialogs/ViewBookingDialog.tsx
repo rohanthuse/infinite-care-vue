@@ -800,58 +800,56 @@ export function ViewBookingDialog({
               <FileText className="h-4 w-4" />
               {bookingServicesList.length > 1 ? 'Services' : 'Service'}
             </div>
-            <div className="pl-6 space-y-2">
-              {/* All services for this booking */}
+            <div className="pl-6 space-y-3">
+              {/* All services displayed as clean badges */}
               {bookingServicesList.length > 0 ? (
-                bookingServicesList.map((svc, index) => (
-                  <div key={svc.id || index} className="p-2 bg-blue-50 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-blue-900">
-                          {svc.title}
-                        </span>
-                        {index === 0 && (
-                          <div className="text-xs text-blue-700 mt-1">
-                            {startTimeStr || ''} - {endTimeStr || ''}
-                          </div>
-                        )}
-                      </div>
-                      {bookingServicesList.length > 1 && (
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                          {index === 0 ? 'Primary' : `Service ${index + 1}`}
-                        </Badge>
-                      )}
-                    </div>
+                <div className="space-y-3">
+                  {/* Service names as badges in a row */}
+                  <div className="flex flex-wrap gap-2">
+                    {bookingServicesList.map((svc, index) => (
+                      <Badge 
+                        key={svc.id || index} 
+                        variant="secondary" 
+                        className="bg-blue-100 text-blue-800 text-sm py-1 px-3"
+                      >
+                        {svc.title}
+                      </Badge>
+                    ))}
                   </div>
-                ))
+                  
+                  {/* Appointment time shown below all services */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>{startTimeStr || ''} - {endTimeStr || ''}</span>
+                  </div>
+                </div>
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">
-                  <span className="text-sm text-gray-500">No service selected</span>
+                <div className="p-2 bg-muted rounded-md">
+                  <span className="text-sm text-muted-foreground">No service selected</span>
                 </div>
               )}
               
               {/* Related services from other bookings in same session */}
               {relatedBookings.length > 0 && (
                 <>
-                  <div className="text-xs text-gray-500 font-medium mt-2">
+                  <div className="text-xs text-muted-foreground font-medium mt-2">
                     Additional Services (Same Booking Session):
                   </div>
                   {relatedBookings.map((relatedBooking) => {
                     const relatedService = services.find(s => s.id === relatedBooking.service_id);
                     const relatedStart = parseISO(relatedBooking.start_time);
                     const relatedEnd = parseISO(relatedBooking.end_time);
-                    // Format related times in user's local timezone to match main booking display
                     const relatedStartTime = formatInTimeZone(relatedStart, getUserTimezone(), 'HH:mm');
                     const relatedEndTime = formatInTimeZone(relatedEnd, getUserTimezone(), 'HH:mm');
                     
                     return (
-                      <div key={relatedBooking.id} className="p-2 bg-gray-50 rounded-md">
+                      <div key={relatedBooking.id} className="p-2 bg-muted rounded-md">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium">
                               {relatedService?.title || "Unknown Service"}
                             </span>
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               {relatedStartTime} - {relatedEndTime}
                             </div>
                           </div>
