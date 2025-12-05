@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Calendar, Clock, User } from "lucide-react";
 import { format } from "date-fns";
 
@@ -101,11 +102,26 @@ export const CarerUnavailabilityDialog: React.FC<CarerUnavailabilityDialogProps>
               </span>
             </div>
             
-            {appointment.services?.title && (
-              <div className="text-sm">
-                <span className="font-medium">Service:</span> {appointment.services.title}
+            <div className="text-sm">
+              <span className="font-medium">
+                {appointment.service_names && appointment.service_names.length > 1 ? 'Services:' : 'Service:'}
+              </span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {appointment.service_names && appointment.service_names.length > 0 ? (
+                  appointment.service_names.map((name: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                      {name}
+                    </Badge>
+                  ))
+                ) : appointment.services?.title ? (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                    {appointment.services.title}
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground">No service selected</span>
+                )}
               </div>
-            )}
+            </div>
           </div>
           
           {/* Reason Selection */}
