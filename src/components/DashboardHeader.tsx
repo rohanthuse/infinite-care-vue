@@ -321,6 +321,7 @@ export function DashboardHeader() {
                     setSearchDropdownOpen(false);
                   }}
                   anchorRef={searchInputRef}
+                  tenantSlug={tenantSlug}
                 />
               ) : isBranchContext && branchId ? (
                 <BranchSearchDropdown
@@ -420,6 +421,17 @@ export function DashboardHeader() {
                       setSearchDropdownOpen(false);
                     }}
                     anchorRef={mobileSearchInputRef}
+                  />
+                ) : isSuperAdminDashboard ? (
+                  <SuperAdminSearchDropdown
+                    searchValue={searchValue}
+                    onClose={() => setSearchDropdownOpen(false)}
+                    onResultClick={() => {
+                      setSearchValue("");
+                      setSearchDropdownOpen(false);
+                    }}
+                    anchorRef={mobileSearchInputRef}
+                    tenantSlug={tenantSlug}
                   />
                 ) : isBranchContext && branchId ? (
                   <BranchSearchDropdown

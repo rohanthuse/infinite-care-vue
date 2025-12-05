@@ -4,14 +4,21 @@ import {
   Users, 
   Building2, 
   Settings, 
-  BarChart, 
   LayoutDashboard,
   Loader2,
-  User
+  User,
+  FileText,
+  Briefcase,
+  Heart,
+  Brain,
+  Stethoscope,
+  ListChecks,
+  Activity,
+  Bell,
+  Home
 } from "lucide-react";
 import { useSuperAdminSearch } from "@/hooks/useSuperAdminSearch";
 import { SearchDropdownItem } from "./SearchDropdownItem";
-import { cn } from "@/lib/utils";
 
 interface ModuleShortcut {
   name: string;
@@ -20,26 +27,40 @@ interface ModuleShortcut {
   icon: any;
 }
 
-const superAdminModules: ModuleShortcut[] = [
-  { name: 'Dashboard Home', keywords: ['home', 'dashboard', 'main'], path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Tenant Users', keywords: ['user', 'tenant user', 'admin'], path: '/system/users', icon: Users },
-  { name: 'System Tenants', keywords: ['tenant', 'organization', 'company'], path: '/system/tenants', icon: Building2 },
-  { name: 'System Settings', keywords: ['setting', 'config', 'system'], path: '/system/settings', icon: Settings },
-  { name: 'System Analytics', keywords: ['analytic', 'stats', 'report'], path: '/system/analytics', icon: BarChart },
-];
+// Organization-level modules with tenant-aware paths
+const getOrgModules = (tenantSlug: string | null): ModuleShortcut[] => {
+  const basePath = tenantSlug ? `/${tenantSlug}` : '';
+  
+  return [
+    { name: 'Home', keywords: ['home', 'main', 'overview'], path: `${basePath}/dashboard`, icon: Home },
+    { name: 'Settings', keywords: ['settings', 'config', 'preferences'], path: `${basePath}/settings`, icon: Settings },
+    { name: 'Agreement', keywords: ['agreement', 'contract', 'terms'], path: `${basePath}/agreement`, icon: FileText },
+    { name: 'Services', keywords: ['service', 'care service'], path: `${basePath}/services`, icon: Briefcase },
+    { name: 'Hobbies', keywords: ['hobby', 'hobbies', 'interest', 'activity'], path: `${basePath}/hobbies`, icon: Heart },
+    { name: 'Skills', keywords: ['skill', 'skills', 'ability', 'competency'], path: `${basePath}/skills`, icon: Brain },
+    { name: 'Medical & Mental', keywords: ['medical', 'mental', 'health', 'condition'], path: `${basePath}/medical-mental`, icon: Stethoscope },
+    { name: 'Type of Work', keywords: ['work type', 'job type', 'employment', 'type of work'], path: `${basePath}/type-of-work`, icon: ListChecks },
+    { name: 'Body Map', keywords: ['body map', 'body', 'injury', 'injuries'], path: `${basePath}/body-map-points`, icon: Activity },
+    { name: 'Branch', keywords: ['branch', 'branches', 'location', 'office'], path: `${basePath}/branch`, icon: Building2 },
+    { name: 'Branch Admin', keywords: ['branch admin', 'administrator', 'manager', 'admins'], path: `${basePath}/branch-admins`, icon: Users },
+    { name: 'Notifications', keywords: ['notification', 'notifications', 'alert', 'message'], path: `${basePath}/notifications`, icon: Bell }
+  ];
+};
 
 interface SuperAdminSearchDropdownProps {
   searchValue: string;
   onClose: () => void;
   onResultClick: () => void;
   anchorRef: React.RefObject<HTMLInputElement>;
+  tenantSlug?: string | null;
 }
 
 export function SuperAdminSearchDropdown({
   searchValue,
   onClose,
   onResultClick,
-  anchorRef
+  anchorRef,
+  tenantSlug
 }: SuperAdminSearchDropdownProps) {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,11 +72,15 @@ export function SuperAdminSearchDropdown({
     isLoading
   } = useSuperAdminSearch(searchValue);
 
+  // Get organization modules with tenant-aware paths
+  const orgModules = getOrgModules(tenantSlug || null);
+
   // Get matching module shortcuts
-  const matchingModules = superAdminModules.filter(module =>
+  const matchingModules = orgModules.filter(module =>
     module.keywords.some(keyword => 
       keyword.includes(searchValue.toLowerCase()) || 
-      searchValue.toLowerCase().includes(keyword)
+      searchValue.toLowerCase().includes(keyword) ||
+      module.name.toLowerCase().includes(searchValue.toLowerCase())
     )
   );
 
@@ -74,25 +99,16 @@ export function SuperAdminSearchDropdown({
     if (result.type === 'module') {
       navigate(result.path);
     } else if (result.type === 'branch') {
-      // Navigate to branch dashboard
-      const currentPath = window.location.pathname;
-      const pathParts = currentPath.split('/').filter(Boolean);
-      
-      // Check if current URL has a valid tenant slug (not 'dashboard', 'system', etc.)
-      let tenantSlug = null;
-      if (pathParts.length > 0 && !['dashboard', 'system', 'login'].includes(pathParts[0])) {
-        tenantSlug = pathParts[0];
-      }
-      
-      // Construct the navigation path
+      // Navigate to branch dashboard using the tenantSlug prop
       const navigationPath = tenantSlug 
         ? `/${tenantSlug}/branch-dashboard/${result.id}/${encodeURIComponent(result.name)}`
         : `/branch-dashboard/${result.id}/${encodeURIComponent(result.name)}`;
       
       navigate(navigationPath);
     } else if (result.type === 'admin') {
-      // Navigate to dashboard with admin highlighted
-      navigate('/dashboard', { state: { highlightAdminId: result.id } });
+      // Navigate to branch admins page
+      const adminPath = tenantSlug ? `/${tenantSlug}/branch-admins` : '/branch-admins';
+      navigate(adminPath, { state: { highlightAdminId: result.id } });
     }
     onResultClick();
   };
@@ -180,18 +196,18 @@ export function SuperAdminSearchDropdown({
           </div>
         ) : (
           <>
-            {/* Module Shortcuts */}
+            {/* Organisation Modules */}
             {matchingModules.length > 0 && (
               <div className="mb-2">
                 <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  System Modules
+                  Organisation Modules
                 </div>
                 {matchingModules.map((module, index) => (
                   <SearchDropdownItem
                     key={`module-${index}`}
                     icon={module.icon}
                     title={module.name}
-                    onClick={() => handleNavigate(module)}
+                    onClick={() => handleNavigate({ ...module, type: 'module' })}
                     isSelected={selectedIndex === index}
                     type="module"
                   />
@@ -217,7 +233,7 @@ export function SuperAdminSearchDropdown({
                     title={branch.name}
                     subtitle={`${branch.branch_type} • ${branch.country}`}
                     badge={branch.status}
-                    onClick={() => handleNavigate(branch)}
+                    onClick={() => handleNavigate({ ...branch, type: 'branch' })}
                     isSelected={selectedIndex === matchingModules.length + index}
                     type="client"
                   />
@@ -243,7 +259,7 @@ export function SuperAdminSearchDropdown({
                     title={admin.full_name}
                     subtitle={admin.email}
                     badge={admin.branch_name || 'No Branch'}
-                    onClick={() => handleNavigate(admin)}
+                    onClick={() => handleNavigate({ ...admin, type: 'admin' })}
                     isSelected={selectedIndex === matchingModules.length + limitedBranches.length + index}
                     type="staff"
                   />
