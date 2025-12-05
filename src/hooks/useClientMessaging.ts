@@ -360,24 +360,43 @@ export const useClientSendMessage = () => {
         sender_type: 'client',
         content,
         has_attachments: attachments.length > 0,
-        attachments: attachments.length > 0 ? JSON.stringify(attachments) : null
+        attachments: attachments.length > 0 ? attachments : null
       };
 
       console.log('[useClientSendMessage] Inserting message:', messagePayload);
 
-      const { data, error } = await supabase
-        .from('messages')
-        .insert(messagePayload)
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .insert(messagePayload)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('[useClientSendMessage] Supabase error:', error);
-        throw new Error(error.message || 'Failed to send message');
+        if (error) {
+          console.error('[useClientSendMessage] Supabase error:', error);
+          throw new Error(error.message || 'Failed to send message');
+        }
+
+        console.log('[useClientSendMessage] Message sent successfully:', data?.id);
+
+        // Update thread timestamp
+        const { error: threadError } = await supabase
+          .from('message_threads')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', threadId);
+
+        if (threadError) {
+          console.warn('[useClientSendMessage] Failed to update thread timestamp:', threadError);
+        }
+
+        return data;
+      } catch (fetchError: any) {
+        console.error('[useClientSendMessage] Network/fetch error:', fetchError);
+        if (fetchError.message === 'Failed to fetch' || fetchError.name === 'TypeError') {
+          throw new Error('Network error - please check your connection and try again');
+        }
+        throw fetchError;
       }
-
-      console.log('[useClientSendMessage] Message sent successfully:', data?.id);
-      return data;
     },
     onMutate: async (variables) => {
       console.log('[useClientSendMessage] onMutate - Starting optimistic update');
@@ -416,6 +435,8 @@ export const useClientSendMessage = () => {
       // Invalidate to get the real message from server
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', variables.threadId] });
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-thread-messages', variables.threadId] });
     },
     onError: (error: Error, variables, context) => {
       console.error('[useClientSendMessage] onError:', error.message);

@@ -22,10 +22,21 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     // Add fetch wrapper to include dynamic session token headers
     fetch: (url: RequestInfo | URL, options?: RequestInit) => {
       const sessionToken = getSystemSessionToken();
-      const headers = new Headers(options?.headers);
       
-      if (sessionToken) {
-        headers.set('x-system-session-token', sessionToken);
+      // Properly preserve all existing headers
+      let headers: HeadersInit;
+      if (options?.headers instanceof Headers) {
+        headers = new Headers(options.headers);
+        if (sessionToken) {
+          (headers as Headers).set('x-system-session-token', sessionToken);
+        }
+      } else if (options?.headers) {
+        headers = {
+          ...options.headers,
+          ...(sessionToken ? { 'x-system-session-token': sessionToken } : {})
+        };
+      } else {
+        headers = sessionToken ? { 'x-system-session-token': sessionToken } : {};
       }
       
       return fetch(url, {
