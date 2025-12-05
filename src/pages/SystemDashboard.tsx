@@ -109,12 +109,7 @@ export default function SystemDashboard() {
       <DashboardHeader />
       
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Notifications Bell in Header Area */}
-        <div className="flex justify-end mb-4">
-          <SystemNotifications />
-        </div>
-
-        <SystemInfoHeader 
+        <SystemInfoHeader
           systemInfo={systemInfo}
           onQuickAction={handleQuickAction}
         />

@@ -6,6 +6,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import { SystemNotifications } from "@/components/system/SystemNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
@@ -342,11 +343,15 @@ export function DashboardHeader() {
         
         {/* Bell notification, theme switcher and sidebar trigger on right for desktop view */}
         <div className="hidden md:flex items-center gap-2">
-          <NotificationDropdown 
-            branchId={branchId || undefined} 
-            organizationId={!isBranchContext ? organizationId || undefined : undefined}
-            onViewAll={handleViewAllNotifications}
-          />
+          {isSystemPortal ? (
+            <SystemNotifications />
+          ) : (
+            <NotificationDropdown 
+              branchId={branchId || undefined} 
+              organizationId={!isBranchContext ? organizationId || undefined : undefined}
+              onViewAll={handleViewAllNotifications}
+            />
+          )}
           <ThemeSwitcher />
           {isBranchDashboard && sidebarState && (
             <SidebarTrigger className="h-9 w-9 text-primary hover:bg-primary/10" />
@@ -449,11 +454,15 @@ export function DashboardHeader() {
               )}
             </div>
             <div className="ml-2 flex items-center gap-2">
-              <NotificationDropdown 
-                branchId={branchId || undefined} 
-                organizationId={!isBranchContext ? organizationId || undefined : undefined}
-                onViewAll={handleViewAllNotifications}
-              />
+              {isSystemPortal ? (
+                <SystemNotifications />
+              ) : (
+                <NotificationDropdown 
+                  branchId={branchId || undefined} 
+                  organizationId={!isBranchContext ? organizationId || undefined : undefined}
+                  onViewAll={handleViewAllNotifications}
+                />
+              )}
               <ThemeSwitcher />
             </div>
           </div>
