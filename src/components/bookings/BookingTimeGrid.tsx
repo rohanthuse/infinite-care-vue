@@ -48,6 +48,7 @@ export interface Booking {
   start_time?: string;  // ISO format
   end_time?: string;    // ISO format
   service_id?: string;
+  service_ids?: string[]; // Multiple services from junction table
   branch_id?: string;
   client_id?: string;
   unavailability_request?: {

@@ -115,6 +115,9 @@ export function EditBookingDialog({
   const { data: userRole } = useUserRole();
   const queryClient = useQueryClient();
   
+  // Fetch services from junction table
+  const { data: bookingServices, isLoading: isLoadingServices } = useBookingServices(booking?.id || '');
+  
   // Consolidated validation system
   const { validateBooking, isValidating } = useConsolidatedValidation(branchId);
   
@@ -308,23 +311,36 @@ export function EditBookingDialog({
       // Only set values if we have valid data
       if (startStr) form.setValue("start_time", startStr);
       if (endStr) form.setValue("end_time", endStr);
-      // Handle both old service_id and new service_ids for backwards compatibility
-      const existingServiceIds = booking.service_ids || (booking.service_id ? [booking.service_id] : []);
-      form.setValue("service_ids", existingServiceIds);
+      
+      // Get services from junction table (bookingServices hook) with fallbacks
+      let serviceIdsToSet: string[] = [];
+      if (bookingServices && bookingServices.length > 0) {
+        // Priority 1: Use services from junction table
+        serviceIdsToSet = bookingServices.map(bs => bs.service_id);
+      } else if (booking.service_ids?.length > 0) {
+        // Priority 2: Use service_ids array from booking object
+        serviceIdsToSet = booking.service_ids;
+      } else if (booking.service_id) {
+        // Priority 3: Fallback to single service_id for backwards compatibility
+        serviceIdsToSet = [booking.service_id];
+      }
+      
+      form.setValue("service_ids", serviceIdsToSet);
       form.setValue("notes", booking.notes || "");
       
       console.log('[EditBookingDialog] Form initialized:', {
         bookingId: booking.id,
         start_time: startStr,
         end_time: endStr,
-        service_ids: existingServiceIds
+        service_ids: serviceIdsToSet,
+        fromJunctionTable: bookingServices && bookingServices.length > 0
       });
       
       // Reset validation state when dialog opens
       setValidationResult(null);
       setShowOverlapAlert(false);
     }
-  }, [booking, open, form]);
+  }, [booking, open, form, bookingServices]);
 
   // Validate booking when time fields change
   const validateCurrentBooking = async () => {

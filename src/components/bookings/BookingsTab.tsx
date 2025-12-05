@@ -254,6 +254,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       start_time: fullBooking.start_time,
       end_time: fullBooking.end_time,
       service_id: fullBooking.service_id,
+      service_ids: (fullBooking as any).service_ids || (fullBooking.service_id ? [fullBooking.service_id] : []),
       created_at: fullBooking.created_at,
       // Type-cast request statuses properly
       cancellation_request_status: fullBooking.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
