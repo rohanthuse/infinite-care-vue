@@ -25,14 +25,13 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
   const { data: contacts, isLoading: contactsLoading } = useCarerInternalContacts();
   const createThreadMutation = useUnifiedCreateThread();
 
-  // Group contacts by type for organized display
+  // Group contacts by type for organized display (Super Admin and Branch only)
   const groupedContacts = React.useMemo(() => {
-    if (!contacts) return { admins: [], branchAdmins: [], carers: [] };
+    if (!contacts) return { superAdmins: [], branchAdmins: [] };
     
     return {
-      admins: contacts.filter(c => ['super_admin', 'admin'].includes(c.type)),
-      branchAdmins: contacts.filter(c => c.type === 'branch_admin'),
-      carers: contacts.filter(c => ['carer', 'staff'].includes(c.type))
+      superAdmins: contacts.filter(c => ['super_admin', 'admin'].includes(c.type)),
+      branchAdmins: contacts.filter(c => c.type === 'branch_admin')
     };
   }, [contacts]);
 
@@ -125,13 +124,13 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
                   <SelectValue placeholder="Select recipient..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-80">
-                  {/* Super Admins and Admins Group */}
-                  {groupedContacts.admins.length > 0 && (
+                  {/* Super Admin Group */}
+                  {groupedContacts.superAdmins.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                        Admins
+                        Super Admin
                       </div>
-                      {groupedContacts.admins.map((contact) => (
+                      {groupedContacts.superAdmins.map((contact) => (
                         <SelectItem key={contact.id} value={contact.id}>
                           <div className="flex items-center gap-2">
                             <span>{contact.name}</span>
@@ -149,11 +148,11 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
                     </>
                   )}
                   
-                  {/* Branch Admins Group */}
+                  {/* Branch Group */}
                   {groupedContacts.branchAdmins.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                        Branch Admins
+                        Branch
                       </div>
                       {groupedContacts.branchAdmins.map((contact) => (
                         <SelectItem key={contact.id} value={contact.id}>
@@ -164,28 +163,6 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
                               className="text-xs bg-blue-50 text-blue-700 border-blue-200"
                             >
                               Branch Admin
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  
-                  {/* Carers/Staff Group */}
-                  {groupedContacts.carers.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                        Carers / Staff
-                      </div>
-                      {groupedContacts.carers.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{contact.name}</span>
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs bg-green-50 text-green-700 border-green-200"
-                            >
-                              Carer
                             </Badge>
                           </div>
                         </SelectItem>
