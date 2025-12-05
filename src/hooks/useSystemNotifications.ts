@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSystemAuth } from "@/contexts/SystemAuthContext";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface SystemNotification {
   id: string;
@@ -26,11 +27,21 @@ export interface SystemNotification {
 export const useSystemNotifications = () => {
   const queryClient = useQueryClient();
   const { user: systemUser } = useSystemAuth();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Set up real-time subscription for demo_requests table
   useEffect(() => {
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create a unique channel name to avoid subscription conflicts
+    const channelName = `demo-request-notifications-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     const channel = supabase
-      .channel('demo-request-notifications')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -45,8 +56,13 @@ export const useSystemNotifications = () => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [queryClient]);
 
