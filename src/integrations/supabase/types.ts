@@ -11690,6 +11690,7 @@ export type Database = {
           read_at: string
           title: string
           type: string
+          updated_at: string
           user_id: string
         }[]
       }

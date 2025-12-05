@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSystemAuth } from "@/contexts/SystemAuthContext";
@@ -20,14 +21,38 @@ export interface SystemNotification {
 /**
  * Hook for managing system-level notifications (for system dashboard users)
  * Filters notifications for the authenticated system user
+ * Demo request notifications are broadcast to ALL system admins
  */
 export const useSystemNotifications = () => {
   const queryClient = useQueryClient();
   const { user: systemUser } = useSystemAuth();
 
+  // Set up real-time subscription for demo_requests table
+  useEffect(() => {
+    const channel = supabase
+      .channel('demo-request-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'demo_requests'
+        },
+        () => {
+          // Refetch notifications when new demo request comes in
+          queryClient.invalidateQueries({ queryKey: ['system-notifications'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   // Fetch notifications for the current system user
   const {
-    data: notifications = [],
+    data: rawNotifications = [],
     isLoading,
     error,
   } = useQuery({
@@ -61,6 +86,20 @@ export const useSystemNotifications = () => {
     retryDelay: 1000,
     refetchInterval: 30000, // Poll every 30 seconds
   });
+
+  // Deduplicate demo_request notifications by demo_request_id to avoid showing duplicates
+  const notifications = useMemo(() => {
+    const seenDemoRequestIds = new Set<string>();
+    return rawNotifications.filter(n => {
+      if (n.type === 'demo_request' && n.data?.demo_request_id) {
+        if (seenDemoRequestIds.has(n.data.demo_request_id)) {
+          return false;
+        }
+        seenDemoRequestIds.add(n.data.demo_request_id);
+      }
+      return true;
+    });
+  }, [rawNotifications]);
 
   // Get unread count
   const unreadCount = notifications.filter(n => !n.read_at).length;

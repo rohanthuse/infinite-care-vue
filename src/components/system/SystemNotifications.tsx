@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useSystemNotifications } from "@/hooks/useSystemNotifications";
+import { useSystemNotifications, SystemNotification } from "@/hooks/useSystemNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,19 @@ export const SystemNotifications: React.FC = () => {
         return 'text-yellow-500';
       default:
         return 'text-muted-foreground';
+    }
+  };
+
+  const handleNotificationClick = (notification: SystemNotification) => {
+    // Mark as read if unread
+    if (!notification.read_at) {
+      markAsRead(notification.id);
+    }
+    
+    // Navigate based on notification type
+    if (notification.type === 'demo_request') {
+      setOpen(false);
+      navigate('/system-dashboard?tab=reports');
     }
   };
 
@@ -94,7 +107,7 @@ export const SystemNotifications: React.FC = () => {
                       ? "bg-background border-border hover:bg-accent/50"
                       : "bg-accent/30 border-primary/20 hover:bg-accent/50"
                   )}
-                  onClick={() => !notification.read_at && markAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
                     <div className={cn(
