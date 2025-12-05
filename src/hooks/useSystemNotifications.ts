@@ -31,6 +31,8 @@ export const useSystemNotifications = () => {
 
   // Set up real-time subscription for demo_requests table
   useEffect(() => {
+    if (!systemUser?.id) return;
+
     // Clean up any existing channel first
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -50,8 +52,8 @@ export const useSystemNotifications = () => {
           table: 'demo_requests'
         },
         () => {
-          // Refetch notifications when new demo request comes in
-          queryClient.invalidateQueries({ queryKey: ['system-notifications'] });
+          // Refetch notifications when new demo request comes in - use consistent query key
+          queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
         }
       )
       .subscribe();
@@ -64,7 +66,7 @@ export const useSystemNotifications = () => {
         channelRef.current = null;
       }
     };
-  }, [queryClient]);
+  }, [queryClient, systemUser?.id]);
 
   // Fetch notifications for the current system user
   const {
