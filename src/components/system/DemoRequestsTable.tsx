@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -15,7 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, Building, MessageSquare, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Mail, Phone, Building, MessageSquare, CheckCircle, Clock, AlertCircle, Search, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DemoRequest {
@@ -38,6 +40,8 @@ export const DemoRequestsTable: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<DemoRequest | null>(null);
   const [notes, setNotes] = useState("");
   const [newStatus, setNewStatus] = useState<'pending' | 'contacted' | 'completed' | 'cancelled'>('contacted');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: demoRequests, isLoading, error } = useQuery({
     queryKey: ['demo-requests'],
@@ -45,11 +49,9 @@ export const DemoRequestsTable: React.FC = () => {
       try {
         console.log('[DemoRequestsTable] Fetching demo requests...');
         
-        // Check if user is authenticated
         const { data: { session } } = await supabase.auth.getSession();
         console.log('[DemoRequestsTable] Current session:', session ? 'authenticated' : 'not authenticated');
         
-        // Use the security definer function that bypasses RLS
         const { data, error } = await supabase.rpc('get_demo_requests');
 
         if (error) {
@@ -66,13 +68,51 @@ export const DemoRequestsTable: React.FC = () => {
     },
     retry: 2,
     retryDelay: 1000,
-    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
-    staleTime: 1000, // Consider data stale after 1 second to force fresh data
+    refetchInterval: 5000,
+    staleTime: 1000,
   });
+
+  // Filter requests based on search query
+  const filteredRequests = useMemo(() => {
+    if (!demoRequests || !searchQuery.trim()) return demoRequests;
+    
+    const query = searchQuery.toLowerCase();
+    return demoRequests.filter(request => 
+      request.full_name?.toLowerCase().includes(query) ||
+      request.email?.toLowerCase().includes(query) ||
+      request.phone?.toLowerCase().includes(query) ||
+      request.company_name?.toLowerCase().includes(query) ||
+      request.status?.toLowerCase().includes(query) ||
+      formatDate(request.created_at).toLowerCase().includes(query)
+    );
+  }, [demoRequests, searchQuery]);
+
+  // Selection state helpers
+  const isAllSelected = filteredRequests && filteredRequests.length > 0 && 
+    filteredRequests.every(r => selectedIds.has(r.id));
+  
+  const isIndeterminate = selectedIds.size > 0 && !isAllSelected;
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && filteredRequests) {
+      setSelectedIds(new Set(filteredRequests.map(r => r.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: string; notes?: string }) => {
-      // Use the security definer function that bypasses RLS
       const { data, error } = await supabase.rpc('update_demo_request_status', {
         request_id: id,
         new_status: status,
@@ -84,6 +124,7 @@ export const DemoRequestsTable: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['demo-request-stats'] });
       toast({
         title: "Request updated successfully",
         description: "The demo request status has been updated.",
@@ -100,6 +141,56 @@ export const DemoRequestsTable: React.FC = () => {
       });
     },
   });
+
+  // Delete mutation with optimistic updates
+  const deleteRequestsMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data, error } = await supabase.rpc('delete_demo_requests', {
+        p_request_ids: ids
+      });
+      if (error) throw error;
+      return data as { success: boolean; deleted_count: number };
+    },
+    onMutate: async (ids) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['demo-requests'] });
+      
+      // Snapshot previous value
+      const previousRequests = queryClient.getQueryData(['demo-requests']);
+      
+      // Optimistic update - remove deleted items immediately
+      queryClient.setQueryData(['demo-requests'], (old: DemoRequest[] = []) =>
+        old.filter(r => !ids.includes(r.id))
+      );
+      
+      return { previousRequests };
+    },
+    onError: (err, ids, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['demo-requests'], context?.previousRequests);
+      toast({
+        title: "Error deleting requests",
+        description: "Failed to delete selected demo requests. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (data) => {
+      setSelectedIds(new Set());
+      toast({
+        title: "Requests deleted",
+        description: `Successfully deleted ${data?.deleted_count || 'selected'} demo request(s).`,
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['demo-request-stats'] });
+    },
+  });
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    deleteRequestsMutation.mutate(Array.from(selectedIds));
+  };
 
   const handleUpdateRequest = () => {
     if (!selectedRequest) return;
@@ -178,16 +269,51 @@ export const DemoRequestsTable: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!demoRequests || demoRequests.length === 0 ? (
+        {/* Search and Actions Bar */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone, status..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          {selectedIds.size > 0 && (
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={deleteRequestsMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteRequestsMutation.isPending ? "Deleting..." : `Delete Selected (${selectedIds.size})`}
+            </Button>
+          )}
+        </div>
+
+        {!filteredRequests || filteredRequests.length === 0 ? (
           <div className="text-center py-8">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No demo requests found</p>
+            <p className="text-muted-foreground">
+              {searchQuery ? "No demo requests match your search" : "No demo requests found"}
+            </p>
           </div>
         ) : (
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                      className={isIndeterminate ? "opacity-50" : ""}
+                    />
+                  </TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Organisation</TableHead>
                   <TableHead>Status</TableHead>
@@ -196,8 +322,15 @@ export const DemoRequestsTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {demoRequests.map((request) => (
+                {filteredRequests.map((request) => (
                   <TableRow key={request.id}>
+                    <TableCell className="w-12">
+                      <Checkbox
+                        checked={selectedIds.has(request.id)}
+                        onCheckedChange={(checked) => handleSelectOne(request.id, !!checked)}
+                        aria-label={`Select ${request.full_name}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{request.full_name}</div>
