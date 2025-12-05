@@ -11362,6 +11362,7 @@ export type Database = {
         Args: { admin_user_id: string }
         Returns: Json
       }
+      delete_demo_requests: { Args: { p_request_ids: string[] }; Returns: Json }
       delete_organization_cascade: {
         Args: { p_organization_id: string; p_system_user_id: string }
         Returns: Json
