@@ -1,48 +1,32 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PageHero from "@/components/PageHero";
+import { Shield, Calendar } from "lucide-react";
 
 const PrivacyPolicy = () => {
+  const sections = [
+    { title: "Information We Collect", content: "We collect information you provide directly to us, such as when you create an account, use our services, or contact us. This includes personal identification information, organization details, care recipient data, and usage analytics." },
+    { title: "How We Use Your Information", content: "We use the information to provide and improve our services, process transactions, send technical notices and support messages, and ensure compliance with healthcare regulations." },
+    { title: "Data Security", content: "We implement industry-standard security measures including end-to-end encryption, regular security audits, SOC 2 Type II certification, and GDPR compliance." },
+    { title: "Data Sharing", content: "We do not sell your personal information. We may share information with service providers, to comply with legal obligations, or with your consent." },
+    { title: "Your Rights", content: "Under GDPR and UK data protection laws, you have the right to access, correct, delete, object to processing, and request portability of your personal data." },
+    { title: "Contact Us", content: "For questions about this privacy policy: privacy@med-infinite.com or 0800 123 4567. You may also lodge a complaint with the ICO." }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
       <Navbar />
       <main className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Privacy Policy
-          </h1>
-          <p className="text-gray-600 mb-8">Last updated: December 1, 2024</p>
-          
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 prose prose-gray max-w-none">
-            <h2 className="text-xl font-semibold text-gray-900 mt-0">1. Information We Collect</h2>
-            <p className="text-gray-600">
-              We collect information you provide directly to us, including personal information such as your name, email address, and organization details when you register for an account or contact us.
-            </p>
-            
-            <h2 className="text-xl font-semibold text-gray-900">2. How We Use Your Information</h2>
-            <p className="text-gray-600">
-              We use the information we collect to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, and respond to your comments and questions.
-            </p>
-            
-            <h2 className="text-xl font-semibold text-gray-900">3. Data Security</h2>
-            <p className="text-gray-600">
-              We implement appropriate technical and organizational measures to protect the security of your personal information. All data is encrypted in transit and at rest.
-            </p>
-            
-            <h2 className="text-xl font-semibold text-gray-900">4. Data Retention</h2>
-            <p className="text-gray-600">
-              We retain your personal information for as long as necessary to fulfill the purposes for which it was collected, including to satisfy any legal, accounting, or reporting requirements.
-            </p>
-            
-            <h2 className="text-xl font-semibold text-gray-900">5. Your Rights</h2>
-            <p className="text-gray-600">
-              You have the right to access, correct, or delete your personal information. You may also have the right to restrict or object to certain processing of your data.
-            </p>
-            
-            <h2 className="text-xl font-semibold text-gray-900">6. Contact Us</h2>
-            <p className="text-gray-600">
-              If you have any questions about this Privacy Policy, please contact us at privacy@med-infinite.com.
-            </p>
-          </div>
+        <PageHero badge="Legal" badgeIcon={Shield} title="Privacy" highlightedText="Policy" description="Your privacy is important to us. This policy explains how we collect, use, and protect your information." />
+        <div className="flex items-center justify-center gap-2 text-gray-600 mb-12"><Calendar className="h-5 w-5" /><span>Last updated: December 1, 2024</span></div>
+
+        <div className="max-w-3xl mx-auto space-y-6">
+          {sections.map((s, i) => (
+            <div key={i} className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">{s.title}</h2>
+              <p className="text-gray-600 leading-relaxed">{s.content}</p>
+            </div>
+          ))}
         </div>
       </main>
       <Footer />

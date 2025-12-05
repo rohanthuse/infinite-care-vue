@@ -1,29 +1,35 @@
-
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Heart, Menu, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
     
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Handle hash navigation after page load
+  useEffect(() => {
+    if (location.hash) {
+      setTimeout(() => {
+        const element = document.querySelector(location.hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location]);
   
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -31,6 +37,34 @@ const Navbar = () => {
   
   const handleSignIn = () => {
     navigate("/login");
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const isLandingPage = location.pathname === '/';
+    
+    if (isLandingPage) {
+      // Smooth scroll to section on landing page
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Navigate to landing page with hash
+      navigate('/' + href);
+    }
+    
+    // Close mobile menu if open
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+    }
   };
   
   const navItems = [
@@ -43,11 +77,15 @@ const Navbar = () => {
   return (
     <header className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4", 
-      isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
+      isScrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
     )}>
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center space-x-2 text-2xl font-semibold">
+        <a 
+          href="/" 
+          onClick={handleLogoClick}
+          className="flex items-center space-x-2 text-2xl font-semibold"
+        >
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-8 w-8" />
           <div className="flex flex-col">
             <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent text-xl font-bold">
@@ -62,8 +100,9 @@ const Navbar = () => {
           {navItems.map((item, index) => (
             <a 
               key={index} 
-              href={item.href} 
-              className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200"
+              href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-600 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300"
             >
               {item.text}
             </a>
@@ -95,7 +134,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <div 
         className={cn(
-          "fixed inset-0 bg-white z-40 pt-20 transition-transform duration-300 ease-in-out-cubic md:hidden", 
+          "fixed inset-0 bg-white z-40 pt-20 transition-transform duration-300 ease-in-out md:hidden", 
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -103,9 +142,9 @@ const Navbar = () => {
           {navItems.map((item, index) => (
             <a 
               key={index} 
-              href={item.href} 
-              className="text-xl font-medium text-gray-800 hover:text-blue-600 py-2 border-b border-gray-100" 
-              onClick={() => setIsMobileMenuOpen(false)}
+              href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
+              className="text-xl font-medium text-gray-800 hover:text-blue-600 py-2 border-b border-gray-100"
             >
               {item.text}
             </a>
