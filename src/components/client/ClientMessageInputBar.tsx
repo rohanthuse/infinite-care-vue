@@ -33,13 +33,33 @@ export const ClientMessageInputBar: React.FC<ClientMessageInputBarProps> = ({
   };
 
   const handleSend = async () => {
-    if (!content.trim() && attachedFiles.length === 0) return;
+    console.log('[ClientMessageInputBar] handleSend called', {
+      threadId,
+      hasContent: !!content.trim(),
+      contentLength: content.trim().length,
+      fileCount: attachedFiles.length,
+      isUserLoading: sendMessage.isUserLoading,
+      isPending: sendMessage.isPending
+    });
+
+    if (!content.trim() && attachedFiles.length === 0) {
+      console.log('[ClientMessageInputBar] Nothing to send - empty content and no files');
+      return;
+    }
+
+    // Check if user data is still loading
+    if (sendMessage.isUserLoading) {
+      console.log('[ClientMessageInputBar] User data still loading, please wait');
+      toast.error('Please wait for the app to load completely');
+      return;
+    }
 
     try {
       let attachments: any[] = [];
 
       // Upload files first if any
       if (attachedFiles.length > 0) {
+        console.log('[ClientMessageInputBar] Uploading', attachedFiles.length, 'files');
         for (const file of attachedFiles) {
           const uploadedFile = await uploadFile(file, { category: 'attachment' });
           attachments.push({
@@ -51,15 +71,19 @@ export const ClientMessageInputBar: React.FC<ClientMessageInputBarProps> = ({
             bucket: 'agreement-files'
           });
         }
+        console.log('[ClientMessageInputBar] Files uploaded successfully:', attachments.length);
       }
 
       // Send the message
+      console.log('[ClientMessageInputBar] Calling sendMessage.mutateAsync...');
       await sendMessage.mutateAsync({
         threadId,
         content: content.trim(),
         attachments
       });
 
+      console.log('[ClientMessageInputBar] Message sent successfully, clearing inputs');
+      
       // Clear inputs
       setContent('');
       setAttachedFiles([]);
@@ -69,8 +93,8 @@ export const ClientMessageInputBar: React.FC<ClientMessageInputBarProps> = ({
         textareaRef.current.style.height = 'auto';
       }
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      toast.error(`Failed to send message: ${error.message}`);
+      console.error('[ClientMessageInputBar] Error sending message:', error);
+      // Toast is already shown by the hook's onError, but we can add additional handling here if needed
     }
   };
 
@@ -91,7 +115,7 @@ export const ClientMessageInputBar: React.FC<ClientMessageInputBarProps> = ({
   };
 
   const isSending = sendMessage.isPending || uploading;
-  const isDisabled = (!content.trim() && attachedFiles.length === 0) || isSending;
+  const isDisabled = (!content.trim() && attachedFiles.length === 0) || isSending || sendMessage.isUserLoading;
 
   return (
     <div className="border-t border-border bg-card p-2 sm:p-3 shrink-0">

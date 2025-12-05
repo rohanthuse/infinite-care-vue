@@ -329,9 +329,9 @@ export const useClientCreateThread = () => {
 
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
-  const { data: currentUser } = useUserRole();
+  const { data: currentUser, isLoading: isUserLoading } = useUserRole();
   
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async ({
       threadId,
       content,
@@ -341,31 +341,98 @@ export const useClientSendMessage = () => {
       content: string;
       attachments?: any[];
     }) => {
+      console.log('[useClientSendMessage] Starting mutation...', {
+        threadId,
+        contentLength: content.length,
+        attachmentsCount: attachments.length,
+        currentUserId: currentUser?.id,
+        isUserLoading
+      });
+
       if (!currentUser?.id) {
-        throw new Error('Client not authenticated');
+        console.error('[useClientSendMessage] No current user available');
+        throw new Error('Please wait for authentication to complete');
       }
 
-      const { error } = await supabase
+      const messagePayload = {
+        thread_id: threadId,
+        sender_id: currentUser.id,
+        sender_type: 'client',
+        content,
+        has_attachments: attachments.length > 0,
+        attachments: attachments.length > 0 ? JSON.stringify(attachments) : null
+      };
+
+      console.log('[useClientSendMessage] Inserting message:', messagePayload);
+
+      const { data, error } = await supabase
         .from('messages')
-        .insert({
-          thread_id: threadId,
-          sender_id: currentUser.id,
-          sender_type: 'client',
-          content,
-          has_attachments: attachments.length > 0,
-          attachments: attachments.length > 0 ? JSON.stringify(attachments) : null
-        });
+        .insert(messagePayload)
+        .select()
+        .single();
 
       if (error) {
-        console.error('[useClientSendMessage] Error:', error);
-        throw error;
+        console.error('[useClientSendMessage] Supabase error:', error);
+        throw new Error(error.message || 'Failed to send message');
       }
 
-      toast.success('Reply sent successfully');
+      console.log('[useClientSendMessage] Message sent successfully:', data?.id);
+      return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      console.log('[useClientSendMessage] onMutate - Starting optimistic update');
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['client-thread-messages', variables.threadId] });
+      
+      // Snapshot previous value
+      const previousMessages = queryClient.getQueryData(['client-thread-messages', variables.threadId]);
+      
+      // Optimistically add new message
+      if (currentUser?.id) {
+        queryClient.setQueryData(['client-thread-messages', variables.threadId], (old: ThreadMessage[] | undefined) => {
+          const optimisticMessage: ThreadMessage = {
+            id: `temp-${Date.now()}`,
+            threadId: variables.threadId,
+            senderId: currentUser.id,
+            senderName: currentUser.fullName || 'You',
+            senderType: 'client',
+            content: variables.content,
+            timestamp: new Date(),
+            isRead: false,
+            hasAttachments: (variables.attachments?.length || 0) > 0,
+            attachments: variables.attachments
+          };
+          console.log('[useClientSendMessage] Adding optimistic message:', optimisticMessage.id);
+          return [...(old || []), optimisticMessage];
+        });
+      }
+      
+      return { previousMessages };
+    },
+    onSuccess: (data, variables) => {
+      console.log('[useClientSendMessage] onSuccess - Message confirmed:', data?.id);
+      toast.success('Message sent');
+      // Invalidate to get the real message from server
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', variables.threadId] });
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
+    },
+    onError: (error: Error, variables, context) => {
+      console.error('[useClientSendMessage] onError:', error.message);
+      // Rollback optimistic update on error
+      if (context?.previousMessages) {
+        console.log('[useClientSendMessage] Rolling back optimistic update');
+        queryClient.setQueryData(['client-thread-messages', variables.threadId], context.previousMessages);
+      }
+      toast.error(`Failed to send message: ${error.message}`);
+    },
+    onSettled: (data, error, variables) => {
+      console.log('[useClientSendMessage] onSettled - Mutation complete', { success: !error });
     }
   });
+
+  return {
+    ...mutation,
+    isUserLoading
+  };
 };
