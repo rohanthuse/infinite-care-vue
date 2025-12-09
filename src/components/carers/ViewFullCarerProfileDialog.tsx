@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { 
   User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
   AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
-  Award, Heart, DollarSign, Settings, MessageCircle
+  Award, Heart, DollarSign, Settings, MessageCircle, ArrowRightLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
 import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { CarerProfileSummaryCard } from "@/components/carer-profile/CarerProfileSummaryCard";
+import { TransferBranchDialog } from "@/components/carers/TransferBranchDialog";
 
 interface ViewFullCarerProfileDialogProps {
   carerId: string;
@@ -55,6 +56,7 @@ export function ViewFullCarerProfileDialog({
   onClose
 }: ViewFullCarerProfileDialogProps) {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [photoKey, setPhotoKey] = useState(0);
 
@@ -172,15 +174,26 @@ export function ViewFullCarerProfileDialog({
                   {carer.first_name} {carer.last_name} - Full Profile
                 </DialogTitle>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowSharingDialog(true)}
-                className="flex items-center gap-2"
-              >
-                <Share2 className="h-4 w-4" />
-                Share
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowTransferDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  Transfer Branch
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowSharingDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Button>
+              </div>
             </div>
             <DialogDescription>
               Comprehensive view of carer information, performance, and details
@@ -287,6 +300,25 @@ export function ViewFullCarerProfileDialog({
             hire_date: carer.hire_date || '',
           }}
           branchId={branchId}
+        />
+      )}
+
+      {/* Transfer Dialog */}
+      {carer && showTransferDialog && (
+        <TransferBranchDialog
+          open={showTransferDialog}
+          onOpenChange={setShowTransferDialog}
+          staff={{
+            id: carer.id,
+            first_name: carer.first_name,
+            last_name: carer.last_name,
+            branch_id: branchId,
+          }}
+          currentBranchName={branchName || 'Current Branch'}
+          onTransferComplete={() => {
+            setShowTransferDialog(false);
+            handleClose();
+          }}
         />
       )}
     </>

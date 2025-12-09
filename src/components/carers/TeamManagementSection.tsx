@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings, Mail } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings, Mail, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
 import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { SendInvitationDialog } from "./SendInvitationDialog";
+import { TransferBranchDialog } from "./TransferBranchDialog";
 import { useSendInvitationEmail } from "@/hooks/useSendInvitationEmail";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
@@ -82,6 +83,7 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
+  const [transferringCarer, setTransferringCarer] = useState<CarerDB | null>(null);
   
   // Refs for preventing race conditions and memory leaks
   const dialogCleanupRef = useRef<NodeJS.Timeout>();
@@ -457,6 +459,13 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         closeAllDropdowns();
+                        setTimeout(() => setTransferringCarer(carer), 50);
+                      }}>
+                        <ArrowRightLeft className="h-4 w-4 mr-2" />
+                        Transfer to Another Branch
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        closeAllDropdowns();
                         setTimeout(() => setSettingPasswordCarer(carer), 50);
                       }}>
                         <Shield className="h-4 w-4 mr-2" />
@@ -581,6 +590,16 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
         onConfirm={handleSendInvitation}
         isLoading={sendInvitationMutation.isPending}
       />
+
+      {transferringCarer && (
+        <TransferBranchDialog
+          open={!!transferringCarer}
+          onOpenChange={(open) => !open && setTransferringCarer(null)}
+          staff={transferringCarer}
+          currentBranchName={branchName || 'Current Branch'}
+          onTransferComplete={() => setTransferringCarer(null)}
+        />
+      )}
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
         <AlertDialogContent onCloseAutoFocus={() => {
