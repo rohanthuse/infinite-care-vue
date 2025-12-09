@@ -62,14 +62,21 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
   }, [settings, form]);
 
   const onSubmit = (data: PrivateAccountingFormData) => {
+    // Sanitize all UUID fields - convert empty strings to null for database
+    const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
+    const sanitizedOrganizationId = organization?.id && organization.id.trim() !== '' ? organization.id : null;
+    const sanitizedTravelRateId = data.travel_rate_id && data.travel_rate_id.trim() !== '' ? data.travel_rate_id : null;
+    const sanitizedPrivateInvoiceConfig = data.private_invoice_config && data.private_invoice_config.trim() !== '' ? data.private_invoice_config : null;
+    
     updateSettings.mutate({
       client_id: clientId,
-      branch_id: branchId,
-      organization_id: organization?.id || '',
+      branch_id: sanitizedBranchId,
+      organization_id: sanitizedOrganizationId,
       charge_based_on: data.charge_based_on || 'planned_time',
       extra_time_calculation: data.extra_time_calculation || false,
       credit_period_days: data.credit_period_days || 0,
-      ...data
+      private_invoice_config: sanitizedPrivateInvoiceConfig,
+      travel_rate_id: sanitizedTravelRateId,
     });
   };
 

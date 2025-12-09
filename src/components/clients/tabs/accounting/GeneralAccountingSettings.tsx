@@ -148,10 +148,11 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
       const sanitizedAgreementType = data.agreement_type && data.agreement_type.trim() !== '' ? data.agreement_type : null;
       const sanitizedExpiryDate = data.expiry_date && data.expiry_date.trim() !== '' ? data.expiry_date : null;
       const sanitizedPayMethod = data.pay_method && data.pay_method.trim() !== '' ? data.pay_method : null;
+      const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
       
       updateSettings.mutate({
         client_id: clientId,
-        branch_id: branchId,
+        branch_id: sanitizedBranchId,
         care_lead_id: sanitizedCareLeadId,
         agreement_type: sanitizedAgreementType,
         expiry_date: sanitizedExpiryDate,
