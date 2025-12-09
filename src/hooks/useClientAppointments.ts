@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { notifyMeetingCreated, notifyMeetingUpdated, notifyMeetingCancelled } from '@/utils/meetingNotifications';
 
 export interface CreateClientAppointment {
   client_id: string | null;
@@ -71,6 +72,22 @@ export const useCreateClientAppointment = () => {
       
       // Also invalidate all staff meetings cache to ensure comprehensive sync
       queryClient.invalidateQueries({ queryKey: ['staff-meetings'] });
+      
+      // Send notifications to participants
+      const createdMeeting = Array.isArray(data) ? data[0] : data;
+      if (createdMeeting?.id) {
+        await notifyMeetingCreated({
+          meetingId: createdMeeting.id,
+          branchId: variables.branch_id,
+          clientId: variables.client_id,
+          notes: variables.notes,
+          meetingTitle: variables.appointment_type,
+          meetingDate: variables.appointment_date,
+          meetingTime: variables.appointment_time,
+          location: variables.location,
+          providerName: variables.provider_name,
+        });
+      }
       
       // Success toast with date confirmation
       toast.success(
@@ -164,6 +181,18 @@ export const useUpdateClientAppointment = () => {
         });
       }
       
+      // Send update notifications
+      await notifyMeetingUpdated({
+        meetingId: data.id,
+        branchId: data.branch_id,
+        clientId: data.client_id,
+        notes: data.notes,
+        meetingTitle: data.appointment_type,
+        meetingDate: data.appointment_date,
+        meetingTime: data.appointment_time,
+        location: data.location,
+      });
+      
       toast.success('Meeting updated successfully');
     },
     onError: (error) => {
@@ -178,15 +207,22 @@ export const useDeleteClientAppointment = () => {
 
   return useMutation({
     mutationFn: async (appointmentId: string) => {
+      // Fetch meeting data before deletion for notifications
+      const { data: meeting } = await supabase
+        .from('client_appointments')
+        .select('*')
+        .eq('id', appointmentId)
+        .single();
+      
       const { error } = await supabase
         .from('client_appointments')
         .delete()
         .eq('id', appointmentId);
 
       if (error) throw error;
-      return appointmentId;
+      return { appointmentId, meeting };
     },
-    onSuccess: async () => {
+    onSuccess: async ({ meeting }) => {
       await queryClient.invalidateQueries({ 
         queryKey: ['organization-calendar'],
         exact: false
@@ -197,6 +233,11 @@ export const useDeleteClientAppointment = () => {
         exact: false,
         type: 'active'
       });
+      
+      // Send cancellation notifications
+      if (meeting) {
+        await notifyMeetingCancelled(meeting);
+      }
       
       toast.success('Meeting deleted successfully');
     },

@@ -1587,6 +1587,7 @@ export type Database = {
           id: string
           location: string
           notes: string | null
+          organization_id: string | null
           provider_name: string
           status: string
           updated_at: string
@@ -1601,6 +1602,7 @@ export type Database = {
           id?: string
           location: string
           notes?: string | null
+          organization_id?: string | null
           provider_name: string
           status?: string
           updated_at?: string
@@ -1615,6 +1617,7 @@ export type Database = {
           id?: string
           location?: string
           notes?: string | null
+          organization_id?: string | null
           provider_name?: string
           status?: string
           updated_at?: string
@@ -1639,6 +1642,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_appointments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

@@ -40,17 +40,23 @@ const EXTENDED_TYPES: Record<string, string> = {
   'event_shared': 'events_logs',
   'task_assigned': 'task',
   'event_log': 'events_logs',
+  // Meeting types
+  'meeting_created': 'meeting',
+  'meeting_updated': 'meeting',
+  'meeting_cancelled': 'meeting',
 };
 
 // Organization dashboard route mappings
 const ORG_ROUTES: Record<string, string> = {
   tenant_agreement: '/agreement',
+  meeting: '/organization-calendar',
 };
 
 // Client portal route mappings
 const CLIENT_ROUTES: Record<string, string> = {
   booking: '/appointments',
   appointment: '/appointments',
+  meeting: '/appointments',
   care_plan: '/care-plans',
   task: '/events-logs',
   message: '/messages',
@@ -73,6 +79,7 @@ const CLIENT_ROUTES: Record<string, string> = {
 const CARER_ROUTES: Record<string, string> = {
   booking: '/appointments',
   appointment: '/appointments',
+  meeting: '/appointments',
   care_plan: '/careplans',
   task: '/events-logs',
   message: '/messages',
@@ -255,6 +262,12 @@ export const storeDeepLinkData = (notification: Notification): void => {
       sessionStorage.setItem('openAppointmentId', data.appointment_id);
     }
   }
+  // Handle meeting types
+  else if (effectiveType === 'meeting') {
+    if (data.meeting_id) {
+      sessionStorage.setItem('openMeetingId', data.meeting_id);
+    }
+  }
   // Handle service_report types
   else if (effectiveType === 'service_report') {
     if (data.report_id) {
@@ -311,6 +324,7 @@ export const clearDeepLinkData = (): void => {
     'openLeaveRequestId',
     'openBookingId',
     'openAppointmentId',
+    'openMeetingId',
     'openServiceReportId',
     'openMedicationId',
     'openPaymentId',

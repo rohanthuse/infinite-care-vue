@@ -51,6 +51,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <FileText className={cn(iconClass, 'text-purple-500')} />;
       }
       
+      // Check for meeting type from data.notification_type
+      if (dataNotificationType?.startsWith('meeting_')) {
+        return <Calendar className={cn(iconClass, 'text-purple-500')} />;
+      }
+      
       switch (type) {
         case 'booking':
         case 'appointment':
@@ -173,6 +178,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             navigate(`/branch-dashboard/${branchId}/${branchName}/library`);
           } else if (effectiveType === 'training') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/training`);
+          } else if (effectiveType === 'meeting') {
+            // Navigate to organization calendar for meeting notifications
+            const meetingId = (notification.data as any)?.meeting_id;
+            navigate(`/branch-dashboard/${branchId}/${branchName}/organization-calendar${meetingId ? `?meeting=${meetingId}` : ''}`);
           }
         }
         return;
