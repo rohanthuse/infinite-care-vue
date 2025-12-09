@@ -265,8 +265,13 @@ export function ClientScheduleCalendar({
           });
         });
         
-        // Calculate total hours for the week
-        const totalWeekHours = clientBookings.reduce((sum, b) => {
+        // Calculate total hours for the week (accounting for multiple carers)
+        // Group bookings by time slot to identify multi-carer scenarios
+        const weekGrouped = groupBookingsByTimeSlot(clientBookings);
+        let totalWeekHours = 0;
+        
+        weekGrouped.forEach((bookingsInSlot) => {
+          const b = bookingsInSlot[0];
           const [startH, startM] = b.startTime.split(':').map(Number);
           const [endH, endM] = b.endTime.split(':').map(Number);
           let durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
@@ -275,8 +280,9 @@ export function ClientScheduleCalendar({
             durationMinutes += 1440; // Add 24 hours
           }
           const duration = durationMinutes / 60;
-          return sum + duration;
-        }, 0);
+          const carerCount = bookingsInSlot.length; // Number of carers = number of booking records
+          totalWeekHours += duration * carerCount;
+        });
         
         return {
           id: client.id,
@@ -399,7 +405,9 @@ export function ClientScheduleCalendar({
             });
             
             // Update total hours calculation to use the portion on THIS day only
-            totalCareHours += minutesUntilMidnight / 60;
+            // Multiply by number of carers assigned
+            const carerCount = (booking as any).allCarerIds?.length || bookingGroup.length;
+            totalCareHours += (minutesUntilMidnight / 60) * carerCount;
             
           } else {
             // Normal booking (doesn't cross midnight)
@@ -428,7 +436,9 @@ export function ClientScheduleCalendar({
               }
             });
             
-            totalCareHours += durationMinutes / 60;
+            // Multiply by number of carers assigned
+            const carerCount = (booking as any).allCarerIds?.length || bookingGroup.length;
+            totalCareHours += (durationMinutes / 60) * carerCount;
           }
         });
 
