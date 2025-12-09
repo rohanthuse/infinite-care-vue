@@ -48,7 +48,7 @@ export const useCarerTraining = () => {
   const { data: carerProfile } = useCarerProfile();
 
   const { data: trainingRecords = [], isLoading, error } = useQuery({
-    queryKey: ['carer-training', carerProfile?.id],
+    queryKey: ['carer-training', carerProfile?.id, carerProfile?.branch_id],
     queryFn: async () => {
       if (!carerProfile?.id || !carerProfile?.branch_id) {
         throw new Error('Carer profile not found');
