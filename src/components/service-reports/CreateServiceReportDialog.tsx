@@ -5,21 +5,17 @@ import * as z from 'zod';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
-import { useClientCompletedBookings } from '@/hooks/useClientCompletedBookings';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
-import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Target, Circle, Loader2, User, PenTool } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -27,8 +23,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
 import { useVisitVitals } from '@/hooks/useVisitVitals';
-import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
-import { useClientActivities } from '@/hooks/useClientActivities';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
 import { NEWS2Display } from './view-report/NEWS2Display';
@@ -36,6 +30,9 @@ import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -67,7 +64,14 @@ interface CreateServiceReportDialogProps {
 }
 
 const moodOptions = [
-  'Happy', 'Content', 'Neutral', 'Anxious', 'Sad', 'Confused', 'Agitated', 'Calm'
+  { value: 'Happy', emoji: '😊' },
+  { value: 'Content', emoji: '😌' },
+  { value: 'Neutral', emoji: '😐' },
+  { value: 'Anxious', emoji: '😰' },
+  { value: 'Sad', emoji: '😢' },
+  { value: 'Confused', emoji: '😕' },
+  { value: 'Agitated', emoji: '😠' },
+  { value: 'Calm', emoji: '😇' },
 ];
 
 const engagementOptions = [
@@ -88,8 +92,6 @@ export function CreateServiceReportDialog({
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
   const updateServiceReport = useUpdateServiceReport();
-  const [newTask, setNewTask] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedications = [] } = useQuery({
@@ -117,7 +119,7 @@ export function CreateServiceReportDialog({
       
       const { data, error } = await supabase
         .from('visit_records')
-        .select('visit_start_time, visit_end_time, status')
+        .select('*')
         .eq('id', visitRecordId)
         .single();
 
@@ -140,41 +142,13 @@ export function CreateServiceReportDialog({
 
   // Fetch visit vitals (NEWS2 readings)
   const { 
-    vitals: visitVitals = [], 
     news2Readings = [], 
     latestNEWS2,
     otherVitals = [],
     isLoading: isLoadingVitals 
   } = useVisitVitals(visitRecordId);
 
-  // Fetch care plan ID for the client
-  const { data: carePlanData } = useQuery({
-    queryKey: ['client-care-plan', preSelectedBooking?.client_id],
-    queryFn: async () => {
-      if (!preSelectedBooking?.client_id) return null;
-      
-      const { data, error } = await supabase
-        .from('client_care_plans')
-        .select('id, auto_save_data')
-        .eq('client_id', preSelectedBooking.client_id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!preSelectedBooking?.client_id && open,
-  });
-
-  // Fetch care plan goals
-  const { data: carePlanGoals = [] } = useCarePlanGoals(carePlanData?.id || '');
-
-  // Fetch client activities
-  const { data: clientActivities = [] } = useClientActivities(carePlanData?.id || '');
-
-  // Fetch visit record with full details including signatures and notes
+  // Fetch full visit record with signatures
   const { data: fullVisitRecord } = useQuery({
     queryKey: ['full-visit-record', visitRecordId],
     queryFn: async () => {
@@ -206,8 +180,6 @@ export function CreateServiceReportDialog({
     },
   });
 
-
-
   // Populate form with existing report data when editing
   React.useEffect(() => {
     if (mode === 'edit' && existingReport && open) {
@@ -224,24 +196,6 @@ export function CreateServiceReportDialog({
       });
     }
   }, [mode, existingReport, open, form]);
-  
-  const selectedClientId = form.watch('client_id');
-  const { data: completedBookings = [] } = useClientCompletedBookings(
-    preSelectedClient?.id || selectedClientId
-  );
-
-  const handleAddTask = () => {
-    if (newTask.trim()) {
-      const current = form.getValues('tasks_completed') || [];
-      form.setValue('tasks_completed', [...current, newTask.trim()]);
-      setNewTask('');
-    }
-  };
-
-  const handleRemoveTask = (index: number) => {
-    const current = form.getValues('tasks_completed') || [];
-    form.setValue('tasks_completed', current.filter((_, i) => i !== index));
-  };
 
   const onSubmit = async (data: FormData) => {
     if (!carerContext?.staffProfile?.id || !carerContext?.staffProfile?.branch_id || !data.client_id) {
@@ -275,7 +229,6 @@ export function CreateServiceReportDialog({
     };
 
     if (mode === 'edit' && existingReport) {
-      // Update existing report - keep approved status
       updateServiceReport.mutate({
         id: existingReport.id,
         updates: {
@@ -291,7 +244,6 @@ export function CreateServiceReportDialog({
         },
       });
     } else {
-      // Create new report
       createServiceReport.mutate(reportData, {
         onSuccess: () => {
           onOpenChange(false);
@@ -301,727 +253,454 @@ export function CreateServiceReportDialog({
     }
   };
 
-  const tasksCompleted = form.watch('tasks_completed') || [];
+  // Get client and carer names
+  const clientName = existingReport?.clients 
+    ? `${existingReport.clients.first_name} ${existingReport.clients.last_name}`
+    : preSelectedClient?.name || 'Client';
+  
+  const carerName = existingReport?.staff 
+    ? `${existingReport.staff.first_name} ${existingReport.staff.last_name}`
+    : carerContext?.staffProfile 
+      ? `${carerContext.staffProfile.first_name} ${carerContext.staffProfile.last_name}`
+      : 'Carer';
+
+  const clientInitials = clientName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Get service date and duration
+  const serviceDate = existingReport?.service_date || (preSelectedBooking ? format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
+  const serviceDuration = existingReport?.service_duration_minutes || (preSelectedBooking 
+    ? Math.round((new Date(preSelectedBooking.end_time).getTime() - new Date(preSelectedBooking.start_time).getTime()) / 60000)
+    : 60);
+
+  const isDataLoading = isLoadingTasks || isLoadingVitals;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {mode === 'edit' ? (
-              <>Edit Service Report{preSelectedClient ? ` for ${preSelectedClient.name}` : ''}</>
-            ) : preSelectedClient ? (
-              <>Create Service Report for {preSelectedClient.name}</>
-            ) : (
-              <>Create Service Report</>
-            )}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'edit' 
-              ? 'Update your service report and resubmit for admin review.'
-              : 'Complete this report after providing care services to the client.'
-            }
-          </DialogDescription>
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <div className="flex items-start gap-4">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={existingReport?.clients?.avatar_url} />
+              <AvatarFallback>{clientInitials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <DialogTitle className="text-2xl">
+                {mode === 'edit' ? 'Edit Service Report' : 'Create Service Report'}: {clientName}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  Carer: {carerName}
+                </Badge>
+                <Badge variant="default" className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  APPROVED
+                </Badge>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 px-6 space-y-6 pb-6">
-          {/* Booking Details Summary */}
-          {preSelectedBooking && (
-          <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                Appointment Details
-              </h3>
-            </div>
-            
-            {/* Scheduled Times Section */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">
-                Scheduled
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Date */}
-                <div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Date</p>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      {format(new Date(preSelectedBooking.start_time), 'MMM dd, yyyy')}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Scheduled Time */}
-                <div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Time</p>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      {format(new Date(preSelectedBooking.start_time), 'HH:mm')} - {format(new Date(preSelectedBooking.end_time), 'HH:mm')}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Duration */}
-                <div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Duration</p>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    {Math.round(
-                      (new Date(preSelectedBooking.end_time).getTime() - new Date(preSelectedBooking.start_time).getTime()) / 60000
-                    )} minutes
-                  </p>
-                </div>
-                
-                {/* Booked Service */}
-                <div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Booked Service</p>
-                  <Badge variant="default" className="text-xs">
-                    {preSelectedBooking.service_name || 'General Service'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Actual Visit Times Section */}
-            {visitRecord && visitRecord.visit_start_time && visitRecord.visit_end_time && (
-              <div className="pt-3 border-t border-blue-200 dark:border-blue-700 space-y-3">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">
-                  Actual Visit Times
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* Actual Start Time */}
-                  <div>
-                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Actual Start</p>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-green-600" />
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                        {format(new Date(visitRecord.visit_start_time), 'HH:mm')}
-                      </p>
+        <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+              
+              {/* Loading State */}
+              {isDataLoading && visitRecordId && (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading visit details...</span>
                     </div>
-                  </div>
-                  
-                  {/* Actual End Time */}
-                  <div>
-                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Actual End</p>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-green-600" />
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                        {format(new Date(visitRecord.visit_end_time), 'HH:mm')}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Total Duration (Actual) */}
-                  <div>
-                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Total Duration</p>
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                      {Math.round(
-                        (new Date(visitRecord.visit_end_time).getTime() - 
-                         new Date(visitRecord.visit_start_time).getTime()) / 60000
-                      )} minutes
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Booking Notes Section */}
-            {preSelectedBooking.notes && (
-              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">
-                  Booking Notes
-                </p>
-                <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap">
-                  {preSelectedBooking.notes}
-                </p>
-              </div>
-            )}
-            
-            {/* Client Contact Info */}
-            {preSelectedBooking.clients && (
-              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
-                  Client Contact
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {preSelectedBooking.clients.phone && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-blue-600">📞</span>
-                      <span className="text-blue-900 dark:text-blue-100">
-                        {preSelectedBooking.clients.phone}
-                      </span>
-                    </div>
-                  )}
-                  {preSelectedBooking.clients.email && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-blue-600">✉️</span>
-                      <span className="text-blue-900 dark:text-blue-100 truncate">
-                        {preSelectedBooking.clients.email}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Visit Details Summary Section */}
-        <div className="space-y-4 p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-purple-600" />
-            <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
-              Visit Details Summary
-            </h3>
-            <Badge variant="outline" className="ml-auto">
-              {visitRecordId ? (
-                <>
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Auto-populated from visit
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  No visit record
-                </>
+                  </CardContent>
+                </Card>
               )}
-            </Badge>
-            {visitRecordId && (isLoadingTasks || isLoadingVitals) && (
-              <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
-            )}
-          </div>
 
-          {/* Loading indicator */}
-          {visitRecordId && (isLoadingTasks || isLoadingVitals) && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              <p className="ml-3 text-sm text-muted-foreground">Loading visit details...</p>
-            </div>
-          )}
-
-          {/* Show content if visitRecordId exists, otherwise show helpful message */}
-          {!visitRecordId ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="h-16 w-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium mb-2">No Visit Record Found</p>
-              <p className="text-sm max-w-md mx-auto">
-                This appointment doesn't have an associated visit record yet. 
-                Visit records are created when a carer starts and completes a visit through the mobile app.
-              </p>
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700 max-w-md mx-auto">
-                <p className="text-xs text-left">
-                  <strong>Note:</strong> You can still create a service report manually by filling out the form below. 
-                  The Visit Details Summary will be available for visits that were tracked through the system.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <ScrollArea className="h-[350px] md:h-[400px] lg:h-[450px] w-full pr-4">
-              <div className="space-y-6">
-                
-                {/* 1. Care Tasks & Assigned Tasks - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <ClipboardList className="h-4 w-4" />
-                      Tasks Completed ({visitTasks?.filter(t => t.is_completed).length || 0}/{visitTasks?.length || 0})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {visitTasks && visitTasks.length > 0 ? (
-                      <TasksTable tasks={visitTasks} />
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No tasks recorded for this visit</p>
+              {/* Visit Summary Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Visit Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Service Date</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {formatSafeDate(serviceDate, 'PPP')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Duration</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {serviceDuration} minutes
+                      </p>
+                    </div>
+                    {visitRecord?.visit_start_time && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Start Time</p>
+                        <p className="font-medium">
+                          {formatSafeDate(visitRecord.visit_start_time, 'p')}
+                        </p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-
-                {/* 2. Medications - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Pill className="h-4 w-4" />
-                      Medications ({visitMedications?.filter(m => m.is_administered).length || 0} administered)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {visitMedications && visitMedications.length > 0 ? (
-                      <MedicationsTable medications={visitMedications} />
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No medications recorded for this visit</p>
+                    {visitRecord?.visit_end_time && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">End Time</p>
+                        <p className="font-medium">
+                          {formatSafeDate(visitRecord.visit_end_time, 'p')}
+                        </p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-
-                {/* 3. NEWS2 & Vital Signs - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Activity className="h-4 w-4" />
-                      Vital Signs ({news2Readings?.length || 0} NEWS2 readings, {otherVitals?.length || 0} other vitals)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
-                      <NEWS2Display 
-                        news2Readings={news2Readings} 
-                        latestNEWS2={latestNEWS2}
-                        otherVitals={otherVitals}
-                      />
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No vital signs recorded for this visit</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 4. Events & Incidents - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <AlertTriangle className="h-4 w-4" />
-                      Events & Incidents ({visitEvents?.length || 0} recorded)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {visitEvents && visitEvents.length > 0 ? (
-                      <EventsList 
-                        incidents={incidents}
-                        accidents={accidents}
-                        observations={observations}
-                      />
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No events or incidents recorded for this visit</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 5. Care Plan Goals - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Target className="h-4 w-4" />
-                      Care Plan Goals ({carePlanGoals?.filter(g => g.status === 'completed' || g.status === 'achieved').length || 0} completed)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {carePlanGoals && carePlanGoals.length > 0 ? (
-                      <div className="space-y-3">
-                        {carePlanGoals.map((goal) => (
-                          <div key={goal.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                            <div className="flex-shrink-0 mt-1">
-                              {goal.status === 'completed' || goal.status === 'achieved' ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              ) : goal.status === 'in-progress' || goal.status === 'in_progress' ? (
-                                <Circle className="h-5 w-5 text-blue-600" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-gray-400" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{goal.description}</p>
-                              {goal.measurable_outcome && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Target: {goal.measurable_outcome}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {goal.status}
-                                </Badge>
-                                {goal.progress !== undefined && goal.progress !== null && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {goal.progress}% complete
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <Target className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No care plan goals for this client</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 6. Client Activities - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Calendar className="h-4 w-4" />
-                      Client Activities ({clientActivities?.filter(a => a.status === 'completed').length || 0} completed)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {clientActivities && clientActivities.length > 0 ? (
-                      <div className="space-y-2">
-                        {clientActivities.map((activity) => (
-                          <div key={activity.id} className="flex items-center justify-between p-2 border rounded">
-                            <div>
-                              <p className="font-medium text-sm">{activity.name}</p>
-                              {activity.description && (
-                                <p className="text-xs text-muted-foreground">{activity.description}</p>
-                              )}
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {activity.frequency}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No activities recorded for this client</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 7. Visit Notes / Carer Notes - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <FileText className="h-4 w-4" />
-                      Visit Notes / Carer Notes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {fullVisitRecord?.visit_notes ? (
-                      <div className="p-3 bg-muted rounded border">
-                        <p className="text-sm whitespace-pre-wrap">{fullVisitRecord.visit_notes}</p>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <FileText className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No notes recorded during this visit</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 8. Care Plan Information - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <User className="h-4 w-4" />
-                      Care Plan Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {carePlanData?.auto_save_data && typeof carePlanData.auto_save_data === 'object' && 'personalInfo' in carePlanData.auto_save_data ? (
-                      <div className="space-y-2 text-sm">
-                        {(carePlanData.auto_save_data as any).personalInfo?.preferred_name && (
-                          <div className="flex justify-between py-1 border-b">
-                            <span className="text-muted-foreground">Preferred Name:</span>
-                            <span className="font-medium">{(carePlanData.auto_save_data as any).personalInfo.preferred_name}</span>
-                          </div>
-                        )}
-                        {(carePlanData.auto_save_data as any).personalInfo?.communication_preferences && (
-                          <div className="flex justify-between py-1 border-b">
-                            <span className="text-muted-foreground">Communication:</span>
-                            <span className="font-medium">{(carePlanData.auto_save_data as any).personalInfo.communication_preferences}</span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <User className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No care plan information available</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 9. Sign-Off Details - ALWAYS SHOW */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <PenTool className="h-4 w-4" />
-                      Sign-Off Details (Signatures)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(fullVisitRecord?.staff_signature_data || fullVisitRecord?.client_signature_data) ? (
-                      <SignatureDisplay
-                        carerSignature={fullVisitRecord.staff_signature_data}
-                        carerName={preSelectedBooking?.staff_name || 'Carer'}
-                        clientSignature={fullVisitRecord.client_signature_data}
-                        clientName={preSelectedBooking?.client_name || 'Client'}
-                      />
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <PenTool className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">Visit not signed off yet</p>
-                        <p className="text-xs mt-1">Signatures will appear after visit completion and sign-off</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-              </div>
-            </ScrollArea>
-          )}
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Client Information */}
-            {preSelectedClient && !preSelectedBooking && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium">Client: {preSelectedClient.name}</p>
-              </div>
-            )}
-
-            {/* Booking Selection */}
-            {preSelectedClient && completedBookings.length > 0 && !preSelectedBooking && (
-              <FormField
-                control={form.control}
-                name="booking_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Link to Completed Booking (Optional)</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const booking = completedBookings.find(b => b.id === value);
-                        if (booking) {
-                          setSelectedBooking(booking);
-                        }
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a completed booking (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {completedBookings.map((booking: any) => (
-                          <SelectItem key={booking.id} value={booking.id}>
-                            {format(new Date(booking.start_time), 'MMM dd, yyyy HH:mm')} - 
-                            {booking.services?.title || 'Service'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Link this report to a specific completed booking. This will auto-fill date and duration.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {selectedBooking && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">Booking Linked</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      Service details have been auto-filled from the selected booking.
-                    </p>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* Tasks Completed */}
-            <div className="space-y-4">
-              <FormLabel>Specific Tasks Completed (Optional)</FormLabel>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add task completed..."
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTask())}
-                />
-                <Button type="button" onClick={handleAddTask} size="icon">
-                  <Plus className="h-4 w-4" />
+                  <Separator />
+
+                  {/* Services Provided */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Services Provided</p>
+                    <div className="flex flex-wrap gap-2">
+                      {existingReport?.services_provided?.length > 0 ? (
+                        existingReport.services_provided.map((service: string, index: number) => (
+                          <Badge key={index} variant="secondary">
+                            {service}
+                          </Badge>
+                        ))
+                      ) : preSelectedBooking?.service_name ? (
+                        <Badge variant="secondary">{preSelectedBooking.service_name}</Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No services recorded</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Visit Summary Text */}
+                  {visitRecord?.visit_summary && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Visit Summary</p>
+                      <p className="text-sm bg-muted/50 p-3 rounded-md">
+                        {visitRecord.visit_summary}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Task Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5" />
+                    Task Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {visitTasks && visitTasks.length > 0 ? (
+                    <TasksTable tasks={visitTasks} />
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No tasks recorded for this visit</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Medication Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Pill className="h-5 w-5" />
+                    Medication Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {visitMedications && visitMedications.length > 0 ? (
+                    <MedicationsTable medications={visitMedications} />
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No medications recorded for this visit</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* NEWS2 & Vital Signs Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="h-5 w-5" />
+                    NEWS2 & Vital Signs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
+                    <NEWS2Display 
+                      news2Readings={news2Readings} 
+                      latestNEWS2={latestNEWS2}
+                      otherVitals={otherVitals}
+                    />
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No vital signs recorded for this visit</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Events & Incidents Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Events & Incidents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {visitEvents && visitEvents.length > 0 ? (
+                    <EventsList 
+                      incidents={incidents}
+                      accidents={accidents}
+                      observations={observations}
+                    />
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No events or incidents recorded for this visit</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Client Mood & Engagement Card - Editable */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Smile className="h-5 w-5" />
+                    Client Mood & Engagement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="client_mood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Mood <span className="text-destructive">*</span></FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select mood" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {moodOptions.map((mood) => (
+                                <SelectItem key={mood.value} value={mood.value}>
+                                  {mood.emoji} {mood.value}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="client_engagement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Engagement <span className="text-destructive">*</span></FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select engagement level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {engagementOptions.map((engagement) => (
+                                <SelectItem key={engagement} value={engagement}>
+                                  {engagement}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="activities_undertaken"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Activities Undertaken</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe any activities, exercises, or social interactions..."
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Visit Notes Card - Editable */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Visit Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="carer_observations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carer Observations <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Your professional observations about the client's condition, progress, concerns..."
+                            {...field}
+                            className="min-h-[100px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="client_feedback"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client Feedback</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any feedback or comments from the client..."
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="next_visit_preparations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Next Visit Preparations</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any special preparations, supplies needed, or items to follow up on..."
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Signatures Card - Read Only */}
+              {(fullVisitRecord?.staff_signature_data || fullVisitRecord?.client_signature_data) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PenTool className="h-5 w-5" />
+                      Signatures
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SignatureDisplay
+                      carerSignature={fullVisitRecord?.staff_signature_data}
+                      carerName={carerName}
+                      clientSignature={fullVisitRecord?.client_signature_data}
+                      clientName={clientName}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Report Metadata Card */}
+              {mode === 'edit' && existingReport && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Report Created</p>
+                        <p className="font-medium">
+                          {formatSafeDate(existingReport.created_at, 'PPp')}
+                        </p>
+                      </div>
+                      {existingReport.updated_at && formatSafeDate(existingReport.updated_at, 'PPp') !== 'N/A' && (
+                        <div>
+                          <p className="text-muted-foreground">Last Updated</p>
+                          <p className="font-medium">
+                            {formatSafeDate(existingReport.updated_at, 'PPp')}
+                          </p>
+                        </div>
+                      )}
+                      {existingReport.reviewed_at && formatSafeDate(existingReport.reviewed_at, 'PPp') !== 'N/A' && (
+                        <div>
+                          <p className="text-muted-foreground">Reviewed At</p>
+                          <p className="font-medium">
+                            {formatSafeDate(existingReport.reviewed_at, 'PPp')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Submit Buttons */}
+              <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-background pb-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createServiceReport.isPending || updateServiceReport.isPending}>
+                  {mode === 'edit' 
+                    ? (updateServiceReport.isPending ? 'Updating...' : 'Update Report')
+                    : (createServiceReport.isPending ? 'Saving...' : 'Save Report')
+                  }
                 </Button>
               </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {tasksCompleted.map((task, index) => (
-                  <Badge key={index} variant="outline" className="flex items-center gap-1">
-                    {task}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTask(index)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Client Assessment */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="client_mood"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client Mood</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select mood" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {moodOptions.map((mood) => (
-                          <SelectItem key={mood} value={mood}>
-                            {mood}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="client_engagement"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client Engagement</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select engagement level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {engagementOptions.map((engagement) => (
-                          <SelectItem key={engagement} value={engagement}>
-                            {engagement}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Activities */}
-            <FormField
-              control={form.control}
-              name="activities_undertaken"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Activities Undertaken</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe any activities, exercises, or social interactions..."
-                      {...field}
-                      rows={3}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Additional Sections */}
-            <FormField
-              control={form.control}
-              name="next_visit_preparations"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Next Visit Preparations</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Any special preparations, supplies needed, or items to follow up on..."
-                      {...field}
-                      rows={2}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="carer_observations"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Carer Observations *</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Your professional observations about the client's condition, progress, concerns..."
-                      {...field}
-                      rows={4}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="client_feedback"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client Feedback</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Any feedback or comments from the client..."
-                      {...field}
-                      rows={2}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Submit Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createServiceReport.isPending || updateServiceReport.isPending}>
-                {mode === 'edit' 
-                  ? (updateServiceReport.isPending ? 'Resubmitting...' : 'Update & Resubmit')
-                  : (createServiceReport.isPending ? 'Submitting...' : 'Submit Report')
-                }
-              </Button>
-            </div>
-          </form>
-        </Form>
-        </div>
+            </form>
+          </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
