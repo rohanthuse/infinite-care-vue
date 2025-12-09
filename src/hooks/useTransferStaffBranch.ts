@@ -134,16 +134,41 @@ export const useTransferStaffBranch = () => {
       };
     },
     onSuccess: (result, params) => {
+      // Clear all carer-related localStorage caches to force fresh data
+      const keysToRemove = [
+        'carerProfile',
+        'carerName',
+        'carerBranch',
+        'carerId',
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // Clear all context caches (for both admin and carer views)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('carerContext-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
       toast.success(`Staff transferred successfully`, {
         description: `${params.staffName} has been transferred to ${params.toBranchName}${result.futureBookingsMoved > 0 ? `. ${result.futureBookingsMoved} future booking(s) moved.` : ''}`,
       });
 
-      // Invalidate all related queries
+      // Invalidate all related queries - comprehensive list for branch transfer
       queryClient.invalidateQueries({ queryKey: ['branch-carers'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-context'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['staffProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-branch'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-working-hours'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-clients'] });
     },
     onError: (error: Error) => {
       console.error('[useTransferStaffBranch] Transfer failed:', error);

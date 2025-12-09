@@ -2,6 +2,23 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthSafe } from './useAuthSafe';
 
+/**
+ * Utility function to clear carer context cache from localStorage
+ * Call this after branch transfers or when carer data needs to be refreshed
+ */
+export const clearCarerContextCache = (userId?: string) => {
+  if (userId) {
+    localStorage.removeItem(`carerContext-${userId}`);
+  } else {
+    // Clear all context caches
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('carerContext-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+};
+
 export interface CarerContextData {
   staffId: string;
   staffProfile: any;
