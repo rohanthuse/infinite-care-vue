@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle } from "lucide-react";
+import { getBookingStatusColor, getBookingStatusLabel, BOOKING_STATUS_COLORS, BookingStatusType } from "../utils/bookingColors";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { BookingValidationAlert } from "../BookingValidationAlert";
 import { BookingOverlapAlert } from "../BookingOverlapAlert";
@@ -82,7 +83,19 @@ const editBookingSchema = z.object({
   staff_ids: z.array(z.string()).optional(),
   assign_later: z.boolean().optional(),
   notes: z.string().optional(),
+  status: z.string().optional(),
 });
+
+// Available booking statuses for manual selection
+const BOOKING_STATUSES = [
+  { value: 'assigned', label: 'Assigned', colorClass: 'bg-green-500' },
+  { value: 'unassigned', label: 'Unassigned', colorClass: 'bg-amber-500' },
+  { value: 'in-progress', label: 'In Progress', colorClass: 'bg-purple-500' },
+  { value: 'done', label: 'Done', colorClass: 'bg-blue-500' },
+  { value: 'cancelled', label: 'Cancelled', colorClass: 'bg-red-500' },
+  { value: 'departed', label: 'Departed', colorClass: 'bg-teal-500' },
+  { value: 'suspended', label: 'Suspended', colorClass: 'bg-gray-500' },
+] as const;
 
 type EditBookingFormData = z.infer<typeof editBookingSchema>;
 
@@ -151,20 +164,27 @@ export function EditBookingDialog({
       staff_ids: [],
       assign_later: false,
       notes: "",
+      status: "",
     },
   });
 
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
 
-  // Calculate predicted status based on staff_ids selection
+  // Calculate predicted status based on manual selection or staff_ids
   const predictedStatus = useMemo(() => {
+    const manualStatus = form.watch('status');
     const selectedStaffIds = form.watch('staff_ids') || [];
     const assignLater = form.watch('assign_later');
     
+    // If manual status is set to something other than assigned/unassigned, use it
+    if (manualStatus && manualStatus !== 'assigned' && manualStatus !== 'unassigned') {
+      return manualStatus;
+    }
+    
     if (assignLater) return 'unassigned';
     return selectedStaffIds.length > 0 ? 'assigned' : 'unassigned';
-  }, [form.watch('staff_ids'), form.watch('assign_later')]);
+  }, [form.watch('status'), form.watch('staff_ids'), form.watch('assign_later')]);
 
   // Get current status from booking
   const currentStatus = booking?.status || 'unassigned';
@@ -327,6 +347,7 @@ export function EditBookingDialog({
       
       form.setValue("service_ids", serviceIdsToSet);
       form.setValue("notes", booking.notes || "");
+      form.setValue("status", booking.status || "assigned");
       
       console.log('[EditBookingDialog] Form initialized:', {
         bookingId: booking.id,
@@ -434,12 +455,16 @@ export function EditBookingDialog({
       
       // Common booking data - use first service_id for backwards compatibility
       const primaryServiceId = data.service_ids?.[0] || null;
+      
+      // Determine final status: use manual selection if set, otherwise auto-calculate
+      const finalStatus = data.status || (newStaffIds.length > 0 ? 'assigned' : 'unassigned');
+      
       const commonUpdates = {
         start_time: start.toISOString(),
         end_time: end.toISOString(),
         service_id: primaryServiceId,
         notes: data.notes,
-        status: newStaffIds.length > 0 ? 'assigned' : 'unassigned',
+        status: finalStatus,
         reschedule_request_status: null,
         cancellation_request_status: null,
       };
@@ -938,6 +963,54 @@ export function EditBookingDialog({
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Manual Status Selection */}
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Booking Status
+                        {field.value && (
+                          <Badge 
+                            variant="custom" 
+                            className={cn(
+                              "text-xs",
+                              getBookingStatusColor(field.value, 'light')
+                            )}
+                          >
+                            {getBookingStatusLabel(field.value)}
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {BOOKING_STATUSES.map((status) => (
+                            <SelectItem key={status.value} value={status.value}>
+                              <div className="flex items-center gap-2">
+                                <Circle className={cn("h-2 w-2 fill-current", status.colorClass, "text-transparent")} />
+                                <span>{status.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Manually override the booking status. Changes will sync across the entire system.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
