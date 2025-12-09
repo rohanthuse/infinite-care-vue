@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,18 +9,21 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
-import { useUpdateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useUpdateClientRateSchedule, useClientAccountingSettings } from '@/hooks/useClientAccounting';
 import { 
   ClientRateSchedule,
   rateCategoryLabels,
   payBasedOnLabels,
-  chargeTypeLabels,
-  dayLabels
+  dayLabels,
+  servicePayerLabels,
+  authorityCategoryLabels
 } from '@/types/clientAccounting';
 
 const editRateScheduleSchema = z.object({
-  authority_type: z.string().min(1, 'Authority type is required'),
   service_type_codes: z.array(z.string()).default([]),
   start_date: createDateValidation('Start date'),
   end_date: z.string().optional(),
@@ -34,22 +37,28 @@ const editRateScheduleSchema = z.object({
     'rate_per_hour', 'rate_per_minutes_pro_rata', 
     'rate_per_minutes_flat_rate', 'daily_flat_rate'
   ]).default('hourly_rate'),
-  base_rate: z.number().optional(),
-  rate_15_minutes: z.number().optional(),
-  rate_30_minutes: z.number().optional(),
-  rate_45_minutes: z.number().optional(),
-  rate_60_minutes: z.number().optional(),
-  consecutive_hours_rate: z.number().optional(),
-  bank_holiday_multiplier: z.number().min(1).max(3).default(1)
+  base_rate: z.number().min(0.01, 'Rate is required and must be greater than 0'),
+  bank_holiday_multiplier: z.number().min(1).max(3).default(1),
+  is_vatable: z.boolean().default(false),
+  vat_rate: z.number().min(0, 'VAT rate must be at least 0').max(100, 'VAT rate cannot exceed 100%').optional().default(20)
 }).refine(data => {
-  // Validate base_rate is required when NOT hours_minutes
-  if (data.pay_based_on !== 'hours_minutes') {
-    return data.base_rate && data.base_rate > 0;
+  if (data.time_from && data.time_until) {
+    const start = new Date(`2000-01-01T${data.time_from}`);
+    const end = new Date(`2000-01-01T${data.time_until}`);
+    return start < end;
   }
   return true;
 }, {
-  message: "Base rate is required and must be greater than 0",
-  path: ["base_rate"]
+  message: "Time until must be after time from",
+  path: ["time_until"]
+}).refine(data => {
+  if (data.is_vatable && (data.vat_rate === undefined || data.vat_rate === null)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "VAT rate is required when VATable is selected",
+  path: ["vat_rate"]
 });
 
 type EditRateScheduleFormData = z.infer<typeof editRateScheduleSchema>;
@@ -70,11 +79,12 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
   branchId
 }) => {
   const updateSchedule = useUpdateClientRateSchedule();
+  const { data: accountingSettings } = useClientAccountingSettings(clientId);
+  const [enableBankHolidayMultiplier, setEnableBankHolidayMultiplier] = useState(schedule.bank_holiday_multiplier > 1);
 
   const form = useForm<EditRateScheduleFormData>({
     resolver: zodResolver(editRateScheduleSchema),
     defaultValues: {
-      authority_type: schedule.authority_type,
       service_type_codes: schedule.service_type_codes || [],
       start_date: schedule.start_date,
       end_date: schedule.end_date || '',
@@ -85,21 +95,18 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
       pay_based_on: schedule.pay_based_on,
       charge_type: schedule.charge_type,
       base_rate: schedule.base_rate,
-      rate_15_minutes: schedule.rate_15_minutes || undefined,
-      rate_30_minutes: schedule.rate_30_minutes || undefined,
-      rate_45_minutes: schedule.rate_45_minutes || undefined,
-      rate_60_minutes: schedule.rate_60_minutes || undefined,
-      consecutive_hours_rate: schedule.consecutive_hours_rate || undefined,
-      bank_holiday_multiplier: schedule.bank_holiday_multiplier
+      bank_holiday_multiplier: schedule.bank_holiday_multiplier,
+      is_vatable: schedule.is_vatable || false,
+      vat_rate: schedule.vat_rate || 20
     }
   });
 
-  const selectedChargeType = form.watch('charge_type');
+  const selectedPayBasedOn = form.watch('pay_based_on');
+  const isVatable = form.watch('is_vatable');
 
   useEffect(() => {
     if (open && schedule) {
       form.reset({
-        authority_type: schedule.authority_type,
         service_type_codes: schedule.service_type_codes || [],
         start_date: schedule.start_date,
         end_date: schedule.end_date || '',
@@ -110,21 +117,42 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
         pay_based_on: schedule.pay_based_on,
         charge_type: schedule.charge_type,
         base_rate: schedule.base_rate,
-        rate_15_minutes: schedule.rate_15_minutes || undefined,
-        rate_30_minutes: schedule.rate_30_minutes || undefined,
-        rate_45_minutes: schedule.rate_45_minutes || undefined,
-        rate_60_minutes: schedule.rate_60_minutes || undefined,
-        consecutive_hours_rate: schedule.consecutive_hours_rate || undefined,
-        bank_holiday_multiplier: schedule.bank_holiday_multiplier
+        bank_holiday_multiplier: schedule.bank_holiday_multiplier,
+        is_vatable: schedule.is_vatable || false,
+        vat_rate: schedule.vat_rate || 20
       });
+      setEnableBankHolidayMultiplier(schedule.bank_holiday_multiplier > 1);
     }
   }, [open, schedule, form]);
+
+  // Auto-set charge_type based on pay_based_on
+  useEffect(() => {
+    const currentPayBasedOn = form.getValues('pay_based_on');
+    
+    if (currentPayBasedOn === 'hours_minutes') {
+      form.setValue('charge_type', 'rate_per_hour');
+    } else if (currentPayBasedOn === 'service') {
+      form.setValue('charge_type', 'hourly_rate');
+    } else if (currentPayBasedOn === 'daily_flat_rate') {
+      form.setValue('charge_type', 'daily_flat_rate');
+    }
+  }, [selectedPayBasedOn, form]);
 
   const onSubmit = (data: EditRateScheduleFormData) => {
     updateSchedule.mutate({
       id: schedule.id,
       ...data,
-      base_rate: data.pay_based_on === 'hours_minutes' ? 0 : (data.base_rate || 0),
+      authority_type: accountingSettings?.authority_category || schedule.authority_type,
+      base_rate: data.base_rate || 0,
+      bank_holiday_multiplier: enableBankHolidayMultiplier ? (data.bank_holiday_multiplier || 1) : 1,
+      is_vatable: data.is_vatable,
+      vat_rate: data.is_vatable ? (data.vat_rate || 20) : null,
+      // Clear incremental rates (no longer used)
+      rate_15_minutes: null,
+      rate_30_minutes: null,
+      rate_45_minutes: null,
+      rate_60_minutes: null,
+      consecutive_hours_rate: null
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -141,8 +169,12 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
     }
   };
 
-  const showIncrementalRates = selectedChargeType.includes('rate_per_minutes') || 
-                              selectedChargeType === 'hour_minutes';
+  const getRateLabel = () => {
+    if (selectedPayBasedOn === 'hours_minutes') {
+      return 'Rate Per Hour (£) *';
+    }
+    return 'Base Rate (£) *';
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,34 +188,33 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Client Accounting Info - Auto-populated from settings */}
+            {accountingSettings && (accountingSettings.service_payer || accountingSettings.authority_category) && (
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Client Accounting Settings</h4>
+                <div className="flex flex-wrap gap-4">
+                  {accountingSettings.service_payer && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Who Pays:</span>
+                      <Badge variant="outline">
+                        {servicePayerLabels[accountingSettings.service_payer as keyof typeof servicePayerLabels] || accountingSettings.service_payer}
+                      </Badge>
+                    </div>
+                  )}
+                  {accountingSettings.authority_category && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Authority Category:</span>
+                      <Badge variant="outline">
+                        {authorityCategoryLabels[accountingSettings.authority_category as keyof typeof authorityCategoryLabels] || accountingSettings.authority_category}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="authority_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Authorities *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select authority type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="local_authority">Local Authority</SelectItem>
-                        <SelectItem value="nhs">NHS</SelectItem>
-                        <SelectItem value="insurance">Insurance</SelectItem>
-                        <SelectItem value="charity">Charity</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="start_date"
@@ -225,7 +256,7 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
                 render={() => (
                   <FormItem>
                     <FormLabel>Days Covered *</FormLabel>
-                    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                    <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                       {Object.entries(dayLabels).map(([key, label]) => (
                         <FormField
                           key={key}
@@ -240,7 +271,7 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal">
-                                {label.slice(0, 3)}
+                                {key === 'bank_holiday' ? 'Bank Hol' : label.slice(0, 3)}
                               </FormLabel>
                             </FormItem>
                           )}
@@ -289,7 +320,7 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Rate Configuration</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="rate_category"
@@ -339,211 +370,153 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="charge_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Charge Type *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select charge type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(chargeTypeLabels).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="base_rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Base Rate (£) *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Rate Field - Always visible with dynamic label */}
+              <FormField
+                control={form.control}
+                name="base_rate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{getRateLabel()}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0"
+                        placeholder="0.00"
+                        className="max-w-xs"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="bank_holiday_multiplier"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bank Holiday Multiplier</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseFloat(value))} 
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select multiplier" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">1x (Normal Rate)</SelectItem>
-                          <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
-                          <SelectItem value="2">2x (Double Time)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Incremental Rates */}
-              {showIncrementalRates && (
-                <div className="space-y-4">
-                  <h4 className="font-medium">Incremental Rates</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="rate_15_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rate at 15 min (£)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              min="0"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="rate_30_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rate at 30 min (£)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              min="0"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="rate_45_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rate at 45 min (£)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              min="0"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="rate_60_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rate at 60 min (£)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              min="0"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {/* Bank Holiday Multiplier Toggle */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Enable Bank Holiday Multiplier</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Apply a multiplier rate for bank holidays
+                    </p>
                   </div>
-
+                  <Switch 
+                    checked={enableBankHolidayMultiplier}
+                    onCheckedChange={(checked) => {
+                      setEnableBankHolidayMultiplier(checked);
+                      if (!checked) {
+                        form.setValue('bank_holiday_multiplier', 1);
+                      }
+                    }}
+                  />
+                </div>
+                
+                {enableBankHolidayMultiplier && (
                   <FormField
                     control={form.control}
-                    name="consecutive_hours_rate"
+                    name="bank_holiday_multiplier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Consecutive Hours Rate (£)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            min="0"
-                            placeholder="0.00"
-                            className="max-w-xs"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                          />
-                        </FormControl>
+                        <FormLabel>Bank Holiday Multiplier</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseFloat(value))} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="max-w-xs">
+                              <SelectValue placeholder="Select multiplier" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">1x (Normal Rate)</SelectItem>
+                            <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
+                            <SelectItem value="2">2x (Double Time)</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* VAT Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">VAT Configuration</h3>
+              
+              <FormField
+                control={form.control}
+                name="is_vatable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Is this rate VATable? *
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Select whether VAT should be applied to this rate schedule
+                      </div>
+                    </div>
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Button type="button" variant={field.value === false ? "default" : "outline"} size="sm" onClick={() => field.onChange(false)}>
+                          No
+                        </Button>
+                        <Button type="button" variant={field.value === true ? "default" : "outline"} size="sm" onClick={() => field.onChange(true)}>
+                          Yes
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* VAT Rate Input - Shown only when is_vatable = true */}
+              {isVatable && (
+                <FormField
+                  control={form.control}
+                  name="vat_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>VAT Rate (%) *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="20"
+                          className="max-w-xs"
+                          {...field}
+                          value={field.value ?? 20}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Enter the VAT percentage (e.g., 20 for 20%)
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button 
-                type="button" 
-                variant="destructive" 
-                onClick={() => onOpenChange(false)}
-              >
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={updateSchedule.isPending}
-                className="bg-success text-success-foreground hover:bg-success/90"
-              >
-                {updateSchedule.isPending ? 'Updating...' : 'Update'}
+              <Button type="submit" disabled={updateSchedule.isPending}>
+                {updateSchedule.isPending ? 'Saving...' : 'Update Rate Schedule'}
               </Button>
             </div>
           </form>
