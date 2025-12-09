@@ -13,7 +13,8 @@ export interface ClientAccountingSettings {
   billing_address_same_as_personal: boolean;
   billing_address?: string | null;
   pay_method?: string;
-  rate_type: RateCategory;
+  rate_type?: RateCategory;
+  authority_category?: AuthorityCategory;
   mileage_rule_no_payment: boolean;
   service_payer: ServicePayer;
   created_at: string;
@@ -92,6 +93,8 @@ export type BillingFrequency = 'weekly' | 'fortnightly' | 'monthly' | 'on_demand
 
 export type RateCategory = 'standard' | 'adult' | 'cyp';
 
+export type AuthorityCategory = 'private' | 'local_authority' | 'nhs' | 'insurance' | 'charity' | 'other';
+
 export type ServicePayer = 'authorities' | 'direct_payment' | 'self_funder' | 'other';
 
 export type ChargeBasedOn = 'planned_time' | 'actual_time';
@@ -142,6 +145,15 @@ export const rateCategoryLabels: Record<RateCategory, string> = {
   standard: 'Standard',
   adult: 'Adult',
   cyp: 'CYP (Children & Young People)'
+};
+
+export const authorityCategoryLabels: Record<AuthorityCategory, string> = {
+  private: 'Private',
+  local_authority: 'Local Authority',
+  nhs: 'NHS',
+  insurance: 'Insurance',
+  charity: 'Charity',
+  other: 'Other'
 };
 
 export const servicePayerLabels: Record<ServicePayer, string> = {

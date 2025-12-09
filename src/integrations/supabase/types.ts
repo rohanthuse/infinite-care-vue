@@ -1440,6 +1440,7 @@ export type Database = {
       client_accounting_settings: {
         Row: {
           agreement_type: string | null
+          authority_category: string | null
           billing_address: string | null
           billing_address_same_as_personal: boolean | null
           branch_id: string | null
@@ -1462,6 +1463,7 @@ export type Database = {
         }
         Insert: {
           agreement_type?: string | null
+          authority_category?: string | null
           billing_address?: string | null
           billing_address_same_as_personal?: boolean | null
           branch_id?: string | null
@@ -1484,6 +1486,7 @@ export type Database = {
         }
         Update: {
           agreement_type?: string | null
+          authority_category?: string | null
           billing_address?: string | null
           billing_address_same_as_personal?: boolean | null
           branch_id?: string | null
