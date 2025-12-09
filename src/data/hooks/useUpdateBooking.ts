@@ -1,10 +1,16 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notifyBookingUpdated } from "@/utils/bookingNotifications";
 
 interface UpdateBookingPayload {
   bookingId: string;
+  previousData?: {
+    staff_id?: string;
+    start_time?: string;
+    end_time?: string;
+    status?: string;
+  };
   updatedData: Partial<{
     client_id: string;
     staff_id: string;
@@ -40,8 +46,69 @@ export function useUpdateBooking(branchId?: string) {
 
   return useMutation({
     mutationFn: updateBooking,
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       console.log('[useUpdateBooking] Successfully updated booking:', data.id);
+      
+      // Detect what changed for notifications
+      const changes: {
+        staffChanged?: { oldStaffId?: string; newStaffId?: string };
+        timeChanged?: boolean;
+        statusChanged?: { oldStatus?: string; newStatus?: string };
+      } = {};
+
+      const prev = variables.previousData;
+      if (prev) {
+        // Check if staff changed
+        if (prev.staff_id !== data.staff_id) {
+          changes.staffChanged = {
+            oldStaffId: prev.staff_id,
+            newStaffId: data.staff_id,
+          };
+        }
+
+        // Check if time changed
+        if (prev.start_time !== data.start_time || prev.end_time !== data.end_time) {
+          changes.timeChanged = true;
+        }
+
+        // Check if status changed
+        if (prev.status !== data.status) {
+          changes.statusChanged = {
+            oldStatus: prev.status,
+            newStatus: data.status,
+          };
+        }
+      }
+
+      // Send notifications if there are changes
+      if (Object.keys(changes).length > 0) {
+        // Get client name for notifications
+        let clientName: string | undefined;
+        if (data.client_id) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('first_name, last_name')
+            .eq('id', data.client_id)
+            .single();
+          if (client) {
+            clientName = `${client.first_name} ${client.last_name}`;
+          }
+        }
+
+        await notifyBookingUpdated({
+          booking: {
+            bookingId: data.id,
+            branchId: data.branch_id || branchId || '',
+            organizationId: data.organization_id,
+            clientId: data.client_id,
+            staffId: data.staff_id,
+            clientName,
+            startTime: data.start_time,
+            notificationType: 'booking_updated',
+          },
+          changes,
+        });
+      }
       
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });

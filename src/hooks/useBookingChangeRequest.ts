@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { notifyAdminsBookingChangeRequest } from '@/utils/bookingNotifications';
 
 interface SubmitCancellationRequestParams {
   bookingId: string;
@@ -73,25 +74,15 @@ export function useSubmitCancellationRequest() {
         throw bookingError;
       }
 
-      // Create notification for admin
-      await supabase
-        .from('notifications')
-        .insert({
-          title: '🔴 New Cancellation Request',
-          message: `New cancellation request received from client`,
-          type: 'booking',
-          category: 'info',
-          priority: 'high',
-          branch_id: params.branchId,
-          organization_id: params.organizationId,
-          user_id: params.clientId,
-          data: {
-            booking_id: params.bookingId,
-            client_id: params.clientId,
-            request_type: 'cancellation',
-            request_id: request.id
-          }
-        });
+      // Create notification for branch admins (not client)
+      await notifyAdminsBookingChangeRequest({
+        branchId: params.branchId,
+        organizationId: params.organizationId,
+        requestType: 'cancellation',
+        bookingId: params.bookingId,
+        clientId: params.clientId,
+        requestId: request.id,
+      });
 
       console.log('[useSubmitCancellationRequest] Success:', request);
       return request;
@@ -172,27 +163,17 @@ export function useSubmitRescheduleRequest() {
         throw bookingError;
       }
 
-      // Create notification for admin
-      await supabase
-        .from('notifications')
-        .insert({
-          title: '🟠 New Reschedule Request',
-          message: `New reschedule request received - Requested date: ${formattedDate} at ${formattedTime}`,
-          type: 'booking',
-          category: 'info',
-          priority: 'high',
-          branch_id: params.branchId,
-          organization_id: params.organizationId,
-          user_id: params.clientId,
-          data: {
-            booking_id: params.bookingId,
-            client_id: params.clientId,
-            request_type: 'reschedule',
-            request_id: request.id,
-            new_date: formattedDate,
-            new_time: formattedTime
-          }
-        });
+      // Create notification for branch admins (not client)
+      await notifyAdminsBookingChangeRequest({
+        branchId: params.branchId,
+        organizationId: params.organizationId,
+        requestType: 'reschedule',
+        bookingId: params.bookingId,
+        clientId: params.clientId,
+        requestId: request.id,
+        newDate: formattedDate,
+        newTime: formattedTime,
+      });
 
       console.log('[useSubmitRescheduleRequest] Success:', request);
       return request;

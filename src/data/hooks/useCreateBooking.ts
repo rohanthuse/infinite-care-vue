@@ -4,6 +4,7 @@ import { checkClientSuspensionForBilling } from "@/services/SuspensionAwareInvoi
 import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
 import { toast } from "@/hooks/use-toast";
 import { createBookingServices } from "@/hooks/useBookingServices";
+import { notifyBookingCreated } from "@/utils/bookingNotifications";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -95,6 +96,43 @@ export async function createBooking(input: CreateBookingInput) {
   
   console.log('[createBooking] ✅ SUCCESS - Booking saved to database:', data);
   console.log('[createBooking] ✅ New booking ID:', data?.id);
+  
+  // Get client name for notifications
+  let clientName: string | undefined;
+  if (input.client_id) {
+    const { data: client } = await supabase
+      .from('clients')
+      .select('first_name, last_name')
+      .eq('id', input.client_id)
+      .single();
+    if (client) {
+      clientName = `${client.first_name} ${client.last_name}`;
+    }
+  }
+
+  // Get organization_id from branch for notifications
+  let organizationId: string | undefined;
+  if (bookingBranchId) {
+    const { data: branch } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', bookingBranchId)
+      .single();
+    organizationId = branch?.organization_id || undefined;
+  }
+
+  // Send notifications for booking creation
+  await notifyBookingCreated({
+    bookingId: data.id,
+    branchId: bookingBranchId,
+    organizationId,
+    clientId: input.client_id,
+    staffId: input.staff_id,
+    clientName,
+    startTime: input.start_time,
+    notificationType: 'booking_created',
+  });
+  
   console.log('[createBooking] ========== BOOKING CREATION END ==========');
   return { ...data, service_ids: serviceIds };
 }
