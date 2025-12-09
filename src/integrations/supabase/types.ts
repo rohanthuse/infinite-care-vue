@@ -7927,6 +7927,70 @@ export type Database = {
           },
         ]
       }
+      staff_branch_transfers: {
+        Row: {
+          created_at: string | null
+          effective_date: string
+          from_branch_id: string | null
+          future_bookings_moved: number | null
+          id: string
+          move_future_bookings: boolean | null
+          staff_id: string
+          to_branch_id: string
+          transfer_notes: string | null
+          transfer_reason: string | null
+          transferred_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          effective_date: string
+          from_branch_id?: string | null
+          future_bookings_moved?: number | null
+          id?: string
+          move_future_bookings?: boolean | null
+          staff_id: string
+          to_branch_id: string
+          transfer_notes?: string | null
+          transfer_reason?: string | null
+          transferred_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          effective_date?: string
+          from_branch_id?: string | null
+          future_bookings_moved?: number | null
+          id?: string
+          move_future_bookings?: boolean | null
+          staff_id?: string
+          to_branch_id?: string
+          transfer_notes?: string | null
+          transfer_reason?: string | null
+          transferred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_branch_transfers_from_branch_id_fkey"
+            columns: ["from_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_branch_transfers_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_branch_transfers_to_branch_id_fkey"
+            columns: ["to_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_career_highlights: {
         Row: {
           achieved_date: string
