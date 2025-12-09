@@ -18,10 +18,10 @@ import { useTenant } from '@/contexts/TenantContext';
 import { AuthoritySelector } from '@/components/accounting/AuthoritySelector';
 import { 
   InvoiceMethod, 
-  RateCategory, 
+  AuthorityCategory, 
   ServicePayer,
   invoiceMethodLabels,
-  rateCategoryLabels,
+  authorityCategoryLabels,
   servicePayerLabels
 } from '@/types/clientAccounting';
 import { fundingTypeLabels } from '@/types/billing';
@@ -37,7 +37,7 @@ const generalSettingsSchema = z.object({
   invoice_display_type: z.string().default('per_visit'),
   billing_address_same_as_personal: z.boolean().default(true),
   pay_method: z.string().optional(),
-  rate_type: z.enum(['standard', 'adult', 'cyp']).default('standard'),
+  authority_category: z.enum(['private', 'local_authority', 'nhs', 'insurance', 'charity', 'other']).default('private'),
   mileage_rule_no_payment: z.boolean().default(false),
   service_payer: z.enum(['authorities', 'direct_payment', 'self_funder', 'other']).default('authorities'),
   // Add funding type fields
@@ -85,7 +85,7 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
       invoice_display_type: 'per_visit',
       billing_address_same_as_personal: true,
       pay_method: '',
-      rate_type: 'standard',
+      authority_category: 'private',
       mileage_rule_no_payment: false,
       service_payer: 'authorities',
       funding_type: 'private',
@@ -106,7 +106,7 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
         invoice_display_type: settings?.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: settings?.billing_address_same_as_personal ?? true,
         pay_method: settings?.pay_method || '',
-        rate_type: settings?.rate_type || 'standard',
+        authority_category: (settings as any)?.authority_category || 'private',
         mileage_rule_no_payment: settings?.mileage_rule_no_payment || false,
         service_payer: settings?.service_payer || 'authorities',
         funding_type: fundingInfo?.funding_type || 'private',
@@ -140,7 +140,7 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
         invoice_display_type: data.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: data.billing_address_same_as_personal ?? true,
         pay_method: data.pay_method || null,
-        rate_type: data.rate_type || 'standard',
+        authority_category: data.authority_category || 'private',
         mileage_rule_no_payment: data.mileage_rule_no_payment || false,
         service_payer: data.service_payer || 'authorities',
       });
@@ -408,18 +408,18 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
 
               <FormField
                 control={form.control}
-                name="rate_type"
+                name="authority_category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rate Type</FormLabel>
+                    <FormLabel>Authorities</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select rate type" />
+                          <SelectValue placeholder="Select authority type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(rateCategoryLabels).map(([value, label]) => (
+                        {Object.entries(authorityCategoryLabels).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
                             {label}
                           </SelectItem>
