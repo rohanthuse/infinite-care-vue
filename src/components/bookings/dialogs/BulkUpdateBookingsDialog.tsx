@@ -20,7 +20,6 @@ import {
   DialogFooter,
   DialogDescription
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -68,6 +67,7 @@ interface BulkUpdateBookingsDialogProps {
   onOpenChange: (open: boolean) => void;
   branchId: string;
   carers: Array<{ id: string; first_name?: string | null; last_name?: string | null; name?: string }>;
+  clients: Array<{ id: string; first_name?: string | null; last_name?: string | null; name?: string }>;
   onUpdateComplete?: () => void;
 }
 
@@ -76,10 +76,13 @@ export function BulkUpdateBookingsDialog({
   onOpenChange,
   branchId,
   carers,
+  clients,
   onUpdateComplete,
 }: BulkUpdateBookingsDialogProps) {
-  // Selection state
-  const [selectionMode, setSelectionMode] = useState<'date-range' | 'manual'>('date-range');
+  // Client selection state
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  
+  // Date range selection state
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
     from: null,
     to: null,
@@ -103,7 +106,7 @@ export function BulkUpdateBookingsDialog({
   // Reset state when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      setSelectionMode('date-range');
+      setSelectedClientId("");
       setDateRange({ from: null, to: null });
       setFetchedBookings([]);
       setSelectedBookingIds([]);
@@ -126,7 +129,7 @@ export function BulkUpdateBookingsDialog({
     setHasFetched(false);
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select(`
           id,
@@ -144,6 +147,13 @@ export function BulkUpdateBookingsDialog({
         .lte('start_time', endOfDay(dateRange.to).toISOString())
         .neq('status', 'cancelled')
         .order('start_time', { ascending: true });
+      
+      // Filter by client if selected
+      if (selectedClientId && selectedClientId !== 'all') {
+        query = query.eq('client_id', selectedClientId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         console.error('[BulkUpdateBookingsDialog] Error fetching bookings:', error);
@@ -295,6 +305,13 @@ export function BulkUpdateBookingsDialog({
     }));
   }, [carers]);
 
+  const clientOptions = useMemo(() => {
+    return clients.map(c => ({
+      id: c.id,
+      name: c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown',
+    }));
+  }, [clients]);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -304,15 +321,46 @@ export function BulkUpdateBookingsDialog({
             Bulk Update Bookings
           </DialogTitle>
           <DialogDescription>
-            Select bookings by date range and apply bulk updates to carer, time, or status.
+            Select a client and date range, then apply bulk updates to carer, time, or status.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Client Selection */}
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Select Client (Optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                  {clientOptions.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                Leave empty to fetch bookings for all clients in the date range.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Date Range Selection */}
           <Card>
             <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium">Select Date Range</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                Select Date Range
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -400,59 +448,62 @@ export function BulkUpdateBookingsDialog({
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {fetchedBookings.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No bookings found in the selected date range.
+                  <p className="text-sm text-muted-foreground text-center py-4 px-4">
+                    No bookings found for the selected criteria.
                   </p>
                 ) : (
-                  <ScrollArea className="max-h-[200px]">
-                    <div className="space-y-2">
-                      {/* Select All checkbox */}
-                      <div className="flex items-center gap-2 pb-2 border-b">
-                        <Checkbox 
-                          id="select-all"
-                          checked={selectedBookingIds.length === fetchedBookings.length}
-                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                        />
-                        <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                          Select All ({fetchedBookings.length})
-                        </Label>
-                      </div>
-                      
-                      {fetchedBookings.map((booking) => (
-                        <div 
-                          key={booking.id} 
-                          className="flex items-center gap-2 py-2 hover:bg-muted/50 rounded px-1"
-                        >
-                          <Checkbox
-                            checked={selectedBookingIds.includes(booking.id)}
-                            onCheckedChange={() => toggleBookingSelection(booking.id)}
-                          />
-                          <div className="flex-1 text-sm grid grid-cols-4 gap-2">
-                            <span className="font-medium">
-                              {formatDate(booking.start_time)}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
-                            </span>
-                            <span className="truncate" title={getClientName(booking)}>
-                              {getClientName(booking)}
-                            </span>
-                            <span className="text-muted-foreground truncate" title={getCarerName(booking)}>
-                              {getCarerName(booking)}
-                            </span>
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={cn("text-xs", getBookingStatusColor(booking.status || 'unassigned'))}
-                          >
-                            {booking.status || 'unassigned'}
-                          </Badge>
-                        </div>
-                      ))}
+                  <div className="border-t">
+                    {/* Select All header - sticky */}
+                    <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
+                      <Checkbox 
+                        id="select-all"
+                        checked={selectedBookingIds.length === fetchedBookings.length}
+                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                      />
+                      <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                        Select All ({fetchedBookings.length})
+                      </Label>
                     </div>
-                  </ScrollArea>
+                    
+                    {/* Scrollable bookings list with fixed height */}
+                    <ScrollArea className="h-[250px]">
+                      <div className="space-y-1 p-2">
+                        {fetchedBookings.map((booking) => (
+                          <div 
+                            key={booking.id} 
+                            className="flex items-center gap-2 py-2 px-2 hover:bg-muted/50 rounded"
+                          >
+                            <Checkbox
+                              checked={selectedBookingIds.includes(booking.id)}
+                              onCheckedChange={() => toggleBookingSelection(booking.id)}
+                            />
+                            <div className="flex-1 text-sm grid grid-cols-4 gap-2">
+                              <span className="font-medium">
+                                {formatDate(booking.start_time)}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                              </span>
+                              <span className="truncate" title={getClientName(booking)}>
+                                {getClientName(booking)}
+                              </span>
+                              <span className="text-muted-foreground truncate" title={getCarerName(booking)}>
+                                {getCarerName(booking)}
+                              </span>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className={cn("text-xs", getBookingStatusColor(booking.status || 'unassigned'))}
+                            >
+                              {booking.status || 'unassigned'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>

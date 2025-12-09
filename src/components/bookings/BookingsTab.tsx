@@ -594,6 +594,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         onOpenChange={setShowBulkUpdateDialog}
         branchId={branchId || ""}
         carers={carers}
+        clients={clients}
       />
     </div>
   );
