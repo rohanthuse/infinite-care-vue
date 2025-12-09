@@ -22,7 +22,7 @@ export const useBranchesForOrganization = (excludeBranchId?: string) => {
         .from('branches')
         .select('id, name, status')
         .eq('organization_id', organization.id)
-        .eq('status', 'active');
+        .eq('status', 'Active');
 
       if (excludeBranchId) {
         query = query.neq('id', excludeBranchId);
