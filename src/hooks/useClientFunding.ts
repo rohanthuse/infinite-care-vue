@@ -165,11 +165,14 @@ export const useUpdateClientFunding = () => {
       fundingType: 'private' | 'authority';
       authorityId?: string;
     }) => {
+      // Explicitly convert undefined/empty string to null for UUID field
+      const sanitizedAuthorityId = authorityId && authorityId.trim() !== '' ? authorityId : null;
+      
       const { data, error } = await supabase
         .from('clients')
         .update({
           funding_type: fundingType,
-          authority_id: authorityId
+          authority_id: sanitizedAuthorityId
         })
         .eq('id', clientId)
         .select()

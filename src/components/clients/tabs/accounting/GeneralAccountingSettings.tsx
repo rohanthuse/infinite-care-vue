@@ -126,29 +126,42 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
 
   const onSubmit = async (data: GeneralSettingsFormData) => {
     try {
+      // Sanitize UUID fields - convert empty strings to null/undefined
+      const sanitizedAuthorityId = data.authority_id && data.authority_id.trim() !== '' ? data.authority_id : undefined;
+      const currentAuthorityId = fundingInfo?.authority_id || undefined;
+      
+      // Check if funding info actually changed
+      const fundingTypeChanged = data.funding_type !== (fundingInfo?.funding_type || 'private');
+      const authorityIdChanged = sanitizedAuthorityId !== currentAuthorityId;
+      
       // First update the funding type if it changed
-      if (data.funding_type !== fundingInfo?.funding_type || data.authority_id !== fundingInfo?.authority_id) {
+      if (fundingTypeChanged || authorityIdChanged) {
         await updateClientFunding.mutateAsync({
           clientId,
           fundingType: data.funding_type,
-          authorityId: data.authority_id || undefined
+          authorityId: sanitizedAuthorityId
         });
       }
       
-      // Sanitize data: convert empty strings to null for optional UUID fields
+      // Sanitize all UUID fields - convert empty strings to null for database
+      const sanitizedCareLeadId = data.care_lead_id && data.care_lead_id.trim() !== '' ? data.care_lead_id : null;
+      const sanitizedAgreementType = data.agreement_type && data.agreement_type.trim() !== '' ? data.agreement_type : null;
+      const sanitizedExpiryDate = data.expiry_date && data.expiry_date.trim() !== '' ? data.expiry_date : null;
+      const sanitizedPayMethod = data.pay_method && data.pay_method.trim() !== '' ? data.pay_method : null;
+      
       updateSettings.mutate({
         client_id: clientId,
         branch_id: branchId,
-        care_lead_id: data.care_lead_id || null,
-        agreement_type: data.agreement_type || null,
-        expiry_date: data.expiry_date || null,
+        care_lead_id: sanitizedCareLeadId,
+        agreement_type: sanitizedAgreementType,
+        expiry_date: sanitizedExpiryDate,
         show_in_task_matrix: data.show_in_task_matrix || false,
         show_in_form_matrix: data.show_in_form_matrix || false,
         enable_geo_fencing: data.enable_geo_fencing || false,
         invoice_method: data.invoice_method || 'per_visit',
         invoice_display_type: data.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: data.billing_address_same_as_personal ?? true,
-        pay_method: data.pay_method || null,
+        pay_method: sanitizedPayMethod,
         // Only save authority_category when service_payer is 'authorities'
         authority_category: data.service_payer === 'authorities' ? (data.authority_category || 'private') : null,
         mileage_rule_no_payment: data.mileage_rule_no_payment || false,
