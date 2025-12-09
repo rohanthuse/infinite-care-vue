@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, Badge as BadgeIcon } from "lucide-react";
+import { Plus, RefreshCw, Badge as BadgeIcon, Edit } from "lucide-react";
+import { BulkUpdateBookingsDialog } from "./dialogs/BulkUpdateBookingsDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -71,6 +72,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
   const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
+  const [showBulkUpdateDialog, setShowBulkUpdateDialog] = useState(false);
 
   // Update URL parameters when filters change
   useEffect(() => {
@@ -402,6 +404,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           >
             Force Refresh
           </Button>
+          <Button variant="outline" onClick={() => setShowBulkUpdateDialog(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Bulk Update
+          </Button>
           <Button onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
             New Booking
@@ -581,6 +587,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         services={services}
         onEdit={handleEditFromView}
         branchId={branchId}
+      />
+
+      <BulkUpdateBookingsDialog
+        open={showBulkUpdateDialog}
+        onOpenChange={setShowBulkUpdateDialog}
+        branchId={branchId || ""}
+        carers={carers}
       />
     </div>
   );
