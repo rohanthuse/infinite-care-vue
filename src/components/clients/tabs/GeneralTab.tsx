@@ -23,12 +23,12 @@ import {
 import {
   invoiceMethodLabels,
   invoiceDisplayTypeLabels,
-  rateCategoryLabels,
   servicePayerLabels,
+  authorityCategoryLabels,
   InvoiceMethod,
   InvoiceDisplayType,
-  RateCategory,
-  ServicePayer
+  ServicePayer,
+  AuthorityCategory
 } from '@/types/clientAccounting';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,9 +50,17 @@ const accountingFormSchema = z.object({
   invoice_display_type: z.string(),
   billing_address_same_as_personal: z.boolean(),
   billing_address: z.string().nullable(),
-  rate_type: z.enum(['standard', 'adult', 'cyp']),
   mileage_rule_no_payment: z.boolean(),
   service_payer: z.enum(['authorities', 'direct_payment', 'self_funder', 'other']),
+  authority_category: z.enum(['private', 'local_authority', 'nhs', 'insurance', 'charity', 'other']).nullable(),
+}).refine((data) => {
+  if (data.service_payer === 'authorities') {
+    return data.authority_category !== null;
+  }
+  return true;
+}, {
+  message: "Please select an authority category",
+  path: ["authority_category"],
 });
 
 type AccountingFormValues = z.infer<typeof accountingFormSchema>;
@@ -100,13 +108,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       invoice_display_type: 'per_visit',
       billing_address_same_as_personal: true,
       billing_address: null,
-      rate_type: 'standard',
       mileage_rule_no_payment: false,
       service_payer: 'authorities',
+      authority_category: null,
     },
   });
 
   const billingAddressSameAsPersonal = accountingForm.watch('billing_address_same_as_personal');
+  const servicePayer = accountingForm.watch('service_payer');
   
   // Load data into form when available
   useEffect(() => {
@@ -130,9 +139,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         invoice_display_type: accountingSettings.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: accountingSettings.billing_address_same_as_personal ?? true,
         billing_address: accountingSettings.billing_address || null,
-        rate_type: (accountingSettings.rate_type as RateCategory) || 'standard',
         mileage_rule_no_payment: accountingSettings.mileage_rule_no_payment || false,
         service_payer: (accountingSettings.service_payer as ServicePayer) || 'authorities',
+        authority_category: (accountingSettings.authority_category as AuthorityCategory) || null,
       });
     }
   }, [accountingSettings, accountingForm]);
@@ -168,9 +177,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         invoice_display_type: values.invoice_display_type,
         billing_address_same_as_personal: values.billing_address_same_as_personal,
         billing_address: values.billing_address_same_as_personal ? null : values.billing_address,
-        rate_type: values.rate_type as RateCategory,
         mileage_rule_no_payment: values.mileage_rule_no_payment,
         service_payer: values.service_payer as ServicePayer,
+        authority_category: values.service_payer === 'authorities' ? values.authority_category : null,
         show_in_task_matrix: accountingSettings?.show_in_task_matrix || false,
         show_in_form_matrix: accountingSettings?.show_in_form_matrix || false,
         enable_geo_fencing: accountingSettings?.enable_geo_fencing || false,
@@ -492,31 +501,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                       />
                     )}
 
-                    {/* Rate Type */}
-                    <FormField
-                      control={accountingForm.control}
-                      name="rate_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rate Type</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select rate type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(rateCategoryLabels).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     {/* No Mileage Paid to Staff */}
                     <FormField
@@ -575,6 +559,37 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                         </FormItem>
                       )}
                     />
+
+                    {/* Authority Category - Conditional */}
+                    {servicePayer === 'authorities' && (
+                      <FormField
+                        control={accountingForm.control}
+                        name="authority_category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Authority Category</FormLabel>
+                            <Select 
+                              value={field.value || ''} 
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select authority category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(authorityCategoryLabels).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     {/* Submit Button */}
                     <div className="flex justify-end pt-4">
