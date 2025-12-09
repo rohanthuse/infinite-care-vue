@@ -77,6 +77,7 @@ export interface ClientRateSchedule {
   consecutive_hours_rate?: number;
   bank_holiday_multiplier: number;
   is_vatable: boolean;
+  vat_rate?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;

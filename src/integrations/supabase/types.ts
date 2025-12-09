@@ -3577,6 +3577,7 @@ export type Database = {
           time_from: string
           time_until: string
           updated_at: string | null
+          vat_rate: number | null
         }
         Insert: {
           authority_type: string
@@ -3605,6 +3606,7 @@ export type Database = {
           time_from: string
           time_until: string
           updated_at?: string | null
+          vat_rate?: number | null
         }
         Update: {
           authority_type?: string
@@ -3633,6 +3635,7 @@ export type Database = {
           time_from?: string
           time_until?: string
           updated_at?: string | null
+          vat_rate?: number | null
         }
         Relationships: [
           {
