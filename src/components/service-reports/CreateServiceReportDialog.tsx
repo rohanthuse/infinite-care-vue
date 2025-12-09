@@ -275,21 +275,19 @@ export function CreateServiceReportDialog({
     };
 
     if (mode === 'edit' && existingReport) {
-      // Update existing report and reset status to pending for re-review
+      // Update existing report - keep approved status
       updateServiceReport.mutate({
         id: existingReport.id,
         updates: {
           ...reportData,
-          status: 'pending',
-          reviewed_at: null,
-          reviewed_by: null,
-          review_notes: null,
+          status: 'approved',
+          visible_to_client: true,
         }
       }, {
         onSuccess: () => {
           onOpenChange(false);
           form.reset();
-          toast.success('Service report resubmitted for review');
+          toast.success('Service report updated successfully');
         },
       });
     } else {

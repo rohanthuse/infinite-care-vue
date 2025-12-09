@@ -112,7 +112,9 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     carer_observations: observations || undefined,
     care_plan_goals: goalsProgress,
     daily_activities: activitiesPerformed,
-    status: 'pending' as const, // Will need admin review
+    status: 'approved' as const, // Auto-approved
+    visible_to_client: true,
+    reviewed_at: new Date().toISOString(),
     created_by: data.createdBy,
   };
 }

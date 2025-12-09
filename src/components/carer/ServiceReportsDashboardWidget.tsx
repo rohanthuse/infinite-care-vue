@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileBarChart2, Plus, Clock, CheckCircle } from 'lucide-react';
+import { FileBarChart2, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCarerContext } from '@/hooks/useCarerContext';
@@ -62,8 +62,7 @@ export const ServiceReportsDashboardWidget: React.FC = () => {
     );
   }
 
-  const pendingReports = reportsData?.filter(report => report.status === 'pending') || [];
-  const approvedReports = reportsData?.filter(report => report.status === 'approved') || [];
+  const totalReports = reportsData?.length || 0;
 
   return (
     <Card>
@@ -80,12 +79,8 @@ export const ServiceReportsDashboardWidget: React.FC = () => {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3 text-orange-500" />
-                {pendingReports.length} Pending
-              </span>
-              <span className="flex items-center gap-1">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                {approvedReports.length} Approved
+                {totalReports} Total Reports
               </span>
             </div>
           </div>
@@ -105,8 +100,8 @@ export const ServiceReportsDashboardWidget: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <Badge variant={report.status === 'approved' ? 'default' : 'secondary'}>
-                    {report.status}
+                  <Badge className="bg-green-100 text-green-800 border-green-200" variant="outline">
+                    Approved
                   </Badge>
                 </div>
               ))}
