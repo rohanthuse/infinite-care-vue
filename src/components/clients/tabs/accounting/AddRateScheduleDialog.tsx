@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,12 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
 import { useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
 import { useTenant } from '@/contexts/TenantContext';
 import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, chargeTypeLabels, dayLabels } from '@/types/clientAccounting';
 const rateScheduleSchema = z.object({
-  authority_type: z.string().min(1, 'Authority type is required'),
   service_type_codes: z.array(z.string()).default([]),
   start_date: createDateValidation('Start date'),
   end_date: z.string().transform(val => val === '' ? undefined : val).optional(),
@@ -99,7 +99,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const form = useForm<RateScheduleFormData>({
     resolver: zodResolver(rateScheduleSchema),
     defaultValues: {
-      authority_type: '',
       service_type_codes: [],
       start_date: '',
       end_date: '',
@@ -119,6 +118,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       is_vatable: false
     }
   });
+  
+  const [enableBankHolidayMultiplier, setEnableBankHolidayMultiplier] = useState(false);
   const selectedPayBasedOn = form.watch('pay_based_on');
   const selectedChargeType = form.watch('charge_type');
 
@@ -143,7 +144,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       client_id: clientId,
       branch_id: branchId,
       organization_id: organization?.id || '',
-      authority_type: data.authority_type,
+      authority_type: '', // Removed from UI but kept for database compatibility
       service_type_codes: data.service_type_codes,
       start_date: data.start_date,
       end_date: data.end_date || null,
@@ -160,7 +161,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       rate_45_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_45_minutes || null) : null,
       rate_60_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_60_minutes || null) : null,
       consecutive_hours_rate: data.pay_based_on === 'hours_minutes' ? (data.consecutive_hours_rate || null) : null,
-      bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
+      bank_holiday_multiplier: enableBankHolidayMultiplier ? (data.bank_holiday_multiplier || 1) : 1,
       is_vatable: data.is_vatable
     };
     createSchedule.mutate(scheduleData, {
@@ -173,7 +174,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const onSaveAndAdd = () => {
     // Simply reset the form without saving
     form.reset({
-      authority_type: '',
       service_type_codes: [],
       start_date: '',
       end_date: '',
@@ -192,6 +192,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       bank_holiday_multiplier: 1,
       is_vatable: false
     });
+    setEnableBankHolidayMultiplier(false);
   };
   const toggleDay = (day: string, checked: boolean) => {
     const currentDays = form.getValues('days_covered');
@@ -215,28 +216,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField control={form.control} name="authority_type" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Authorities *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select authority type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="local_authority">Local Authority</SelectItem>
-                        <SelectItem value="nhs">NHS</SelectItem>
-                        <SelectItem value="insurance">Insurance</SelectItem>
-                        <SelectItem value="charity">Charity</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>} />
-
               <FormField control={form.control} name="start_date" render={({
               field
             }) => <FormItem>
@@ -411,25 +390,48 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                       </FormItem>} />
                 )}
 
-                {/* Bank Holiday Multiplier - Always visible */}
-                <FormField control={form.control} name="bank_holiday_multiplier" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Bank Holiday Multiplier</FormLabel>
-                      <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select multiplier" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">1x (Normal Rate)</SelectItem>
-                          <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
-                          <SelectItem value="2">2x (Double Time)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>} />
+              </div>
+
+              {/* Bank Holiday Multiplier Toggle */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Enable Bank Holiday Multiplier</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Apply a multiplier rate for bank holidays
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={enableBankHolidayMultiplier}
+                    onCheckedChange={(checked) => {
+                      setEnableBankHolidayMultiplier(checked);
+                      if (!checked) {
+                        form.setValue('bank_holiday_multiplier', 1);
+                      }
+                    }}
+                  />
+                </div>
+                
+                {enableBankHolidayMultiplier && (
+                  <FormField control={form.control} name="bank_holiday_multiplier" render={({
+                    field
+                  }) => <FormItem>
+                        <FormLabel>Bank Holiday Multiplier</FormLabel>
+                        <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select multiplier" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">1x (Normal Rate)</SelectItem>
+                            <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
+                            <SelectItem value="2">2x (Double Time)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>} />
+                )}
               </div>
 
               {/* Incremental Rates */}
