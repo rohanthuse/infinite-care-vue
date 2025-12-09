@@ -28,7 +28,8 @@ const rateScheduleSchema = z.object({
   charge_type: z.enum(['flat_rate', 'pro_rata', 'hourly_rate', 'hour_minutes', 'rate_per_hour', 'rate_per_minutes_pro_rata', 'rate_per_minutes_flat_rate', 'daily_flat_rate']).optional().default('hourly_rate'),
   base_rate: z.number().min(0.01, 'Rate is required and must be greater than 0'),
   bank_holiday_multiplier: z.number().min(1).max(3).optional(),
-  is_vatable: z.boolean()
+  is_vatable: z.boolean(),
+  vat_rate: z.number().min(0, 'VAT rate must be at least 0').max(100, 'VAT rate cannot exceed 100%').optional().default(20)
 }).refine(data => {
   if (data.time_from && data.time_until) {
     const start = new Date(`2000-01-01T${data.time_from}`);
@@ -39,6 +40,15 @@ const rateScheduleSchema = z.object({
 }, {
   message: "Time until must be after time from",
   path: ["time_until"]
+}).refine(data => {
+  // If VATable, vat_rate is required and must be > 0
+  if (data.is_vatable && (data.vat_rate === undefined || data.vat_rate === null)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "VAT rate is required when VATable is selected",
+  path: ["vat_rate"]
 });
 
 type RateScheduleFormData = z.infer<typeof rateScheduleSchema>;
@@ -72,12 +82,14 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       charge_type: 'hourly_rate',
       base_rate: 0,
       bank_holiday_multiplier: 1,
-      is_vatable: false
+      is_vatable: false,
+      vat_rate: 20
     }
   });
   
   const [enableBankHolidayMultiplier, setEnableBankHolidayMultiplier] = useState(false);
   const selectedPayBasedOn = form.watch('pay_based_on');
+  const isVatable = form.watch('is_vatable');
 
   // Auto-set charge_type based on pay_based_on
   React.useEffect(() => {
@@ -115,7 +127,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       rate_60_minutes: null,
       consecutive_hours_rate: null,
       bank_holiday_multiplier: enableBankHolidayMultiplier ? (data.bank_holiday_multiplier || 1) : 1,
-      is_vatable: data.is_vatable
+      is_vatable: data.is_vatable,
+      vat_rate: data.is_vatable ? (data.vat_rate || 20) : null
     };
     createSchedule.mutate(scheduleData, {
       onSuccess: () => {
@@ -138,7 +151,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       charge_type: 'hourly_rate',
       base_rate: 0,
       bank_holiday_multiplier: 1,
-      is_vatable: false
+      is_vatable: false,
+      vat_rate: 20
     });
     setEnableBankHolidayMultiplier(false);
   };
@@ -394,6 +408,32 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                   <FormMessage />
                 </FormItem>
               )} />
+              
+              {/* VAT Rate Input - Shown only when is_vatable = true */}
+              {isVatable && (
+                <FormField control={form.control} name="vat_rate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>VAT Rate (%) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="20"
+                        className="max-w-xs"
+                        {...field}
+                        value={field.value ?? 20}
+                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Enter the VAT percentage (e.g., 20 for 20%)
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
             </div>
 
             <div className="flex justify-end space-x-2">
