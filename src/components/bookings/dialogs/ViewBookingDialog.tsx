@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
@@ -19,19 +19,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
+import { useDeleteMultipleBookings } from "@/hooks/useDeleteMultipleBookings";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useBookingServices } from "@/hooks/useBookingServices";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { DeleteBookingConfirmationDialog } from "./DeleteBookingConfirmationDialog";
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -51,6 +42,7 @@ export function ViewBookingDialog({
   branchId,
 }: ViewBookingDialogProps) {
   const deleteBooking = useDeleteBooking(branchId);
+  const deleteMultipleBookings = useDeleteMultipleBookings(branchId);
   const { data: userRole } = useUserRole();
   const [relatedBookings, setRelatedBookings] = React.useState<any[]>([]);
   const [assignedStaff, setAssignedStaff] = React.useState<Array<{
@@ -60,6 +52,7 @@ export function ViewBookingDialog({
   const [showApprovalForCancellation, setShowApprovalForCancellation] = React.useState(false);
   const [showApprovalForReschedule, setShowApprovalForReschedule] = React.useState(false);
   const [changeRequest, setChangeRequest] = React.useState<any>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   
   // Fetch services from junction table
   const { data: bookingServices } = useBookingServices(booking?.id || '');
@@ -908,45 +901,15 @@ export function ViewBookingDialog({
           <div className="flex justify-between w-full">
             <div className="flex gap-2">
               {canDelete && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
-                      disabled={deleteBooking.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Booking
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    {deleteBooking.isPending && (
-                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                          <p className="text-sm text-muted-foreground">Deleting booking...</p>
-                        </div>
-                      </div>
-                    )}
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this booking? This action cannot be undone.
-                        The booking will be permanently removed from the system.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
-                      <Button
-                        onClick={handleDelete}
-                        disabled={deleteBooking.isPending}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
-                      </Button>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={() => setShowDeleteConfirmation(true)}
+                  disabled={deleteBooking.isPending || deleteMultipleBookings.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Booking
+                </Button>
               )}
             </div>
             <div className="flex gap-2">
@@ -962,6 +925,40 @@ export function ViewBookingDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteBookingConfirmationDialog
+        open={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+        booking={{
+          id: booking.id,
+          clientId: booking.clientId || booking.client_id,
+          clientName: booking.clientName || 'Unknown Client',
+          carerId: booking.carerId || booking.staff_id,
+          carerName: booking.carerName,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          serviceName: service?.title,
+          branchId: branchId || booking.branchId || booking.branch_id
+        }}
+        onDeleteSingle={async () => {
+          await handleDelete();
+          setShowDeleteConfirmation(false);
+        }}
+        onDeleteMultiple={async (bookingIds, bookings) => {
+          await deleteMultipleBookings.mutateAsync({ 
+            bookingIds, 
+            bookings: bookings.map(b => ({
+              id: b.id,
+              clientId: booking.clientId || booking.client_id,
+              staffId: b.staff_id
+            }))
+          });
+          setShowDeleteConfirmation(false);
+          onOpenChange(false);
+        }}
+        isDeleting={deleteBooking.isPending || deleteMultipleBookings.isPending}
+      />
 
       {/* Approval Dialog for Cancellation/Reschedule */}
       {changeRequest && (showApprovalForCancellation || showApprovalForReschedule) && (
