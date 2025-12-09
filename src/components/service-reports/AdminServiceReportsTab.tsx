@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminServiceReportForm } from './AdminServiceReportForm';
+import { CreateServiceReportDialog } from './CreateServiceReportDialog';
 import { ViewServiceReportDialog } from './ViewServiceReportDialog';
 import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, Edit, Download, MessageSquare, List } from 'lucide-react';
 import { format } from 'date-fns';
@@ -211,22 +211,24 @@ export function AdminServiceReportsTab({
       )}
 
       {/* Edit Report Dialog */}
-      <AdminServiceReportForm 
-        open={editReportDialog.open} 
-        onOpenChange={open => setEditReportDialog({
-          open,
-          report: null
-        })} 
-        branchId={branchId} 
-        clients={clients.length > 0 ? clients : [{
-          id: clientId,
-          first_name: 'Selected',
-          last_name: 'Client'
-        }]} 
-        staff={staff} 
-        existingReport={editReportDialog.report} 
-        mode="edit" 
-      />
+      {editReportDialog.report && (
+        <CreateServiceReportDialog
+          open={editReportDialog.open}
+          onOpenChange={(open) => setEditReportDialog({ open, report: open ? editReportDialog.report : null })}
+          preSelectedClient={{
+            id: editReportDialog.report.client_id,
+            name: `${editReportDialog.report.clients?.first_name || ''} ${editReportDialog.report.clients?.last_name || ''}`.trim() || clientName
+          }}
+          preSelectedBooking={editReportDialog.report.visit_record_id ? {
+            start_time: editReportDialog.report.service_date,
+            end_time: editReportDialog.report.service_date,
+            service_name: editReportDialog.report.services_provided?.[0] || 'Service'
+          } : undefined}
+          visitRecordId={editReportDialog.report.visit_record_id}
+          existingReport={editReportDialog.report}
+          mode="edit"
+        />
+      )}
 
       {/* Export Dialog */}
       <ExportServiceReportsDialog
