@@ -59,17 +59,34 @@ export const EntityList: React.FC<EntityListProps> = ({
     const filteredBookings = filterBookingsByDateRange(bookings);
     if (filteredBookings.length === 0) return 0;
     
-    let totalMinutes = 0;
+    // Group bookings by time slot to identify multi-carer scenarios
+    const groupedBySlot = new Map<string, Booking[]>();
+    
     filteredBookings.forEach(booking => {
       if (booking.status !== "cancelled") {
-        const startParts = booking.startTime.split(':').map(Number);
-        const endParts = booking.endTime.split(':').map(Number);
-        
-        const startMinutes = startParts[0] * 60 + startParts[1];
-        const endMinutes = endParts[0] * 60 + endParts[1];
-        
-        totalMinutes += endMinutes - startMinutes;
+        // Group by date+time to identify same visit with multiple carers
+        const key = `${booking.date}-${booking.startTime}-${booking.endTime}`;
+        if (!groupedBySlot.has(key)) {
+          groupedBySlot.set(key, []);
+        }
+        groupedBySlot.get(key)!.push(booking);
       }
+    });
+    
+    let totalMinutes = 0;
+    
+    groupedBySlot.forEach((bookingsInSlot) => {
+      const booking = bookingsInSlot[0];
+      const startParts = booking.startTime.split(':').map(Number);
+      const endParts = booking.endTime.split(':').map(Number);
+      
+      const startMinutes = startParts[0] * 60 + startParts[1];
+      const endMinutes = endParts[0] * 60 + endParts[1];
+      
+      const duration = endMinutes - startMinutes;
+      const carerCount = bookingsInSlot.length; // Each booking record = 1 carer
+      
+      totalMinutes += duration * carerCount;
     });
     
     return Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal place
@@ -83,15 +100,27 @@ export const EntityList: React.FC<EntityListProps> = ({
     const filteredBookings = filterBookingsByDateRange(bookings);
     if (filteredBookings.length === 0) return {};
     
-    const result: Record<string, { count: number, hours: number }> = {};
+    // Group by status AND time slot to account for multiple carers
+    const groupedByStatusAndSlot = new Map<string, Booking[]>();
     
     filteredBookings.forEach(booking => {
-      if (!result[booking.status]) {
-        result[booking.status] = { count: 0, hours: 0 };
+      const key = `${booking.status}-${booking.date}-${booking.startTime}-${booking.endTime}`;
+      if (!groupedByStatusAndSlot.has(key)) {
+        groupedByStatusAndSlot.set(key, []);
+      }
+      groupedByStatusAndSlot.get(key)!.push(booking);
+    });
+    
+    const result: Record<string, { count: number, hours: number }> = {};
+    
+    groupedByStatusAndSlot.forEach((bookingsInSlot) => {
+      const status = bookingsInSlot[0].status;
+      
+      if (!result[status]) {
+        result[status] = { count: 0, hours: 0 };
       }
       
-      result[booking.status].count += 1;
-      
+      const booking = bookingsInSlot[0];
       const startParts = booking.startTime.split(':').map(Number);
       const endParts = booking.endTime.split(':').map(Number);
       
@@ -99,7 +128,10 @@ export const EntityList: React.FC<EntityListProps> = ({
       const endMinutes = endParts[0] * 60 + endParts[1];
       
       const hours = (endMinutes - startMinutes) / 60;
-      result[booking.status].hours += hours;
+      const carerCount = bookingsInSlot.length; // Each booking record = 1 carer
+      
+      result[status].count += 1; // Count unique visits
+      result[status].hours += hours * carerCount; // Hours = duration × carers
     });
     
     return result;
