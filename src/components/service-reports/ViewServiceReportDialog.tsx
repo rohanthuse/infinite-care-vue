@@ -66,7 +66,6 @@ interface ViewServiceReportDialogProps {
   onOpenChange: (open: boolean) => void;
   report: any;
   adminMode?: boolean;
-  onAdminReview?: (status: 'approved' | 'rejected' | 'requires_revision', notes: string, visibleToClient: boolean) => Promise<void>;
 }
 
 export function ViewServiceReportDialog({
@@ -74,7 +73,6 @@ export function ViewServiceReportDialog({
   onOpenChange,
   report,
   adminMode = false,
-  onAdminReview,
 }: ViewServiceReportDialogProps) {
   // Create safeReport with fallbacks BEFORE any hooks
   const safeReport = report ? {
@@ -104,10 +102,6 @@ export function ViewServiceReportDialog({
     next_visit_preparations: safeReport?.next_visit_preparations || '',
   });
 
-  // Admin review state
-  const [adminReviewNotes, setAdminReviewNotes] = useState('');
-  const [adminVisibleToClient, setAdminVisibleToClient] = useState(true);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Mutation hook for updating the report
@@ -231,30 +225,6 @@ export function ViewServiceReportDialog({
         description: 'Failed to submit the report. Please try again.',
         variant: 'destructive',
       });
-    }
-  };
-
-  // Handle admin review actions
-  const handleAdminReview = async (status: 'approved' | 'rejected' | 'requires_revision') => {
-    if (isSubmittingReview) return;
-    
-    setIsSubmittingReview(true);
-    try {
-      if (onAdminReview) {
-        await onAdminReview(status, adminReviewNotes, adminVisibleToClient);
-      }
-      setAdminReviewNotes('');
-      setAdminVisibleToClient(true);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error submitting admin review:', error);
-      toast({
-        title: 'Review Failed',
-        description: 'Failed to submit the review. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmittingReview(false);
     }
   };
 
@@ -796,74 +766,6 @@ export function ViewServiceReportDialog({
               </Card>
             )}
 
-            {/* Admin Review Section - Only visible in admin mode */}
-            {adminMode && (
-              <Card className="border-primary/50 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <ClipboardCheck className="h-5 w-5" />
-                    Admin Review & Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Review Notes */}
-                  <div className="space-y-2">
-                    <Label htmlFor="admin_review_notes">Review Notes</Label>
-                    <Textarea
-                      id="admin_review_notes"
-                      placeholder="Enter review notes or feedback (optional)..."
-                      value={adminReviewNotes}
-                      onChange={(e) => setAdminReviewNotes(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-
-                  {/* Visible to Client Checkbox - Only for approval */}
-                  {safeReport.status === 'pending' && (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="visible_to_client"
-                        checked={adminVisibleToClient}
-                        onCheckedChange={(checked) => setAdminVisibleToClient(checked as boolean)}
-                      />
-                      <Label htmlFor="visible_to_client" className="text-sm font-normal">
-                        Make this report visible to the client after approval
-                      </Label>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={() => handleAdminReview('approved')}
-                      disabled={isSubmittingReview}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      <ThumbsUp className="h-4 w-4 mr-2" />
-                      {isSubmittingReview ? 'Processing...' : 'Approve Report'}
-                    </Button>
-                    <Button
-                      onClick={() => handleAdminReview('requires_revision')}
-                      disabled={isSubmittingReview}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      Request Revision
-                    </Button>
-                    <Button
-                      onClick={() => handleAdminReview('rejected')}
-                      disabled={isSubmittingReview}
-                      variant="destructive"
-                      className="flex-1"
-                    >
-                      <ThumbsDown className="h-4 w-4 mr-2" />
-                      Reject Report
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Report Metadata */}
             <Card>

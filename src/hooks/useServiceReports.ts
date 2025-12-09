@@ -126,7 +126,7 @@ export const useCreateServiceReport = () => {
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
       
-      toast.success('Service report submitted successfully');
+      toast.success('Service report saved successfully');
     },
     onError: (error) => {
       toast.error(`Failed to submit service report: ${error.message}`);

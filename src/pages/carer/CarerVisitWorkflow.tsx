@@ -1033,9 +1033,7 @@ const CarerVisitWorkflow = () => {
       await bookingAttendance.mutateAsync(attendanceData);
       
       console.log('Visit completion successful, navigating...');
-      toast.success('Visit and service report completed successfully!', {
-        description: 'Your report has been submitted for review.',
-      });
+      toast.success('Visit and service report completed successfully!');
       
       // Delay navigation slightly to ensure all operations complete
       setTimeout(() => {
