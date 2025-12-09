@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,10 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
-import { useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useCreateClientRateSchedule, useClientAccountingSettings } from '@/hooks/useClientAccounting';
 import { useTenant } from '@/contexts/TenantContext';
-import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, dayLabels } from '@/types/clientAccounting';
+import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, dayLabels, servicePayerLabels, authorityCategoryLabels } from '@/types/clientAccounting';
 
 const rateScheduleSchema = z.object({
   service_type_codes: z.array(z.string()).default([]),
@@ -41,7 +42,6 @@ const rateScheduleSchema = z.object({
   message: "Time until must be after time from",
   path: ["time_until"]
 }).refine(data => {
-  // If VATable, vat_rate is required and must be > 0
   if (data.is_vatable && (data.vat_rate === undefined || data.vat_rate === null)) {
     return false;
   }
@@ -68,6 +68,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
 }) => {
   const { organization } = useTenant();
   const createSchedule = useCreateClientRateSchedule();
+  const { data: accountingSettings, isLoading: isLoadingSettings } = useClientAccountingSettings(clientId);
+  
   const form = useForm<RateScheduleFormData>({
     resolver: zodResolver(rateScheduleSchema),
     defaultValues: {
@@ -92,7 +94,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const isVatable = form.watch('is_vatable');
 
   // Auto-set charge_type based on pay_based_on
-  React.useEffect(() => {
+  useEffect(() => {
     const currentPayBasedOn = form.getValues('pay_based_on');
     
     if (currentPayBasedOn === 'hours_minutes') {
@@ -109,7 +111,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       client_id: clientId,
       branch_id: branchId,
       organization_id: organization?.id || '',
-      authority_type: '', // Removed from UI but kept for database compatibility
+      authority_type: accountingSettings?.authority_category || '',
       service_type_codes: data.service_type_codes,
       start_date: data.start_date,
       end_date: data.end_date || null,
@@ -120,7 +122,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       pay_based_on: data.pay_based_on,
       charge_type: data.pay_based_on === 'hours_minutes' ? 'rate_per_hour' : data.charge_type,
       base_rate: data.base_rate || 0,
-      // Set all incremental rates to null (no longer used)
       rate_15_minutes: null,
       rate_30_minutes: null,
       rate_45_minutes: null,
@@ -166,7 +167,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
     }
   };
 
-  // Dynamic label for rate field based on pay_based_on selection
   const getRateLabel = () => {
     if (selectedPayBasedOn === 'hours_minutes') {
       return 'Rate Per Hour (£) *';
@@ -186,6 +186,31 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Client Accounting Info - Auto-populated from settings */}
+            {accountingSettings && (accountingSettings.service_payer || accountingSettings.authority_category) && (
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Client Accounting Settings</h4>
+                <div className="flex flex-wrap gap-4">
+                  {accountingSettings.service_payer && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Who Pays:</span>
+                      <Badge variant="outline">
+                        {servicePayerLabels[accountingSettings.service_payer as keyof typeof servicePayerLabels] || accountingSettings.service_payer}
+                      </Badge>
+                    </div>
+                  )}
+                  {accountingSettings.authority_category && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Authority Category:</span>
+                      <Badge variant="outline">
+                        {authorityCategoryLabels[accountingSettings.authority_category as keyof typeof authorityCategoryLabels] || accountingSettings.authority_category}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField control={form.control} name="start_date" render={({ field }) => (
@@ -436,13 +461,16 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
               )}
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="destructive" onClick={() => onOpenChange(false)}>
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              
-              <Button type="submit" disabled={createSchedule.isPending} className="bg-green-600 hover:bg-green-700 text-white">
-                {createSchedule.isPending ? 'Saving...' : 'Save'}
+              <Button type="button" variant="secondary" onClick={form.handleSubmit(data => { onSubmit(data); onSaveAndAdd(); })}>
+                Save & Add Another
+              </Button>
+              <Button type="submit" disabled={createSchedule.isPending}>
+                {createSchedule.isPending ? 'Saving...' : 'Save Rate Schedule'}
               </Button>
             </div>
           </form>
