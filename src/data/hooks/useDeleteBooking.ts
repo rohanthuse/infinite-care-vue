@@ -1,11 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notifyBookingCancelled } from "@/utils/bookingNotifications";
 
 interface DeleteBookingPayload {
   bookingId: string;
   clientId?: string;
   staffId?: string;
+  branchId?: string;
+  organizationId?: string;
+  clientName?: string;
 }
 
 async function deleteBooking({ bookingId }: DeleteBookingPayload) {
@@ -29,6 +33,19 @@ export function useDeleteBooking(branchId?: string) {
     mutationFn: deleteBooking,
     onSuccess: async (deletedBookingId, variables) => {
       console.log('[useDeleteBooking] Successfully deleted booking:', deletedBookingId);
+      
+      // Send cancellation notifications
+      if (variables.branchId) {
+        await notifyBookingCancelled({
+          bookingId: deletedBookingId,
+          branchId: variables.branchId,
+          organizationId: variables.organizationId,
+          clientId: variables.clientId,
+          staffId: variables.staffId,
+          clientName: variables.clientName,
+          notificationType: 'booking_cancelled',
+        });
+      }
       
       // Await all refetch operations to complete before mutation is marked as done
       await Promise.all([
