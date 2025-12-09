@@ -11353,15 +11353,15 @@ export type Database = {
       }
       create_auth_user_for_system_user:
         | {
-            Args: { p_password?: string; p_system_user_id: string }
-            Returns: Json
-          }
-        | {
             Args: {
               p_email: string
               p_password?: string
               p_system_user_id: string
             }
+            Returns: Json
+          }
+        | {
+            Args: { p_password?: string; p_system_user_id: string }
             Returns: Json
           }
       create_carer_preapproved: {
@@ -11448,9 +11448,10 @@ export type Database = {
             Args: {
               p_access_expires_at?: string
               p_email: string
-              p_full_name: string
+              p_first_name: string
               p_password: string
               p_request_id: string
+              p_surname: string
             }
             Returns: string
           }
@@ -11458,10 +11459,9 @@ export type Database = {
             Args: {
               p_access_expires_at?: string
               p_email: string
-              p_first_name: string
+              p_full_name: string
               p_password: string
               p_request_id: string
-              p_surname: string
             }
             Returns: string
           }
@@ -12007,6 +12007,7 @@ export type Database = {
         Returns: Json
       }
       system_authenticate:
+        | { Args: { p_email: string; p_password: string }; Returns: Json }
         | {
             Args: {
               p_email: string
@@ -12016,7 +12017,6 @@ export type Database = {
             }
             Returns: Json
           }
-        | { Args: { p_email: string; p_password: string }; Returns: Json }
       system_create_session_for_auth_user: {
         Args: {
           p_auth_user_id: string
@@ -12080,6 +12080,16 @@ export type Database = {
         | {
             Args: {
               p_document_type: string
+              p_expiry_date?: string
+              p_file_path: string
+              p_file_size?: string
+              p_staff_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_document_type: string
               p_file_name: string
               p_file_path: string
               p_file_size: string
@@ -12087,6 +12097,7 @@ export type Database = {
             }
             Returns: string
           }
+      upload_staff_document_bypass_rls:
         | {
             Args: {
               p_document_type: string
@@ -12097,23 +12108,12 @@ export type Database = {
             }
             Returns: Json
           }
-      upload_staff_document_bypass_rls:
         | {
             Args: {
               p_description?: string
               p_document_type: string
               p_expiry_date?: string
               p_file_name?: string
-              p_file_path: string
-              p_file_size?: string
-              p_staff_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_document_type: string
-              p_expiry_date?: string
               p_file_path: string
               p_file_size?: string
               p_staff_id: string

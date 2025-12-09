@@ -37,7 +37,7 @@ const generalSettingsSchema = z.object({
   invoice_display_type: z.string().default('per_visit'),
   billing_address_same_as_personal: z.boolean().default(true),
   pay_method: z.string().optional(),
-  authority_category: z.enum(['private', 'local_authority', 'nhs', 'insurance', 'charity', 'other']).default('private'),
+  authority_category: z.enum(['private', 'local_authority', 'nhs', 'insurance', 'charity', 'other']).optional(),
   mileage_rule_no_payment: z.boolean().default(false),
   service_payer: z.enum(['authorities', 'direct_payment', 'self_funder', 'other']).default('authorities'),
   // Add funding type fields
@@ -52,6 +52,15 @@ const generalSettingsSchema = z.object({
 }, {
   message: "Authority selection is required when funding type is Authority",
   path: ["authority_id"]
+}).refine((data) => {
+  // If service_payer is authorities, authority_category is required
+  if (data.service_payer === 'authorities' && !data.authority_category) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Authority type is required when Authorities is selected",
+  path: ["authority_category"]
 });
 
 type GeneralSettingsFormData = z.infer<typeof generalSettingsSchema>;
@@ -140,7 +149,8 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
         invoice_display_type: data.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: data.billing_address_same_as_personal ?? true,
         pay_method: data.pay_method || null,
-        authority_category: data.authority_category || 'private',
+        // Only save authority_category when service_payer is 'authorities'
+        authority_category: data.service_payer === 'authorities' ? (data.authority_category || 'private') : null,
         mileage_rule_no_payment: data.mileage_rule_no_payment || false,
         service_payer: data.service_payer || 'authorities',
       });
@@ -151,6 +161,9 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
 
   const fundingType = form.watch('funding_type');
   const isAuthorityFunding = fundingType === 'authority';
+  
+  const servicePayer = form.watch('service_payer');
+  const isAuthorityPayer = servicePayer === 'authorities';
 
   if (settingsLoading) {
     return <div>Loading settings...</div>;
@@ -405,31 +418,6 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="authority_category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Authorities</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select authority type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(authorityCategoryLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <div className="space-y-3">
@@ -502,6 +490,33 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
                   </FormItem>
                 )}
               />
+
+              {isAuthorityPayer && (
+                <FormField
+                  control={form.control}
+                  name="authority_category"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>Authorities</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select authority type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(authorityCategoryLabels).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </CardContent>
         </Card>
