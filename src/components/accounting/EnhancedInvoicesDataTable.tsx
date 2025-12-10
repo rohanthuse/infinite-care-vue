@@ -62,6 +62,9 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   // Expenses dialog state
   const [expensesDialogOpen, setExpensesDialogOpen] = useState(false);
   const [selectedInvoiceForExpenses, setSelectedInvoiceForExpenses] = useState<string | null>(null);
+  
+  // Controlled dropdown state to prevent UI freeze when opening dialogs
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const {
     data: invoices,
     isLoading
@@ -194,8 +197,17 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
 
   // Handler for opening Expenses dialog
   const handleOpenExpenses = (invoiceId: string) => {
-    setSelectedInvoiceForExpenses(invoiceId);
-    setExpensesDialogOpen(true);
+    setOpenDropdownId(null);
+    setTimeout(() => {
+      setSelectedInvoiceForExpenses(invoiceId);
+      setExpensesDialogOpen(true);
+    }, 0);
+  };
+
+  // Helper to close dropdown before triggering action
+  const handleDropdownAction = (action: () => void) => {
+    setOpenDropdownId(null);
+    setTimeout(action, 0);
   };
 
   const formatDate = (dateString: string) => {
@@ -351,7 +363,10 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center">
-                      <DropdownMenu>
+                      <DropdownMenu 
+                        open={openDropdownId === invoice.id}
+                        onOpenChange={(open) => setOpenDropdownId(open ? invoice.id : null)}
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button 
                             variant="ghost" 
@@ -365,13 +380,13 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                         
                         <DropdownMenuContent align="end" className="w-56">
                           {/* Primary Actions */}
-                          <DropdownMenuItem onClick={() => onViewInvoice?.(invoice.id)}>
+                          <DropdownMenuItem onClick={() => handleDropdownAction(() => onViewInvoice?.(invoice.id))}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>View Invoice</span>
                           </DropdownMenuItem>
                           
                           {canEdit && (
-                            <DropdownMenuItem onClick={() => onEditInvoice?.(invoice.id)}>
+                            <DropdownMenuItem onClick={() => handleDropdownAction(() => onEditInvoice?.(invoice.id))}>
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit Invoice</span>
                             </DropdownMenuItem>
@@ -383,21 +398,21 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                               <DropdownMenuSeparator />
                               
                               {canLock && (
-                                <DropdownMenuItem onClick={() => onLockInvoice?.(invoice.id)}>
+                                <DropdownMenuItem onClick={() => handleDropdownAction(() => onLockInvoice?.(invoice.id))}>
                                   <Lock className="mr-2 h-4 w-4" />
                                   <span>Lock Invoice</span>
                                 </DropdownMenuItem>
                               )}
                               
                               {isLocked && onUnlockInvoice && (
-                                <DropdownMenuItem onClick={() => onUnlockInvoice?.(invoice.id)}>
+                                <DropdownMenuItem onClick={() => handleDropdownAction(() => onUnlockInvoice?.(invoice.id))}>
                                   <Unlock className="mr-2 h-4 w-4" />
                                   <span>Unlock Invoice</span>
                                 </DropdownMenuItem>
                               )}
                               
                               {canSend && (
-                                <DropdownMenuItem onClick={() => onSendInvoice?.(invoice.id)}>
+                                <DropdownMenuItem onClick={() => handleDropdownAction(() => onSendInvoice?.(invoice.id))}>
                                   <Send className="mr-2 h-4 w-4" />
                                   <span>Send Invoice</span>
                                 </DropdownMenuItem>
@@ -408,7 +423,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                           {/* Additional Actions */}
                           <DropdownMenuSeparator />
                           
-                          <DropdownMenuItem onClick={() => handleSendViaEmail(invoice.id)}>
+                          <DropdownMenuItem onClick={() => handleDropdownAction(() => handleSendViaEmail(invoice.id))}>
                             <Mail className="mr-2 h-4 w-4" />
                             <span>Send via Email</span>
                           </DropdownMenuItem>
@@ -423,7 +438,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
-                                onClick={() => onRecordPayment?.(invoice.id)}
+                                onClick={() => handleDropdownAction(() => onRecordPayment?.(invoice.id))}
                                 className="text-green-600 focus:text-green-600"
                               >
                                 <PoundSterling className="mr-2 h-4 w-4" />
@@ -435,14 +450,14 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                           {/* Export & Delete */}
                           <DropdownMenuSeparator />
                           
-                          <DropdownMenuItem onClick={() => onExportInvoice?.(invoice.id)}>
+                          <DropdownMenuItem onClick={() => handleDropdownAction(() => onExportInvoice?.(invoice.id))}>
                             <Download className="mr-2 h-4 w-4" />
                             <span>Export PDF</span>
                           </DropdownMenuItem>
                           
                           {canDelete && (
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteInvoice(invoice)}
+                              onClick={() => handleDropdownAction(() => handleDeleteInvoice(invoice))}
                               className="text-destructive focus:text-destructive"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
