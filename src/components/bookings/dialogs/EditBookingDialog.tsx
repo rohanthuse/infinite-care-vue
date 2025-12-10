@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle } from "lucide-react";
 import { getBookingStatusColor, getBookingStatusLabel, BOOKING_STATUS_COLORS, BookingStatusType } from "../utils/bookingColors";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
@@ -63,27 +64,27 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const toLocalInput = (value?: string | Date) => {
-  if (!value) return "";
-  const d = typeof value === "string" ? new Date(value) : value;
-  if (isNaN(d.getTime())) return "";
-  try {
-    return format(d, "yyyy-MM-dd'T'HH:mm");
-  } catch {
-    return "";
-  }
-};
-
 const isValidDate = (d: Date) => !isNaN(d.getTime());
 
 const editBookingSchema = z.object({
-  start_time: z.string().min(1, "Start time is required"),
-  end_time: z.string().min(1, "End time is required"),
+  booking_date: z.date({
+    required_error: "Booking date is required",
+  }),
+  start_time: z.string().min(5, { message: "Start time is required" }), // HH:mm format
+  end_time: z.string().min(5, { message: "End time is required" }),     // HH:mm format
   service_ids: z.array(z.string()).optional(),
   staff_ids: z.array(z.string()).optional(),
   assign_later: z.boolean().optional(),
   notes: z.string().optional(),
   status: z.string().optional(),
+}).refine((data) => {
+  // Validate end time is after start time
+  const [startHour, startMin] = data.start_time.split(':').map(Number);
+  const [endHour, endMin] = data.end_time.split(':').map(Number);
+  return (endHour * 60 + endMin) > (startHour * 60 + startMin);
+}, {
+  message: "End time must be after start time",
+  path: ["end_time"]
 });
 
 // Available booking statuses for manual selection
@@ -158,6 +159,7 @@ export function EditBookingDialog({
   const form = useForm<EditBookingFormData>({
     resolver: zodResolver(editBookingSchema),
     defaultValues: {
+      booking_date: undefined as Date | undefined,
       start_time: "",
       end_time: "",
       service_ids: [],
@@ -315,22 +317,30 @@ export function EditBookingDialog({
   useEffect(() => {
     if (booking && booking.id && open) {
       // Handle both ISO format (start_time) and local format (date + startTime)
-      let startStr = "";
-      let endStr = "";
+      let bookingDate: Date | undefined;
+      let startTimeStr = "";
+      let endTimeStr = "";
       
       if (booking.start_time) {
         // ISO format from raw database
-        startStr = toLocalInput(booking.start_time);
-        endStr = toLocalInput(booking.end_time);
+        const start = new Date(booking.start_time);
+        const end = new Date(booking.end_time);
+        if (isValidDate(start) && isValidDate(end)) {
+          bookingDate = start;
+          startTimeStr = format(start, "HH:mm");
+          endTimeStr = format(end, "HH:mm");
+        }
       } else if (booking.date && booking.startTime) {
         // Local format from grid/list view
-        startStr = toLocalInput(`${booking.date}T${booking.startTime}:00`);
-        endStr = toLocalInput(`${booking.date}T${booking.endTime}:00`);
+        bookingDate = new Date(booking.date);
+        startTimeStr = booking.startTime;
+        endTimeStr = booking.endTime;
       }
       
       // Only set values if we have valid data
-      if (startStr) form.setValue("start_time", startStr);
-      if (endStr) form.setValue("end_time", endStr);
+      if (bookingDate) form.setValue("booking_date", bookingDate);
+      if (startTimeStr) form.setValue("start_time", startTimeStr);
+      if (endTimeStr) form.setValue("end_time", endTimeStr);
       
       // Get services from junction table (bookingServices hook) with fallbacks
       let serviceIdsToSet: string[] = [];
@@ -351,8 +361,9 @@ export function EditBookingDialog({
       
       console.log('[EditBookingDialog] Form initialized:', {
         bookingId: booking.id,
-        start_time: startStr,
-        end_time: endStr,
+        booking_date: bookingDate,
+        start_time: startTimeStr,
+        end_time: endTimeStr,
         service_ids: serviceIdsToSet,
         fromJunctionTable: bookingServices && bookingServices.length > 0
       });
@@ -368,17 +379,16 @@ export function EditBookingDialog({
     if (!booking) return true;
     
     const formValues = form.getValues();
-    const startDateTime = new Date(formValues.start_time);
-    const endDateTime = new Date(formValues.end_time);
+    const bookingDate = formValues.booking_date;
+    const startTime = formValues.start_time;
+    const endTime = formValues.end_time;
 
-    if (!isValidDate(startDateTime) || !isValidDate(endDateTime)) {
+    if (!bookingDate || !startTime || !endTime) {
       return true;
     }
 
-    // Extract local date and time from the datetime-local input
-    const date = format(startDateTime, "yyyy-MM-dd");
-    const startTime = format(startDateTime, "HH:mm");
-    const endTime = format(endDateTime, "HH:mm");
+    // Use date from the separate date picker
+    const date = format(bookingDate, "yyyy-MM-dd");
 
     const selectedStaffIds = formValues.staff_ids || [];
     
@@ -452,10 +462,19 @@ export function EditBookingDialog({
       return;
     }
 
-    const start = new Date(data.start_time);
-    const end = new Date(data.end_time);
+    // Combine date + time into full datetime
+    const bookingDate = data.booking_date;
+    const [startHour, startMin] = data.start_time.split(':').map(Number);
+    const [endHour, endMin] = data.end_time.split(':').map(Number);
+
+    const start = new Date(bookingDate);
+    start.setHours(startHour, startMin, 0, 0);
+
+    const end = new Date(bookingDate);
+    end.setHours(endHour, endMin, 0, 0);
+
     if (!isValidDate(start) || !isValidDate(end)) {
-      toast.error("Please provide valid start and end times");
+      toast.error("Please provide valid date and times");
       return;
     }
     
@@ -924,6 +943,29 @@ export function EditBookingDialog({
                   )}
                 />
 
+                {/* Booking Date - Full width */}
+                <FormField
+                  control={form.control}
+                  name="booking_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Booking Date</FormLabel>
+                      <FormControl>
+                        <EnhancedDatePicker
+                          value={field.value}
+                          onChange={(date) => {
+                            field.onChange(date);
+                            setValidationResult(null);
+                          }}
+                          placeholder="Enter or pick date (dd/mm/yyyy)"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Time Fields - Side by side */}
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -933,11 +975,10 @@ export function EditBookingDialog({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <Input
-                            type="datetime-local"
+                            type="time"
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              // Reset validation when time changes
                               setValidationResult(null);
                             }}
                           />
@@ -955,11 +996,10 @@ export function EditBookingDialog({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <Input
-                            type="datetime-local"
+                            type="time"
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              // Reset validation when time changes
                               setValidationResult(null);
                             }}
                           />
