@@ -175,10 +175,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     handleCreateBooking,
     handleOverlapChooseDifferentCarer,
     handleOverlapModifyTime,
-    handleOverlapForceCreate,
     handleUpdateOverlapChooseDifferentCarer,
     handleUpdateOverlapModifyTime,
-    handleUpdateOverlapForceUpdate,
     createMultipleBookingsMutation,
     updateBookingMutation,
     forceRefresh
@@ -564,7 +562,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         availableCarers={overlapData?.availableCarers || []}
         onChooseDifferentCarer={handleOverlapChooseDifferentCarer}
         onModifyTime={handleOverlapModifyTime}
-        onForceCreate={handleOverlapForceCreate}
       />
 
       <BookingOverlapAlert
@@ -577,7 +574,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         availableCarers={updateOverlapData?.availableCarers || []}
         onChooseDifferentCarer={handleUpdateOverlapChooseDifferentCarer}
         onModifyTime={handleUpdateOverlapModifyTime}
-        onForceCreate={handleUpdateOverlapForceUpdate}
       />
 
       <ViewBookingDialog

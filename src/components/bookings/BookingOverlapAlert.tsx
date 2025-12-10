@@ -31,7 +31,6 @@ interface BookingOverlapAlertProps {
   availableCarers: Array<{ id: string; name: string; initials: string }>;
   onChooseDifferentCarer: () => void;
   onModifyTime: () => void;
-  onForceCreate?: () => void;
 }
 
 export function BookingOverlapAlert({
@@ -44,7 +43,6 @@ export function BookingOverlapAlert({
   availableCarers,
   onChooseDifferentCarer,
   onModifyTime,
-  onForceCreate,
 }: BookingOverlapAlertProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -150,15 +148,6 @@ export function BookingOverlapAlert({
               Modify Time
             </AlertDialogAction>
           </div>
-          
-          {onForceCreate && (
-            <AlertDialogAction
-              onClick={onForceCreate}
-              className="w-full text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Force Save (Emergency Only - May Cause Serious Issues)
-            </AlertDialogAction>
-          )}
           
           <AlertDialogCancel className="w-full">Cancel</AlertDialogCancel>
         </AlertDialogFooter>
