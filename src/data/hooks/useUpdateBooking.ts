@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { notifyBookingUpdated } from "@/utils/bookingNotifications";
+import { ensureValidBookingTimes } from "@/utils/bookingTimeValidation";
 
 interface UpdateBookingPayload {
   bookingId: string;
@@ -25,9 +26,18 @@ interface UpdateBookingPayload {
 async function updateBooking({ bookingId, updatedData }: UpdateBookingPayload) {
   console.log("[useUpdateBooking] Updating booking:", { bookingId, updatedData });
   
+  // CRITICAL: Validate booking times if both start_time and end_time are being updated
+  let validatedData = { ...updatedData };
+  if (updatedData.start_time && updatedData.end_time) {
+    const validatedTimes = ensureValidBookingTimes(updatedData.start_time, updatedData.end_time);
+    validatedData.start_time = validatedTimes.startTime;
+    validatedData.end_time = validatedTimes.endTime;
+    console.log("[useUpdateBooking] Validated booking times:", validatedTimes);
+  }
+  
   const { data, error } = await supabase
     .from("bookings")
-    .update(updatedData)
+    .update(validatedData)
     .eq("id", bookingId)
     .select()
     .single();

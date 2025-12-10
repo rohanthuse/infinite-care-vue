@@ -5,6 +5,7 @@ import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
 import { toast } from "@/hooks/use-toast";
 import { createBookingServices } from "@/hooks/useBookingServices";
 import { notifyBookingCreated } from "@/utils/bookingNotifications";
+import { ensureValidBookingTimes } from "@/utils/bookingTimeValidation";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -54,6 +55,10 @@ export async function createBooking(input: CreateBookingInput) {
     throw new Error(message);
   }
   
+  // CRITICAL: Validate and auto-correct booking times to prevent date mismatches
+  const validatedTimes = ensureValidBookingTimes(input.start_time, input.end_time);
+  console.log('[createBooking] Validated booking times:', validatedTimes);
+  
   // Get primary service_id for backwards compatibility
   const serviceIds = input.service_ids || (input.service_id ? [input.service_id] : []);
   const primaryServiceId = serviceIds[0] || null;
@@ -65,8 +70,8 @@ export async function createBooking(input: CreateBookingInput) {
         branch_id: bookingBranchId, // Use resolved branch_id (fallback applied if needed)
         client_id: input.client_id,
         staff_id: input.staff_id || null, // Handle null staff_id for unassigned bookings
-        start_time: input.start_time,
-        end_time: input.end_time,
+        start_time: validatedTimes.startTime,
+        end_time: validatedTimes.endTime,
         service_id: primaryServiceId, // Keep for backwards compatibility
         revenue: input.revenue || null,
         status: input.status || (input.staff_id ? "assigned" : "unassigned"), // Auto-set status based on staff assignment
