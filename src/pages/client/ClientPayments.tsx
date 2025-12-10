@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/utils/currencyFormatter";
-import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
+import { useClientPortalInvoices, getInvoiceDisplayStatus } from "@/hooks/useClientPortalInvoices";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { format } from "date-fns";
 import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
@@ -27,10 +27,13 @@ const ClientPayments = () => {
   const clientName = `${authData?.client?.first_name || ''} ${authData?.client?.last_name || ''}`.trim();
   const clientEmail = authData?.user?.email;
 
-  const { data: invoices, isLoading: billingLoading, error: billingError } = useEnhancedClientBilling(clientId || '');
+  const { data: invoices, isLoading: billingLoading, error: billingError } = useClientPortalInvoices(clientId || '');
 
-  // Calculate totals for summary
-  const pendingInvoices = invoices?.filter(inv => inv.status === 'pending' || inv.status === 'sent') || [];
+  // Calculate totals for summary - include overdue invoices
+  const pendingInvoices = invoices?.filter(inv => {
+    const displayStatus = getInvoiceDisplayStatus(inv);
+    return displayStatus === 'pending' || displayStatus === 'sent' || displayStatus === 'overdue';
+  }) || [];
   const totalPending = pendingInvoices.reduce((sum, inv) => sum + (inv.total_amount || inv.amount), 0);
 
   // Get status badge style
@@ -204,7 +207,8 @@ const ClientPayments = () => {
             <div className="space-y-4">
               {invoices && invoices.length > 0 ? invoices.map(invoice => {
                 const remainingBalance = calculateRemainingBalance(invoice);
-                const isPaid = invoice.status === 'paid' || remainingBalance <= 0;
+                const displayStatus = getInvoiceDisplayStatus(invoice);
+                const isPaid = displayStatus === 'paid' || remainingBalance <= 0;
                 
                 return (
                   <div key={invoice.id} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -213,7 +217,7 @@ const ClientPayments = () => {
                         <div className="flex items-center">
                           <h4 className="font-medium">{invoice.invoice_number}</h4>
                           <span className="mx-2 text-gray-400">•</span>
-                          {getStatusBadge(invoice.status)}
+                          {getStatusBadge(displayStatus)}
                         </div>
                         <p className="text-sm text-gray-600 mt-1">{invoice.description}</p>
                       </div>
