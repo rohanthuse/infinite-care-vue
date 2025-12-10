@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,22 +17,22 @@ import {
   SafeSelectTrigger as SelectTrigger,
   SafeSelectValue as SelectValue,
 } from '@/components/ui/safe-select';
-import { useCarerExtraTimeManagement } from '@/hooks/useCarerExtraTimeManagement';
+import { useCarerExtraTimeEdit } from '@/hooks/useCarerExtraTimeEdit';
 import { useCarerAssignedClients } from '@/hooks/useCarerAssignedClients';
-import { useToast } from '@/hooks/use-toast';
+import { MyExtraTimeRecord } from '@/hooks/useMyExtraTime';
 
-interface AddExtraTimeDialogProps {
+interface EditExtraTimeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  extraTime: MyExtraTimeRecord | null;
 }
 
-export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogProps) => {
-  const { toast } = useToast();
-  const { createExtraTimeRecord } = useCarerExtraTimeManagement();
+export const EditExtraTimeDialog = ({ open, onOpenChange, extraTime }: EditExtraTimeDialogProps) => {
+  const { updateExtraTime } = useCarerExtraTimeEdit();
   const { data: assignedClients = [], isLoading: loadingClients } = useCarerAssignedClients();
 
   const [formData, setFormData] = useState({
-    work_date: new Date().toISOString().split('T')[0],
+    work_date: '',
     scheduled_start_time: '',
     scheduled_end_time: '',
     actual_start_time: '',
@@ -44,41 +44,44 @@ export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogPro
     client_id: '',
   });
 
+  useEffect(() => {
+    if (extraTime) {
+      setFormData({
+        work_date: extraTime.work_date,
+        scheduled_start_time: extraTime.scheduled_start_time,
+        scheduled_end_time: extraTime.scheduled_end_time,
+        actual_start_time: extraTime.actual_start_time || '',
+        actual_end_time: extraTime.actual_end_time || '',
+        hourly_rate: extraTime.hourly_rate.toString(),
+        extra_time_rate: extraTime.extra_time_rate?.toString() || '',
+        reason: extraTime.reason || '',
+        notes: extraTime.notes || '',
+        client_id: '', // Would need client_id in type
+      });
+    }
+  }, [extraTime]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!extraTime) return;
 
     try {
-      await createExtraTimeRecord.mutateAsync({
-        ...formData,
+      await updateExtraTime.mutateAsync({
+        id: extraTime.id,
+        work_date: formData.work_date,
+        scheduled_start_time: formData.scheduled_start_time,
+        scheduled_end_time: formData.scheduled_end_time,
+        actual_start_time: formData.actual_start_time,
+        actual_end_time: formData.actual_end_time,
         hourly_rate: parseFloat(formData.hourly_rate),
         extra_time_rate: formData.extra_time_rate ? parseFloat(formData.extra_time_rate) : undefined,
+        reason: formData.reason || undefined,
+        notes: formData.notes || undefined,
         client_id: formData.client_id || undefined,
       });
-
-      toast({
-        title: "Success",
-        description: "Extra time record submitted for approval",
-      });
-
       onOpenChange(false);
-      setFormData({
-        work_date: new Date().toISOString().split('T')[0],
-        scheduled_start_time: '',
-        scheduled_end_time: '',
-        actual_start_time: '',
-        actual_end_time: '',
-        hourly_rate: '',
-        extra_time_rate: '',
-        reason: '',
-        notes: '',
-        client_id: '',
-      });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit extra time record",
-        variant: "destructive",
-      });
+      // Error handled in hook
     }
   };
 
@@ -86,13 +89,15 @@ export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogPro
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  if (!extraTime) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Submit Extra Time Request</DialogTitle>
+          <DialogTitle>Edit Extra Time Record</DialogTitle>
           <DialogDescription>
-            Submit your overtime/extra time for approval and payment.
+            Update your pending extra time claim details.
           </DialogDescription>
         </DialogHeader>
 
@@ -185,7 +190,6 @@ export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogPro
                 step="0.01"
                 value={formData.hourly_rate}
                 onChange={(e) => handleInputChange('hourly_rate', e.target.value)}
-                placeholder="e.g., 15.50"
                 required
               />
             </div>
@@ -208,7 +212,6 @@ export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogPro
               id="reason"
               value={formData.reason}
               onChange={(e) => handleInputChange('reason', e.target.value)}
-              placeholder="e.g., Client emergency, extended care needs"
             />
           </div>
 
@@ -218,23 +221,15 @@ export const AddExtraTimeDialog = ({ open, onOpenChange }: AddExtraTimeDialogPro
               id="notes"
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Any additional details about the extra time worked"
             />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createExtraTimeRecord.isPending}
-            >
-              {createExtraTimeRecord.isPending ? 'Submitting...' : 'Submit Extra Time'}
+            <Button type="submit" disabled={updateExtraTime.isPending}>
+              {updateExtraTime.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

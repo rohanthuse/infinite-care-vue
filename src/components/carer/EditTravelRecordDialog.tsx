@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,24 +17,24 @@ import {
   SafeSelectTrigger as SelectTrigger,
   SafeSelectValue as SelectValue,
 } from '@/components/ui/safe-select';
-import { useCarerTravelManagement } from '@/hooks/useCarerTravelManagement';
-import { useToast } from '@/hooks/use-toast';
+import { useCarerTravelEdit } from '@/hooks/useCarerTravelEdit';
 import { useTravelRateOptions } from '@/hooks/useParameterOptions';
 import { useCarerAssignedClients } from '@/hooks/useCarerAssignedClients';
+import { MyTravelRecord } from '@/hooks/useMyTravel';
 
-interface AddTravelRecordDialogProps {
+interface EditTravelRecordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  travel: MyTravelRecord | null;
 }
 
-export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDialogProps) => {
-  const { toast } = useToast();
-  const { createTravelRecord, uploadReceipt } = useCarerTravelManagement();
+export const EditTravelRecordDialog = ({ open, onOpenChange, travel }: EditTravelRecordDialogProps) => {
+  const { updateTravel } = useCarerTravelEdit();
   const { data: travelRateOptions = [], isLoading: loadingRates } = useTravelRateOptions();
   const { data: assignedClients = [], isLoading: loadingClients } = useCarerAssignedClients();
 
   const [formData, setFormData] = useState({
-    travel_date: new Date().toISOString().split('T')[0],
+    travel_date: '',
     client_id: '',
     start_location: '',
     end_location: '',
@@ -43,57 +43,47 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     vehicle_type: 'personal_car',
     purpose: '',
     notes: '',
-    travel_rate_type: undefined as string | undefined,
     mileage_rate: '0.45',
   });
 
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  useEffect(() => {
+    if (travel) {
+      setFormData({
+        travel_date: travel.travel_date,
+        client_id: '', // Would need client_id in travel record type
+        start_location: travel.start_location,
+        end_location: travel.end_location,
+        distance_miles: travel.distance_miles.toString(),
+        travel_time_minutes: travel.travel_time_minutes?.toString() || '',
+        vehicle_type: travel.vehicle_type,
+        purpose: travel.purpose,
+        notes: travel.notes || '',
+        mileage_rate: travel.mileage_rate.toString(),
+      });
+    }
+  }, [travel]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!travel) return;
 
     try {
-      let receipt_url: string | undefined;
-      
-      if (receiptFile) {
-        receipt_url = await uploadReceipt(receiptFile);
-      }
-
-      await createTravelRecord.mutateAsync({
-        ...formData,
+      await updateTravel.mutateAsync({
+        id: travel.id,
+        travel_date: formData.travel_date,
         client_id: formData.client_id || undefined,
+        start_location: formData.start_location,
+        end_location: formData.end_location,
         distance_miles: parseFloat(formData.distance_miles),
         travel_time_minutes: formData.travel_time_minutes ? parseInt(formData.travel_time_minutes) : undefined,
+        vehicle_type: formData.vehicle_type,
+        purpose: formData.purpose,
+        notes: formData.notes || undefined,
         mileage_rate: parseFloat(formData.mileage_rate),
-        receipt_url,
       });
-
-      toast({
-        title: "Success",
-        description: "Travel record submitted for approval",
-      });
-
       onOpenChange(false);
-      setFormData({
-        travel_date: new Date().toISOString().split('T')[0],
-        client_id: '',
-        start_location: '',
-        end_location: '',
-        distance_miles: '',
-        travel_time_minutes: '',
-        vehicle_type: 'personal_car',
-        purpose: '',
-        notes: '',
-        travel_rate_type: undefined,
-        mileage_rate: '0.45',
-      });
-      setReceiptFile(null);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit travel record",
-        variant: "destructive",
-      });
+      // Error handled in hook
     }
   };
 
@@ -101,42 +91,15 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleRateTypeChange = (rateType: string) => {
-    const selectedRate = travelRateOptions.find(rate => rate.value === rateType);
-    if (selectedRate) {
-      const rateMatch = selectedRate.label.match(/£?(\d+\.?\d*)/);
-      const rate = rateMatch ? rateMatch[1] : '0.45';
-      
-      setFormData(prev => ({
-        ...prev,
-        travel_rate_type: rateType,
-        mileage_rate: rate
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        travel_rate_type: rateType
-      }));
-    }
-  };
-
-  const handleClientChange = (clientId: string) => {
-    const selectedClient = assignedClients.find(c => c.id === clientId);
-    setFormData(prev => ({
-      ...prev,
-      client_id: clientId === 'none' ? '' : clientId,
-      // Auto-fill end location with client address if available
-      end_location: selectedClient?.address || prev.end_location
-    }));
-  };
+  if (!travel) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Submit Travel & Mileage Claim</DialogTitle>
+          <DialogTitle>Edit Travel Record</DialogTitle>
           <DialogDescription>
-            Submit your travel expenses for approval and reimbursement.
+            Update your pending travel claim details.
           </DialogDescription>
         </DialogHeader>
 
@@ -156,7 +119,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
               <Label htmlFor="client_id">Client (Optional)</Label>
               <Select
                 value={formData.client_id || 'none'}
-                onValueChange={handleClientChange}
+                onValueChange={(value) => handleInputChange('client_id', value === 'none' ? '' : value)}
                 disabled={loadingClients}
               >
                 <SelectTrigger>
@@ -176,32 +139,13 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="travel_rate_type">Rate Type</Label>
-              <Select
-                value={formData.travel_rate_type}
-                onValueChange={handleRateTypeChange}
-                disabled={loadingRates}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingRates ? "Loading rates..." : "Select rate type"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {travelRateOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="vehicle_type">Vehicle Type</Label>
               <Select
                 value={formData.vehicle_type}
                 onValueChange={(value) => handleInputChange('vehicle_type', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle type" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="personal_car">Personal Car</SelectItem>
@@ -210,54 +154,6 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
                   <SelectItem value="bicycle">Bicycle</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_location">Start Location</Label>
-              <Input
-                id="start_location"
-                value={formData.start_location}
-                onChange={(e) => handleInputChange('start_location', e.target.value)}
-                placeholder="Enter start address"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_location">End Location</Label>
-              <Input
-                id="end_location"
-                value={formData.end_location}
-                onChange={(e) => handleInputChange('end_location', e.target.value)}
-                placeholder="Enter destination address"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="distance_miles">Distance (miles)</Label>
-              <Input
-                id="distance_miles"
-                type="number"
-                step="0.1"
-                value={formData.distance_miles}
-                onChange={(e) => handleInputChange('distance_miles', e.target.value)}
-                placeholder="0.0"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="travel_time_minutes">Travel Time (minutes)</Label>
-              <Input
-                id="travel_time_minutes"
-                type="number"
-                value={formData.travel_time_minutes}
-                onChange={(e) => handleInputChange('travel_time_minutes', e.target.value)}
-                placeholder="Optional"
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="mileage_rate">Rate per mile (£)</Label>
@@ -272,13 +168,57 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="start_location">Start Location</Label>
+              <Input
+                id="start_location"
+                value={formData.start_location}
+                onChange={(e) => handleInputChange('start_location', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="end_location">End Location</Label>
+              <Input
+                id="end_location"
+                value={formData.end_location}
+                onChange={(e) => handleInputChange('end_location', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="distance_miles">Distance (miles)</Label>
+              <Input
+                id="distance_miles"
+                type="number"
+                step="0.1"
+                value={formData.distance_miles}
+                onChange={(e) => handleInputChange('distance_miles', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="travel_time_minutes">Travel Time (minutes)</Label>
+              <Input
+                id="travel_time_minutes"
+                type="number"
+                value={formData.travel_time_minutes}
+                onChange={(e) => handleInputChange('travel_time_minutes', e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="purpose">Purpose of Travel</Label>
             <Input
               id="purpose"
               value={formData.purpose}
               onChange={(e) => handleInputChange('purpose', e.target.value)}
-              placeholder="e.g., Client visit, training, meeting"
               required
             />
           </div>
@@ -289,38 +229,15 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
               id="notes"
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Any additional details or context"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="receipt">Receipt (Optional)</Label>
-            <Input
-              id="receipt"
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-            />
-            {receiptFile && (
-              <p className="text-sm text-muted-foreground">
-                Selected: {receiptFile.name}
-              </p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createTravelRecord.isPending}
-            >
-              {createTravelRecord.isPending ? 'Submitting...' : 'Submit Travel Claim'}
+            <Button type="submit" disabled={updateTravel.isPending}>
+              {updateTravel.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
