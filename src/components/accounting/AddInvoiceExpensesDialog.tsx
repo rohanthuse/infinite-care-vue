@@ -27,6 +27,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AddNewExpenseEntryDialog } from "./AddNewExpenseEntryDialog";
 import { InvoiceExpenseEntry } from "@/types/invoiceExpense";
+import { useCreateInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface AddInvoiceExpensesDialogProps {
   open: boolean;
@@ -41,10 +43,11 @@ export function AddInvoiceExpensesDialog({
   invoiceId,
   branchId,
 }: AddInvoiceExpensesDialogProps) {
+  const { organization } = useTenant();
   const [expenses, setExpenses] = useState<InvoiceExpenseEntry[]>([]);
   const [addExpenseDialogOpen, setAddExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<InvoiceExpenseEntry | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createInvoiceExpenseEntries = useCreateInvoiceExpenseEntries();
 
   // Formatting helpers
   const formatCurrency = (amount: number | null) => {
@@ -122,28 +125,32 @@ export function AddInvoiceExpensesDialog({
       return;
     }
 
-    setIsSubmitting(true);
+    if (!invoiceId) {
+      toast({
+        title: "No invoice selected",
+        description: "Please select an invoice first.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      // TODO: Backend integration - save expenses to invoice
-      console.log("Saving expenses to invoice:", { invoiceId, expenses });
-
-      toast({
-        title: "Expenses saved!",
-        description: `${expenses.length} expense(s) added to the invoice successfully.`,
+      await createInvoiceExpenseEntries.mutateAsync({
+        invoiceId,
+        expenses,
+        organizationId: organization?.id || undefined,
       });
 
       // Reset and close
       setExpenses([]);
       onOpenChange(false);
     } catch (error) {
+      console.error("Error saving expenses to invoice:", error);
       toast({
         title: "Failed to save expenses",
         description: "An error occurred while saving the expenses.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -302,14 +309,14 @@ export function AddInvoiceExpensesDialog({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+            <Button variant="outline" onClick={handleCancel} disabled={createInvoiceExpenseEntries.isPending}>
               Cancel
             </Button>
             <Button
               onClick={handleSaveToInvoice}
-              disabled={isSubmitting || expenses.length === 0}
+              disabled={createInvoiceExpenseEntries.isPending || expenses.length === 0}
             >
-              {isSubmitting ? "Saving..." : "Save to Invoice"}
+              {createInvoiceExpenseEntries.isPending ? "Saving..." : "Save to Invoice"}
             </Button>
           </DialogFooter>
         </DialogContent>

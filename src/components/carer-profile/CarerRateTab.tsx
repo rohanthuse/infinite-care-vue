@@ -12,6 +12,7 @@ import { AddStaffRateScheduleDialog } from "@/components/carer-profile/accountin
 import { EditStaffRateScheduleDialog } from "@/components/carer-profile/accounting/EditStaffRateScheduleDialog";
 import { ViewStaffRateScheduleDialog } from "@/components/carer-profile/accounting/ViewStaffRateScheduleDialog";
 import { ServiceTypesDisplay } from "@/components/carer-profile/accounting/ServiceTypesDisplay";
+import { StaffTravelPaymentSelector } from "@/components/staff/StaffTravelPaymentSelector";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface CarerRateTabProps {
@@ -113,7 +114,12 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId, branchId })
   }
 
   return (
-    <Card>
+    <div className="space-y-6">
+      {/* Travel Payment Preference */}
+      <StaffTravelPaymentSelector staffId={carerId} />
+
+      {/* Rate Schedules */}
+      <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -284,5 +290,6 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId, branchId })
         </AlertDialogContent>
       </AlertDialog>
     </Card>
+    </div>
   );
 };
