@@ -150,9 +150,13 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
       const sanitizedPayMethod = data.pay_method && data.pay_method.trim() !== '' ? data.pay_method : null;
       const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
       
+      // Sanitize organization_id as well
+      const sanitizedOrganizationId = organization?.id && organization.id.trim() !== '' ? organization.id : null;
+      
       updateSettings.mutate({
         client_id: clientId,
         branch_id: sanitizedBranchId,
+        organization_id: sanitizedOrganizationId,
         care_lead_id: sanitizedCareLeadId,
         agreement_type: sanitizedAgreementType,
         expiry_date: sanitizedExpiryDate,

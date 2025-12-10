@@ -30,17 +30,25 @@ export const useCreateOrUpdateClientAccountingSettings = () => {
   
   return useMutation({
     mutationFn: async (settings: Omit<ClientAccountingSettings, 'id' | 'created_at' | 'updated_at'>) => {
+      // Defensive sanitization: convert empty strings to null for UUID fields
+      const sanitizedSettings = {
+        ...settings,
+        branch_id: settings.branch_id || null,
+        organization_id: settings.organization_id || null,
+        care_lead_id: settings.care_lead_id || null,
+      };
+      
       const { data: existing } = await supabase
         .from('client_accounting_settings')
         .select('id')
-        .eq('client_id', settings.client_id!)
+        .eq('client_id', sanitizedSettings.client_id!)
         .maybeSingle();
       
       if (existing) {
         const { data, error } = await supabase
           .from('client_accounting_settings')
-          .update(settings)
-          .eq('client_id', settings.client_id!)
+          .update(sanitizedSettings)
+          .eq('client_id', sanitizedSettings.client_id!)
           .select('*')
           .single();
         
@@ -49,7 +57,7 @@ export const useCreateOrUpdateClientAccountingSettings = () => {
       } else {
         const { data, error } = await supabase
           .from('client_accounting_settings')
-          .insert([settings])
+          .insert([sanitizedSettings])
           .select('*')
           .single();
         
@@ -101,17 +109,25 @@ export const useCreateOrUpdateClientPrivateAccounting = () => {
   
   return useMutation({
     mutationFn: async (settings: Omit<ClientPrivateAccounting, 'id' | 'created_at' | 'updated_at'>) => {
+      // Defensive sanitization: convert empty strings to null for UUID fields
+      const sanitizedSettings = {
+        ...settings,
+        branch_id: settings.branch_id || null,
+        organization_id: settings.organization_id || null,
+        travel_rate_id: settings.travel_rate_id || null,
+      };
+      
       const { data: existing } = await supabase
         .from('client_private_accounting')
         .select('id')
-        .eq('client_id', settings.client_id!)
-        .single();
+        .eq('client_id', sanitizedSettings.client_id!)
+        .maybeSingle();
       
       if (existing) {
         const { data, error } = await supabase
           .from('client_private_accounting')
-          .update(settings)
-          .eq('client_id', settings.client_id!)
+          .update(sanitizedSettings)
+          .eq('client_id', sanitizedSettings.client_id!)
           .select('*')
           .single();
         
@@ -120,7 +136,7 @@ export const useCreateOrUpdateClientPrivateAccounting = () => {
       } else {
         const { data, error } = await supabase
           .from('client_private_accounting')
-          .insert([settings])
+          .insert([sanitizedSettings])
           .select('*')
           .single();
         
