@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format, isToday, isTomorrow, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,7 @@ import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
@@ -746,15 +748,17 @@ const CarerAppointments: React.FC = () => {
       {/* Appointments List */}
       {(() => {
         const categorized = categorizeAppointments(filteredAppointments);
-        const hasAnyAppointments = categorized.current.length + categorized.today.length + categorized.upcoming.length + categorized.past.length > 0;
+        const upcomingCount = categorized.current.length + categorized.today.length + categorized.upcoming.length;
+        const pastCount = categorized.past.length;
+        const hasAnyAppointments = upcomingCount + pastCount > 0;
 
         if (!hasAnyAppointments) {
           return (
             <Card>
               <CardContent className="text-center py-12">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
-                <p className="text-gray-500 mb-4">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No appointments found</h3>
+                <p className="text-muted-foreground mb-4">
                   {searchTerm ? "Try adjusting your search or filters" : "You don't have any appointments yet"}
                 </p>
               </CardContent>
@@ -780,13 +784,13 @@ const CarerAppointments: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
                         {formatAppointmentDate(appointment.start_time)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       <span>
                         {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
                       </span>
@@ -794,7 +798,7 @@ const CarerAppointments: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-gray-500" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
                       {appointment.clients?.first_name} {appointment.clients?.last_name}
                     </span>
@@ -816,7 +820,7 @@ const CarerAppointments: React.FC = () => {
                   </div>
                   
                   {appointment.clients?.address && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <MapPin className="h-4 w-4" />
                       <span>{appointment.clients.address}</span>
                     </div>
@@ -829,17 +833,17 @@ const CarerAppointments: React.FC = () => {
                    appointment.visit_records && 
                    appointment.visit_records.length > 0 && 
                    appointment.visit_records[0].visit_start_time && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="text-xs font-semibold text-gray-700 mb-2">Actual Visit Times</div>
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs font-semibold mb-2">Actual Visit Times</div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-gray-500">Start:</span>{' '}
+                          <span className="text-muted-foreground">Start:</span>{' '}
                           <span className="font-medium">
                             {format(new Date(appointment.visit_records[0].visit_start_time), 'HH:mm')}
                           </span>
                         </div>
                         <div>
-                          <span className="text-gray-500">End:</span>{' '}
+                          <span className="text-muted-foreground">End:</span>{' '}
                           <span className="font-medium">
                             {appointment.visit_records[0].visit_end_time 
                               ? format(new Date(appointment.visit_records[0].visit_end_time), 'HH:mm')
@@ -849,7 +853,7 @@ const CarerAppointments: React.FC = () => {
                         </div>
                         {appointment.visit_records[0].actual_duration_minutes && (
                           <div className="col-span-2">
-                            <span className="text-gray-500">Total Hours:</span>{' '}
+                            <span className="text-muted-foreground">Total Hours:</span>{' '}
                             <span className="font-medium text-primary">
                               {(appointment.visit_records[0].actual_duration_minutes / 60).toFixed(2)} hrs
                             </span>
@@ -865,7 +869,7 @@ const CarerAppointments: React.FC = () => {
                     {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
                   </Badge>
                   {appointment.revenue && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       £{appointment.revenue}
                     </div>
                   )}
@@ -877,140 +881,176 @@ const CarerAppointments: React.FC = () => {
         );
 
         return (
-          <div className="space-y-8">
-            {/* Ready to Start */}
-            {categorized.current.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
-                  <Badge className="bg-green-100 text-green-700">{categorized.current.length}</Badge>
-                </div>
-                <div className="space-y-4">
-                  {categorized.current.map(renderAppointmentCard)}
-                </div>
-              </div>
-            )}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upcoming' | 'past')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="upcoming" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Upcoming</span>
+                <Badge variant="secondary" className="ml-1">{upcomingCount}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="past" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">Past</span>
+                <Badge variant="secondary" className="ml-1">{pastCount}</Badge>
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Today's Schedule */}
-            {categorized.today.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-blue-700">Today's Schedule</h2>
-                  <Badge className="bg-blue-100 text-blue-700">{categorized.today.length}</Badge>
-                </div>
-                <div className="space-y-4">
-                  {categorized.today.map(renderAppointmentCard)}
-                </div>
-              </div>
-            )}
+            <TabsContent value="upcoming" className="space-y-8 mt-0">
+              {upcomingCount === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No upcoming appointments</h3>
+                    <p className="text-muted-foreground">You don't have any scheduled appointments</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Ready to Start */}
+                  {categorized.current.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
+                        <Badge className="bg-green-100 text-green-700">{categorized.current.length}</Badge>
+                      </div>
+                      <div className="space-y-4">
+                        {categorized.current.map(renderAppointmentCard)}
+                      </div>
+                    </div>
+                  )}
 
-            {/* Upcoming */}
-            {categorized.upcoming.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                  <h2 className="text-lg font-semibold text-amber-700">Upcoming Appointments</h2>
-                  <Badge className="bg-amber-100 text-amber-700">{categorized.upcoming.length}</Badge>
-                </div>
-                
-                {/* Filter controls for Upcoming */}
-                <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
-                  <Input 
-                    placeholder="Search client..." 
-                    value={upcomingAppointmentsFilter.clientSearch}
-                    onChange={(e) => setUpcomingAppointmentsFilter(prev => ({
-                      ...prev, 
-                      clientSearch: e.target.value
-                    }))}
-                    className="md:max-w-xs"
-                  />
-                  <Select 
-                    value={upcomingAppointmentsFilter.dateRange}
-                    onValueChange={(value) => setUpcomingAppointmentsFilter(prev => ({
-                      ...prev,
-                      dateRange: value
-                    }))}
-                  >
-                    <SelectTrigger className="md:w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="next-7-days">Next 7 Days</SelectItem>
-                      <SelectItem value="next-30-days">Next 30 Days</SelectItem>
-                      <SelectItem value="all">All Future</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-4">
-                  {filterUpcomingAppointments(categorized.upcoming).map(renderAppointmentCard)}
-                </div>
-              </div>
-            )}
+                  {/* Today's Schedule */}
+                  {categorized.today.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold text-blue-700">Today's Schedule</h2>
+                        <Badge className="bg-blue-100 text-blue-700">{categorized.today.length}</Badge>
+                      </div>
+                      <div className="space-y-4">
+                        {categorized.today.map(renderAppointmentCard)}
+                      </div>
+                    </div>
+                  )}
 
-            {/* Past */}
-            {categorized.past.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-5 w-5 rounded-full bg-gray-400"></div>
-                  <h2 className="text-lg font-semibold text-gray-700">Past Appointments</h2>
-                  <Badge className="bg-gray-100 text-gray-700">{categorized.past.length}</Badge>
+                  {/* Upcoming */}
+                  {categorized.upcoming.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Clock className="h-5 w-5 text-amber-600" />
+                        <h2 className="text-lg font-semibold text-amber-700">Upcoming Appointments</h2>
+                        <Badge className="bg-amber-100 text-amber-700">{categorized.upcoming.length}</Badge>
+                      </div>
+                      
+                      {/* Filter controls for Upcoming */}
+                      <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                        <Input 
+                          placeholder="Search client..." 
+                          value={upcomingAppointmentsFilter.clientSearch}
+                          onChange={(e) => setUpcomingAppointmentsFilter(prev => ({
+                            ...prev, 
+                            clientSearch: e.target.value
+                          }))}
+                          className="md:max-w-xs"
+                        />
+                        <Select 
+                          value={upcomingAppointmentsFilter.dateRange}
+                          onValueChange={(value) => setUpcomingAppointmentsFilter(prev => ({
+                            ...prev,
+                            dateRange: value
+                          }))}
+                        >
+                          <SelectTrigger className="md:w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="next-7-days">Next 7 Days</SelectItem>
+                            <SelectItem value="next-30-days">Next 30 Days</SelectItem>
+                            <SelectItem value="all">All Future</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {filterUpcomingAppointments(categorized.upcoming).map(renderAppointmentCard)}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="past" className="space-y-6 mt-0">
+              {pastCount === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No past appointments</h3>
+                    <p className="text-muted-foreground">Your completed appointments will appear here</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <History className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-lg font-semibold">Past Appointments</h2>
+                    <Badge variant="secondary">{categorized.past.length}</Badge>
+                  </div>
+                  
+                  {/* Filter controls for Past */}
+                  <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                    <Input 
+                      placeholder="Search client..." 
+                      value={pastAppointmentsFilter.clientSearch}
+                      onChange={(e) => setPastAppointmentsFilter(prev => ({
+                        ...prev, 
+                        clientSearch: e.target.value
+                      }))}
+                      className="md:max-w-xs"
+                    />
+                    <Select 
+                      value={pastAppointmentsFilter.dateRange}
+                      onValueChange={(value) => setPastAppointmentsFilter(prev => ({
+                        ...prev,
+                        dateRange: value
+                      }))}
+                    >
+                      <SelectTrigger className="md:w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="last-7-days">Last 7 Days</SelectItem>
+                        <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                        <SelectItem value="last-90-days">Last 90 Days</SelectItem>
+                        <SelectItem value="all">All Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={pastAppointmentsFilter.statusFilter}
+                      onValueChange={(value) => setPastAppointmentsFilter(prev => ({
+                        ...prev,
+                        statusFilter: value
+                      }))}
+                    >
+                      <SelectTrigger className="md:w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="done">Completed</SelectItem>
+                        <SelectItem value="completed">Done</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {filterPastAppointments(categorized.past).map(renderAppointmentCard)}
+                  </div>
                 </div>
-                
-                {/* Filter controls for Past */}
-                <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
-                  <Input 
-                    placeholder="Search client..." 
-                    value={pastAppointmentsFilter.clientSearch}
-                    onChange={(e) => setPastAppointmentsFilter(prev => ({
-                      ...prev, 
-                      clientSearch: e.target.value
-                    }))}
-                    className="md:max-w-xs"
-                  />
-                  <Select 
-                    value={pastAppointmentsFilter.dateRange}
-                    onValueChange={(value) => setPastAppointmentsFilter(prev => ({
-                      ...prev,
-                      dateRange: value
-                    }))}
-                  >
-                    <SelectTrigger className="md:w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="last-7-days">Last 7 Days</SelectItem>
-                      <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-                      <SelectItem value="last-90-days">Last 90 Days</SelectItem>
-                      <SelectItem value="all">All Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select 
-                    value={pastAppointmentsFilter.statusFilter}
-                    onValueChange={(value) => setPastAppointmentsFilter(prev => ({
-                      ...prev,
-                      statusFilter: value
-                    }))}
-                  >
-                    <SelectTrigger className="md:w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="done">Completed</SelectItem>
-                      <SelectItem value="completed">Done</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-4">
-                  {filterPastAppointments(categorized.past).map(renderAppointmentCard)}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </TabsContent>
+          </Tabs>
         );
       })()}
 
