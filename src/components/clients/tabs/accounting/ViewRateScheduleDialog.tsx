@@ -2,20 +2,24 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ClientRateSchedule, dayLabels, rateCategoryLabels, payBasedOnLabels } from '@/types/clientAccounting';
+import { ClientRateSchedule, dayLabels, rateCategoryLabels, payBasedOnLabels, servicePayerLabels, authorityCategoryLabels, ServicePayer, AuthorityCategory } from '@/types/clientAccounting';
 import { formatCurrency } from '@/utils/currencyFormatter';
+import { useClientAccountingSettings } from '@/hooks/useClientAccounting';
 
 interface ViewRateScheduleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   schedule: ClientRateSchedule;
+  clientId: string;
 }
 
 export const ViewRateScheduleDialog: React.FC<ViewRateScheduleDialogProps> = ({
   open,
   onOpenChange,
-  schedule
+  schedule,
+  clientId
 }) => {
+  const { data: accountingSettings } = useClientAccountingSettings(clientId);
   const formatDays = (days: string[]) => {
     return days.map(day => dayLabels[day] || day).join(', ');
   };
@@ -72,6 +76,31 @@ export const ViewRateScheduleDialog: React.FC<ViewRateScheduleDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Authority Information */}
+          {(accountingSettings?.service_payer || schedule.authority_type) && (
+            <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Authority Information</h4>
+              <div className="flex flex-wrap gap-4">
+                {accountingSettings?.service_payer && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Who Pays:</span>
+                    <Badge variant="outline">
+                      {servicePayerLabels[accountingSettings.service_payer as ServicePayer] || accountingSettings.service_payer}
+                    </Badge>
+                  </div>
+                )}
+                {schedule.authority_type && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Authority Category:</span>
+                    <Badge variant="outline">
+                      {authorityCategoryLabels[schedule.authority_type as AuthorityCategory] || schedule.authority_type}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>

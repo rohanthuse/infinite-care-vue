@@ -276,7 +276,7 @@ export const useDeleteClientRateSchedule = () => {
     mutationFn: async (scheduleId: string) => {
       const { error } = await supabase
         .from('client_rate_schedules')
-        .update({ is_active: false })
+        .delete()
         .eq('id', scheduleId);
       
       if (error) throw error;
@@ -288,7 +288,7 @@ export const useDeleteClientRateSchedule = () => {
       });
       toast({
         title: "Rate Schedule Deleted",
-        description: "Rate schedule has been deactivated successfully."
+        description: "Rate schedule has been deleted successfully."
       });
     },
     onError: (error: Error) => {

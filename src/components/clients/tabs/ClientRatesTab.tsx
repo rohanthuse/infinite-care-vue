@@ -300,6 +300,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
               if (!open) setSelectedSchedule(null);
             }}
             schedule={selectedSchedule}
+            clientId={clientId}
           />
         </>
       )}
