@@ -63,10 +63,14 @@ export const AuthorityAccountingSettings: React.FC<AuthorityAccountingSettingsPr
   }, [settings, form]);
 
   const onSubmit = (data: AuthorityAccountingFormData) => {
+    // Sanitize UUID fields - convert empty strings to null for database
+    const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
+    const sanitizedOrganizationId = organization?.id && organization.id.trim() !== '' ? organization.id : null;
+    
     updateSettings.mutate({
       client_id: clientId,
-      branch_id: branchId,
-      organization_id: organization?.id || '',
+      branch_id: sanitizedBranchId,
+      organization_id: sanitizedOrganizationId,
       // Preserve existing settings
       show_in_task_matrix: settings?.show_in_task_matrix || false,
       show_in_form_matrix: settings?.show_in_form_matrix || false,

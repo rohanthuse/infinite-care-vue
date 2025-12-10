@@ -107,10 +107,14 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   }, [selectedPayBasedOn, form]);
 
   const onSubmit = (data: RateScheduleFormData) => {
+    // Sanitize UUID fields - convert empty strings to null for database
+    const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
+    const sanitizedOrganizationId = organization?.id && organization.id.trim() !== '' ? organization.id : null;
+    
     const scheduleData = {
       client_id: clientId,
-      branch_id: branchId,
-      organization_id: organization?.id || '',
+      branch_id: sanitizedBranchId,
+      organization_id: sanitizedOrganizationId,
       authority_type: accountingSettings?.authority_category || '',
       service_type_codes: data.service_type_codes,
       start_date: data.start_date,
