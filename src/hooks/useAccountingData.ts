@@ -383,10 +383,58 @@ export function useTravelRecords(branchId?: string) {
 
       if (error) throw error;
 
+      // Get unique staff IDs and client IDs from travel records
+      const staffIds = [...new Set((data || []).map(record => record.staff_id).filter(Boolean))];
+      const clientIds = [...new Set((data || []).map(record => record.client_id).filter(Boolean))];
+      
+      let staffMap = new Map();
+      let clientMap = new Map();
+      
+      // Fetch staff data if we have staff IDs
+      if (staffIds.length > 0) {
+        try {
+          const { data: staffData, error: staffError } = await supabase
+            .from('staff')
+            .select('id, first_name, last_name')
+            .in('id', staffIds);
+          
+          if (staffError) {
+            console.error('Error fetching staff data for travel records:', staffError);
+          } else {
+            staffData?.forEach(staff => {
+              staffMap.set(staff.id, staff);
+            });
+          }
+        } catch (staffFetchError) {
+          console.error('Failed to fetch staff data:', staffFetchError);
+        }
+      }
+
+      // Fetch client data if we have client IDs
+      if (clientIds.length > 0) {
+        try {
+          const { data: clientData, error: clientError } = await supabase
+            .from('clients')
+            .select('id, first_name, last_name')
+            .in('id', clientIds);
+          
+          if (clientError) {
+            console.error('Error fetching client data for travel records:', clientError);
+          } else {
+            clientData?.forEach(client => {
+              clientMap.set(client.id, client);
+            });
+          }
+        } catch (clientFetchError) {
+          console.error('Failed to fetch client data:', clientFetchError);
+        }
+      }
+
+      // Transform the data to include staff and client info
       const transformedData = (data || []).map(record => ({
         ...record,
-        staff: null,
-        client: null
+        staff: staffMap.get(record.staff_id) || null,
+        client: clientMap.get(record.client_id) || null
       }));
 
       return transformedData as TravelRecord[];

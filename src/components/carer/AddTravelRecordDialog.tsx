@@ -20,6 +20,7 @@ import {
 import { useCarerTravelManagement } from '@/hooks/useCarerTravelManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useTravelRateOptions } from '@/hooks/useParameterOptions';
+import { useCarerAssignedClients } from '@/hooks/useCarerAssignedClients';
 
 interface AddTravelRecordDialogProps {
   open: boolean;
@@ -30,9 +31,11 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
   const { toast } = useToast();
   const { createTravelRecord } = useCarerTravelManagement();
   const { data: travelRateOptions = [], isLoading: loadingRates } = useTravelRateOptions();
+  const { data: assignedClients = [], isLoading: loadingClients } = useCarerAssignedClients();
 
   const [formData, setFormData] = useState({
     travel_date: new Date().toISOString().split('T')[0],
+    client_id: '',
     start_location: '',
     end_location: '',
     distance_miles: '',
@@ -40,8 +43,8 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     vehicle_type: 'personal_car',
     purpose: '',
     notes: '',
-    travel_rate_type: undefined, // Selected travel rate type
-    mileage_rate: '0.45', // Will be updated based on selected rate
+    travel_rate_type: undefined as string | undefined,
+    mileage_rate: '0.45',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +53,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     try {
       await createTravelRecord.mutateAsync({
         ...formData,
+        client_id: formData.client_id || undefined,
         distance_miles: parseFloat(formData.distance_miles),
         travel_time_minutes: formData.travel_time_minutes ? parseInt(formData.travel_time_minutes) : undefined,
         mileage_rate: parseFloat(formData.mileage_rate),
@@ -63,6 +67,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
       onOpenChange(false);
       setFormData({
         travel_date: new Date().toISOString().split('T')[0],
+        client_id: '',
         start_location: '',
         end_location: '',
         distance_miles: '',
@@ -89,8 +94,6 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
   const handleRateTypeChange = (rateType: string) => {
     const selectedRate = travelRateOptions.find(rate => rate.value === rateType);
     if (selectedRate) {
-      // Extract rate from label if it contains rate information
-      // Assuming the label format is like "Standard Rate (£0.45/mile)"
       const rateMatch = selectedRate.label.match(/£?(\d+\.?\d*)/);
       const rate = rateMatch ? rateMatch[1] : '0.45';
       
@@ -107,9 +110,19 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     }
   };
 
+  const handleClientChange = (clientId: string) => {
+    const selectedClient = assignedClients.find(c => c.id === clientId);
+    setFormData(prev => ({
+      ...prev,
+      client_id: clientId === 'none' ? '' : clientId,
+      // Auto-fill end location with client address if available
+      end_location: selectedClient?.address || prev.end_location
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Submit Travel & Mileage Claim</DialogTitle>
           <DialogDescription>
@@ -130,6 +143,29 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="client_id">Client (Optional)</Label>
+              <Select
+                value={formData.client_id || 'none'}
+                onValueChange={handleClientChange}
+                disabled={loadingClients}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingClients ? "Loading..." : "Select client"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No specific client</SelectItem>
+                  {assignedClients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.first_name} {client.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="travel_rate_type">Rate Type</Label>
               <Select
                 value={formData.travel_rate_type}
@@ -148,9 +184,6 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="vehicle_type">Vehicle Type</Label>
               <Select

@@ -81,11 +81,12 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[140px]">Date</TableHead>
+            <TableHead className="w-[120px]">Date</TableHead>
+            <TableHead>Staff</TableHead>
+            <TableHead>Client</TableHead>
             <TableHead>Journey</TableHead>
             <TableHead className="text-right">Distance</TableHead>
             <TableHead>Vehicle</TableHead>
-            <TableHead>Purpose</TableHead>
             <TableHead className="text-right">Cost</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right w-[120px]">Actions</TableHead>
@@ -96,23 +97,31 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
             <TableRow key={record.id}>
               <TableCell className="font-medium">{new Date(record.travel_date).toLocaleDateString()}</TableCell>
               <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium">From: {record.start_location}</div>
-                  <div className="text-gray-500">To: {record.end_location}</div>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">{record.distance_miles.toFixed(1)} miles</TableCell>
-              <TableCell>{vehicleTypeLabels[record.vehicle_type] || record.vehicle_type}</TableCell>
-              <TableCell>
-                <div className="text-sm max-w-[200px] truncate" title={record.purpose}>
-                  {record.purpose}
-                </div>
-                {record.client && (
-                  <div className="text-xs text-gray-500">
-                    Client: {record.client.first_name} {record.client.last_name}
-                  </div>
+                {record.staff ? (
+                  <span className="font-medium">
+                    {record.staff.first_name} {record.staff.last_name}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
+              <TableCell>
+                {record.client ? (
+                  <span>
+                    {record.client.first_name} {record.client.last_name}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <div className="font-medium">From: {record.start_location}</div>
+                  <div className="text-muted-foreground">To: {record.end_location}</div>
+                </div>
+              </TableCell>
+              <TableCell className="text-right">{record.distance_miles.toFixed(1)} mi</TableCell>
+              <TableCell>{vehicleTypeLabels[record.vehicle_type] || record.vehicle_type}</TableCell>
               <TableCell className="text-right font-medium">{formatCurrency(record.total_cost)}</TableCell>
               <TableCell>{renderStatusBadge(record.status)}</TableCell>
               <TableCell>
@@ -130,14 +139,16 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => onEditRecord(record)}
+                    disabled={record.status === 'approved' || record.status === 'reimbursed'}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => onDeleteRecord(record.id)}
+                    disabled={record.status === 'approved' || record.status === 'reimbursed'}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
