@@ -9,6 +9,15 @@ export interface BulkGenerationProgress {
   currentClient?: string;
 }
 
+interface ExtraTimeRecord {
+  id: string;
+  client_id: string;
+  work_date: string;
+  extra_time_minutes: number;
+  total_cost: number;
+  reason?: string;
+}
+
 export interface BulkGenerationResult {
   successCount: number;
   errorCount: number;
@@ -25,6 +34,7 @@ export interface BulkGenerationResult {
     invoiceNumber: string;
     amount: number;
     lineItemCount: number;
+    extraTimeCount?: number;
   }>;
   message?: string;
 }
@@ -113,7 +123,34 @@ export const useBulkInvoiceGeneration = () => {
 
     console.log(`[BulkInvoiceGeneration] Found ${bookings.length} bookings (all statuses)`);
 
-    // Step 2: Group bookings by client
+    // Step 2: Fetch approved extra time records for the period
+    const { data: extraTimeRecords, error: extraTimeError } = await supabase
+      .from('extra_time_records')
+      .select('id, client_id, work_date, extra_time_minutes, total_cost, reason')
+      .eq('branch_id', branchId)
+      .eq('status', 'approved')
+      .eq('invoiced', false)
+      .gte('work_date', periodDetails.startDate)
+      .lte('work_date', periodDetails.endDate);
+
+    if (extraTimeError) {
+      console.error('[BulkInvoiceGeneration] Error fetching extra time records:', extraTimeError);
+    }
+
+    // Group extra time by client
+    const clientExtraTimeMap = new Map<string, ExtraTimeRecord[]>();
+    (extraTimeRecords || []).forEach((record: ExtraTimeRecord) => {
+      if (record.client_id) {
+        if (!clientExtraTimeMap.has(record.client_id)) {
+          clientExtraTimeMap.set(record.client_id, []);
+        }
+        clientExtraTimeMap.get(record.client_id)!.push(record);
+      }
+    });
+
+    console.log(`[BulkInvoiceGeneration] Found ${extraTimeRecords?.length || 0} approved extra time records`);
+
+    // Step 3: Group bookings by client
     const clientBookingsMap = new Map<string, { clientName: string; bookings: any[] }>();
     bookings.forEach(booking => {
       const clientId = booking.client_id;
@@ -131,7 +168,7 @@ export const useBulkInvoiceGeneration = () => {
 
     console.log(`[BulkInvoiceGeneration] Processing ${totalClients} clients`);
 
-    // Step 3: Process each client
+    // Step 4: Process each client
     for (const [clientId, clientData] of clientBookingsMap) {
       try {
         onProgress?.({ 
@@ -142,7 +179,11 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Processing client: ${clientData.clientName} (${clientData.bookings.length} bookings)`);
 
-        // 3a. Fetch client rate schedules
+        // Get extra time records for this client
+        const clientExtraTime = clientExtraTimeMap.get(clientId) || [];
+        console.log(`[BulkInvoiceGeneration] Client has ${clientExtraTime.length} extra time records`);
+
+        // 4a. Fetch client rate schedules
         const { data: rateSchedules, error: rateError } = await supabase
           .from('client_rate_schedules')
           .select('*')
@@ -167,7 +208,7 @@ export const useBulkInvoiceGeneration = () => {
         // Cast rate schedules to the correct type
         const typedRateSchedules = rateSchedules as any[];
 
-        // 3b. Convert bookings to Visit format for calculator
+        // 4b. Convert bookings to Visit format for calculator
         const visits: Visit[] = await Promise.all(
           clientData.bookings.map(async (booking) => ({
             id: booking.id,
@@ -185,21 +226,27 @@ export const useBulkInvoiceGeneration = () => {
           }))
         );
 
-        // 3c. Calculate using existing VisitBillingCalculator
+        // 4c. Calculate using existing VisitBillingCalculator
         const calculator = new VisitBillingCalculator(typedRateSchedules, false);
         const billingSummary = calculator.calculateVisitsBilling(visits);
+
+        // 4d. Add extra time costs to the billing
+        const extraTimeCost = clientExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0);
+        const totalWithExtraTime = billingSummary.total_amount + extraTimeCost;
 
         console.log(`[BulkInvoiceGeneration] Calculated billing for ${clientData.clientName}:`, {
           net: billingSummary.net_amount,
           vat: billingSummary.vat_amount,
           total: billingSummary.total_amount,
+          extraTimeCost,
+          totalWithExtraTime,
           lineItems: billingSummary.line_items.length
         });
 
-        // 3d. Generate unique invoice number
+        // 4e. Generate unique invoice number
         const invoiceNumber = await generateUniqueInvoiceNumber(organizationId);
 
-        // 3e. Create invoice
+        // 4f. Create invoice (including extra time in total)
         const { data: invoice, error: invoiceError } = await supabase
           .from('client_billing')
           .insert({
@@ -207,10 +254,10 @@ export const useBulkInvoiceGeneration = () => {
             organization_id: organizationId,
             invoice_number: invoiceNumber,
             description: `${periodDetails.type.charAt(0).toUpperCase() + periodDetails.type.slice(1)} Invoice (${periodDetails.startDate} to ${periodDetails.endDate})`,
-            amount: billingSummary.net_amount,
-            net_amount: billingSummary.net_amount,
+            amount: billingSummary.net_amount + extraTimeCost,
+            net_amount: billingSummary.net_amount + extraTimeCost,
             vat_amount: billingSummary.vat_amount,
-            total_amount: billingSummary.total_amount,
+            total_amount: totalWithExtraTime + billingSummary.vat_amount,
             invoice_date: new Date().toISOString().split('T')[0],
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             status: 'pending',
@@ -229,7 +276,7 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName}`);
 
-        // 3f. Create line items
+        // 4g. Create line items for bookings
         const lineItemsData = billingSummary.line_items.map(item => ({
           invoice_id: invoice.id,
           organization_id: organizationId,
@@ -252,6 +299,42 @@ export const useBulkInvoiceGeneration = () => {
 
         if (lineItemsError) throw lineItemsError;
 
+        // 4h. Add extra time as line items
+        if (clientExtraTime.length > 0) {
+          const extraTimeLineItems = clientExtraTime.map(et => ({
+            invoice_id: invoice.id,
+            organization_id: organizationId,
+            description: `Extra Time: ${et.reason || 'Additional work time'}`,
+            visit_date: et.work_date,
+            duration_minutes: et.extra_time_minutes,
+            rate_type_applied: 'extra_time',
+            rate_per_unit: et.total_cost / (et.extra_time_minutes / 60),
+            unit_price: et.total_cost / (et.extra_time_minutes / 60),
+            quantity: et.extra_time_minutes / 60,
+            line_total: et.total_cost,
+            day_type: 'extra_time'
+          }));
+
+          const { error: extraTimeLineError } = await supabase
+            .from('invoice_line_items')
+            .insert(extraTimeLineItems);
+
+          if (extraTimeLineError) {
+            console.error('[BulkInvoiceGeneration] Error adding extra time line items:', extraTimeLineError);
+          }
+
+          // Mark extra time records as invoiced
+          const extraTimeIds = clientExtraTime.map(et => et.id);
+          const { error: markInvoicedError } = await supabase
+            .from('extra_time_records')
+            .update({ invoiced: true, invoice_id: invoice.id })
+            .in('id', extraTimeIds);
+
+          if (markInvoicedError) {
+            console.error('[BulkInvoiceGeneration] Error marking extra time as invoiced:', markInvoicedError);
+          }
+        }
+
         // Mark bookings as invoiced
         const bookingIds = clientData.bookings.map(b => b.id);
         if (bookingIds.length > 0) {
@@ -271,13 +354,14 @@ export const useBulkInvoiceGeneration = () => {
 
         // Success!
         results.successCount++;
-        results.totalAmount += billingSummary.total_amount;
+        results.totalAmount += totalWithExtraTime + billingSummary.vat_amount;
         results.invoices.push({
           clientId,
           clientName: clientData.clientName,
           invoiceNumber,
-          amount: billingSummary.total_amount,
-          lineItemCount: lineItemsData.length
+          amount: totalWithExtraTime + billingSummary.vat_amount,
+          lineItemCount: lineItemsData.length,
+          extraTimeCount: clientExtraTime.length
         });
 
         console.log(`[BulkInvoiceGeneration] Successfully processed ${clientData.clientName}`);

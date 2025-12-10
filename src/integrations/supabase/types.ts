@@ -4916,6 +4916,7 @@ export type Database = {
           organization_id: string | null
           payment_method: string
           receipt_url: string | null
+          rejection_reason: string | null
           staff_id: string | null
           status: string
           updated_at: string
@@ -4936,6 +4937,7 @@ export type Database = {
           organization_id?: string | null
           payment_method?: string
           receipt_url?: string | null
+          rejection_reason?: string | null
           staff_id?: string | null
           status?: string
           updated_at?: string
@@ -4956,6 +4958,7 @@ export type Database = {
           organization_id?: string | null
           payment_method?: string
           receipt_url?: string | null
+          rejection_reason?: string | null
           staff_id?: string | null
           status?: string
           updated_at?: string
@@ -5033,6 +5036,7 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           reason: string | null
+          rejection_reason: string | null
           scheduled_duration_minutes: number
           scheduled_end_time: string
           scheduled_start_time: string
@@ -5062,6 +5066,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           reason?: string | null
+          rejection_reason?: string | null
           scheduled_duration_minutes: number
           scheduled_end_time: string
           scheduled_start_time: string
@@ -5091,6 +5096,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           reason?: string | null
+          rejection_reason?: string | null
           scheduled_duration_minutes?: number
           scheduled_end_time?: string
           scheduled_start_time?: string
@@ -5755,6 +5761,92 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "client_billing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_expense_entries: {
+        Row: {
+          admin_cost_percentage: number
+          amount: number
+          created_at: string
+          date: string | null
+          description: string | null
+          expense_id: string | null
+          expense_type_id: string
+          expense_type_name: string
+          id: string
+          invoice_id: string
+          organization_id: string | null
+          pay_staff: boolean | null
+          pay_staff_amount: number | null
+          staff_id: string | null
+          staff_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_cost_percentage?: number
+          amount?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          expense_id?: string | null
+          expense_type_id: string
+          expense_type_name: string
+          id?: string
+          invoice_id: string
+          organization_id?: string | null
+          pay_staff?: boolean | null
+          pay_staff_amount?: number | null
+          staff_id?: string | null
+          staff_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_cost_percentage?: number
+          amount?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          expense_id?: string | null
+          expense_type_id?: string
+          expense_type_name?: string
+          id?: string
+          invoice_id?: string
+          organization_id?: string | null
+          pay_staff?: boolean | null
+          pay_staff_amount?: number | null
+          staff_id?: string | null
+          staff_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_expense_entries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_expense_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_expense_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_expense_entries_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -7788,6 +7880,7 @@ export type Database = {
           status: string | null
           temporary_password: string | null
           training_records: Json | null
+          travel_payment_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -7831,6 +7924,7 @@ export type Database = {
           status?: string | null
           temporary_password?: string | null
           training_records?: Json | null
+          travel_payment_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -7874,6 +7968,7 @@ export type Database = {
           status?: string | null
           temporary_password?: string | null
           training_records?: Json | null
+          travel_payment_type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -10565,6 +10660,7 @@ export type Database = {
           purpose: string
           receipt_url: string | null
           reimbursed_at: string | null
+          rejection_reason: string | null
           staff_id: string
           start_location: string
           status: string
@@ -10590,6 +10686,7 @@ export type Database = {
           purpose: string
           receipt_url?: string | null
           reimbursed_at?: string | null
+          rejection_reason?: string | null
           staff_id: string
           start_location: string
           status?: string
@@ -10615,6 +10712,7 @@ export type Database = {
           purpose?: string
           receipt_url?: string | null
           reimbursed_at?: string | null
+          rejection_reason?: string | null
           staff_id?: string
           start_location?: string
           status?: string
