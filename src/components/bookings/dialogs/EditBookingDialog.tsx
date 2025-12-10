@@ -1052,11 +1052,21 @@ export function EditBookingDialog({
           availableCarers={[]} // Not applicable for editing
           onChooseDifferentCarer={() => {
             setShowOverlapAlert(false);
-            toast.info("Please contact an administrator to assign a different carer");
+            // Clear current staff selection to prompt user to choose new carer
+            form.setValue('staff_ids', []);
+            // Reset validation state
+            setValidationResult(null);
+            toast.info("Please select a different carer from the dropdown above", {
+              duration: 4000
+            });
           }}
           onModifyTime={() => {
             setShowOverlapAlert(false);
-            toast.info("Please adjust the appointment times to avoid conflicts");
+            // Reset validation state
+            setValidationResult(null);
+            toast.info("Adjust the start or end time to avoid conflicts with existing bookings", {
+              duration: 4000
+            });
           }}
         />
 

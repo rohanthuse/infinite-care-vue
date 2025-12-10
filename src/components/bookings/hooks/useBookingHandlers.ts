@@ -712,42 +712,35 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
   const handleOverlapChooseDifferentCarer = () => {
     setOverlapAlertOpen(false);
-    // Keep the dialog open to allow carer selection
+    // Clear pending booking data's carer selection to prompt user to choose new carer
+    if (pendingBookingData) {
+      setPendingBookingData({
+        ...pendingBookingData,
+        carerId: null,
+        staff_ids: []
+      });
+    }
+    // Dialog stays open - user can select new carer
+    toast.info("Please select a different carer for this booking");
   };
 
   const handleOverlapModifyTime = () => {
     setOverlapAlertOpen(false);
-    // Keep the dialog open to allow time modification
-  };
-
-  const handleOverlapForceCreate = () => {
-    if (pendingBookingData) {
-      proceedWithBookingCreation(pendingBookingData);
-    }
-    setOverlapAlertOpen(false);
-    setPendingBookingData(null);
-    setOverlapData(null);
+    // Dialog stays open - user can modify time
+    toast.info("Please adjust the booking time to avoid conflicts");
   };
 
   // Add handlers for update overlaps
   const handleUpdateOverlapChooseDifferentCarer = () => {
     setUpdateOverlapAlertOpen(false);
     // Keep the edit dialog open to allow carer selection
+    toast.info("Please select a different carer in the edit dialog");
   };
 
   const handleUpdateOverlapModifyTime = () => {
     setUpdateOverlapAlertOpen(false);
     // Keep the edit dialog open to allow time modification
-  };
-
-  const handleUpdateOverlapForceUpdate = () => {
-    console.log("[useBookingHandlers] FORCE UPDATE REQUESTED - This should be rare!");
-    if (pendingUpdateData) {
-      proceedWithBookingUpdate(pendingUpdateData);
-    }
-    setUpdateOverlapAlertOpen(false);
-    setPendingUpdateData(null);
-    setUpdateOverlapData(null);
+    toast.info("Please adjust the appointment times in the edit dialog");
   };
 
   const isCheckingOverlap = isChecking || isValidatingUpdate || isEnhancedValidating || isVerifying;
@@ -775,10 +768,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     handleCreateBooking,
     handleOverlapChooseDifferentCarer,
     handleOverlapModifyTime,
-    handleOverlapForceCreate,
     handleUpdateOverlapChooseDifferentCarer,
     handleUpdateOverlapModifyTime,
-    handleUpdateOverlapForceUpdate,
     createMultipleBookingsMutation,
     updateBookingMutation,
     forceRefresh
