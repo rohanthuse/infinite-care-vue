@@ -4,6 +4,7 @@ import { useCarerProfile } from './useCarerProfile';
 
 export interface CreateTravelRecordData {
   travel_date: string;
+  client_id?: string;
   start_location: string;
   end_location: string;
   distance_miles: number;
@@ -29,7 +30,16 @@ export const useCarerTravelManagement = () => {
       const { data: travelRecord, error } = await supabase
         .from('travel_records')
         .insert({
-          ...data,
+          travel_date: data.travel_date,
+          client_id: data.client_id || null,
+          start_location: data.start_location,
+          end_location: data.end_location,
+          distance_miles: data.distance_miles,
+          travel_time_minutes: data.travel_time_minutes || null,
+          vehicle_type: data.vehicle_type,
+          purpose: data.purpose,
+          notes: data.notes || null,
+          mileage_rate: data.mileage_rate,
           staff_id: carerProfile.id,
           branch_id: carerProfile.branch_id,
           total_cost,
