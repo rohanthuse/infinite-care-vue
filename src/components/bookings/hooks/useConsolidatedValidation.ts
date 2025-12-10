@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInUserTimezone } from "@/utils/timezoneUtils";
 
 export interface ConflictingBooking {
   id: string;
@@ -168,22 +169,33 @@ export function useConsolidatedValidation(branchId?: string) {
         return hasOverlap;
       });
 
-      // Helper function to extract time consistently
-      const extractTime = (isoString: string) => {
-        const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
-        return timePart?.substring(0, 5) || "07:00";
+      // Helper functions to extract time/date in user's local timezone
+      const extractTimeLocal = (isoString: string) => {
+        if (!isoString) return "07:00";
+        try {
+          return formatInUserTimezone(isoString, 'HH:mm');
+        } catch {
+          return "07:00";
+        }
       };
 
-      const extractDate = (isoString: string) => isoString?.split('T')[0] || "";
+      const extractDateLocal = (isoString: string) => {
+        if (!isoString) return "";
+        try {
+          return formatInUserTimezone(isoString, 'yyyy-MM-dd');
+        } catch {
+          return isoString?.split('T')[0] || "";
+        }
+      };
 
       const conflictingBookings: ConflictingBooking[] = conflicts.map((booking: any) => ({
         id: booking.id,
         clientName: booking.clients ? 
           `${booking.clients.first_name} ${booking.clients.last_name}` : 
           "Unknown Client",
-        startTime: extractTime(booking.start_time),
-        endTime: extractTime(booking.end_time),
-        date: extractDate(booking.start_time)
+        startTime: extractTimeLocal(booking.start_time),
+        endTime: extractTimeLocal(booking.end_time),
+        date: extractDateLocal(booking.start_time)
       }));
 
       // Find available carers if provided
@@ -232,7 +244,7 @@ export function useConsolidatedValidation(branchId?: string) {
           `${firstConflict.clients.first_name} ${firstConflict.clients.last_name}` : 
           'another client';
         
-        result.error = `This carer is already assigned to ${clientName} from ${extractTime(originalBooking?.start_time || '')} to ${extractTime(originalBooking?.end_time || '')} on ${extractDate(originalBooking?.start_time || '')}. Current booking status: ${originalBooking?.status || 'unknown'}`;
+        result.error = `This carer is already assigned to ${clientName} from ${extractTimeLocal(originalBooking?.start_time || '')} to ${extractTimeLocal(originalBooking?.end_time || '')} on ${extractDateLocal(originalBooking?.start_time || '')}. Current booking status: ${originalBooking?.status || 'unknown'}`;
       }
 
       console.log("[useConsolidatedValidation] === FINAL VALIDATION RESULT ===");
