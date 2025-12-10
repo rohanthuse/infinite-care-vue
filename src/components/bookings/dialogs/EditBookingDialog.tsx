@@ -943,44 +943,29 @@ export function EditBookingDialog({
                   )}
                 />
 
-                {/* Booking Date - Full width */}
-                <FormField
-                  control={form.control}
-                  name="booking_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Booking Date</FormLabel>
-                      <FormControl>
-                        <EnhancedDatePicker
-                          value={field.value}
-                          onChange={(date) => {
-                            field.onChange(date);
-                            setValidationResult(null);
-                          }}
-                          placeholder="Enter or pick date (dd/mm/yyyy)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Time Fields - Side by side */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Schedule Section - Date & Time Fields */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 bg-primary rounded-full"></span>
+                    Schedule
+                  </h4>
+                  
+                  {/* Booking Date - Full width */}
                   <FormField
                     control={form.control}
-                    name="start_time"
+                    name="booking_date"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Time</FormLabel>
+                      <FormItem className="flex flex-col w-full">
+                        <FormLabel className="font-medium">Booking Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
+                          <EnhancedDatePicker
+                            value={field.value}
+                            onChange={(date) => {
+                              field.onChange(date);
                               setValidationResult(null);
                             }}
+                            placeholder="Select booking date"
+                            className="w-full"
                           />
                         </FormControl>
                         <FormMessage />
@@ -988,26 +973,52 @@ export function EditBookingDialog({
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="end_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Time</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setValidationResult(null);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Time Fields - Responsive grid: stack on mobile, side by side on larger screens */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="start_time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-medium">Start Time</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              className="w-full"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setValidationResult(null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="end_time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-medium">End Time</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              className="w-full"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setValidationResult(null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <FormField
