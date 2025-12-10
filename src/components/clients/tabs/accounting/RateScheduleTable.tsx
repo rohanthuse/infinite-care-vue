@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Eye, Edit, Trash2 } from 'lucide-react';
-import { ClientRateSchedule, ServiceType, dayLabels } from '@/types/clientAccounting';
+import { ClientRateSchedule, ServiceType, dayLabels, servicePayerLabels, authorityCategoryLabels, ServicePayer, AuthorityCategory } from '@/types/clientAccounting';
 import { formatCurrency } from '@/utils/currencyFormatter';
-import { useDeleteClientRateSchedule, useUpdateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useDeleteClientRateSchedule, useUpdateClientRateSchedule, useClientAccountingSettings } from '@/hooks/useClientAccounting';
 import { EditRateScheduleDialog } from './EditRateScheduleDialog';
 import { ViewRateScheduleDialog } from './ViewRateScheduleDialog';
 import { ServiceTypesDisplay } from '@/components/carer-profile/accounting/ServiceTypesDisplay';
@@ -38,6 +38,7 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteSchedule = useDeleteClientRateSchedule();
   const updateSchedule = useUpdateClientRateSchedule();
+  const { data: accountingSettings } = useClientAccountingSettings(clientId);
 
   const handleToggleActive = (schedule: ClientRateSchedule, newValue: boolean) => {
     updateSchedule.mutate({
@@ -118,7 +119,29 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
                   maxVisible={2}
                 />
               </TableCell>
-              <TableCell>{schedule.authority_type}</TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  {accountingSettings?.service_payer && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Who Pays: </span>
+                      <span className="font-medium">
+                        {servicePayerLabels[accountingSettings.service_payer as ServicePayer] || accountingSettings.service_payer}
+                      </span>
+                    </div>
+                  )}
+                  {schedule.authority_type && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Category: </span>
+                      <span className="font-medium">
+                        {authorityCategoryLabels[schedule.authority_type as AuthorityCategory] || schedule.authority_type}
+                      </span>
+                    </div>
+                  )}
+                  {!accountingSettings?.service_payer && !schedule.authority_type && (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell className="capitalize">{schedule.rate_category}</TableCell>
               <TableCell>{formatCurrency(schedule.base_rate)}</TableCell>
               <TableCell>
@@ -204,6 +227,7 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
             open={showViewDialog}
             onOpenChange={setShowViewDialog}
             schedule={selectedSchedule}
+            clientId={clientId}
           />
         </>
       )}
