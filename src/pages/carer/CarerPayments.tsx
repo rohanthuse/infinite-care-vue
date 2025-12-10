@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,6 +88,9 @@ const CarerPayments: React.FC = () => {
   const [viewTravel, setViewTravel] = useState(null);
   const [viewExtraTime, setViewExtraTime] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Dialog state
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
 
   // Edit/Delete state
   const [editExpense, setEditExpense] = useState(null);
@@ -191,6 +195,7 @@ const CarerPayments: React.FC = () => {
         receipt_file: expenseForm.receipt || undefined,
       });
       setExpenseForm({ description: '', category: '', amount: '', date: new Date().toISOString().split('T')[0], paymentMethod: 'cash', notes: '', receipt: null });
+      setExpenseDialogOpen(false);
       toast({ title: "Success", description: "Expense claim submitted successfully" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to submit expense claim", variant: "destructive" });
@@ -335,7 +340,7 @@ const CarerPayments: React.FC = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>My Expense Claims</CardTitle>
-                <Dialog>
+                <Dialog open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
                   <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Submit Expense</Button></DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader><DialogTitle>Submit Expense Claim</DialogTitle><DialogDescription>Submit an expense for reimbursement approval.</DialogDescription></DialogHeader>

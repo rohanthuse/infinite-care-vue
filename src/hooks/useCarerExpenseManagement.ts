@@ -55,7 +55,7 @@ export function useCarerExpenseManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast.success('Expense claim submitted successfully');
+      queryClient.invalidateQueries({ queryKey: ['my-expenses'] });
     },
     onError: (error: Error) => {
       console.error('Expense submission error:', error);

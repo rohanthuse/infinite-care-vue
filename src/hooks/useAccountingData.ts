@@ -573,7 +573,7 @@ export function useCreateExpense() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast.success('Expense created successfully');
+      queryClient.invalidateQueries({ queryKey: ['my-expenses'] });
     },
     onError: (error) => {
       console.error('Error creating expense:', error);
