@@ -28,15 +28,20 @@ export function useConsolidatedValidation(branchId?: string) {
     startTime: string,
     endTime: string,
     date: string,
-    excludeBookingId?: string,
+    excludeBookingIds?: string | string[],
     availableCarers?: Array<{ id: string; name: string; initials: string }>
   ): Promise<ValidationResult> => {
+      // Normalize excludeBookingIds to array
+      const excludeIds = excludeBookingIds 
+        ? (Array.isArray(excludeBookingIds) ? excludeBookingIds : [excludeBookingIds])
+        : [];
+
       console.log("[useConsolidatedValidation] Starting validation:", {
         carerId,
         startTime,
         endTime,
         date,
-        excludeBookingId,
+        excludeBookingIds: excludeIds,
         branchId,
         timestamp: new Date().toISOString()
       });
@@ -53,11 +58,27 @@ export function useConsolidatedValidation(branchId?: string) {
     setIsValidating(true);
 
     try {
-      // Create precise timestamps in UTC
-      const startTimestamp = `${date}T${startTime}:00+00:00`;
-      const endTimestamp = `${date}T${endTime}:00+00:00`;
+      // Create timestamps using the user's local timezone context
+      // The times passed in are already in local time (HH:mm format)
+      // We need to create UTC timestamps for database comparison
+      const localStartDate = new Date(`${date}T${startTime}:00`);
+      const localEndDate = new Date(`${date}T${endTime}:00`);
+      
+      // Convert to ISO strings (which will be in UTC)
+      const startTimestamp = localStartDate.toISOString();
+      const endTimestamp = localEndDate.toISOString();
+      
+      console.log("[useConsolidatedValidation] Time conversion:", {
+        input: { date, startTime, endTime },
+        localStart: localStartDate.toString(),
+        localEnd: localEndDate.toString(),
+        utcStart: startTimestamp,
+        utcEnd: endTimestamp
+      });
 
       // Query for existing bookings for this carer on this date
+      // Use the date portion of the start timestamp to filter
+      const dateStart = startTimestamp.split('T')[0];
       let query = supabase
         .from("bookings")
         .select(`
@@ -71,13 +92,16 @@ export function useConsolidatedValidation(branchId?: string) {
         `)
         .eq("branch_id", branchId)
         .eq("staff_id", carerId)
-        .gte("start_time", `${date}T00:00:00+00:00`)
-        .lt("start_time", `${date}T23:59:59+00:00`);
+        .gte("start_time", `${dateStart}T00:00:00Z`)
+        .lt("start_time", `${dateStart}T23:59:59Z`);
 
-      // CRITICAL: Exclude the booking being edited
-      if (excludeBookingId) {
-        query = query.neq("id", excludeBookingId);
-        console.log("[useConsolidatedValidation] Excluding booking:", excludeBookingId);
+      // CRITICAL: Exclude ALL related booking records (for multi-staff appointments)
+      if (excludeIds.length > 0) {
+        // Use not.in for multiple IDs
+        for (const excludeId of excludeIds) {
+          query = query.neq("id", excludeId);
+        }
+        console.log("[useConsolidatedValidation] Excluding bookings:", excludeIds);
       }
 
       const { data: existingBookings, error } = await query;
@@ -92,8 +116,8 @@ export function useConsolidatedValidation(branchId?: string) {
         queryParams: {
           branchId,
           staffId: carerId,
-          dateFilter: `${date}T00:00:00+00:00 to ${date}T23:59:59+00:00`,
-          excludeBookingId
+          dateFilter: `${dateStart}T00:00:00Z to ${dateStart}T23:59:59Z`,
+          excludeBookingIds: excludeIds
         }
       });
 
@@ -112,15 +136,18 @@ export function useConsolidatedValidation(branchId?: string) {
         });
       }
 
-      // Check for time overlaps
+      // Check for time overlaps using actual Date objects (already in UTC)
+      const proposedStart = localStartDate;
+      const proposedEnd = localEndDate;
+      
       const conflicts = (existingBookings || []).filter((booking: any) => {
         const existingStart = new Date(booking.start_time);
         const existingEnd = new Date(booking.end_time);
-        const proposedStart = new Date(startTimestamp);
-        const proposedEnd = new Date(endTimestamp);
 
         // Strict overlap detection: any time intersection is blocked
-        const hasOverlap = proposedStart < existingEnd && proposedEnd > existingStart;
+        // Two intervals overlap if: start1 < end2 AND end1 > start2
+        const hasOverlap = proposedStart.getTime() < existingEnd.getTime() && 
+                           proposedEnd.getTime() > existingStart.getTime();
         
         console.log("[useConsolidatedValidation] Overlap check for booking:", {
           bookingId: booking.id,
@@ -128,20 +155,12 @@ export function useConsolidatedValidation(branchId?: string) {
           existing: {
             start: existingStart.toISOString(),
             end: existingEnd.toISOString(),
-            startTime: existingStart.getUTCHours() + ':' + existingStart.getUTCMinutes().toString().padStart(2, '0'),
-            endTime: existingEnd.getUTCHours() + ':' + existingEnd.getUTCMinutes().toString().padStart(2, '0')
+            localTime: `${existingStart.getHours()}:${existingStart.getMinutes().toString().padStart(2, '0')} - ${existingEnd.getHours()}:${existingEnd.getMinutes().toString().padStart(2, '0')}`
           },
           proposed: {
             start: proposedStart.toISOString(), 
             end: proposedEnd.toISOString(),
-            startTime: proposedStart.getUTCHours() + ':' + proposedStart.getUTCMinutes().toString().padStart(2, '0'),
-            endTime: proposedEnd.getUTCHours() + ':' + proposedEnd.getUTCMinutes().toString().padStart(2, '0')
-          },
-          overlapConditions: {
-            condition1: `${proposedStart.toISOString()} < ${existingEnd.toISOString()}`,
-            condition1Result: proposedStart < existingEnd,
-            condition2: `${proposedEnd.toISOString()} > ${existingStart.toISOString()}`,
-            condition2Result: proposedEnd > existingStart
+            localTime: `${proposedStart.getHours()}:${proposedStart.getMinutes().toString().padStart(2, '0')} - ${proposedEnd.getHours()}:${proposedEnd.getMinutes().toString().padStart(2, '0')}`
           },
           hasOverlap
         });

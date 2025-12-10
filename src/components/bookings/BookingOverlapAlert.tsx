@@ -90,10 +90,14 @@ export function BookingOverlapAlert({
                       </div>
                       <div className="flex items-center gap-1 mt-1 text-xs text-red-700">
                         <Clock className="h-3 w-3" />
-                        {booking.startTime} - {booking.endTime}
+                        {booking.startTime} - {booking.endTime} (existing booking)
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        ID: {booking.id} | Date: {booking.date}
+                        Date: {(() => {
+                          const dateStr = booking.date.includes('T') ? booking.date.split('T')[0] : booking.date;
+                          const [year, month, day] = dateStr.split('-');
+                          return `${month}/${day}/${year}`;
+                        })()}
                       </div>
                     </div>
                   ))}
