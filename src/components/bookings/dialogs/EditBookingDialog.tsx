@@ -375,6 +375,7 @@ export function EditBookingDialog({
       return true;
     }
 
+    // Extract local date and time from the datetime-local input
     const date = format(startDateTime, "yyyy-MM-dd");
     const startTime = format(startDateTime, "HH:mm");
     const endTime = format(endDateTime, "HH:mm");
@@ -386,19 +387,38 @@ export function EditBookingDialog({
       return true;
     }
     
-    // Validate each selected staff for overlaps
+    // Collect ALL booking IDs that should be excluded (multi-staff appointments)
+    const allExcludeIds = [
+      booking.id,
+      ...relatedBookingRecords.map(r => r.id),
+      ...(unassignedBookingId ? [unassignedBookingId] : [])
+    ].filter(Boolean);
+    
+    console.log("[EditBookingDialog] Excluding booking IDs:", allExcludeIds);
+    
+    // Only validate NEW staff members (not already assigned)
+    const newStaffToValidate = selectedStaffIds.filter(id => !originalStaffIds.includes(id));
+    
+    // If no new staff being added, skip validation
+    if (newStaffToValidate.length === 0) {
+      console.log("[EditBookingDialog] No new staff to validate, skipping overlap check");
+      setValidationResult({ isValid: true, conflictingBookings: [] });
+      return true;
+    }
+    
+    // Validate each NEW staff for overlaps
     let hasOverlap = false;
     let allConflictingBookings: any[] = [];
     
-    for (const staffId of selectedStaffIds) {
-      console.log("[EditBookingDialog] Validating for staff:", staffId);
+    for (const staffId of newStaffToValidate) {
+      console.log("[EditBookingDialog] Validating for NEW staff:", staffId);
       
       const result = await validateBooking(
         staffId,
         startTime,
         endTime,
         date,
-        booking.id
+        allExcludeIds
       );
       
       if (!result.isValid && result.conflictingBookings.length > 0) {
