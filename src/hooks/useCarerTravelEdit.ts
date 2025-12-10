@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCarerProfile } from './useCarerProfile';
+import { toast } from 'sonner';
 
-export interface CreateTravelRecordData {
+export interface UpdateTravelData {
+  id: string;
   travel_date: string;
   client_id?: string;
   start_location: string;
@@ -13,24 +15,35 @@ export interface CreateTravelRecordData {
   purpose: string;
   notes?: string;
   mileage_rate: number;
-  receipt_url?: string;
 }
 
-export const useCarerTravelManagement = () => {
+export const useCarerTravelEdit = () => {
   const queryClient = useQueryClient();
   const { data: carerProfile } = useCarerProfile();
 
-  const createTravelRecord = useMutation({
-    mutationFn: async (data: CreateTravelRecordData) => {
-      if (!carerProfile?.id || !carerProfile?.branch_id) {
+  const updateTravel = useMutation({
+    mutationFn: async (data: UpdateTravelData) => {
+      if (!carerProfile?.id) {
         throw new Error('Carer profile not found');
       }
 
+      // Verify the travel belongs to this carer and is pending
+      const { data: travel, error: fetchError } = await supabase
+        .from('travel_records')
+        .select('id, staff_id, status')
+        .eq('id', data.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!travel) throw new Error('Travel record not found');
+      if (travel.staff_id !== carerProfile.id) throw new Error('Unauthorized');
+      if (travel.status !== 'pending') throw new Error('Only pending travel records can be edited');
+
       const total_cost = data.distance_miles * data.mileage_rate;
 
-      const { data: travelRecord, error } = await supabase
+      const { error } = await supabase
         .from('travel_records')
-        .insert({
+        .update({
           travel_date: data.travel_date,
           client_id: data.client_id || null,
           start_location: data.start_location,
@@ -41,43 +54,21 @@ export const useCarerTravelManagement = () => {
           purpose: data.purpose,
           notes: data.notes || null,
           mileage_rate: data.mileage_rate,
-          staff_id: carerProfile.id,
-          branch_id: carerProfile.branch_id,
           total_cost,
-          status: 'pending',
-          receipt_url: data.receipt_url || null,
         })
-        .select()
-        .single();
+        .eq('id', data.id);
 
       if (error) throw error;
-
-      return travelRecord;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-travel'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Travel record updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update travel record', { description: error.message });
     },
   });
 
-  const uploadReceipt = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const filePath = `travel-receipts/${carerProfile?.id}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage
-      .from('documents')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  return {
-    createTravelRecord,
-    uploadReceipt,
-  };
+  return { updateTravel };
 };
