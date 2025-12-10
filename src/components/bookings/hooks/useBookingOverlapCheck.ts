@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { checkBookingOverlaps, getAvailableCarers, BookingOverlap } from "../utils/bookingOverlapDetection";
 import { Booking } from "../BookingTimeGrid";
+import { formatInUserTimezone } from "@/utils/timezoneUtils";
 
 /**
  * @deprecated Use useConsolidatedValidation instead. This hook is no longer maintained.
@@ -14,22 +15,29 @@ export function useBookingOverlapCheck(branchId?: string) {
     console.log("[useBookingOverlapCheck] Converting DB bookings:", bookingsDB.length, "bookings");
     console.log("[useBookingOverlapCheck] Raw DB bookings:", bookingsDB);
     
-    // Extract date and time directly from ISO string without timezone conversion (SAME as useBookingData.ts)
-    const extractDate = (isoString: string) => {
+    // Extract date and time in user's local timezone (consistent with calendar display)
+    const extractDateLocal = (isoString: string) => {
       if (!isoString) return "";
-      return isoString.split('T')[0] || "";
+      try {
+        return formatInUserTimezone(isoString, 'yyyy-MM-dd');
+      } catch {
+        return isoString.split('T')[0] || "";
+      }
     };
 
-    const extractTime = (isoString: string) => {
+    const extractTimeLocal = (isoString: string) => {
       if (!isoString) return "07:00";
-      const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
-      return timePart?.substring(0, 5) || "07:00"; // HH:MM format
+      try {
+        return formatInUserTimezone(isoString, 'HH:mm');
+      } catch {
+        return "07:00";
+      }
     };
     
     return (bookingsDB || []).map((bk: any) => {
-      const startDate = extractDate(bk.start_time);
-      const startTime = extractTime(bk.start_time);
-      const endTime = extractTime(bk.end_time);
+      const startDate = extractDateLocal(bk.start_time);
+      const startTime = extractTimeLocal(bk.start_time);
+      const endTime = extractTimeLocal(bk.end_time);
       
       console.log("[useBookingOverlapCheck] Converting booking (FIXED):", {
         id: bk.id,

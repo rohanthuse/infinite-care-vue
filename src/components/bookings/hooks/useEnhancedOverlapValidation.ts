@@ -1,8 +1,6 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { format } from "date-fns";
+import { formatInUserTimezone } from "@/utils/timezoneUtils";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -134,38 +132,43 @@ export function useEnhancedOverlapValidation(branchId?: string) {
         return hasOverlap;
       });
 
-      const result: ValidationResult = {
-        isValid: conflicts.length === 0,
-        conflictingBookings: conflicts.map((booking: any) => {
-          // Use SAME direct string extraction as other components  
-          const extractTime = (isoString: string) => {
-            const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
-            return timePart?.substring(0, 5) || "07:00";
-          };
-          
-          return {
-            id: booking.id,
-            clientName: booking.clients ? 
-              `${booking.clients.first_name} ${booking.clients.last_name}` : 
-              "Unknown Client",
-            startTime: extractTime(booking.start_time),
-            endTime: extractTime(booking.end_time)
-          };
-        })
+      // Helper function to extract time in user's local timezone
+      const extractTimeLocal = (isoString: string) => {
+        if (!isoString) return "07:00";
+        try {
+          return formatInUserTimezone(isoString, 'HH:mm');
+        } catch {
+          return "07:00";
+        }
       };
 
-        if (!result.isValid) {
-        // Get the first conflicting booking for specific error message - use CONSISTENT extraction
+      const extractDateLocal = (isoString: string) => {
+        if (!isoString) return "";
+        try {
+          return formatInUserTimezone(isoString, 'yyyy-MM-dd');
+        } catch {
+          return isoString?.split('T')[0] || "";
+        }
+      };
+
+      const result: ValidationResult = {
+        isValid: conflicts.length === 0,
+        conflictingBookings: conflicts.map((booking: any) => ({
+          id: booking.id,
+          clientName: booking.clients ? 
+            `${booking.clients.first_name} ${booking.clients.last_name}` : 
+            "Unknown Client",
+          startTime: extractTimeLocal(booking.start_time),
+          endTime: extractTimeLocal(booking.end_time)
+        }))
+      };
+
+      if (!result.isValid) {
+        // Get the first conflicting booking for specific error message
         const firstConflict = conflicts[0];
-        const extractTime = (isoString: string) => {
-          const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
-          return timePart?.substring(0, 5) || "07:00";
-        };
-        const extractDate = (isoString: string) => isoString?.split('T')[0] || "";
-        
-        const conflictStart = extractTime(firstConflict?.start_time);
-        const conflictEnd = extractTime(firstConflict?.end_time);
-        const conflictDate = extractDate(firstConflict?.start_time);
+        const conflictStart = extractTimeLocal(firstConflict?.start_time);
+        const conflictEnd = extractTimeLocal(firstConflict?.end_time);
+        const conflictDate = extractDateLocal(firstConflict?.start_time);
         
         // Ensure proper client name resolution
         const clientName = firstConflict?.clients ? 
