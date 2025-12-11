@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppointmentApprovalDialog from "@/components/bookings/AppointmentApprovalDialog";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import { useDeleteMultipleBookings } from "@/hooks/useDeleteMultipleBookings";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useBookingServices } from "@/hooks/useBookingServices";
 import { DeleteBookingConfirmationDialog } from "./DeleteBookingConfirmationDialog";
+import { CarePlanPreviewSection } from "@/components/care/CarePlanPreviewSection";
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -857,6 +858,26 @@ export function ViewBookingDialog({
               )}
             </div>
           </div>
+
+          {/* Care Plan Preview */}
+          {(booking.clientId || booking.client_id) && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <ClipboardList className="h-4 w-4" />
+                  Care Plan Preview
+                </div>
+                <div className="pl-2">
+                  <CarePlanPreviewSection 
+                    clientId={booking.clientId || booking.client_id}
+                    compact={true}
+                    showHeader={false}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {booking.notes && (
             <>

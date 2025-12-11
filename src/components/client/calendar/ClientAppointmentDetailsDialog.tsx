@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, User, Heart, FileText, RotateCcw, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Heart, FileText, RotateCcw, XCircle, AlertCircle, ClipboardList } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { CalendarEvent } from '@/types/calendar';
 import { getAppointmentStatusColor, getEventTypeBadgeColor } from '@/utils/clientCalendarHelpers';
 import { RescheduleAppointmentDialog } from '@/components/client/RescheduleAppointmentDialog';
 import { CancelBookingDialog } from '@/components/client/CancelBookingDialog';
+import { CarePlanPreviewSection } from '@/components/care/CarePlanPreviewSection';
 
 interface ClientAppointmentDetailsDialogProps {
   open: boolean;
@@ -153,6 +154,24 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
                 Please arrive 10 minutes early for your appointment. If you need to reschedule or have any questions, please contact your care coordinator.
               </p>
             </div>
+          )}
+
+          {/* Care Plan Preview for booking type */}
+          {event.type === 'booking' && event._rawAppointmentData?.client_id && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                  <h4 className="font-semibold text-foreground">Your Care Plan for This Visit</h4>
+                </div>
+                <CarePlanPreviewSection 
+                  clientId={event._rawAppointmentData.client_id} 
+                  compact={true}
+                  showHeader={false}
+                />
+              </div>
+            </>
           )}
 
           <Separator />
