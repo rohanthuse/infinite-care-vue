@@ -1032,6 +1032,7 @@ export function useApproveTravelRecord() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['travel-records'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-travel'] });
       toast.success('Travel record approved successfully');
     },
     onError: (error) => {
@@ -1063,6 +1064,7 @@ export function useRejectTravelRecord() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['travel-records'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-travel'] });
       toast.success('Travel record rejected');
     },
     onError: (error) => {

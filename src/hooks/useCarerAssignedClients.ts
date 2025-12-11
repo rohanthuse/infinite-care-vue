@@ -42,7 +42,7 @@ export const useCarerAssignedClients = () => {
         .from('clients')
         .select('id, first_name, last_name, address')
         .in('id', clientIds)
-        .eq('status', 'active');
+        .ilike('status', 'active');
 
       if (clientsError) throw clientsError;
 
