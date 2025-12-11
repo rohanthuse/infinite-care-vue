@@ -62,6 +62,7 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
         )}
         
         <div className="grid grid-cols-2 gap-2">
+          {/* Tasks Card */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -69,8 +70,22 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
             </div>
             <p className="text-lg font-bold text-foreground">{tasks.pending}</p>
             <p className="text-xs text-muted-foreground">pending</p>
+            {tasks.items.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-primary/10 space-y-1">
+                {tasks.items.slice(0, 3).map((task) => (
+                  <p key={task.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
+                    <span className="w-1 h-1 bg-primary rounded-full flex-shrink-0" />
+                    {task.title}
+                  </p>
+                ))}
+                {tasks.items.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{tasks.items.length - 3} more</p>
+                )}
+              </div>
+            )}
           </div>
           
+          {/* Medications Card */}
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <Pill className="h-4 w-4 text-orange-600" />
@@ -78,8 +93,22 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
             </div>
             <p className="text-lg font-bold text-foreground">{medications.active}</p>
             <p className="text-xs text-muted-foreground">active</p>
+            {medications.items.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-orange-200/50 space-y-1">
+                {medications.items.slice(0, 3).map((med) => (
+                  <p key={med.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
+                    <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                    {med.name}
+                  </p>
+                ))}
+                {medications.items.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{medications.items.length - 3} more</p>
+                )}
+              </div>
+            )}
           </div>
           
+          {/* Goals Card */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <Target className="h-4 w-4 text-green-600" />
@@ -87,8 +116,22 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
             </div>
             <p className="text-lg font-bold text-foreground">{goals.completed}/{goals.total}</p>
             <p className="text-xs text-muted-foreground">completed</p>
+            {goals.items.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-green-200/50 space-y-1">
+                {goals.items.slice(0, 3).map((goal) => (
+                  <p key={goal.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
+                    <span className="w-1 h-1 bg-green-500 rounded-full flex-shrink-0" />
+                    {goal.description}
+                  </p>
+                ))}
+                {goals.items.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{goals.items.length - 3} more</p>
+                )}
+              </div>
+            )}
           </div>
           
+          {/* Activities Card */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <Activity className="h-4 w-4 text-blue-600" />
@@ -96,6 +139,19 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
             </div>
             <p className="text-lg font-bold text-foreground">{activities.active}</p>
             <p className="text-xs text-muted-foreground">scheduled</p>
+            {activities.items.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-blue-200/50 space-y-1">
+                {activities.items.slice(0, 3).map((activity) => (
+                  <p key={activity.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
+                    <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0" />
+                    {activity.name}
+                  </p>
+                ))}
+                {activities.items.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{activities.items.length - 3} more</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
