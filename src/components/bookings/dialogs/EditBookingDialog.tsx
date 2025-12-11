@@ -52,6 +52,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { updateBookingServices, useBookingServices } from "@/hooks/useBookingServices";
+import { notifyBookingCancelled } from "@/utils/bookingNotifications";
+import { AdvancedCancellationDialog, CancellationData } from "./AdvancedCancellationDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -143,6 +145,11 @@ export function EditBookingDialog({
   } | null>(null);
   const [showOverlapAlert, setShowOverlapAlert] = useState(false);
   
+  // Cancellation workflow state
+  const [showCancellationDialog, setShowCancellationDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [previousStatus, setPreviousStatus] = useState<string>("");
+  
   // Track all related booking records for this appointment
   const [relatedBookingRecords, setRelatedBookingRecords] = React.useState<Array<{
     id: string;
@@ -226,6 +233,96 @@ export function EditBookingDialog({
       console.error('[EditBookingDialog] Delete mutation failed:', error);
       clearTimeout(safetyTimeout);
       onOpenChange(false);
+    }
+  };
+
+  // Handle cancellation with advanced workflow
+  const handleCancellationConfirm = async (cancellationData: CancellationData) => {
+    if (!booking) return;
+    
+    setIsCancelling(true);
+    
+    try {
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Update booking with cancellation details
+      const updateData: Record<string, any> = {
+        status: 'cancelled',
+        cancellation_reason: cancellationData.reasonLabel + (cancellationData.details ? ` - ${cancellationData.details}` : ''),
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: user?.id || null,
+        suspension_honor_staff_payment: cancellationData.payStaff,
+      };
+      
+      // Handle invoice removal
+      if (cancellationData.removeFromInvoice) {
+        updateData.is_invoiced = false;
+        updateData.included_in_invoice_id = null;
+      }
+      
+      // Update the booking
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update(updateData)
+        .eq('id', booking.id);
+      
+      if (updateError) throw updateError;
+      
+      // Also update related bookings (multi-staff appointments)
+      if (relatedBookingRecords.length > 0) {
+        const relatedIds = relatedBookingRecords.map(r => r.id).filter(id => id !== booking.id);
+        if (relatedIds.length > 0) {
+          await supabase
+            .from('bookings')
+            .update(updateData)
+            .in('id', relatedIds);
+        }
+      }
+      
+      // Send notification if enabled
+      if (cancellationData.sendNotification) {
+        try {
+          await notifyBookingCancelled({
+            bookingId: booking.id,
+            branchId: booking.branch_id || branchId || '',
+            clientId: booking.clientId || booking.client_id,
+            staffId: booking.carerId || booking.staff_id,
+            clientName: booking.clientName,
+            carerName: booking.carerName,
+            startTime: booking.start_time || booking.startTime,
+            notificationType: 'booking_cancelled',
+          });
+        } catch (notifyError) {
+          console.error('[EditBookingDialog] Failed to send cancellation notification:', notifyError);
+          // Don't fail the whole operation for notification errors
+        }
+      }
+      
+      // Update form status
+      form.setValue('status', 'cancelled');
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      
+      toast.success('Booking cancelled successfully', {
+        description: `Reason: ${cancellationData.reasonLabel}`,
+      });
+      
+      setShowCancellationDialog(false);
+      onOpenChange(false);
+      
+      if (onSuccess) {
+        onSuccess(booking.id);
+      }
+    } catch (error) {
+      console.error('[EditBookingDialog] Cancellation failed:', error);
+      toast.error('Failed to cancel booking');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -1060,7 +1157,15 @@ export function EditBookingDialog({
                         )}
                       </FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
+                        onValueChange={(value) => {
+                          // Intercept "cancelled" status to show cancellation dialog
+                          if (value === 'cancelled') {
+                            setPreviousStatus(field.value || booking?.status || 'assigned');
+                            setShowCancellationDialog(true);
+                          } else {
+                            field.onChange(value);
+                          }
+                        }} 
                         value={field.value || ""}
                       >
                         <FormControl>
@@ -1119,6 +1224,23 @@ export function EditBookingDialog({
               duration: 4000
             });
           }}
+        />
+
+        {/* Advanced Cancellation Dialog */}
+        <AdvancedCancellationDialog
+          open={showCancellationDialog}
+          onOpenChange={(open) => {
+            setShowCancellationDialog(open);
+            // If user closes without confirming, don't change status
+          }}
+          onConfirm={handleCancellationConfirm}
+          bookingDetails={{
+            clientName: booking?.clientName,
+            carerName: booking?.carerName,
+            date: booking?.date || (booking?.start_time ? format(new Date(booking.start_time), 'dd MMM yyyy') : undefined),
+            time: booking?.startTime || (booking?.start_time ? format(new Date(booking.start_time), 'HH:mm') : undefined),
+          }}
+          isLoading={isCancelling}
         />
 
         <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
