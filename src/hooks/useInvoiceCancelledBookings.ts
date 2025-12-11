@@ -13,6 +13,7 @@ export interface CancelledBookingData {
   staff_payment_type: string | null;
   staff_payment_amount: number | null;
   is_invoiced: boolean | null;
+  included_in_invoice_id: string | null;
   staff_first_name: string | null;
   staff_last_name: string | null;
 }
@@ -23,6 +24,19 @@ export const useInvoiceCancelledBookings = (invoiceId: string | undefined) => {
     queryFn: async (): Promise<CancelledBookingData[]> => {
       if (!invoiceId) return [];
 
+      // Step 1: Get invoice details (client_id, start_date, end_date)
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('client_billing')
+        .select('client_id, start_date, end_date')
+        .eq('id', invoiceId)
+        .single();
+
+      if (invoiceError || !invoice) {
+        console.error('Failed to fetch invoice:', invoiceError);
+        return [];
+      }
+
+      // Step 2: Query cancelled bookings - directly linked OR within invoice date range
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -37,13 +51,16 @@ export const useInvoiceCancelledBookings = (invoiceId: string | undefined) => {
           staff_payment_type,
           staff_payment_amount,
           is_invoiced,
+          included_in_invoice_id,
           staff:staff_id (
             first_name,
             last_name
           )
         `)
-        .eq('included_in_invoice_id', invoiceId)
+        .eq('client_id', invoice.client_id)
         .eq('status', 'cancelled')
+        .gte('start_time', invoice.start_date)
+        .lte('start_time', `${invoice.end_date}T23:59:59`)
         .order('cancelled_at', { ascending: false });
 
       if (error) throw error;
@@ -61,6 +78,7 @@ export const useInvoiceCancelledBookings = (invoiceId: string | undefined) => {
         staff_payment_type: booking.staff_payment_type,
         staff_payment_amount: booking.staff_payment_amount,
         is_invoiced: booking.is_invoiced,
+        included_in_invoice_id: booking.included_in_invoice_id,
         staff_first_name: booking.staff?.first_name || null,
         staff_last_name: booking.staff?.last_name || null,
       }));
