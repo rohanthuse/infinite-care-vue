@@ -331,12 +331,21 @@ export const usePayrollBookingIntegration = () => {
         // Calculate payroll data from bookings
         const calculationData = await calculatePayrollFromBookings(branchId, staffId, payPeriodStart, payPeriodEnd);
 
+        // Calculate travel reimbursement from APPROVED records only
+        const approvedTravelRecords = (calculationData.travelRecords || []).filter(
+          (r: any) => r.status === 'approved'
+        );
+        const travelReimbursement = approvedTravelRecords.reduce(
+          (sum: number, record: any) => sum + (record.total_cost || 0),
+          0
+        );
+
         // Calculate pay components
         const basicSalary = calculationData.regularHours * calculationData.basHourlyRate;
         const overtimePay = calculationData.overtimeHours * calculationData.overtimeRate;
         const extraTimePay = calculationData.extraTimeHours * calculationData.overtimeRate;
         
-        const grossPay = basicSalary + overtimePay + extraTimePay;
+        const grossPay = basicSalary + overtimePay + extraTimePay + travelReimbursement;
         
         // Calculate deductions (basic estimates - should be configurable)
         const taxRate = 0.20; // 20% tax estimate
@@ -371,7 +380,7 @@ export const usePayrollBookingIntegration = () => {
           payment_status: 'pending' as const,
           payment_method: 'bank_transfer' as const,
           payment_date: payPeriodEnd.split('T')[0],
-          notes: `Auto-generated from ${calculationData.bookings.length} bookings and ${calculationData.attendanceRecords.length} attendance records`,
+          notes: `Auto-generated from ${calculationData.bookings.length} bookings, ${calculationData.attendanceRecords.length} attendance records, and ${approvedTravelRecords.length} approved travel records (£${travelReimbursement.toFixed(2)} travel reimbursement)`,
           created_by: createdBy
         };
 

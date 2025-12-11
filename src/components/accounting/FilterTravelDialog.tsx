@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TravelRecord } from "@/hooks/useAccountingData";
 
 // Define filter interface that matches what TravelTab expects
 interface TravelTabFilter {
@@ -32,6 +34,7 @@ interface FilterTravelDialogProps {
   onClose: () => void;
   onApplyFilters: (filters: TravelTabFilter) => void;
   currentFilters: TravelTabFilter;
+  travelRecords?: TravelRecord[];
 }
 
 const vehicleTypeLabels: Record<string, string> = {
@@ -54,6 +57,7 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   onClose,
   onApplyFilters,
   currentFilters,
+  travelRecords = [],
 }) => {
   const [vehicleTypes, setVehicleTypes] = useState<string[]>(
     currentFilters.vehicleTypes || []
@@ -75,6 +79,37 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   const [maxCost, setMaxCost] = useState<number | undefined>(
     currentFilters.maxCost
   );
+  const [selectedCarerId, setSelectedCarerId] = useState<string | undefined>(
+    currentFilters.carerIds?.[0]
+  );
+  const [selectedClientName, setSelectedClientName] = useState<string | undefined>(
+    currentFilters.clientNames?.[0]
+  );
+
+  // Extract unique carers and clients from travel records
+  const uniqueCarers = useMemo(() => {
+    const carers = new Map<string, { id: string; name: string }>();
+    travelRecords.forEach((record) => {
+      if (record.staff && record.staff_id) {
+        carers.set(record.staff_id, {
+          id: record.staff_id,
+          name: `${record.staff.first_name} ${record.staff.last_name}`,
+        });
+      }
+    });
+    return Array.from(carers.values());
+  }, [travelRecords]);
+
+  const uniqueClients = useMemo(() => {
+    const clients = new Map<string, string>();
+    travelRecords.forEach((record) => {
+      if (record.client) {
+        const name = `${record.client.first_name} ${record.client.last_name}`;
+        clients.set(name, name);
+      }
+    });
+    return Array.from(clients.values());
+  }, [travelRecords]);
 
   // Toggle vehicle type selection
   const toggleVehicleType = (value: string) => {
@@ -104,6 +139,8 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
       maxDistance,
       minCost,
       maxCost,
+      carerIds: selectedCarerId ? [selectedCarerId] : undefined,
+      clientNames: selectedClientName ? [selectedClientName] : undefined,
     });
     onClose();
   };
@@ -117,6 +154,8 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
     setMaxDistance(undefined);
     setMinCost(undefined);
     setMaxCost(undefined);
+    setSelectedCarerId(undefined);
+    setSelectedClientName(undefined);
   };
 
   return (
@@ -137,6 +176,48 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
+          {/* Carer and Client Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="carer-filter">Filter by Carer</Label>
+              <Select
+                value={selectedCarerId || "all"}
+                onValueChange={(value) => setSelectedCarerId(value === "all" ? undefined : value)}
+              >
+                <SelectTrigger id="carer-filter">
+                  <SelectValue placeholder="All Carers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Carers</SelectItem>
+                  {uniqueCarers.map((carer) => (
+                    <SelectItem key={carer.id} value={carer.id}>
+                      {carer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-filter">Filter by Client</Label>
+              <Select
+                value={selectedClientName || "all"}
+                onValueChange={(value) => setSelectedClientName(value === "all" ? undefined : value)}
+              >
+                <SelectTrigger id="client-filter">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                  {uniqueClients.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Date Range */}
           <div className="space-y-4">
             <h3 className="font-medium">Date Range</h3>
