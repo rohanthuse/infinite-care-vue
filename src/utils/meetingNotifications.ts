@@ -55,12 +55,30 @@ export async function createMeetingNotification(params: {
 }
 
 /**
- * Extract staff ID from notes field (format: "Staff ID: uuid")
+ * Extract staff ID from notes field (format: "Staff ID: uuid" - legacy single)
  */
 function extractStaffIdFromNotes(notes?: string | null): string | null {
   if (!notes) return null;
   const match = notes.match(/Staff ID: ([a-f0-9-]+)/i);
   return match ? match[1] : null;
+}
+
+/**
+ * Extract multiple Staff IDs from notes field (format: "Staff IDs: uuid1,uuid2")
+ */
+function extractStaffIdsFromNotes(notes?: string | null): string[] {
+  if (!notes) return [];
+  const match = notes.match(/Staff IDs: ([a-f0-9,-]+)/i);
+  return match ? match[1].split(',').filter(id => id.trim()) : [];
+}
+
+/**
+ * Extract multiple Client IDs from notes field (format: "Client IDs: uuid1,uuid2")
+ */
+function extractClientIdsFromNotes(notes?: string | null): string[] {
+  if (!notes) return [];
+  const match = notes.match(/Client IDs: ([a-f0-9,-]+)/i);
+  return match ? match[1].split(',').filter(id => id.trim()) : [];
 }
 
 /**
@@ -114,6 +132,8 @@ export async function notifyMeetingCreated(params: {
   providerName: string;
 }): Promise<void> {
   const staffId = extractStaffIdFromNotes(params.notes);
+  const staffIds = extractStaffIdsFromNotes(params.notes);
+  const clientIds = extractClientIdsFromNotes(params.notes);
   const organizationId = await getOrganizationIdFromBranch(params.branchId);
 
   const baseData = {
@@ -133,9 +153,10 @@ export async function notifyMeetingCreated(params: {
     month: 'short',
   });
 
-  // Notify assigned staff/carer
-  if (staffId) {
-    const staffAuthId = await getStaffAuthUserId(staffId);
+  // Notify all assigned staff (multi-select)
+  const allStaffIds = new Set([...staffIds, ...(staffId ? [staffId] : [])]);
+  for (const sid of allStaffIds) {
+    const staffAuthId = await getStaffAuthUserId(sid);
     if (staffAuthId) {
       await createMeetingNotification({
         userId: staffAuthId,
@@ -149,9 +170,10 @@ export async function notifyMeetingCreated(params: {
     }
   }
 
-  // Notify client if assigned
-  if (params.clientId) {
-    const clientAuthId = await getClientAuthUserId(params.clientId);
+  // Notify all clients (multi-select)
+  const allClientIds = new Set([...clientIds, ...(params.clientId ? [params.clientId] : [])]);
+  for (const cid of allClientIds) {
+    const clientAuthId = await getClientAuthUserId(cid);
     if (clientAuthId) {
       await createMeetingNotification({
         userId: clientAuthId,
@@ -210,6 +232,8 @@ export async function notifyMeetingUpdated(params: {
   location: string;
 }): Promise<void> {
   const staffId = extractStaffIdFromNotes(params.notes);
+  const staffIds = extractStaffIdsFromNotes(params.notes);
+  const clientIds = extractClientIdsFromNotes(params.notes);
   const organizationId = await getOrganizationIdFromBranch(params.branchId);
 
   const baseData = {
@@ -229,9 +253,10 @@ export async function notifyMeetingUpdated(params: {
     month: 'short',
   });
 
-  // Notify assigned staff/carer
-  if (staffId) {
-    const staffAuthId = await getStaffAuthUserId(staffId);
+  // Notify all assigned staff (multi-select)
+  const allStaffIds = new Set([...staffIds, ...(staffId ? [staffId] : [])]);
+  for (const sid of allStaffIds) {
+    const staffAuthId = await getStaffAuthUserId(sid);
     if (staffAuthId) {
       await createMeetingNotification({
         userId: staffAuthId,
@@ -245,9 +270,10 @@ export async function notifyMeetingUpdated(params: {
     }
   }
 
-  // Notify client if assigned
-  if (params.clientId) {
-    const clientAuthId = await getClientAuthUserId(params.clientId);
+  // Notify all clients (multi-select)
+  const allClientIds = new Set([...clientIds, ...(params.clientId ? [params.clientId] : [])]);
+  for (const cid of allClientIds) {
+    const clientAuthId = await getClientAuthUserId(cid);
     if (clientAuthId) {
       await createMeetingNotification({
         userId: clientAuthId,
@@ -305,6 +331,8 @@ export async function notifyMeetingCancelled(meeting: {
   appointment_time: string;
 }): Promise<void> {
   const staffId = extractStaffIdFromNotes(meeting.notes);
+  const staffIds = extractStaffIdsFromNotes(meeting.notes);
+  const clientIds = extractClientIdsFromNotes(meeting.notes);
   const organizationId = await getOrganizationIdFromBranch(meeting.branch_id);
 
   const baseData = {
@@ -321,9 +349,10 @@ export async function notifyMeetingCancelled(meeting: {
     month: 'short',
   });
 
-  // Notify assigned staff/carer
-  if (staffId) {
-    const staffAuthId = await getStaffAuthUserId(staffId);
+  // Notify all assigned staff (multi-select)
+  const allStaffIds = new Set([...staffIds, ...(staffId ? [staffId] : [])]);
+  for (const sid of allStaffIds) {
+    const staffAuthId = await getStaffAuthUserId(sid);
     if (staffAuthId) {
       await createMeetingNotification({
         userId: staffAuthId,
@@ -337,9 +366,10 @@ export async function notifyMeetingCancelled(meeting: {
     }
   }
 
-  // Notify client if assigned
-  if (meeting.client_id) {
-    const clientAuthId = await getClientAuthUserId(meeting.client_id);
+  // Notify all clients (multi-select)
+  const allClientIds = new Set([...clientIds, ...(meeting.client_id ? [meeting.client_id] : [])]);
+  for (const cid of allClientIds) {
+    const clientAuthId = await getClientAuthUserId(cid);
     if (clientAuthId) {
       await createMeetingNotification({
         userId: clientAuthId,

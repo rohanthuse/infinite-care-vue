@@ -331,14 +331,18 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                       </div>
                       {recentClients.slice(0, 3).map(client => 
                         renderClientItem(client, client.id === selectedClientId)
-                      )}
-                    </div>
                   )}
+                </div>
+              )}
 
-                  {/* Search Results */}
-                  {clients.length > 0 ? (
-                    <div className="p-2">
-                      {clients.map(client => 
+              {/* Search Results - Filter out recent clients to avoid duplicates */}
+              {(() => {
+                const recentClientIds = new Set(recentClients?.map(c => c.id) || []);
+                const filteredClients = searchInput ? clients : clients.filter(c => !recentClientIds.has(c.id));
+                
+                return filteredClients.length > 0 ? (
+                <div className="p-2">
+                  {filteredClients.map(client =>
                         renderClientItem(client, client.id === selectedClientId)
                       )}
                       
@@ -355,7 +359,7 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                         </Button>
                       )}
                     </div>
-                  ) : searchInput ? (
+                ) : searchInput ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">
                       No clients found matching "{searchInput}"
                     </div>
@@ -371,7 +375,8 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                         Example: "John", "12345", or "London"
                       </div>
                     </div>
-                  )}
+                  );
+              })()}
                 </>
               )}
               </div>
