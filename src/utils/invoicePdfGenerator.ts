@@ -30,6 +30,9 @@ export interface InvoicePdfData {
     address: string;
     email: string;
     phone?: string;
+    website?: string;
+    registrationNumber?: string;
+    logoBase64?: string | null;
   };
 }
 
@@ -62,25 +65,70 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     const grayRgb: [number, number, number] = [107, 114, 128]; // #6b7280
     const darkGrayRgb: [number, number, number] = [31, 41, 55]; // #1f2937
 
-    // ===== HEADER SECTION (Centered) =====
-    doc.setFontSize(16);
+    // ===== HEADER SECTION (Two-column: Logo left, Company details right) =====
+    const logoWidth = 35;
+    const logoHeight = 35;
+    let headerStartY = yPosition;
+    let textStartX = margin;
+
+    // Add logo if available
+    if (organizationInfo.logoBase64) {
+      try {
+        const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+          if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+          if (base64.includes('data:image/gif')) return 'GIF';
+          return 'PNG';
+        };
+        const format = getImageFormat(organizationInfo.logoBase64);
+        doc.addImage(organizationInfo.logoBase64, format, margin, yPosition - 5, logoWidth, logoHeight);
+        textStartX = margin + logoWidth + 10; // Move text to the right of logo
+      } catch (error) {
+        console.error('Error adding logo to PDF:', error);
+      }
+    }
+
+    // Company name (bold, larger)
+    doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
-    const orgNameWidth = doc.getTextWidth(organizationInfo.name);
-    doc.text(organizationInfo.name, (pageWidth - orgNameWidth) / 2, yPosition);
+    doc.text(organizationInfo.name, textStartX, yPosition + 2);
     yPosition += 7;
 
+    // Company address
     doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
-    const orgAddressWidth = doc.getTextWidth(organizationInfo.address);
-    doc.text(organizationInfo.address, (pageWidth - orgAddressWidth) / 2, yPosition);
-    yPosition += 5;
+    if (organizationInfo.address) {
+      const addressLines = doc.splitTextToSize(organizationInfo.address, pageWidth - textStartX - margin - 10);
+      addressLines.forEach((line: string) => {
+        doc.text(line, textStartX, yPosition);
+        yPosition += 4;
+      });
+    }
 
-    const orgEmailText = `Email: ${organizationInfo.email}`;
-    const orgEmailWidth = doc.getTextWidth(orgEmailText);
-    doc.text(orgEmailText, (pageWidth - orgEmailWidth) / 2, yPosition);
-    yPosition += 10;
+    // Contact line (Email | Phone)
+    const contactParts = [];
+    if (organizationInfo.email) contactParts.push(`Email: ${organizationInfo.email}`);
+    if (organizationInfo.phone) contactParts.push(`Tel: ${organizationInfo.phone}`);
+    if (contactParts.length > 0) {
+      doc.text(contactParts.join(' | '), textStartX, yPosition);
+      yPosition += 4;
+    }
+
+    // Website (if available)
+    if (organizationInfo.website) {
+      doc.text(`Web: ${organizationInfo.website}`, textStartX, yPosition);
+      yPosition += 4;
+    }
+
+    // Registration number (if available)
+    if (organizationInfo.registrationNumber) {
+      doc.text(`Reg No: ${organizationInfo.registrationNumber}`, textStartX, yPosition);
+      yPosition += 4;
+    }
+
+    // Ensure we're past the logo height
+    yPosition = Math.max(yPosition, headerStartY + logoHeight + 5);
 
     // Header border
     doc.setDrawColor(200, 200, 200);
