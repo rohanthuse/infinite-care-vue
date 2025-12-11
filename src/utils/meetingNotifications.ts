@@ -64,6 +64,24 @@ function extractStaffIdFromNotes(notes?: string | null): string | null {
 }
 
 /**
+ * Extract Super Admin IDs from notes field (format: "Super Admin IDs: uuid1,uuid2")
+ */
+function extractSuperAdminIdsFromNotes(notes?: string | null): string[] {
+  if (!notes) return [];
+  const match = notes.match(/Super Admin IDs: ([a-f0-9,-]+)/i);
+  return match ? match[1].split(',').filter(id => id.trim()) : [];
+}
+
+/**
+ * Extract Branch Admin IDs from notes field (format: "Branch Admin IDs: uuid1,uuid2")
+ */
+function extractBranchAdminIdsFromNotes(notes?: string | null): string[] {
+  if (!notes) return [];
+  const match = notes.match(/Branch Admin IDs: ([a-f0-9,-]+)/i);
+  return match ? match[1].split(',').filter(id => id.trim()) : [];
+}
+
+/**
  * Get organization_id from branch
  */
 async function getOrganizationIdFromBranch(branchId: string): Promise<string | null> {
@@ -147,6 +165,34 @@ export async function notifyMeetingCreated(params: {
     }
   }
 
+  // Notify selected super admins
+  const superAdminIds = extractSuperAdminIdsFromNotes(params.notes);
+  for (const adminId of superAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: params.branchId,
+      organizationId: organizationId || undefined,
+      title: '📅 New Meeting Scheduled',
+      message: `${params.meetingTitle} on ${formattedDate} at ${params.meetingTime}. Created by ${params.providerName}`,
+      priority: 'medium',
+      data: baseData,
+    });
+  }
+
+  // Notify selected branch admins
+  const branchAdminIds = extractBranchAdminIdsFromNotes(params.notes);
+  for (const adminId of branchAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: params.branchId,
+      organizationId: organizationId || undefined,
+      title: '📅 New Meeting Scheduled',
+      message: `${params.meetingTitle} on ${formattedDate} at ${params.meetingTime}. Created by ${params.providerName}`,
+      priority: 'medium',
+      data: baseData,
+    });
+  }
+
   console.log('[meetingNotifications] Meeting creation notifications sent for:', params.meetingId);
 }
 
@@ -215,6 +261,34 @@ export async function notifyMeetingUpdated(params: {
     }
   }
 
+  // Notify selected super admins
+  const superAdminIds = extractSuperAdminIdsFromNotes(params.notes);
+  for (const adminId of superAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: params.branchId,
+      organizationId: organizationId || undefined,
+      title: '🔄 Meeting Updated',
+      message: `${params.meetingTitle} has been updated. Now on ${formattedDate} at ${params.meetingTime}`,
+      priority: 'medium',
+      data: baseData,
+    });
+  }
+
+  // Notify selected branch admins
+  const branchAdminIds = extractBranchAdminIdsFromNotes(params.notes);
+  for (const adminId of branchAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: params.branchId,
+      organizationId: organizationId || undefined,
+      title: '🔄 Meeting Updated',
+      message: `${params.meetingTitle} has been updated. Now on ${formattedDate} at ${params.meetingTime}`,
+      priority: 'medium',
+      data: baseData,
+    });
+  }
+
   console.log('[meetingNotifications] Meeting update notifications sent for:', params.meetingId);
 }
 
@@ -277,6 +351,34 @@ export async function notifyMeetingCancelled(meeting: {
         data: baseData,
       });
     }
+  }
+
+  // Notify selected super admins
+  const superAdminIds = extractSuperAdminIdsFromNotes(meeting.notes);
+  for (const adminId of superAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: meeting.branch_id,
+      organizationId: organizationId || undefined,
+      title: '❌ Meeting Cancelled',
+      message: `${meeting.appointment_type} scheduled for ${formattedDate} has been cancelled`,
+      priority: 'high',
+      data: baseData,
+    });
+  }
+
+  // Notify selected branch admins
+  const branchAdminIds = extractBranchAdminIdsFromNotes(meeting.notes);
+  for (const adminId of branchAdminIds) {
+    await createMeetingNotification({
+      userId: adminId,
+      branchId: meeting.branch_id,
+      organizationId: organizationId || undefined,
+      title: '❌ Meeting Cancelled',
+      message: `${meeting.appointment_type} scheduled for ${formattedDate} has been cancelled`,
+      priority: 'high',
+      data: baseData,
+    });
   }
 
   console.log('[meetingNotifications] Meeting cancellation notifications sent for:', meeting.id);

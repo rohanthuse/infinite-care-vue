@@ -10,6 +10,9 @@ import { format } from 'date-fns';
 import { useCreateClientAppointment } from '@/hooks/useClientAppointments';
 import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { EnhancedStaffSelector } from '@/components/ui/enhanced-staff-selector';
+import { AdminMultiSelect } from '@/components/ui/admin-multi-select';
+import { useOrganizationSuperAdmins, useBranchAdminsWithProfiles } from '@/hooks/useOrganizationAdmins';
+import { useTenant } from '@/contexts/TenantContext';
 import { toast } from 'sonner';
 
 interface NewMeetingDialogProps {
@@ -27,7 +30,7 @@ const formatMeetingType = (type: string): string => {
     'client': 'Client',
     'internal': 'Internal',
     'personal': 'Personal',
-    'third-party': 'Third Party',  // Convert hyphen to space
+    'third-party': 'Third Party',
     'external': 'External'
   };
   return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
@@ -41,6 +44,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   prefilledTime,
   prefilledStaffId
 }) => {
+  const { organization } = useTenant();
+  
   // Calculate initial end time (1 hour after start)
   const getInitialEndTime = (startTime?: string) => {
     if (!startTime) return '10:00';
@@ -59,6 +64,12 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const [endTime, setEndTime] = useState(getInitialEndTime(prefilledTime));
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedSuperAdmins, setSelectedSuperAdmins] = useState<string[]>([]);
+  const [selectedBranchAdmins, setSelectedBranchAdmins] = useState<string[]>([]);
+
+  // Fetch admins for notification selection
+  const { data: superAdmins = [] } = useOrganizationSuperAdmins(organization?.id || '');
+  const { data: branchAdmins = [] } = useBranchAdminsWithProfiles(branchId || '');
 
   const createAppointment = useCreateClientAppointment();
 
@@ -82,6 +93,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     setEndTime(getInitialEndTime(prefilledTime));
     setLocation('');
     setNotes('');
+    setSelectedSuperAdmins([]);
+    setSelectedBranchAdmins([]);
   };
 
   const handleScheduleMeeting = async () => {
@@ -133,7 +146,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         provider_name: staffId ? staffData?.full_name || 'Staff Member' : getProviderName(),
         location: location || getDefaultLocation(),
         status: 'scheduled',
-        notes: `Meeting Type: ${meetingType}\n${staffId ? `Staff ID: ${staffId}\n` : ''}${notes}`
+        notes: `Meeting Type: ${meetingType}\n${staffId ? `Staff ID: ${staffId}\n` : ''}${selectedSuperAdmins.length > 0 ? `Super Admin IDs: ${selectedSuperAdmins.join(',')}\n` : ''}${selectedBranchAdmins.length > 0 ? `Branch Admin IDs: ${selectedBranchAdmins.join(',')}\n` : ''}${notes}`
       });
 
       // Invalidate staff meetings cache for real-time sync
@@ -282,6 +295,28 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
                 />
               </div>
             )}
+
+            {/* Super Admin Selection (Optional) */}
+            <div className="grid gap-2">
+              <Label>Super Admin (Optional)</Label>
+              <AdminMultiSelect
+                admins={superAdmins}
+                selectedIds={selectedSuperAdmins}
+                onChange={setSelectedSuperAdmins}
+                placeholder="Select super admins to notify"
+              />
+            </div>
+
+            {/* Branch Admin Selection (Optional) */}
+            <div className="grid gap-2">
+              <Label>Branch Admin (Optional)</Label>
+              <AdminMultiSelect
+                admins={branchAdmins}
+                selectedIds={selectedBranchAdmins}
+                onChange={setSelectedBranchAdmins}
+                placeholder="Select branch admins to notify"
+              />
+            </div>
 
             {(meetingType === 'client' || meetingType === 'internal') && (
               <div className="grid gap-2">
