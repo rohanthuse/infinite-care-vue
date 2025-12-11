@@ -8,11 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { useCreateClientAppointment } from '@/hooks/useClientAppointments';
-import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
-import { EnhancedStaffSelector } from '@/components/ui/enhanced-staff-selector';
+import { ClientMultiSelect } from '@/components/ui/client-multi-select';
+import { StaffMultiSelect } from '@/components/ui/staff-multi-select';
 import { AdminMultiSelect } from '@/components/ui/admin-multi-select';
 import { useOrganizationSuperAdmins, useBranchAdminsWithProfiles } from '@/hooks/useOrganizationAdmins';
 import { useTenant } from '@/contexts/TenantContext';
+import { EnhancedClient } from '@/hooks/useSearchableClients';
+import { EnhancedStaff } from '@/hooks/useSearchableStaff';
 import { toast } from 'sonner';
 
 interface NewMeetingDialogProps {
@@ -53,12 +55,18 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     const endHours = (hours + 1) % 24;
     return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
+
   const [title, setTitle] = useState('');
   const [meetingType, setMeetingType] = useState('client');
-  const [clientId, setClientId] = useState('');
-  const [clientData, setClientData] = useState<any>(null);
-  const [staffId, setStaffId] = useState<string | undefined>(undefined);
-  const [staffData, setStaffData] = useState<any>(null);
+  
+  // Multi-selection states for clients
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [selectedClientsData, setSelectedClientsData] = useState<EnhancedClient[]>([]);
+  
+  // Multi-selection states for staff
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
+  const [selectedStaffData, setSelectedStaffData] = useState<EnhancedStaff[]>([]);
+  
   const [date, setDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
   const [time, setTime] = useState(prefilledTime || '09:00');
   const [endTime, setEndTime] = useState(getInitialEndTime(prefilledTime));
@@ -76,7 +84,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   // Auto-select staff when opening from staff profile
   React.useEffect(() => {
     if (prefilledStaffId && open) {
-      setStaffId(prefilledStaffId);
+      setSelectedStaffIds([prefilledStaffId]);
       setMeetingType('internal'); // Auto-select internal meeting type for staff
     }
   }, [prefilledStaffId, open]);
@@ -84,10 +92,10 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setMeetingType('client');
-    setClientId('');
-    setClientData(null);
-    setStaffId(undefined);
-    setStaffData(null);
+    setSelectedClientIds([]);
+    setSelectedClientsData([]);
+    setSelectedStaffIds([]);
+    setSelectedStaffData([]);
     setDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
     setTime(prefilledTime || '09:00');
     setEndTime(getInitialEndTime(prefilledTime));
@@ -120,39 +128,46 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     }
     
     // Meeting type specific validation
-    if (meetingType === 'client' && !clientId) {
-      toast.error("Please select a client for client meetings");
+    if (meetingType === 'client' && selectedClientIds.length === 0) {
+      toast.error("Please select at least one client for client meetings");
       return;
     }
 
     try {
+      // Get the first selected staff member's name for provider_name
+      const providerName = selectedStaffData.length > 0 
+        ? selectedStaffData[0].full_name 
+        : getProviderName();
+
       console.log('Creating appointment with data:', {
-        client_id: clientId,
+        client_id: selectedClientIds[0] || null,
         appointment_date: date,
         appointment_time: time,
         appointment_type: title,
-        provider_name: staffId ? staffData?.full_name || 'Staff Member' : 'Team Meeting',
+        provider_name: providerName,
         location: location || 'Office',
         status: 'scheduled',
         notes
       });
 
       await createAppointment.mutateAsync({
-        client_id: meetingType === 'client' ? clientId : null,
+        client_id: meetingType === 'client' && selectedClientIds.length > 0 ? selectedClientIds[0] : null,
         branch_id: branchId!,
         appointment_date: date,
         appointment_time: time,
         appointment_type: `${formatMeetingType(meetingType)} Meeting: ${title}`,
-        provider_name: staffId ? staffData?.full_name || 'Staff Member' : getProviderName(),
+        provider_name: providerName,
         location: location || getDefaultLocation(),
         status: 'scheduled',
-        notes: `Meeting Type: ${meetingType}\n${staffId ? `Staff ID: ${staffId}\n` : ''}${selectedSuperAdmins.length > 0 ? `Super Admin IDs: ${selectedSuperAdmins.join(',')}\n` : ''}${selectedBranchAdmins.length > 0 ? `Branch Admin IDs: ${selectedBranchAdmins.join(',')}\n` : ''}${notes}`
+        notes: `Meeting Type: ${meetingType}\n${selectedClientIds.length > 0 ? `Client IDs: ${selectedClientIds.join(',')}\n` : ''}${selectedStaffIds.length > 0 ? `Staff IDs: ${selectedStaffIds.join(',')}\n` : ''}${selectedSuperAdmins.length > 0 ? `Super Admin IDs: ${selectedSuperAdmins.join(',')}\n` : ''}${selectedBranchAdmins.length > 0 ? `Branch Admin IDs: ${selectedBranchAdmins.join(',')}\n` : ''}${notes}`
       });
 
       // Invalidate staff meetings cache for real-time sync
-      if (staffId) {
+      if (selectedStaffIds.length > 0) {
         const { queryClient } = await import('@/lib/queryClient');
-        await queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffId] });
+        for (const staffId of selectedStaffIds) {
+          await queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffId] });
+        }
       }
 
       // Wait for React Query to process invalidations
@@ -281,61 +296,67 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
               />
             </div>
 
-            {meetingType === 'client' && (
-              <div className="grid gap-2">
-                <Label htmlFor="client">Client *</Label>
-                <EnhancedClientSelector
-                  branchId={branchId || ''}
-                  selectedClientId={clientId}
-                  onClientSelect={(id, data) => {
-                    setClientId(id);
-                    setClientData(data);
-                  }}
-                  placeholder="Search and select a client"
-                />
-              </div>
-            )}
+            {/* Participants Section with Scroll */}
+            <div className="border rounded-lg p-3 bg-muted/30">
+              <Label className="text-sm font-medium mb-3 block">Participants</Label>
+              <ScrollArea className="max-h-[200px] pr-2">
+                <div className="space-y-4">
+                  {/* Client Selection - Multi-Select (only for client meetings) */}
+                  {meetingType === 'client' && (
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Clients *</Label>
+                      <ClientMultiSelect
+                        branchId={branchId || ''}
+                        selectedIds={selectedClientIds}
+                        onChange={(ids, data) => {
+                          setSelectedClientIds(ids);
+                          setSelectedClientsData(data);
+                        }}
+                        placeholder="Select one or more clients"
+                      />
+                    </div>
+                  )}
 
-            {/* Super Admin Selection (Optional) */}
-            <div className="grid gap-2">
-              <Label>Super Admin (Optional)</Label>
-              <AdminMultiSelect
-                admins={superAdmins}
-                selectedIds={selectedSuperAdmins}
-                onChange={setSelectedSuperAdmins}
-                placeholder="Select super admins to notify"
-              />
+                  {/* Super Admin Selection (Optional) */}
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Super Admin (Optional)</Label>
+                    <AdminMultiSelect
+                      admins={superAdmins}
+                      selectedIds={selectedSuperAdmins}
+                      onChange={setSelectedSuperAdmins}
+                      placeholder="Select super admins to notify"
+                    />
+                  </div>
+
+                  {/* Branch Admin Selection (Optional) */}
+                  <div className="grid gap-2">
+                    <Label className="text-sm">Branch Admin (Optional)</Label>
+                    <AdminMultiSelect
+                      admins={branchAdmins}
+                      selectedIds={selectedBranchAdmins}
+                      onChange={setSelectedBranchAdmins}
+                      placeholder="Select branch admins to notify"
+                    />
+                  </div>
+
+                  {/* Staff Selection - Multi-Select */}
+                  {(meetingType === 'client' || meetingType === 'internal') && (
+                    <div className="grid gap-2">
+                      <Label className="text-sm">Staff Members (Optional)</Label>
+                      <StaffMultiSelect
+                        branchId={branchId || ''}
+                        selectedIds={selectedStaffIds}
+                        onChange={(ids, data) => {
+                          setSelectedStaffIds(ids);
+                          setSelectedStaffData(data);
+                        }}
+                        placeholder="Select one or more staff members"
+                      />
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </div>
-
-            {/* Branch Admin Selection (Optional) */}
-            <div className="grid gap-2">
-              <Label>Branch Admin (Optional)</Label>
-              <AdminMultiSelect
-                admins={branchAdmins}
-                selectedIds={selectedBranchAdmins}
-                onChange={setSelectedBranchAdmins}
-                placeholder="Select branch admins to notify"
-              />
-            </div>
-
-            {(meetingType === 'client' || meetingType === 'internal') && (
-              <div className="grid gap-2">
-                <Label htmlFor="staff">Staff Member (Optional)</Label>
-                <EnhancedStaffSelector
-                  branchId={branchId || ''}
-                  selectedStaffId={staffId}
-                  onStaffSelect={(id, data) => {
-                    setStaffId(id);
-                    setStaffData(data);
-                  }}
-                  placeholder={
-                    meetingType === 'client' 
-                      ? "Search staff member (optional)" 
-                      : "Search and select staff member"
-                  }
-                />
-              </div>
-            )}
 
             <div className="grid grid-cols-3 gap-2">
               <div className="grid gap-2">
@@ -396,7 +417,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           </Button>
           <Button 
             onClick={handleScheduleMeeting}
-            disabled={!title || (meetingType === 'client' && !clientId) || !date || !time || !branchId || createAppointment.isPending}
+            disabled={!title || (meetingType === 'client' && selectedClientIds.length === 0) || !date || !time || !branchId || createAppointment.isPending}
           >
             {createAppointment.isPending ? 'Scheduling...' : `Schedule ${getMeetingTypeLabel()}`}
           </Button>

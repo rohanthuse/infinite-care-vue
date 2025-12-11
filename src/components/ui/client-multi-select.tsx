@@ -1,0 +1,185 @@
+import React, { useState, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { useSearchableClients, EnhancedClient } from '@/hooks/useSearchableClients';
+import { ChevronDown, X, Search, User, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface ClientMultiSelectProps {
+  branchId: string;
+  selectedIds: string[];
+  onChange: (ids: string[], clientsData: EnhancedClient[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
+  branchId,
+  selectedIds,
+  onChange,
+  placeholder = "Select clients...",
+  disabled = false,
+  className
+}) => {
+  const [open, setOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+
+  const {
+    clients,
+    isLoading,
+    setSearchTerm,
+    resetPage
+  } = useSearchableClients(branchId);
+
+  // Debounced search
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+      resetPage();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, setSearchTerm, resetPage]);
+
+  // Keep track of selected clients data
+  const [selectedClientsMap, setSelectedClientsMap] = useState<Map<string, EnhancedClient>>(new Map());
+
+  // Update map when clients data is available
+  React.useEffect(() => {
+    const newMap = new Map(selectedClientsMap);
+    clients.forEach(client => {
+      if (selectedIds.includes(client.id)) {
+        newMap.set(client.id, client);
+      }
+    });
+    setSelectedClientsMap(newMap);
+  }, [clients, selectedIds]);
+
+  const handleToggle = (client: EnhancedClient) => {
+    const newMap = new Map(selectedClientsMap);
+    let newIds: string[];
+    
+    if (selectedIds.includes(client.id)) {
+      newIds = selectedIds.filter(id => id !== client.id);
+      newMap.delete(client.id);
+    } else {
+      newIds = [...selectedIds, client.id];
+      newMap.set(client.id, client);
+    }
+    
+    setSelectedClientsMap(newMap);
+    onChange(newIds, Array.from(newMap.values()));
+  };
+
+  const handleClearAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedClientsMap(new Map());
+    onChange([], []);
+  };
+
+  const getDisplayText = () => {
+    if (selectedIds.length === 0) return placeholder;
+    if (selectedIds.length === 1) {
+      const client = selectedClientsMap.get(selectedIds[0]);
+      return client?.full_name || 'Selected client';
+    }
+    return `${selectedIds.length} clients selected`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "w-full justify-between",
+            !selectedIds.length && "text-muted-foreground",
+            className
+          )}
+          disabled={disabled}
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{getDisplayText()}</span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {selectedIds.length > 0 && (
+              <X
+                className="h-4 w-4 opacity-50 hover:opacity-100"
+                onClick={handleClearAll}
+              />
+            )}
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-full p-0 bg-popover" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+        <div className="p-2 border-b">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search clients..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
+        <ScrollArea className="max-h-[200px]">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : clients.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No clients found
+            </div>
+          ) : (
+            <div className="p-2 space-y-1">
+              {clients.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+                  onClick={() => handleToggle(client)}
+                >
+                  <Checkbox
+                    checked={selectedIds.includes(client.id)}
+                    onCheckedChange={() => handleToggle(client)}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{client.full_name}</div>
+                    {client.pin_code && (
+                      <div className="text-xs text-muted-foreground">PIN: {client.pin_code}</div>
+                    )}
+                  </div>
+                  {client.status && (
+                    <Badge variant={client.status === 'Active' ? 'default' : 'secondary'} className="text-xs">
+                      {client.status}
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {selectedIds.length > 0 && (
+          <div className="p-2 border-t bg-muted/50">
+            <div className="text-xs text-muted-foreground">
+              {selectedIds.length} client{selectedIds.length !== 1 ? 's' : ''} selected
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+};
