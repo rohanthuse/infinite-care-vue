@@ -113,8 +113,21 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
         data[record.staff_id] = {};
       }
       
+      // Dynamically determine if training is expired based on expiry_date
+      let effectiveStatus = record.status as TrainingStatus;
+      if (record.status === 'completed' && record.expiry_date) {
+        const expiryDate = new Date(record.expiry_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        expiryDate.setHours(0, 0, 0, 0);
+        
+        if (expiryDate < today) {
+          effectiveStatus = 'expired';
+        }
+      }
+      
       data[record.staff_id][record.training_course_id] = {
-        status: record.status as TrainingStatus,
+        status: effectiveStatus,
         completionDate: record.completion_date,
         expiryDate: record.expiry_date,
         score: record.score,
@@ -391,11 +404,11 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                 <TabsTrigger value="all" className="data-[state=active]:bg-white">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="core" className="data-[state=active]:bg-white">
-                  Core ({categories.find(c => c.category === 'core')?.count || 0})
-                </TabsTrigger>
                 <TabsTrigger value="mandatory" className="data-[state=active]:bg-white">
                   Mandatory ({categories.find(c => c.category === 'mandatory')?.count || 0})
+                </TabsTrigger>
+                <TabsTrigger value="core" className="data-[state=active]:bg-white">
+                  Core ({categories.find(c => c.category === 'core')?.count || 0})
                 </TabsTrigger>
                 <TabsTrigger value="specialized" className="data-[state=active]:bg-white">
                   Specialized ({categories.find(c => c.category === 'specialized')?.count || 0})
