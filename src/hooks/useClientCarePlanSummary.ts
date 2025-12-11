@@ -68,10 +68,10 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     };
   }
 
-  // Fetch active care plan for client
+  // Fetch active care plan for client including auto_save_data
   const { data: carePlan, error: carePlanError } = await supabase
     .from('client_care_plans')
-    .select('id, title, status, display_id')
+    .select('id, title, status, display_id, auto_save_data')
     .eq('client_id', clientId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -94,63 +94,78 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     };
   }
 
-  // Fetch all related data in parallel with full details
-  const [goalsResult, activitiesResult, medicationsResult, tasksResult] = await Promise.all([
-    // Goals - include notes for detailed view
-    supabase
-      .from('client_care_plan_goals')
-      .select('id, description, status, progress, notes')
-      .eq('care_plan_id', carePlan.id)
-      .order('created_at', { ascending: false }),
+  // Parse auto_save_data JSON for goals, activities, and medications
+  const autoSaveData = carePlan.auto_save_data as Record<string, any> | null;
+  
+  // Extract goals from auto_save_data
+  const jsonGoals = autoSaveData?.goals || [];
+  const parsedGoals: CarePlanSummaryGoal[] = Array.isArray(jsonGoals) 
+    ? jsonGoals.map((g: any, index: number) => ({
+        id: `goal-${index}`,
+        description: g.description || g.goal || '',
+        status: g.status || 'in_progress',
+        progress: g.progress || null,
+        notes: g.measurable_outcome || g.notes || null,
+      }))
+    : [];
 
-    // Activities - include description for detailed view
-    supabase
-      .from('client_activities')
-      .select('id, name, description, frequency, status')
-      .eq('care_plan_id', carePlan.id)
-      .order('created_at', { ascending: false }),
+  // Extract activities from auto_save_data
+  const jsonActivities = autoSaveData?.activities || [];
+  const parsedActivities: CarePlanSummaryActivity[] = Array.isArray(jsonActivities)
+    ? jsonActivities.map((a: any, index: number) => ({
+        id: `activity-${index}`,
+        name: a.name || a.activity || '',
+        description: a.description || null,
+        frequency: a.frequency || '',
+        status: a.status || 'active',
+      }))
+    : [];
 
-    // Medications - include notes, start_date, end_date for detailed view
-    supabase
-      .from('client_medications')
-      .select('id, name, dosage, frequency, status, notes, start_date, end_date')
-      .eq('care_plan_id', carePlan.id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false }),
+  // Extract medications from auto_save_data (medical_info.medication_manager.medications)
+  const jsonMedications = autoSaveData?.medical_info?.medication_manager?.medications || [];
+  const parsedMedications: CarePlanSummaryMedication[] = Array.isArray(jsonMedications)
+    ? jsonMedications.map((m: any) => ({
+        id: m.id || `med-${Date.now()}-${Math.random()}`,
+        name: m.name || '',
+        dosage: m.dosage || '',
+        frequency: m.frequency || '',
+        status: m.status || 'active',
+        notes: m.instruction || m.notes || null,
+        start_date: m.start_date || null,
+        end_date: m.end_date || null,
+      }))
+    : [];
 
-    // Tasks - include description, notes, category for detailed view
-    supabase
-      .from('tasks')
-      .select('id, title, description, status, priority, due_date, notes, category')
-      .eq('client_id', clientId)
-      .in('status', ['pending', 'in_progress', 'todo'])
-      .order('due_date', { ascending: true })
-      .limit(10),
-  ]);
+  // Fetch tasks from tasks table (tasks are stored separately)
+  const { data: tasksData } = await supabase
+    .from('tasks')
+    .select('id, title, description, status, priority, due_date, notes, category')
+    .eq('client_id', clientId)
+    .in('status', ['pending', 'in_progress', 'todo'])
+    .order('due_date', { ascending: true })
+    .limit(10);
 
-  const goals = goalsResult.data || [];
-  const activities = activitiesResult.data || [];
-  const medications = medicationsResult.data || [];
-  const tasks = tasksResult.data || [];
+  const tasks = tasksData || [];
 
-  const completedGoals = goals.filter(g => g.status === 'completed').length;
-  const activeActivities = activities.filter(a => a.status === 'active').length;
-  const activeMedications = medications.filter(m => m.status === 'active').length;
+  const completedGoals = parsedGoals.filter(g => g.status === 'completed').length;
+  const activeActivities = parsedActivities.filter(a => a.status === 'active').length;
+  const activeMedications = parsedMedications.filter(m => m.status === 'active').length;
   const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo').length;
 
-  console.log('[useClientCarePlanSummary] Summary:', {
+  console.log('[useClientCarePlanSummary] Summary from auto_save_data:', {
     carePlanId: carePlan.id,
-    goals: goals.length,
-    activities: activities.length,
-    medications: medications.length,
+    goals: parsedGoals.length,
+    activities: parsedActivities.length,
+    medications: parsedMedications.length,
     tasks: tasks.length,
+    autoSaveDataKeys: autoSaveData ? Object.keys(autoSaveData) : [],
   });
 
   return {
-    carePlan,
-    goals: { total: goals.length, completed: completedGoals, items: goals },
-    activities: { total: activities.length, active: activeActivities, items: activities },
-    medications: { total: medications.length, active: activeMedications, items: medications },
+    carePlan: { id: carePlan.id, title: carePlan.title, status: carePlan.status, display_id: carePlan.display_id },
+    goals: { total: parsedGoals.length, completed: completedGoals, items: parsedGoals },
+    activities: { total: parsedActivities.length, active: activeActivities, items: parsedActivities },
+    medications: { total: parsedMedications.length, active: activeMedications, items: parsedMedications },
     tasks: { total: tasks.length, pending: pendingTasks, items: tasks },
     hasCarePlan: true,
   };
