@@ -269,7 +269,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           <DialogDescription>Create a new meeting or appointment with clients or staff members.</DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-0 px-6">
+        <div className="flex-1 overflow-y-auto px-6" style={{ maxHeight: 'calc(85vh - 180px)' }}>
           <div className="grid gap-4 py-4 pr-2">
             <div className="space-y-2">
               <Label htmlFor="meetingType">Meeting Type</Label>
@@ -408,7 +408,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
               />
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-4 border-t">
           <Button variant="outline" onClick={handleClose}>
