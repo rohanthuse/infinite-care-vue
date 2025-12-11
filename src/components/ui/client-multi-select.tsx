@@ -158,7 +158,6 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
                 >
                   <Checkbox
                     checked={selectedIds.includes(client.id)}
-                    onCheckedChange={() => handleToggle(client)}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{client.full_name}</div>
