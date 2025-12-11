@@ -76,6 +76,15 @@ export const useCarePlanCreation = () => {
         updateData.change_request_comments = null;
       }
 
+      // Clear client approval fields when re-sending for approval
+      // This ensures the client can approve the updated care plan
+      if (data.status === 'pending_client_approval') {
+        updateData.client_acknowledged_at = null;
+        updateData.client_signature_data = null;
+        updateData.client_comments = null;
+        updateData.acknowledgment_method = null;
+      }
+
       // Handle provider assignment to satisfy check_provider_assignment constraint
       // The constraint requires: (staff_id IS NOT NULL AND provider_name IS NOT NULL) OR 
       // (staff_id IS NULL AND provider_name IS NOT NULL)
