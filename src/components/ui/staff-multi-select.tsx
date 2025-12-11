@@ -158,7 +158,6 @@ export const StaffMultiSelect: React.FC<StaffMultiSelectProps> = ({
                 >
                   <Checkbox
                     checked={selectedIds.includes(member.id)}
-                    onCheckedChange={() => handleToggle(member)}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{member.full_name}</div>

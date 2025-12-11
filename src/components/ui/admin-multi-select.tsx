@@ -100,7 +100,6 @@ export const AdminMultiSelect: React.FC<AdminMultiSelectProps> = ({
                 >
                   <Checkbox
                     checked={selectedIds.includes(admin.auth_user_id)}
-                    onCheckedChange={() => handleToggle(admin.auth_user_id)}
                   />
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-sm font-medium truncate">
