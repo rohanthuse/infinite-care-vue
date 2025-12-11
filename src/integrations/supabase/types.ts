@@ -6505,6 +6505,7 @@ export type Database = {
           has_attachments: boolean | null
           id: string
           is_deleted: boolean | null
+          is_edited: boolean
           message_type: string | null
           notification_methods: string[] | null
           other_email_address: string | null
@@ -6525,6 +6526,7 @@ export type Database = {
           has_attachments?: boolean | null
           id?: string
           is_deleted?: boolean | null
+          is_edited?: boolean
           message_type?: string | null
           notification_methods?: string[] | null
           other_email_address?: string | null
@@ -6545,6 +6547,7 @@ export type Database = {
           has_attachments?: boolean | null
           id?: string
           is_deleted?: boolean | null
+          is_edited?: boolean
           message_type?: string | null
           notification_methods?: string[] | null
           other_email_address?: string | null

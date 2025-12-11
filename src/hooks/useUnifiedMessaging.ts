@@ -32,6 +32,7 @@ export interface UnifiedMessage {
   actionRequired?: boolean;
   adminEyesOnly?: boolean;
   notificationMethods?: string[];
+  isEdited?: boolean;
 }
 
 export interface UnifiedMessageThread {
@@ -451,7 +452,8 @@ export const useUnifiedThreadMessages = (threadId: string) => {
             action_required,
             admin_eyes_only,
             notification_methods,
-            created_at
+            created_at,
+            is_edited
           `)
           .eq('thread_id', threadId)
           .eq('is_deleted', false)
@@ -494,7 +496,8 @@ export const useUnifiedThreadMessages = (threadId: string) => {
           priority: message.priority,
           actionRequired: message.action_required,
           adminEyesOnly: message.admin_eyes_only,
-          notificationMethods: message.notification_methods
+          notificationMethods: message.notification_methods,
+          isEdited: message.is_edited
         };
       }) || [];
     },
