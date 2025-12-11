@@ -239,6 +239,7 @@ export function useBookingData(branchId?: string) {
             unavailability_request: bk.booking_unavailability_requests?.[0] || null,
             cancellation_request_status: bk.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
             reschedule_request_status: bk.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,
+            visit_records: bk.visit_records || [],
           };
 
           // Debug logging for request statuses

@@ -341,12 +341,21 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         const mins = durationMins % 60;
         const duration = `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
 
+        const visitRecord = booking.visit_records?.[0];
+        const actualStartTime = visitRecord?.visit_start_time 
+          ? format(new Date(visitRecord.visit_start_time), 'HH:mm') 
+          : '';
+        const actualEndTime = visitRecord?.visit_end_time 
+          ? format(new Date(visitRecord.visit_end_time), 'HH:mm') 
+          : '';
+
         return {
-          'Booking ID': booking.id,  
           'Date': formatBookingDate(booking.date),
           'Start Time': booking.startTime,
           'End Time': booking.endTime,
-          'Duration': duration,
+          'Booked Time': duration,
+          'Actual Start': actualStartTime,
+          'Actual End': actualEndTime,
           'Client': booking.clientName || '',
           'Carer': booking.carerName || '',
           'Status': formatStatus(booking.status),
@@ -355,7 +364,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       });
 
       const columns = [
-        'Booking ID', 'Date', 'Start Time', 'End Time', 'Duration', 
+        'Date', 'Start Time', 'End Time', 'Booked Time', 'Actual Start', 'Actual End',
         'Client', 'Carer', 'Status', 'Notes'
       ];
 
@@ -446,13 +455,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                   />
                 </TableHead>
               )}
-              <TableHead className="font-medium">Booking ID</TableHead>
               <TableHead className="font-medium">Date</TableHead>
               <TableHead className="font-medium">Time</TableHead>
               <TableHead className="font-medium">Client</TableHead>
               <TableHead className="font-medium">Carer</TableHead>
               <TableHead className="font-medium">Status</TableHead>
-              <TableHead className="font-medium">Duration</TableHead>
+              <TableHead className="font-medium">Booked Time</TableHead>
+              <TableHead className="font-medium">Actual Time</TableHead>
               <TableHead className="font-medium text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -494,7 +503,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                         />
                       </TableCell>
                     )}
-                    <TableCell className="font-medium">{booking.id}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -521,7 +529,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                         {(() => {
                           const related = relatedCarerCounts.get(booking.id);
                           if (related && related.count > 1 && related.carerNames.length > 1) {
-                            // Multi-carer indicator
                             return (
                               <div className="flex items-center gap-2">
                                 <span>{booking.carerName}</span>
@@ -543,6 +550,29 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>{durationText}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const visitRecord = booking.visit_records?.[0];
+                        if (!visitRecord?.visit_start_time) {
+                          return <span className="text-muted-foreground">-</span>;
+                        }
+                        
+                        const actualStart = format(new Date(visitRecord.visit_start_time), 'HH:mm');
+                        const actualEnd = visitRecord.visit_end_time 
+                          ? format(new Date(visitRecord.visit_end_time), 'HH:mm')
+                          : null;
+                        
+                        return (
+                          <div className="flex items-center text-sm">
+                            <span className="font-medium">{actualStart}</span>
+                            <span className="mx-1">-</span>
+                            <span className={actualEnd ? 'font-medium' : 'text-amber-600 font-medium'}>
+                              {actualEnd || 'In Progress'}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button 

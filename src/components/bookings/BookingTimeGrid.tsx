@@ -62,6 +62,12 @@ export interface Booking {
   } | null;
   cancellation_request_status?: 'pending' | 'approved' | 'rejected' | null;
   reschedule_request_status?: 'pending' | 'approved' | 'rejected' | null;
+  visit_records?: Array<{
+    id: string;
+    visit_start_time: string | null;
+    visit_end_time: string | null;
+    status: string;
+  }>;
 }
 
 export interface Client {
