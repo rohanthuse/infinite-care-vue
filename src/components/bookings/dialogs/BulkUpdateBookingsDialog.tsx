@@ -429,7 +429,7 @@ export function BulkUpdateBookingsDialog({
                     Fetching...
                   </>
                 ) : (
-                  "Fetch Bookings"
+                  "Find Bookings"
                 )}
               </Button>
             </CardContent>
