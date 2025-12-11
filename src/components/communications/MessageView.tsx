@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical, Info } from "lucide-react";
+import { Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical, Info, Pencil } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -20,6 +20,8 @@ import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
 import { MessageReadReceipt } from "./MessageReadReceipt";
 import { MessageInfoSheet } from "./MessageInfoSheet";
+import { EditMessageDialog } from "./EditMessageDialog";
+import { useEditMessage } from "@/hooks/useEditMessage";
 
 interface MessageViewProps {
   messageId: string;
@@ -34,6 +36,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { downloadAttachment, previewAttachment, isDownloading, isPreviewing } = useMessageAttachments();
   const deleteMessage = useDeleteMessage();
   const deleteThread = useDeleteThread();
+  const editMessage = useEditMessage();
 
   // State for delete dialog
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -54,6 +57,15 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     threadId?: string;
   }>({ open: false });
 
+  // State for edit dialog
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    messageId?: string;
+    threadId?: string;
+    content?: string;
+    attachments?: any[];
+  }>({ open: false });
+
   // Dropdown state management
   const [threadDropdownOpen, setThreadDropdownOpen] = useState(false);
   const [messageDropdownOpen, setMessageDropdownOpen] = useState<string | null>(null);
@@ -71,6 +83,35 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
         threadId
       });
     }, 100);
+  };
+
+  // Edit handler
+  const handleEditMessageClick = (msgId: string, threadId: string, content: string, attachments?: any[]) => {
+    setMessageDropdownOpen(null); // Close dropdown first
+    setTimeout(() => {
+      setEditDialog({
+        open: true,
+        messageId: msgId,
+        threadId,
+        content,
+        attachments
+      });
+    }, 100);
+  };
+
+  const handleConfirmEdit = async (newContent: string) => {
+    if (editDialog.messageId && editDialog.threadId) {
+      try {
+        await editMessage.mutateAsync({
+          messageId: editDialog.messageId,
+          threadId: editDialog.threadId,
+          content: newContent
+        });
+      } finally {
+        forceModalCleanup();
+        setEditDialog({ open: false });
+      }
+    }
   };
 
   // Delete handlers
@@ -378,12 +419,20 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                             onInteractOutside={() => setMessageDropdownOpen(null)}
                           >
                             {isCurrentUser && (
-                              <DropdownMenuItem
-                                onClick={() => handleMessageInfoClick(message.id, message.threadId)}
-                              >
-                                <Info className="h-4 w-4 mr-2" />
-                                Message Info
-                              </DropdownMenuItem>
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => handleMessageInfoClick(message.id, message.threadId)}
+                                >
+                                  <Info className="h-4 w-4 mr-2" />
+                                  Message Info
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleEditMessageClick(message.id, message.threadId, message.content, attachmentsList)}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit Message
+                                </DropdownMenuItem>
+                              </>
                             )}
                             <DropdownMenuItem
                               onClick={() => handleDeleteMessageClick(message.id, message.threadId, message.content)}
@@ -420,7 +469,12 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                        )}
                      </div>
                      
-                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                          {message.isEdited && (
+                            <span className="text-xs italic opacity-60 ml-1">(edited)</span>
+                          )}
+                        </p>
                        
                         {/* Attachments */}
                         {message.hasAttachments && attachmentsList.length > 0 && (
@@ -473,6 +527,16 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           threadId={messageInfoSheet.threadId}
         />
       )}
+
+      {/* Edit Message Dialog */}
+      <EditMessageDialog
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
+        onConfirm={handleConfirmEdit}
+        isLoading={editMessage.isPending}
+        currentContent={editDialog.content || ''}
+        attachments={editDialog.attachments}
+      />
     </div>
   );
 };

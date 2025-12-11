@@ -36,6 +36,7 @@ export interface AdminMessage {
   actionRequired?: boolean;
   adminEyesOnly?: boolean;
   notificationMethods?: string[];
+  isEdited?: boolean;
 }
 
 export interface AdminMessageThread {
@@ -462,7 +463,8 @@ export const useAdminThreadMessages = (threadId: string) => {
     priority: message.priority, 
     actionRequired: message.actionRequired,
     adminEyesOnly: message.adminEyesOnly,
-    notificationMethods: message.notificationMethods
+    notificationMethods: message.notificationMethods,
+    isEdited: message.isEdited
   }));
   
   return { data: adminMessages, isLoading, error };
