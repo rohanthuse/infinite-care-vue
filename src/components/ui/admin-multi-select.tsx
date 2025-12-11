@@ -62,24 +62,29 @@ export const AdminMultiSelect: React.FC<AdminMultiSelectProps> = ({
           aria-expanded={open}
           disabled={disabled || admins.length === 0}
           className={cn(
-            'w-full justify-between font-normal',
+            'w-full h-10 justify-between text-sm font-normal',
             !selectedIds.length && 'text-muted-foreground',
             className
           )}
         >
           <span className="truncate">{admins.length === 0 ? 'No admins available' : displayText}</span>
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-1 ml-2 shrink-0">
             {selectedIds.length > 0 && (
               <X
                 className="h-4 w-4 hover:text-destructive"
                 onClick={handleClearAll}
               />
             )}
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <ChevronDown className="h-4 w-4 opacity-50" />
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent 
+        className="p-0 bg-popover border shadow-lg z-[100]" 
+        style={{ width: 'var(--radix-popover-trigger-width)', minWidth: '280px' }}
+        sideOffset={4}
+        align="start"
+      >
         <ScrollArea className="max-h-[200px]">
           <div className="p-2 space-y-1">
             {admins.length === 0 ? (

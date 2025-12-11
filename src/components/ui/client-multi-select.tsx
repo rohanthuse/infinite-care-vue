@@ -98,7 +98,7 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between",
+            "w-full h-10 justify-between text-sm font-normal",
             !selectedIds.length && "text-muted-foreground",
             className
           )}
@@ -108,7 +108,7 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
             <User className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">{getDisplayText()}</span>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {selectedIds.length > 0 && (
               <X
                 className="h-4 w-4 opacity-50 hover:opacity-100"
@@ -120,7 +120,12 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-full p-0 bg-popover" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+      <PopoverContent 
+        className="p-0 bg-popover border shadow-lg z-[100]" 
+        style={{ width: 'var(--radix-popover-trigger-width)', minWidth: '280px' }}
+        sideOffset={4}
+        align="start"
+      >
         <div className="p-2 border-b">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -128,7 +133,7 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
               placeholder="Search clients..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-8"
+              className="pl-8 h-9"
             />
           </div>
         </div>
