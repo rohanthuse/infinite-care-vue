@@ -346,7 +346,7 @@ export function DeleteBookingConfirmationDialog({
                       Loading...
                     </>
                   ) : (
-                    "Fetch Bookings"
+                    "Find Bookings"
                   )}
                 </Button>
               </CardContent>
