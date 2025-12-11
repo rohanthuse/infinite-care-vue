@@ -19,6 +19,9 @@ interface BookingTimeData {
   scheduledMinutes: number;
   actualMinutes?: number;
   extraMinutes: number;
+  // Cancellation payment fields
+  staffPaymentType?: string;
+  staffPaymentAmount?: number;
 }
 
 interface PayrollCalculationData {
@@ -91,6 +94,8 @@ export const usePayrollBookingIntegration = () => {
         status,
         service_id,
         suspension_honor_staff_payment,
+        staff_payment_type,
+        staff_payment_amount,
         clients (
           id,
           first_name,
@@ -177,7 +182,10 @@ export const usePayrollBookingIntegration = () => {
         serviceName: booking.services?.title || 'No Service',
         scheduledMinutes,
         actualMinutes,
-        extraMinutes
+        extraMinutes,
+        // Include cancellation payment details
+        staffPaymentType: (booking as any).staff_payment_type || 'none',
+        staffPaymentAmount: (booking as any).staff_payment_amount || null,
       };
     });
   };
@@ -340,12 +348,30 @@ export const usePayrollBookingIntegration = () => {
           0
         );
 
+        // Calculate cancellation payment from cancelled bookings with payment
+        const cancelledBookingPayment = calculationData.bookings
+          .filter(b => b.status === 'cancelled' && b.staffPaymentType && b.staffPaymentType !== 'none')
+          .reduce((sum, booking) => {
+            if (booking.staffPaymentAmount) {
+              return sum + booking.staffPaymentAmount;
+            }
+            // Calculate based on type if no explicit amount
+            const hourlyRate = calculationData.basHourlyRate;
+            const hours = booking.scheduledMinutes / 60;
+            const fullAmount = hourlyRate * hours;
+            switch (booking.staffPaymentType) {
+              case 'full': return sum + fullAmount;
+              case 'half': return sum + (fullAmount / 2);
+              default: return sum;
+            }
+          }, 0);
+
         // Calculate pay components
         const basicSalary = calculationData.regularHours * calculationData.basHourlyRate;
         const overtimePay = calculationData.overtimeHours * calculationData.overtimeRate;
         const extraTimePay = calculationData.extraTimeHours * calculationData.overtimeRate;
         
-        const grossPay = basicSalary + overtimePay + extraTimePay + travelReimbursement;
+        const grossPay = basicSalary + overtimePay + extraTimePay + travelReimbursement + cancelledBookingPayment;
         
         // Calculate deductions (basic estimates - should be configurable)
         const taxRate = 0.20; // 20% tax estimate
@@ -380,7 +406,7 @@ export const usePayrollBookingIntegration = () => {
           payment_status: 'pending' as const,
           payment_method: 'bank_transfer' as const,
           payment_date: payPeriodEnd.split('T')[0],
-          notes: `Auto-generated from ${calculationData.bookings.length} bookings, ${calculationData.attendanceRecords.length} attendance records, and ${approvedTravelRecords.length} approved travel records (£${travelReimbursement.toFixed(2)} travel reimbursement)`,
+          notes: `Auto-generated from ${calculationData.bookings.length} bookings, ${calculationData.attendanceRecords.length} attendance records, ${approvedTravelRecords.length} approved travel records (£${travelReimbursement.toFixed(2)} travel), and £${cancelledBookingPayment.toFixed(2)} cancelled booking payments`,
           created_by: createdBy
         };
 
