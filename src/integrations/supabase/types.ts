@@ -1079,6 +1079,8 @@ export type Database = {
           revenue: number | null
           service_id: string | null
           staff_id: string | null
+          staff_payment_amount: number | null
+          staff_payment_type: string | null
           start_time: string
           status: string | null
           suspension_honor_staff_payment: boolean | null
@@ -1101,6 +1103,8 @@ export type Database = {
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
+          staff_payment_amount?: number | null
+          staff_payment_type?: string | null
           start_time: string
           status?: string | null
           suspension_honor_staff_payment?: boolean | null
@@ -1123,6 +1127,8 @@ export type Database = {
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
+          staff_payment_amount?: number | null
+          staff_payment_type?: string | null
           start_time?: string
           status?: string | null
           suspension_honor_staff_payment?: boolean | null

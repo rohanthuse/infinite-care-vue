@@ -246,13 +246,15 @@ export function EditBookingDialog({
       // Get current user ID
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Update booking with cancellation details
+      // Update booking with cancellation details including payment type and amount
       const updateData: Record<string, any> = {
         status: 'cancelled',
         cancellation_reason: cancellationData.reasonLabel + (cancellationData.details ? ` - ${cancellationData.details}` : ''),
         cancelled_at: new Date().toISOString(),
         cancelled_by: user?.id || null,
         suspension_honor_staff_payment: cancellationData.payStaff,
+        staff_payment_type: cancellationData.paymentType,
+        staff_payment_amount: cancellationData.payStaff ? cancellationData.paymentAmount : null,
       };
       
       // Handle invoice removal
@@ -307,9 +309,14 @@ export function EditBookingDialog({
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      
+      const paymentInfo = cancellationData.payStaff 
+        ? ` (Carer payment: £${cancellationData.paymentAmount.toFixed(2)})` 
+        : '';
       
       toast.success('Booking cancelled successfully', {
-        description: `Reason: ${cancellationData.reasonLabel}`,
+        description: `Reason: ${cancellationData.reasonLabel}${paymentInfo}`,
       });
       
       setShowCancellationDialog(false);
@@ -1239,6 +1246,10 @@ export function EditBookingDialog({
             carerName: booking?.carerName,
             date: booking?.date || (booking?.start_time ? format(new Date(booking.start_time), 'dd MMM yyyy') : undefined),
             time: booking?.startTime || (booking?.start_time ? format(new Date(booking.start_time), 'HH:mm') : undefined),
+            staffId: booking?.carerId || booking?.staff_id,
+            clientId: booking?.clientId || booking?.client_id,
+            startTime: booking?.start_time,
+            endTime: booking?.end_time,
           }}
           isLoading={isCancelling}
         />
