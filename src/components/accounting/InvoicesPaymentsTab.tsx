@@ -283,16 +283,35 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       const client = invoiceData.clients;
       const clientName = `${client?.preferred_name || client?.first_name || ''} ${client?.last_name || ''}`.trim();
 
-      // Fetch organization details
+      // Fetch organization details with logo
       const orgId = client?.branches?.organization_id || organizationId;
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
-        .select('name, address, contact_email, contact_phone')
+        .select('name, address, contact_email, contact_phone, logo_url, website, registration_number')
         .eq('id', orgId)
         .maybeSingle();
 
       if (orgError) {
         console.error('Error fetching organization:', orgError);
+      }
+
+      // Load logo as base64 if available
+      let logoBase64: string | null = null;
+      if (orgData?.logo_url) {
+        try {
+          const response = await fetch(orgData.logo_url);
+          if (response.ok) {
+            const blob = await response.blob();
+            logoBase64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading organization logo:', error);
+        }
       }
 
       await generateInvoicePDF({
@@ -308,11 +327,14 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         clientAddress: client?.address || '',
         clientEmail: client?.email || '',
         clientPhone: client?.phone || '',
-      organizationInfo: {
-        name: orgData?.name || 'Care Service Provider',
-        address: orgData?.address || 'Organisation Address',
-        email: orgData?.contact_email || 'contact@organisation.com',
-          phone: orgData?.contact_phone
+        organizationInfo: {
+          name: orgData?.name || 'Care Service Provider',
+          address: orgData?.address || 'Organisation Address',
+          email: orgData?.contact_email || 'contact@organisation.com',
+          phone: orgData?.contact_phone,
+          website: orgData?.website,
+          registrationNumber: orgData?.registration_number,
+          logoBase64
         }
       });
 
