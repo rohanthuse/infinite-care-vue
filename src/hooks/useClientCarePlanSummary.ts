@@ -6,11 +6,13 @@ export interface CarePlanSummaryGoal {
   description: string;
   status: string;
   progress: number | null;
+  notes: string | null;
 }
 
 export interface CarePlanSummaryActivity {
   id: string;
   name: string;
+  description: string | null;
   frequency: string;
   status: string;
 }
@@ -21,14 +23,20 @@ export interface CarePlanSummaryMedication {
   dosage: string;
   frequency: string;
   status: string;
+  notes: string | null;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export interface CarePlanSummaryTask {
   id: string;
   title: string;
+  description: string | null;
   status: string;
   priority: string;
   due_date: string | null;
+  notes: string | null;
+  category: string | null;
 }
 
 export interface CarePlanSummary {
@@ -86,34 +94,34 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     };
   }
 
-  // Fetch all related data in parallel
+  // Fetch all related data in parallel with full details
   const [goalsResult, activitiesResult, medicationsResult, tasksResult] = await Promise.all([
-    // Goals
+    // Goals - include notes for detailed view
     supabase
       .from('client_care_plan_goals')
-      .select('id, description, status, progress')
+      .select('id, description, status, progress, notes')
       .eq('care_plan_id', carePlan.id)
       .order('created_at', { ascending: false }),
 
-    // Activities
+    // Activities - include description for detailed view
     supabase
       .from('client_activities')
-      .select('id, name, frequency, status')
+      .select('id, name, description, frequency, status')
       .eq('care_plan_id', carePlan.id)
       .order('created_at', { ascending: false }),
 
-    // Medications (linked to care plan)
+    // Medications - include notes, start_date, end_date for detailed view
     supabase
       .from('client_medications')
-      .select('id, name, dosage, frequency, status')
+      .select('id, name, dosage, frequency, status, notes, start_date, end_date')
       .eq('care_plan_id', carePlan.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
 
-    // Tasks (for client)
+    // Tasks - include description, notes, category for detailed view
     supabase
       .from('tasks')
-      .select('id, title, status, priority, due_date')
+      .select('id, title, description, status, priority, due_date, notes, category')
       .eq('client_id', clientId)
       .in('status', ['pending', 'in_progress', 'todo'])
       .order('due_date', { ascending: true })

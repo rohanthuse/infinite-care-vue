@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History, ClipboardList } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { toast } from "sonner";
 import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDialog";
 import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
+import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,6 +37,11 @@ const CarerAppointments: React.FC = () => {
     dateRange: 'next-30-days',
     clientSearch: ''
   });
+  const [showCarePlanDialog, setShowCarePlanDialog] = useState(false);
+  const [selectedClientForCarePlan, setSelectedClientForCarePlan] = useState<{
+    clientId: string;
+    clientName: string;
+  } | null>(null);
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
@@ -874,6 +880,23 @@ const CarerAppointments: React.FC = () => {
                     </div>
                   )}
                   {getActionButton(appointment)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const clientId = appointment.client_id || appointment.clients?.id;
+                      const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim();
+                      if (clientId) {
+                        setSelectedClientForCarePlan({ clientId, clientName });
+                        setShowCarePlanDialog(true);
+                      }
+                    }}
+                  >
+                    <ClipboardList className="h-3 w-3" />
+                    Care Plan Details
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -1073,6 +1096,16 @@ const CarerAppointments: React.FC = () => {
           onConfirm={handleLateArrivalConfirm}
           minutesLate={lateArrivalInfo.minutesLate}
           staffName={lateArrivalInfo.staffName}
+        />
+      )}
+
+      {/* Care Plan Details Dialog */}
+      {selectedClientForCarePlan && (
+        <CarePlanDetailsDialog
+          clientId={selectedClientForCarePlan.clientId}
+          clientName={selectedClientForCarePlan.clientName}
+          open={showCarePlanDialog}
+          onOpenChange={setShowCarePlanDialog}
         />
       )}
     </div>
