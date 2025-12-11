@@ -56,6 +56,8 @@ export const useCarerTravelManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-travel'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['travel-records'] });
     },
   });
 
