@@ -263,18 +263,18 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Schedule New Meeting</DialogTitle>
           <DialogDescription>Create a new meeting or appointment with clients or staff members.</DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(85vh - 160px)' }}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label htmlFor="meetingType">Meeting Type</Label>
               <SafeSelect value={meetingType} onValueChange={setMeetingType}>
-                <SafeSelectTrigger>
+                <SafeSelectTrigger className="h-10">
                   <SafeSelectValue placeholder="Select meeting type" />
                 </SafeSelectTrigger>
                 <SafeSelectContent>
@@ -286,76 +286,75 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
               </SafeSelect>
             </div>
 
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label htmlFor="title">Meeting Title</Label>
               <Input
                 id="title"
+                className="h-10"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={`e.g., ${meetingType === 'client' ? 'Care Plan Review' : meetingType === 'internal' ? 'Team Discussion' : meetingType === 'personal' ? 'Personal Task' : 'External Meeting'}`}
               />
             </div>
 
-            {/* Participants Section with Scroll */}
-            <div className="border rounded-lg p-3 bg-muted/30">
-              <Label className="text-sm font-medium mb-3 block">Participants</Label>
-              <ScrollArea className="max-h-[200px] pr-2">
-                <div className="space-y-4">
-                  {/* Client Selection - Multi-Select (only for client meetings) */}
-                  {meetingType === 'client' && (
-                    <div className="grid gap-2">
-                      <Label className="text-sm">Clients *</Label>
-                      <ClientMultiSelect
-                        branchId={branchId || ''}
-                        selectedIds={selectedClientIds}
-                        onChange={(ids, data) => {
-                          setSelectedClientIds(ids);
-                          setSelectedClientsData(data);
-                        }}
-                        placeholder="Select one or more clients"
-                      />
-                    </div>
-                  )}
-
-                  {/* Super Admin Selection (Optional) */}
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Super Admin (Optional)</Label>
-                    <AdminMultiSelect
-                      admins={superAdmins}
-                      selectedIds={selectedSuperAdmins}
-                      onChange={setSelectedSuperAdmins}
-                      placeholder="Select super admins to notify"
+            {/* Participants Section - No nested scroll */}
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <Label className="text-sm font-semibold mb-4 block">Participants</Label>
+              <div className="space-y-4">
+                {/* Client Selection - Multi-Select (only for client meetings) */}
+                {meetingType === 'client' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Clients *</Label>
+                    <ClientMultiSelect
+                      branchId={branchId || ''}
+                      selectedIds={selectedClientIds}
+                      onChange={(ids, data) => {
+                        setSelectedClientIds(ids);
+                        setSelectedClientsData(data);
+                      }}
+                      placeholder="Select one or more clients"
                     />
                   </div>
+                )}
 
-                  {/* Branch Admin Selection (Optional) */}
-                  <div className="grid gap-2">
-                    <Label className="text-sm">Branch Admin (Optional)</Label>
-                    <AdminMultiSelect
-                      admins={branchAdmins}
-                      selectedIds={selectedBranchAdmins}
-                      onChange={setSelectedBranchAdmins}
-                      placeholder="Select branch admins to notify"
-                    />
-                  </div>
-
-                  {/* Staff Selection - Multi-Select */}
-                  {(meetingType === 'client' || meetingType === 'internal') && (
-                    <div className="grid gap-2">
-                      <Label className="text-sm">Staff Members (Optional)</Label>
-                      <StaffMultiSelect
-                        branchId={branchId || ''}
-                        selectedIds={selectedStaffIds}
-                        onChange={(ids, data) => {
-                          setSelectedStaffIds(ids);
-                          setSelectedStaffData(data);
-                        }}
-                        placeholder="Select one or more staff members"
-                      />
-                    </div>
-                  )}
+                {/* Super Admin Selection (Optional) */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Super Admin (Optional)</Label>
+                  <AdminMultiSelect
+                    admins={superAdmins}
+                    selectedIds={selectedSuperAdmins}
+                    onChange={setSelectedSuperAdmins}
+                    placeholder="Select super admins to notify"
+                  />
                 </div>
-              </ScrollArea>
+
+                {/* Branch Admin Selection (Optional) */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Branch Admin (Optional)</Label>
+                  <AdminMultiSelect
+                    admins={branchAdmins}
+                    selectedIds={selectedBranchAdmins}
+                    onChange={setSelectedBranchAdmins}
+                    placeholder="Select branch admins to notify"
+                  />
+                </div>
+
+                {/* Staff Selection - Multi-Select */}
+                {(meetingType === 'client' || meetingType === 'internal') && (
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Staff Members (Optional)</Label>
+                    <StaffMultiSelect
+                      branchId={branchId || ''}
+                      selectedIds={selectedStaffIds}
+                      onChange={(ids, data) => {
+                        setSelectedStaffIds(ids);
+                        setSelectedStaffData(data);
+                      }}
+                      placeholder="Select one or more staff members"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
