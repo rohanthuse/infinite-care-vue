@@ -88,6 +88,7 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
             <TableHead className="text-right">Distance</TableHead>
             <TableHead>Vehicle</TableHead>
             <TableHead className="text-right">Cost</TableHead>
+            <TableHead className="text-center">Receipt</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right w-[120px]">Actions</TableHead>
           </TableRow>
@@ -123,6 +124,21 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
               <TableCell className="text-right">{record.distance_miles.toFixed(1)} mi</TableCell>
               <TableCell>{vehicleTypeLabels[record.vehicle_type] || record.vehicle_type}</TableCell>
               <TableCell className="text-right font-medium">{formatCurrency(record.total_cost)}</TableCell>
+              <TableCell className="text-center">
+                {record.receipt_url ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => window.open(record.receipt_url, '_blank')}
+                    title="View Receipt"
+                  >
+                    <Receipt className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
               <TableCell>{renderStatusBadge(record.status)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-2">

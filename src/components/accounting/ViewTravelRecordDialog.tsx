@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { TravelRecord, useApproveTravelRecord, useRejectTravelRecord } from "@/hooks/useAccountingData";
 import { format } from "date-fns";
-import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users } from "lucide-react";
+import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users, Receipt, ExternalLink } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { ReportExporter } from "@/utils/reportExporter";
 import { useToast } from "@/hooks/use-toast";
@@ -267,6 +267,26 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Receipt */}
+            {travelRecord.receipt_url && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                  <Receipt className="h-4 w-4 mr-1" />
+                  Receipt
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.open(travelRecord.receipt_url, '_blank')}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View Receipt
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             {travelRecord.notes && (
