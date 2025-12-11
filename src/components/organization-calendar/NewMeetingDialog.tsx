@@ -263,14 +263,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] p-0 flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
           <DialogTitle>Schedule New Meeting</DialogTitle>
           <DialogDescription>Create a new meeting or appointment with clients or staff members.</DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(85vh - 160px)' }}>
-          <div className="grid gap-4 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6">
+          <div className="grid gap-4 py-4 pr-2">
             <div className="space-y-2">
               <Label htmlFor="meetingType">Meeting Type</Label>
               <SafeSelect value={meetingType} onValueChange={setMeetingType}>
@@ -410,7 +410,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           </div>
         </ScrollArea>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-4 border-t">
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
