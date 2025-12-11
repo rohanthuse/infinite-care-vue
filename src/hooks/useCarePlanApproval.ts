@@ -337,7 +337,9 @@ export const useRequestChanges = () => {
 export const useCarePlanRequiresApproval = (carePlan: any) => {
   if (!carePlan) return false;
   
-  return carePlan.status === 'pending_client_approval' && !carePlan.client_acknowledged_at;
+  // Only check status - if status is pending_client_approval, it always requires approval
+  // This ensures re-sent care plans can be approved even if previously acknowledged
+  return carePlan.status === 'pending_client_approval';
 };
 
 // Hook to check if changes have been requested
