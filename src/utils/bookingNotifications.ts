@@ -273,12 +273,14 @@ export async function notifyBookingUpdated(params: {
 /**
  * Create notifications for booking cancellation/deletion
  */
-export async function notifyBookingCancelled(booking: BookingNotificationData): Promise<void> {
+export async function notifyBookingCancelled(booking: BookingNotificationData & { cancellationReason?: string }): Promise<void> {
   const baseData = {
     booking_id: booking.bookingId,
     client_id: booking.clientId,
     staff_id: booking.staffId,
     notification_type: 'booking_cancelled',
+    notification_methods: ['in_app', 'email'], // Enable email notifications for cancellations
+    cancellation_reason: booking.cancellationReason,
   };
 
   // Notify carer

@@ -90,6 +90,7 @@ export const usePayrollBookingIntegration = () => {
         end_time,
         status,
         service_id,
+        suspension_honor_staff_payment,
         clients (
           id,
           first_name,
@@ -108,7 +109,8 @@ export const usePayrollBookingIntegration = () => {
       .eq('branch_id', branchId)
       .gte('start_time', startDate)
       .lte('end_time', endDate)
-      .in('status', ['in_progress', 'done', 'completed']);
+      // Include completed bookings OR cancelled bookings where staff payment is honored
+      .or('status.in.(in_progress,done,completed),and(status.eq.cancelled,suspension_honor_staff_payment.eq.true)');
 
     if (staffId) {
       query = query.eq('staff_id', staffId);
