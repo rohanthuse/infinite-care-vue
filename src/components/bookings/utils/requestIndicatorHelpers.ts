@@ -38,9 +38,9 @@ export const getRequestStatusColors = (booking: Booking) => {
   }
 
   return {
-    background: "bg-blue-100",
-    border: "border-blue-300",
-    text: "text-blue-800",
+    background: "",
+    border: "",
+    text: "",
     dotColor: "",
     icon: null,
     iconColor: "",
