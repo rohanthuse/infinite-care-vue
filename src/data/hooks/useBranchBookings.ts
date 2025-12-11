@@ -30,6 +30,12 @@ export interface BookingDB {
     service_id: string;
     services: { id: string; title: string } | null;
   }>;
+  visit_records?: Array<{
+    id: string;
+    visit_start_time: string | null;
+    visit_end_time: string | null;
+    status: string;
+  }>;
 }
 
 export async function fetchBranchBookings(branchId?: string) {
@@ -62,6 +68,12 @@ export async function fetchBranchBookings(branchId?: string) {
           id,
           title
         )
+      ),
+      visit_records (
+        id,
+        visit_start_time,
+        visit_end_time,
+        status
       )
     `)
     .eq("branch_id", branchId)
