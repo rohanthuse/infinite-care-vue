@@ -19,6 +19,7 @@ import { formatCurrency } from "@/utils/currencyFormatter";
 import { useToast } from "@/hooks/use-toast";
 import { InvoiceLedgerView } from "@/components/accounting/InvoiceLedgerView";
 import { supabase } from "@/integrations/supabase/client";
+import { InvoiceCancelledBookingsSection } from "./InvoiceCancelledBookingsSection";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -352,6 +353,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               </div>
             </div>
           )}
+
+          {/* Cancelled Bookings Section */}
+          <InvoiceCancelledBookingsSection invoiceId={invoice.id} />
 
           {/* Payment History */}
           {invoice.payment_records && invoice.payment_records.length > 0 && (
