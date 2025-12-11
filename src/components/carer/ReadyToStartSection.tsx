@@ -2,7 +2,8 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, MapPin, Phone, Play } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Play, ClipboardList } from "lucide-react";
+import { CarePlanPreviewCollapsible } from "@/components/care/CarePlanPreviewSection";
 import { format, differenceInMinutes } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
@@ -16,7 +17,9 @@ interface ReadyToStartAppointment {
   end_time: string;
   status: string;
   branch_id: string;
+  client_id?: string;
   clients?: {
+    id?: string;
     first_name: string;
     last_name: string;
     phone?: string;
@@ -196,6 +199,16 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   </Button>
                 </div>
               </div>
+              
+              {/* Care Plan Preview */}
+              {(appointment.client_id || appointment.clients?.id) && (
+                <div className="mt-4 pt-4 border-t border-green-200">
+                  <CarePlanPreviewCollapsible 
+                    clientId={appointment.client_id || appointment.clients?.id || ''} 
+                    compact={true}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

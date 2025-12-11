@@ -2,8 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity, AlertCircle } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity, AlertCircle, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
+import { CarePlanPreviewSection } from "@/components/care/CarePlanPreviewSection";
 
 interface CarerAppointmentDetailDialogProps {
   appointment: any;
@@ -210,6 +211,20 @@ export const CarerAppointmentDetailDialog = ({
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {appointment.notes}
                 </p>
+              </div>
+            </>
+          )}
+
+          {/* Care Plan Preview Section */}
+          {(appointment.client_id || appointment.clients?.id) && (
+            <>
+              <Separator />
+              <div className="bg-muted/30 rounded-lg p-4">
+                <CarePlanPreviewSection 
+                  clientId={appointment.client_id || appointment.clients?.id} 
+                  compact={false}
+                  showHeader={true}
+                />
               </div>
             </>
           )}
