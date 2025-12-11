@@ -35,11 +35,11 @@ const fetchClientsReadyForInvoicing = async (branchId: string): Promise<ClientRe
     return [];
   }
 
-  // Fetch unbilled amounts for each client
+  // Fetch unbilled amounts for each client - only completed/done bookings that are NOT invoiced
   const clientIds = clientsData.map(c => c.id);
   const { data: bookingsData, error: bookingsError } = await supabase
     .from('bookings')
-    .select('client_id, revenue')
+    .select('client_id, revenue, start_time')
     .in('client_id', clientIds)
     .in('status', ['done', 'completed'])
     .eq('is_invoiced', false);
@@ -53,10 +53,12 @@ const fetchClientsReadyForInvoicing = async (branchId: string): Promise<ClientRe
   const clientBookingsMap = new Map<string, { count: number; amount: number; lastDate?: string }>();
   
   (bookingsData || []).forEach(booking => {
-    const existing = clientBookingsMap.get(booking.client_id) || { count: 0, amount: 0 };
+    const existing = clientBookingsMap.get(booking.client_id) || { count: 0, amount: 0, lastDate: undefined };
+    const bookingDate = booking.start_time;
     clientBookingsMap.set(booking.client_id, {
       count: existing.count + 1,
       amount: existing.amount + (Number(booking.revenue) || 0),
+      lastDate: !existing.lastDate || bookingDate > existing.lastDate ? bookingDate : existing.lastDate,
     });
   });
 
@@ -75,7 +77,7 @@ const fetchClientsReadyForInvoicing = async (branchId: string): Promise<ClientRe
         organization_id: client.organization_id,
         uninvoiced_count: bookingStats.count,
         unbilled_amount: bookingStats.amount,
-        last_booking_date: undefined,
+        last_booking_date: bookingStats.lastDate,
       };
     });
 
@@ -88,7 +90,8 @@ export const useInvoiceGenerationQueue = (branchId: string) => {
     queryKey: ['invoice-generation-queue', branchId],
     queryFn: () => fetchClientsReadyForInvoicing(branchId),
     enabled: Boolean(branchId),
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 30000, // Refresh every 30 seconds for faster updates
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 };
 

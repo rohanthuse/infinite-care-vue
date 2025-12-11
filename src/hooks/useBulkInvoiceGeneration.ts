@@ -98,7 +98,7 @@ export const useBulkInvoiceGeneration = () => {
 
     console.log('[BulkInvoiceGeneration] Starting bulk generation for period:', periodDetails);
 
-    // Step 1: Fetch all bookings in period (all statuses)
+    // Step 1: Fetch only completed/done bookings that are NOT already invoiced
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select(`
@@ -108,6 +108,8 @@ export const useBulkInvoiceGeneration = () => {
         staff(first_name, last_name)
       `)
       .eq('branch_id', branchId)
+      .in('status', ['done', 'completed', 'in_progress'])
+      .eq('is_invoiced', false)
       .gte('start_time', periodDetails.startDate)
       .lte('start_time', periodDetails.endDate);
 
@@ -117,11 +119,11 @@ export const useBulkInvoiceGeneration = () => {
     }
 
     if (!bookings || bookings.length === 0) {
-      console.log('[BulkInvoiceGeneration] No bookings found for this period');
-      return { ...results, message: 'No bookings found for this period' };
+      console.log('[BulkInvoiceGeneration] No uninvoiced completed bookings found for this period');
+      return { ...results, message: 'No uninvoiced completed bookings found for this period' };
     }
 
-    console.log(`[BulkInvoiceGeneration] Found ${bookings.length} bookings (all statuses)`);
+    console.log(`[BulkInvoiceGeneration] Found ${bookings.length} uninvoiced completed bookings`);
 
     // Step 2: Fetch approved extra time records for the period
     const { data: extraTimeRecords, error: extraTimeError } = await supabase

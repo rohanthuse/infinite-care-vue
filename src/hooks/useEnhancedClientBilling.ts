@@ -279,7 +279,7 @@ export const useUpdateInvoiceStatus = () => {
   });
 };
 
-// Add payment record
+// Add payment record with auto-update invoice status to 'paid' when fully paid
 export const useAddPaymentRecord = () => {
   const queryClient = useQueryClient();
 
@@ -292,12 +292,47 @@ export const useAddPaymentRecord = () => {
         .single();
 
       if (error) throw error;
+      
+      // After recording payment, check if invoice is fully paid
+      const invoiceId = data.invoice_id;
+      if (invoiceId) {
+        // Fetch invoice with all payments
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('client_billing')
+          .select('*, payment_records(*)')
+          .eq('id', invoiceId)
+          .single();
+        
+        if (!invoiceError && invoice) {
+          const totalPaid = (invoice.payment_records || []).reduce(
+            (sum: number, p: any) => sum + (Number(p.payment_amount) || 0), 
+            0
+          );
+          const totalAmount = Number(invoice.total_amount) || Number(invoice.amount) || 0;
+          
+          // If fully paid, update invoice status
+          if (totalPaid >= totalAmount && invoice.status !== 'paid') {
+            await supabase
+              .from('client_billing')
+              .update({ 
+                status: 'paid', 
+                paid_date: new Date().toISOString().split('T')[0] 
+              })
+              .eq('id', invoiceId);
+            
+            console.log(`[useAddPaymentRecord] Invoice ${invoiceId} marked as paid (total: ${totalAmount}, paid: ${totalPaid})`);
+          }
+        }
+      }
+      
       return result;
     },
     onSuccess: () => {
       toast.success('Payment recorded successfully');
       queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing'] });
       queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['client-portal-invoices'] });
     },
     onError: (error) => {
       console.error('Error recording payment:', error);
