@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, MoreHorizontal
+  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,12 +18,6 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { BookingBulkActionsBar } from "./BookingBulkActionsBar";
 import { cn } from "@/lib/utils";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +49,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const itemsPerPage = 10;
   
   const deleteBooking = useDeleteBooking(branchId);
@@ -164,7 +157,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({
 
   // Handle delete booking click
   const handleDeleteClick = (booking: Booking) => {
-    setOpenDropdownId(null); // Close dropdown immediately before opening dialog
     setDeleteBookingId(booking.id);
   };
 
@@ -200,9 +192,8 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       console.log('[BookingsList] Delete mutation and refetches completed successfully');
       clearTimeout(safetyTimeout);
       
-      // Close dialog and ensure dropdown is fully closed
+      // Close dialog
       setDeleteBookingId(null);
-      setOpenDropdownId(null);
       
       // Force cleanup of any lingering Radix UI state
       setTimeout(() => {
@@ -215,7 +206,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       console.error('[BookingsList] Delete mutation failed:', error);
       clearTimeout(safetyTimeout);
       setDeleteBookingId(null);
-      setOpenDropdownId(null);
       forceModalCleanup();
     }
   };
@@ -594,30 +584,15 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                           <Edit className="h-4 w-4" />
                         </Button>
                         {canDelete && (
-                          <DropdownMenu
-                            open={openDropdownId === booking.id}
-                            onOpenChange={(open) => setOpenDropdownId(open ? booking.id : null)}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteClick(booking)}
+                            title="Delete booking"
                           >
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                title="More actions"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteClick(booking)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Booking
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
                     </TableCell>
