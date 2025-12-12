@@ -63,7 +63,7 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 11:
         return <WizardStep10Equipment form={form} />;
       case 12:
-        return <WizardStep11ServicePlans form={form} />;
+        return <WizardStep11ServicePlans form={form} clientId={clientId} />;
       case 13:
         return <WizardStep12ServiceActions form={form} />;
       case 14:
