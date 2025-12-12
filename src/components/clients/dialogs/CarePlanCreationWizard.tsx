@@ -120,9 +120,9 @@ interface CarePlanCreationWizardProps {
 const wizardSteps = [
   { id: 1, name: "Basic Information", description: "Care plan details and personal information" },
   { id: 2, name: "About Me", description: "Client preferences and background" },
-  { id: 3, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 4, name: "Medication", description: "Medication management and calendar" },
-  { id: 5, name: "Admin Medication", description: "Medication administration details" },
+  { id: 3, name: "Diagnosis", description: "Health conditions and medications" },
+  { id: 4, name: "Medication Schedule", description: "Medication management and calendar" },
+  { id: 5, name: "Medication", description: "Medication administration details" },
   { id: 6, name: "Goals", description: "Care goals and objectives" },
   { id: 7, name: "Activities", description: "Daily activities and routines" },
   { id: 8, name: "Personal Care", description: "Personal care requirements" },

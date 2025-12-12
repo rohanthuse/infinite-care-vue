@@ -51,9 +51,9 @@ interface CarePlanViewDialogProps {
 const viewSteps = [
   { id: 1, name: "Basic Information", description: "Care plan title and basic details", childOnly: false },
   { id: 2, name: "About Me", description: "Client preferences and background", childOnly: false },
-  { id: 3, name: "Medical and Mental", description: "Health conditions and medications", childOnly: false },
-  { id: 4, name: "Medication", description: "Medication management and calendar", childOnly: false },
-  { id: 5, name: "Admin Medication", description: "Medication administration details", childOnly: false },
+  { id: 3, name: "Diagnosis", description: "Health conditions and medications", childOnly: false },
+  { id: 4, name: "Medication Schedule", description: "Medication management and calendar", childOnly: false },
+  { id: 5, name: "Medication", description: "Medication administration details", childOnly: false },
   { id: 6, name: "Goals", description: "Care goals and objectives", childOnly: false },
   { id: 7, name: "Activities", description: "Daily activities and routines", childOnly: false },
   { id: 8, name: "Personal Care", description: "Personal care requirements", childOnly: false },

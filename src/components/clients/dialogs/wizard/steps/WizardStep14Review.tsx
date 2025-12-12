@@ -73,7 +73,7 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
     },
     {
       id: "admin_medication",
-      title: "Admin Medication",
+      title: "Medication",
       icon: Syringe,
       data: formData.medical_info?.admin_medication
     },
