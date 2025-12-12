@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, MapPin, Phone, Play, ClipboardList } from "lucide-react";
-import { CarePlanPreviewCollapsible } from "@/components/care/CarePlanPreviewSection";
-import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
+import { Calendar, Clock, User, MapPin, Phone, Play } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
@@ -44,12 +42,6 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
   const { createCarerPath } = useCarerNavigation();
   const { data: carerContext } = useCarerContext();
   const bookingAttendance = useBookingAttendance();
-  
-  const [showCarePlanDialog, setShowCarePlanDialog] = useState(false);
-  const [selectedClientForCarePlan, setSelectedClientForCarePlan] = useState<{
-    clientId: string;
-    clientName: string;
-  } | null>(null);
 
   const handleStartVisit = async (appointment: ReadyToStartAppointment) => {
     try {
@@ -134,8 +126,8 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
     <div>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-        <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
-        <Badge className="bg-green-100 text-green-700">{appointments.length}</Badge>
+        <h2 className="text-lg font-semibold text-green-800">Ready to Start</h2>
+        <Badge className="bg-green-100 text-green-800 border border-green-300">{appointments.length}</Badge>
       </div>
       
       <div className="space-y-4">
@@ -190,7 +182,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                 </div>
                 
                 <div className="flex flex-col items-end gap-2">
-                  <Badge className="bg-green-100 text-green-700">
+                  <Badge className="bg-green-100 text-green-800 border border-green-300">
                     Ready to Start
                   </Badge>
                   
@@ -206,48 +198,10 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   </Button>
                 </div>
               </div>
-              
-              {/* Care Plan Preview */}
-              {(appointment.client_id || appointment.clients?.id) && (
-                <div className="mt-4 pt-4 border-t border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const clientId = appointment.client_id || appointment.clients?.id;
-                        const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim();
-                        if (clientId) {
-                          setSelectedClientForCarePlan({ clientId, clientName });
-                          setShowCarePlanDialog(true);
-                        }
-                      }}
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      View Care Plan Details
-                    </Button>
-                  </div>
-                  <CarePlanPreviewCollapsible 
-                    clientId={appointment.client_id || appointment.clients?.id || ''} 
-                    compact={true}
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
       </div>
-      
-      {selectedClientForCarePlan && (
-        <CarePlanDetailsDialog
-          clientId={selectedClientForCarePlan.clientId}
-          clientName={selectedClientForCarePlan.clientName}
-          open={showCarePlanDialog}
-          onOpenChange={setShowCarePlanDialog}
-        />
-      )}
     </div>
   );
 };
