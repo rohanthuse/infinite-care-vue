@@ -20,6 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
+
+const TIME_OF_DAY_OPTIONS = [
+  { label: "Morning", value: "morning" },
+  { label: "Afternoon", value: "afternoon" },
+  { label: "Evening", value: "evening" },
+  { label: "Night", value: "night" },
+  { label: "Any Time", value: "any_time" },
+];
 
 interface WizardStep6ActivitiesProps {
   form: UseFormReturn<any>;
@@ -33,7 +42,7 @@ export function WizardStep6Activities({ form }: WizardStep6ActivitiesProps) {
       description: "",
       frequency: "",
       duration: "",
-      time_of_day: ""
+      time_of_day: []
     }]);
   };
 
@@ -101,26 +110,29 @@ export function WizardStep6Activities({ form }: WizardStep6ActivitiesProps) {
                 <FormField
                   control={form.control}
                   name={`activities.${index}.time_of_day`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Time of Day</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  render={({ field }) => {
+                    // Normalize value for backward compatibility (string -> array)
+                    const normalizedValue = Array.isArray(field.value) 
+                      ? field.value 
+                      : (field.value ? [field.value] : []);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Time of Day</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select time" />
-                          </SelectTrigger>
+                          <MultiSelect
+                            options={TIME_OF_DAY_OPTIONS}
+                            selected={normalizedValue}
+                            onSelectionChange={field.onChange}
+                            placeholder="Select time slots..."
+                            searchPlaceholder="Search times..."
+                            emptyText="No time options found."
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="morning">Morning</SelectItem>
-                          <SelectItem value="afternoon">Afternoon</SelectItem>
-                          <SelectItem value="evening">Evening</SelectItem>
-                          <SelectItem value="night">Night</SelectItem>
-                          <SelectItem value="any_time">Any Time</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
 
