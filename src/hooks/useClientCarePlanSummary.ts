@@ -73,7 +73,7 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     .from('client_care_plans')
     .select('id, title, status, display_id, auto_save_data')
     .eq('client_id', clientId)
-    .eq('status', 'active')
+    .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -638,7 +638,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
       )
     `)
     .eq('staff_id', staffId)  // Use staff.id, not auth_user_id
-    .in('status', ['active', 'pending_approval', 'approved']);
+    .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
   // Then get branch-level care plans where staff_id is null
   const branchQuery = supabase
@@ -663,7 +663,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
     `)
     .eq('client.branch_id', branchId)
     .is('staff_id', null)
-    .in('status', ['active', 'pending_approval', 'approved']);
+    .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
   const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
 
@@ -802,7 +802,7 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
           )
         `)
         .eq('staff_id', staffId)
-        .in('status', ['active', 'pending_approval', 'approved', 'pending_client_approval']);
+        .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
       // Then get branch-level care plans where staff_id is null
       const branchQuery = supabase
@@ -827,7 +827,7 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
         `)
         .eq('client.branch_id', branchId)
         .is('staff_id', null)
-        .in('status', ['active', 'pending_approval', 'approved', 'pending_client_approval']);
+        .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
       const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
 
