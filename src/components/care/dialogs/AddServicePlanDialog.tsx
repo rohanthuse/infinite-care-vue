@@ -2,6 +2,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,27 +30,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useServices } from "@/data/hooks/useServices";
+import { useClientAccountingSettings } from "@/hooks/useClientAccounting";
+import { useTenant } from "@/contexts/TenantContext";
+import { DaySelector } from "@/components/care/forms/DaySelector";
+import { TimePickerField } from "@/components/care/forms/TimePickerField";
+import { FREQUENCY_OPTIONS } from "@/types/servicePlan";
 
 const formSchema = z.object({
-  service_name: z.string().min(1, "Service name is required"),
-  service_category: z.string().min(1, "Service category is required"),
-  provider_name: z.string().min(1, "Provider name is required"),
-  frequency: z.string().min(1, "Frequency is required"),
-  duration: z.string().min(1, "Duration is required"),
-  schedule_details: z.string().optional(),
-  goals: z.string().optional(),
-  progress_status: z.string().default("active"),
-  start_date: z.date({
-    required_error: "Start date is required",
-  }),
-  end_date: z.date().optional(),
-  next_scheduled_date: z.date().optional(),
-  notes: z.string().optional(),
+  caption: z.string().min(1, "Caption is required"),
+  start_date: z.date({ required_error: "Start date is required" }),
+  end_date: z.date({ required_error: "End date is required" }),
+  selected_days: z.array(z.string()).min(1, "Select at least one day"),
+  service_id: z.string().min(1, "Service name is required"),
+  service_name: z.string(),
+  authority: z.string().optional(),
+  authority_category: z.string().optional(),
+  start_time: z.string().min(1, "Start time is required"),
+  end_time: z.string().min(1, "End time is required"),
+  frequency: z.string().optional(),
+  location: z.string().optional(),
+  note: z.string().optional(),
 });
 
 interface AddServicePlanDialogProps {
@@ -68,18 +74,24 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
   carePlanId,
   isLoading = false,
 }) => {
+  const { organization } = useTenant();
+  const { data: services = [] } = useServices(organization?.id);
+  const { data: accountingSettings } = useClientAccountingSettings(clientId);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      caption: "",
+      selected_days: [],
+      service_id: "",
       service_name: "",
-      service_category: "",
-      provider_name: "",
+      authority: accountingSettings?.authority_category || "",
+      authority_category: accountingSettings?.authority_category || "",
+      start_time: "",
+      end_time: "",
       frequency: "",
-      duration: "",
-      schedule_details: "",
-      goals: "",
-      progress_status: "active",
-      notes: "",
+      location: "",
+      note: "",
     },
   });
 
@@ -87,18 +99,19 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
     const formattedData = {
       client_id: clientId,
       care_plan_id: carePlanId || null,
-      service_name: values.service_name,
-      service_category: values.service_category,
-      provider_name: values.provider_name,
-      frequency: values.frequency,
-      duration: values.duration,
-      schedule_details: values.schedule_details || null,
-      goals: values.goals ? values.goals.split('\n').filter(g => g.trim()) : [],
-      progress_status: values.progress_status,
+      caption: values.caption,
       start_date: values.start_date.toISOString().split('T')[0],
-      end_date: values.end_date ? values.end_date.toISOString().split('T')[0] : null,
-      next_scheduled_date: values.next_scheduled_date ? values.next_scheduled_date.toISOString().split('T')[0] : null,
-      notes: values.notes || null,
+      end_date: values.end_date.toISOString().split('T')[0],
+      selected_days: values.selected_days,
+      service_id: values.service_id,
+      service_name: values.service_name,
+      authority: accountingSettings?.authority_category || null,
+      authority_category: accountingSettings?.authority_category || null,
+      start_time: values.start_time,
+      end_time: values.end_time,
+      frequency: values.frequency || null,
+      location: values.location || null,
+      note: values.note || null,
     };
     
     onSave(formattedData);
@@ -112,9 +125,17 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
     onOpenChange(newOpen);
   };
 
+  const handleServiceChange = (serviceId: string) => {
+    const selectedService = services.find(s => s.id === serviceId);
+    if (selectedService) {
+      form.setValue('service_id', serviceId);
+      form.setValue('service_name', selectedService.title);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Service Plan</DialogTitle>
           <DialogDescription>
@@ -123,285 +144,271 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Section 1: General */}
+            <div className="space-y-4">
+              <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">
+                General
+              </h5>
+              
               <FormField
                 control={form.control}
-                name="service_name"
+                name="caption"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service Name</FormLabel>
+                    <FormLabel>Caption *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter service name" {...field} />
+                      <Input placeholder="Enter service plan caption" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="service_category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="personal-care">Personal Care</SelectItem>
-                        <SelectItem value="medical-care">Medical Care</SelectItem>
-                        <SelectItem value="domestic-support">Domestic Support</SelectItem>
-                        <SelectItem value="social-activities">Social Activities</SelectItem>
-                        <SelectItem value="transportation">Transportation</SelectItem>
-                        <SelectItem value="therapy">Therapy</SelectItem>
-                        <SelectItem value="nutrition">Nutrition</SelectItem>
-                        <SelectItem value="mobility-assistance">Mobility Assistance</SelectItem>
-                        <SelectItem value="medication-management">Medication Management</SelectItem>
-                        <SelectItem value="safety-monitoring">Safety Monitoring</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date *</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date *</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="provider_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Provider Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter provider name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Section 2: Service Details */}
+            <div className="space-y-4">
+              <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">
+                Service Details
+              </h5>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Days Selection */}
               <FormField
                 control={form.control}
-                name="frequency"
+                name="selected_days"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="as-needed">As Needed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Days Selection *</FormLabel>
+                    <FormControl>
+                      <DaySelector
+                        selectedDays={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="service_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Service Name *</FormLabel>
+                      <Select 
+                        onValueChange={handleServiceChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select service" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {services.map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Authority (auto-populated) */}
+                <div className="space-y-2">
+                  <FormLabel>Authority</FormLabel>
+                  <div className="flex items-center gap-2 min-h-[40px] px-3 py-2 border border-input rounded-md bg-muted/50">
+                    {accountingSettings?.authority_category ? (
+                      <Badge variant="secondary" className="capitalize">
+                        {accountingSettings.authority_category}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">
+                        No authority set in client settings
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="start_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <TimePickerField
+                        label="Start Time"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="end_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <TimePickerField
+                        label="End Time"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Frequency</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {FREQUENCY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter location" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="duration"
+                name="note"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration</FormLabel>
+                    <FormLabel>Note</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 2 hours, 30 minutes" {...field} />
+                      <Textarea
+                        placeholder="Additional notes about this service plan..."
+                        className="resize-none min-h-[80px]"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="schedule_details"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Schedule Details (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter specific scheduling details..."
-                      className="resize-none"
-                      rows={2}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="goals"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Goals (one per line, optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter service goals, one per line..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Date (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="next_scheduled_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Next Scheduled (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter any additional notes..."
-                      className="resize-none"
-                      rows={2}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
