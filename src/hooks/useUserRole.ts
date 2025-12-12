@@ -118,12 +118,13 @@ export const useUserRole = () => {
             .single();
             
           if (clientData) {
+            const combinedName = `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim();
             additionalData = {
               clientId: clientData.id,
               branchId: clientData.branch_id,
               firstName: clientData.first_name,
               lastName: clientData.last_name,
-              fullName: `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim()
+              fullName: combinedName || user.email?.split('@')[0] || ''
             };
           }
         } else if (role === 'carer') {
@@ -135,12 +136,13 @@ export const useUserRole = () => {
             .single();
             
           if (staffData) {
+            const combinedName = `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim();
             additionalData = {
               staffId: staffData.id,
               branchId: staffData.branch_id,
               firstName: staffData.first_name,
               lastName: staffData.last_name,
-              fullName: `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim()
+              fullName: combinedName || user.email?.split('@')[0] || ''
             };
           }
         } else if (role === 'branch_admin' || role === 'super_admin') {
@@ -152,10 +154,11 @@ export const useUserRole = () => {
             .single();
             
           if (profileData) {
+            const combinedName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
             additionalData = {
               firstName: profileData.first_name,
               lastName: profileData.last_name,
-              fullName: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
+              fullName: combinedName || user.email?.split('@')[0] || ''
             };
           }
           

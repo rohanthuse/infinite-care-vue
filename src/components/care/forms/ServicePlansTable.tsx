@@ -74,7 +74,7 @@ export function ServicePlansTable({
               <TableCell>{formatDate(plan.start_date)}</TableCell>
               <TableCell>{formatDate(plan.end_date)}</TableCell>
               <TableCell>{formatDateTime(plan.registered_on)}</TableCell>
-              <TableCell>{plan.registered_by_name || "—"}</TableCell>
+              <TableCell>{plan.registered_by_name && plan.registered_by_name !== 'Unknown' ? plan.registered_by_name : "—"}</TableCell>
               {!readOnly && (
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
