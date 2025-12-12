@@ -962,7 +962,37 @@ export function NewBookingDialog({
                     {bookingMode === "recurring" && (
                       <div className="mt-2">
                         <FormLabel>Days</FormLabel>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                        <div className="flex items-center space-x-2 mt-2 mb-2">
+                          <Checkbox
+                            id={`schedule-${index}-select-all`}
+                            checked={
+                              form.watch(`schedules.${index}.mon`) &&
+                              form.watch(`schedules.${index}.tue`) &&
+                              form.watch(`schedules.${index}.wed`) &&
+                              form.watch(`schedules.${index}.thu`) &&
+                              form.watch(`schedules.${index}.fri`) &&
+                              form.watch(`schedules.${index}.sat`) &&
+                              form.watch(`schedules.${index}.sun`)
+                            }
+                            onCheckedChange={(checked) => {
+                              const value = checked as boolean;
+                              form.setValue(`schedules.${index}.mon`, value);
+                              form.setValue(`schedules.${index}.tue`, value);
+                              form.setValue(`schedules.${index}.wed`, value);
+                              form.setValue(`schedules.${index}.thu`, value);
+                              form.setValue(`schedules.${index}.fri`, value);
+                              form.setValue(`schedules.${index}.sat`, value);
+                              form.setValue(`schedules.${index}.sun`, value);
+                            }}
+                          />
+                          <label 
+                            htmlFor={`schedule-${index}-select-all`}
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Select All Days
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <FormField
                           control={form.control}
                           name={`schedules.${index}.mon` as const}
