@@ -1161,11 +1161,16 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
 
 
 
-      {/* Care Plan Creation Wizard */}
+      {/* Care Plan Creation Wizard - key forces remount for new clients */}
       {selectedClientId && selectedClientName && (
         <CarePlanCreationWizard
+          key={`new-${selectedClientId}-${isCreateCarePlanWizardOpen ? 'open' : 'closed'}`}
           isOpen={isCreateCarePlanWizardOpen}
-          onClose={() => setIsCreateCarePlanWizardOpen(false)}
+          onClose={() => {
+            setIsCreateCarePlanWizardOpen(false);
+            setSelectedClientId(null);
+            setSelectedClientName("");
+          }}
           clientId={selectedClientId}
         />
       )}

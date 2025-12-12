@@ -111,17 +111,19 @@ const calculateContentBasedCompletion = (formData: any): number => {
   return Math.round((completedSections.length / sections.length) * 100);
 };
 
-export function useCarePlanDraft(clientId: string, carePlanId?: string) {
+export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew: boolean = false) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const isManualSavingRef = useRef(false);
 
   // Query to find existing draft for client when no carePlanId is provided
+  // Skip this query entirely if forceNew is true (creating a new care plan)
   const { data: existingDraft, isLoading: isCheckingExistingDraft } = useQuery({
-    queryKey: ['existing-care-plan-draft', clientId],
+    queryKey: ['existing-care-plan-draft', clientId, forceNew],
     queryFn: async () => {
-      if (carePlanId) return null; // Skip if we already have a carePlanId
+      // Skip if we already have a carePlanId or if forceNew is true
+      if (carePlanId || forceNew) return null;
       
       const { data, error } = await supabase
         .from('client_care_plans')
@@ -138,7 +140,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
       
       return data;
     },
-    enabled: !!clientId && !carePlanId,
+    enabled: !!clientId && !carePlanId && !forceNew,
   });
 
   // Determine the effective care plan ID (provided or from existing draft)
