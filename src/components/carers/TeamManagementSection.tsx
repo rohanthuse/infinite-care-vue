@@ -217,15 +217,33 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
         ])
       );
       
-      await Promise.allSettled(promises);
+      const results = await Promise.allSettled(promises);
+      
+      // Check for failures
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
       
       if (!isUnmountedRef.current) {
-        toast.success(`Status updated for ${carerIds.length} staff member${carerIds.length > 1 ? 's' : ''}`, {
-          description: reason ? `Reason: ${reason}` : undefined
-        });
+        if (failed > 0 && succeeded === 0) {
+          // All failed
+          const failedResult = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
+          toast.error("Failed to update status", {
+            description: failedResult?.reason?.message || "Please check your permissions and try again."
+          });
+        } else if (failed > 0) {
+          // Some failed
+          toast.warning(`Status updated for ${succeeded} staff member${succeeded > 1 ? 's' : ''}, ${failed} failed`, {
+            description: "Some updates may have failed. Please refresh the page to verify."
+          });
+        } else if (succeeded > 0) {
+          // All succeeded
+          toast.success(`Status updated for ${succeeded} staff member${succeeded > 1 ? 's' : ''}`, {
+            description: reason ? `Reason: ${reason}` : undefined
+          });
+        }
         
         // Force immediate refetch of staff list
-        queryClient.invalidateQueries({ 
+        await queryClient.invalidateQueries({ 
           queryKey: ["branch-carers", branchId],
           refetchType: 'all'
         });
@@ -237,10 +255,11 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
           }
         }, 100);
       }
-    } catch (error) {
+    } catch (error: any) {
       if (!isUnmountedRef.current) {
+        console.error('[handleBulkStatusChange] Error:', error);
         toast.error("Failed to update status", {
-          description: "Some staff members may not have been updated successfully."
+          description: error?.message || "An unexpected error occurred."
         });
       }
     }
