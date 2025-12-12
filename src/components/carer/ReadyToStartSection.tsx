@@ -135,7 +135,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
       <div className="flex items-center gap-2 mb-4">
         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
         <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
-        <Badge className="bg-green-100 text-green-700">{appointments.length}</Badge>
+        <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">{appointments.length}</Badge>
       </div>
       
       <div className="space-y-4">
