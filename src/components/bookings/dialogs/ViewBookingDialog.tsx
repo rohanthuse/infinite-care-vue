@@ -974,21 +974,6 @@ export function ViewBookingDialog({
             </>
           )}
 
-          <Separator />
-
-          {/* Booking Details */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Clock className="h-4 w-4" />
-              Booking Details
-            </div>
-            <div className="pl-6 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Booking ID:</span>
-                <span className="text-sm font-medium font-mono">{booking.id}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
