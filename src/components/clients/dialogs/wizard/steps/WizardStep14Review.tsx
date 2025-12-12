@@ -1,7 +1,12 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CheckCircle, AlertCircle, FileText, User, Activity, Target, Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle, Pill, Syringe, ClipboardCheck, Heart, ListChecks, AlertTriangle, GraduationCap, ShieldAlert } from "lucide-react";
+import { 
+  CheckCircle, AlertCircle, FileText, User, Activity, Target, 
+  Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle, 
+  Pill, Syringe, ClipboardCheck, Heart, ListChecks, AlertTriangle, 
+  GraduationCap, ShieldAlert, HeartPulse, Users 
+} from "lucide-react";
 import { format } from "date-fns";
 import {
   Form,
@@ -18,9 +23,20 @@ import { Separator } from "@/components/ui/separator";
 
 interface WizardStep14ReviewProps {
   form: UseFormReturn<any>;
+  clientId?: string;
+  isChild?: boolean;
 }
 
-export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
+interface Section {
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  data: any;
+  status?: string;
+  childOnly?: boolean;
+}
+
+export function WizardStep14Review({ form, clientId, isChild = false }: WizardStep14ReviewProps) {
   const formData = form.watch();
 
   const getSectionStatus = (sectionData: any) => {
@@ -30,7 +46,7 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
     return "completed";
   };
 
-  const sections = [
+  const allSections: Section[] = [
     {
       id: "basic_info",
       title: "Basic Information",
@@ -55,10 +71,32 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       data: formData.about_me
     },
     {
-      id: "consent",
-      title: "Consent",
-      icon: ClipboardCheck,
-      data: formData.consent
+      id: "medical_info",
+      title: "Diagnosis",
+      icon: ClipboardList,
+      data: formData.medical_info
+    },
+    {
+      id: "news2_monitoring",
+      title: "NEWS2 Health Monitoring",
+      icon: HeartPulse,
+      data: formData.medical_info?.news2_monitoring,
+      status: formData.news2_monitoring_enabled 
+        ? `Enabled (${formData.news2_monitoring_frequency || 'Daily'})` 
+        : formData.medical_info?.news2_monitoring 
+          ? 'Configured' 
+          : undefined
+    },
+    {
+      id: "medication_schedule",
+      title: "Medication Schedule",
+      icon: Calendar,
+      data: formData.medical_info?.medication_manager,
+      status: formData.medical_info?.medication_manager?.applicable !== false 
+        ? (formData.medical_info?.medication_manager?.medications?.length > 0 
+            ? `${formData.medical_info?.medication_manager?.medications?.length} medication(s) scheduled` 
+            : 'No medications scheduled')
+        : 'Not Applicable'
     },
     {
       id: "medication",
@@ -73,27 +111,27 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
     },
     {
       id: "admin_medication",
-      title: "Medication",
+      title: "Medication Administration",
       icon: Syringe,
       data: formData.medical_info?.admin_medication
-    },
-    {
-      id: "medical_info",
-      title: "Medical Information",
-      icon: ClipboardList,
-      data: formData.medical_info
     },
     {
       id: "goals",
       title: "Goals",
       icon: Target,
-      data: formData.goals
+      data: formData.goals,
+      status: formData.goals?.length > 0 
+        ? `${formData.goals.length} goal${formData.goals.length !== 1 ? 's' : ''} set` 
+        : undefined
     },
     {
       id: "activities",
       title: "Activities",
       icon: Activity,
-      data: formData.activities
+      data: formData.activities,
+      status: formData.activities?.length > 0 
+        ? `${formData.activities.length} activit${formData.activities.length !== 1 ? 'ies' : 'y'} planned` 
+        : undefined
     },
     {
       id: "personal_care",
@@ -111,7 +149,10 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       id: "risk_assessments",
       title: "Risk Assessments",
       icon: Shield,
-      data: formData.risk_assessments
+      data: formData.risk_assessments,
+      status: formData.risk_assessments?.length > 0 
+        ? `${formData.risk_assessments.length} assessment${formData.risk_assessments.length !== 1 ? 's' : ''} completed` 
+        : undefined
     },
     {
       id: "equipment",
@@ -123,7 +164,10 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       id: "service_plans",
       title: "Service Plans",
       icon: Calendar,
-      data: formData.service_plans
+      data: formData.service_plans,
+      status: formData.service_plans?.length > 0 
+        ? `${formData.service_plans.length} plan${formData.service_plans.length !== 1 ? 's' : ''} created` 
+        : undefined
     },
     {
       id: "service_actions",
@@ -135,27 +179,54 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       id: "documents",
       title: "Documents",
       icon: Upload,
-      data: formData.documents
+      data: formData.documents,
+      status: formData.documents?.length > 0 
+        ? `${formData.documents.length} document${formData.documents.length !== 1 ? 's' : ''} uploaded` 
+        : undefined
     },
+    {
+      id: "consent",
+      title: "Consent",
+      icon: ClipboardCheck,
+      data: formData.consent
+    },
+    {
+      id: "key_contacts",
+      title: "Key Contacts",
+      icon: Users,
+      data: formData.key_contacts,
+      status: formData.key_contacts?.length > 0 
+        ? `${formData.key_contacts.length} contact${formData.key_contacts.length !== 1 ? 's' : ''} added` 
+        : undefined
+    },
+    // Child-specific sections
     {
       id: "behavior_support",
       title: "Behavior Support",
       icon: AlertTriangle,
-      data: formData.behavior_support
+      data: formData.behavior_support,
+      childOnly: true
     },
     {
       id: "education_development",
       title: "Education & Development",
       icon: GraduationCap,
-      data: formData.education_development
+      data: formData.education_development,
+      childOnly: true
     },
     {
       id: "safeguarding_risks",
       title: "Safeguarding & Risks",
       icon: ShieldAlert,
-      data: formData.safeguarding
+      data: formData.safeguarding,
+      childOnly: true
     }
   ];
+
+  // Filter sections based on client type (child vs adult)
+  const sections = isChild 
+    ? allSections 
+    : allSections.filter(section => !section.childOnly);
 
   const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
   const emptySections = sections.filter(section => getSectionStatus(section.data) === "empty");
@@ -218,8 +289,8 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
               const status = getSectionStatus(section.data);
               const Icon = section.icon;
               
-              // Special handling for medication section with custom status
-              const displayStatus = (section as any).status || (status === "completed" ? "Complete" : "Empty");
+              // Special handling for section with custom status
+              const displayStatus = section.status || (status === "completed" ? "Complete" : "Empty");
               const badgeVariant = status === "completed" ? "default" : "secondary";
               
               return (
@@ -227,6 +298,11 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
                   <div className="flex items-center gap-3">
                     <Icon className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium">{section.title}</span>
+                    {section.childOnly && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Child
+                      </Badge>
+                    )}
                   </div>
                   <Badge variant={badgeVariant}>
                     {displayStatus}
