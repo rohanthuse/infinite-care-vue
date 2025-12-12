@@ -1,41 +1,16 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Plus, X, Calendar } from "lucide-react";
-import { format } from "date-fns";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Plus } from "lucide-react";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { useServices } from "@/data/hooks/useServices";
 import { useClientAccountingSettings } from "@/hooks/useClientAccounting";
 import { useTenant } from "@/contexts/TenantContext";
-import { DaySelector } from "@/components/care/forms/DaySelector";
-import { TimePickerField } from "@/components/care/forms/TimePickerField";
-import { getDefaultServicePlan, FREQUENCY_OPTIONS } from "@/types/servicePlan";
+import { useUserRole } from "@/hooks/useUserRole";
+import { ServicePlansTable } from "@/components/care/forms/ServicePlansTable";
+import { ServicePlanForm } from "@/components/care/forms/ServicePlanForm";
+import { getDefaultServicePlan, ServicePlanData } from "@/types/servicePlan";
+import { toast } from "sonner";
 
 interface WizardStep11ServicePlansProps {
   form: UseFormReturn<any>;
@@ -46,33 +21,127 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   const { organization } = useTenant();
   const { data: services = [] } = useServices(organization?.id);
   const { data: accountingSettings } = useClientAccountingSettings(clientId || '');
+  const { data: currentUser } = useUserRole();
 
-  const addServicePlan = () => {
-    const current = form.getValues("service_plans") || [];
+  // State for managing service plans
+  const [savedPlans, setSavedPlans] = useState<ServicePlanData[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
+
+  // Initialize saved plans from form data on mount
+  useEffect(() => {
+    const existingPlans = form.getValues("service_plans") || [];
+    const alreadySaved = existingPlans.filter((p: ServicePlanData) => p.is_saved);
+    if (alreadySaved.length > 0) {
+      setSavedPlans(alreadySaved);
+    }
+  }, []);
+
+  // Sync saved plans back to form whenever they change
+  useEffect(() => {
+    form.setValue("service_plans", savedPlans);
+  }, [savedPlans, form]);
+
+  const handleAddNew = () => {
     const newPlan = getDefaultServicePlan(
       accountingSettings?.authority_category || '',
       accountingSettings?.authority_category || ''
     );
-    form.setValue("service_plans", [...current, newPlan]);
+    
+    // Set the new plan as a temporary entry in the form
+    const currentPlans = form.getValues("service_plans") || [];
+    setCurrentPlanIndex(currentPlans.length);
+    form.setValue("service_plans", [...savedPlans, newPlan]);
+    
+    setEditingIndex(null);
+    setShowForm(true);
   };
 
-  const removeServicePlan = (index: number) => {
-    const current = form.getValues("service_plans") || [];
-    form.setValue("service_plans", current.filter((_: any, i: number) => i !== index));
+  const handleEdit = (index: number) => {
+    // Load the plan into the form for editing
+    const planToEdit = savedPlans[index];
+    const updatedPlans = [...savedPlans];
+    form.setValue("service_plans", updatedPlans);
+    setCurrentPlanIndex(index);
+    setEditingIndex(index);
+    setShowForm(true);
   };
 
-  const servicePlans = form.watch("service_plans") || [];
+  const handleDelete = (index: number) => {
+    const updated = savedPlans.filter((_, i) => i !== index);
+    setSavedPlans(updated);
+    toast.success("Service plan removed");
+  };
 
-  const handleServiceChange = (index: number, serviceId: string) => {
-    const selectedService = services.find(s => s.id === serviceId);
-    if (selectedService) {
-      form.setValue(`service_plans.${index}.service_id`, serviceId);
-      form.setValue(`service_plans.${index}.service_name`, selectedService.title);
+  const validatePlan = (plan: ServicePlanData): boolean => {
+    if (!plan.caption?.trim()) {
+      toast.error("Caption is required");
+      return false;
     }
+    if (!plan.start_date) {
+      toast.error("Start date is required");
+      return false;
+    }
+    if (!plan.end_date) {
+      toast.error("End date is required");
+      return false;
+    }
+    if (!plan.service_id) {
+      toast.error("Service name is required");
+      return false;
+    }
+    if (!plan.start_time) {
+      toast.error("Start time is required");
+      return false;
+    }
+    if (!plan.end_time) {
+      toast.error("End time is required");
+      return false;
+    }
+    return true;
   };
 
-  const handleDaysChange = (index: number, days: string[]) => {
-    form.setValue(`service_plans.${index}.selected_days`, days);
+  const handleSave = () => {
+    const allPlans = form.getValues("service_plans") || [];
+    const planData = allPlans[currentPlanIndex];
+    
+    if (!validatePlan(planData)) {
+      return;
+    }
+
+    const enrichedPlan: ServicePlanData = {
+      ...planData,
+      id: planData.id || crypto.randomUUID(),
+      registered_on: editingIndex !== null ? planData.registered_on : new Date().toISOString(),
+      registered_by: editingIndex !== null ? planData.registered_by : currentUser?.id,
+      registered_by_name: editingIndex !== null 
+        ? planData.registered_by_name 
+        : currentUser?.fullName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Unknown',
+      is_saved: true,
+    };
+
+    if (editingIndex !== null) {
+      // Update existing plan
+      const updated = [...savedPlans];
+      updated[editingIndex] = enrichedPlan;
+      setSavedPlans(updated);
+      toast.success("Service plan updated");
+    } else {
+      // Add new plan
+      setSavedPlans([...savedPlans, enrichedPlan]);
+      toast.success("Service plan saved");
+    }
+
+    setShowForm(false);
+    setEditingIndex(null);
+  };
+
+  const handleCancel = () => {
+    // Reset form to only saved plans
+    form.setValue("service_plans", savedPlans);
+    setShowForm(false);
+    setEditingIndex(null);
   };
 
   return (
@@ -86,279 +155,50 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
 
       <Form {...form}>
         <div className="space-y-6">
+          {/* Header with Add Button */}
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Service Plans</h3>
-            <Button type="button" onClick={addServicePlan} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Service Plan
-            </Button>
+            <h3 className="text-lg font-medium">
+              Service Plans {savedPlans.length > 0 && `(${savedPlans.length})`}
+            </h3>
+            {!showForm && (
+              <Button type="button" onClick={handleAddNew} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Service Plan
+              </Button>
+            )}
           </div>
 
-          {servicePlans.length === 0 && (
+          {/* Service Plans Table */}
+          {savedPlans.length > 0 && !showForm && (
+            <ServicePlansTable
+              plans={savedPlans}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
+
+          {/* Empty State */}
+          {savedPlans.length === 0 && !showForm && (
             <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-border rounded-lg">
               <p>No service plans added yet. Click "Add Service Plan" to create your first plan.</p>
             </div>
           )}
 
-          <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-            {servicePlans.map((_: any, index: number) => (
-              <Card key={index} className="border-l-4 border-l-primary">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Service Plan {index + 1}</CardTitle>
-                    <Button
-                      type="button"
-                      onClick={() => removeServicePlan(index)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Section 1: General */}
-                  <div className="space-y-4">
-                    <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">
-                      General
-                    </h5>
-                    
-                    <FormField
-                      control={form.control}
-                      name={`service_plans.${index}.caption`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Caption *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter service plan caption" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`service_plans.${index}.start_date`}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Start Date *</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "PPP")
-                                    ) : (
-                                      <span>Pick date</span>
-                                    )}
-                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`service_plans.${index}.end_date`}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>End Date *</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "PPP")
-                                    ) : (
-                                      <span>Pick date</span>
-                                    )}
-                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Section 2: Service Details */}
-                  <div className="space-y-4">
-                    <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">
-                      Service Details
-                    </h5>
-
-                    {/* Days Selection */}
-                    <div className="space-y-2">
-                      <FormLabel>Days Selection</FormLabel>
-                      <DaySelector
-                        selectedDays={form.watch(`service_plans.${index}.selected_days`) || []}
-                        onChange={(days) => handleDaysChange(index, days)}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Service Name Dropdown */}
-                      <FormField
-                        control={form.control}
-                        name={`service_plans.${index}.service_id`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Service Name *</FormLabel>
-                            <Select 
-                              onValueChange={(value) => handleServiceChange(index, value)} 
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select service" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {services.map((service) => (
-                                  <SelectItem key={service.id} value={service.id}>
-                                    {service.title}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Authority (auto-populated) */}
-                      <div className="space-y-2">
-                        <FormLabel>Authority</FormLabel>
-                        <div className="flex items-center gap-2 min-h-[40px] px-3 py-2 border border-input rounded-md bg-muted/50">
-                          {accountingSettings?.authority_category ? (
-                            <Badge variant="secondary" className="capitalize">
-                              {accountingSettings.authority_category}
-                            </Badge>
-                          ) : (
-                            <span className="text-sm text-muted-foreground italic">
-                              No authority set in client settings
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <TimePickerField
-                        label="Start Time"
-                        required
-                        value={form.watch(`service_plans.${index}.start_time`) || ''}
-                        onChange={(value) => form.setValue(`service_plans.${index}.start_time`, value)}
-                      />
-
-                      <TimePickerField
-                        label="End Time"
-                        required
-                        value={form.watch(`service_plans.${index}.end_time`) || ''}
-                        onChange={(value) => form.setValue(`service_plans.${index}.end_time`, value)}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`service_plans.${index}.frequency`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Frequency</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select frequency" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {FREQUENCY_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`service_plans.${index}.location`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter location" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name={`service_plans.${index}.note`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Note</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Additional notes about this service plan..."
-                              className="min-h-[80px] resize-none"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Service Plan Form */}
+          {showForm && (
+            <div className="max-h-[60vh] overflow-y-auto pr-2">
+              <ServicePlanForm
+                form={form}
+                fieldPrefix={`service_plans.${currentPlanIndex}`}
+                services={services}
+                authorityCategory={accountingSettings?.authority_category}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                isEditing={editingIndex !== null}
+                planNumber={editingIndex !== null ? editingIndex + 1 : savedPlans.length + 1}
+              />
+            </div>
+          )}
         </div>
       </Form>
     </div>
