@@ -199,7 +199,7 @@ export function AttendanceLeaveManagement({ branchId }: AttendanceLeaveManagemen
       tabs.push({ value: "approve", label: "Approve Requests", component: <LeaveRequestsList branchId={branchId} /> });
     }
 
-    if (userRole?.role === 'super_admin') {
+    if (userRole?.role === 'branch_admin' || userRole?.role === 'super_admin') {
       tabs.push({ value: "holidays", label: "Manage Holidays", component: <AnnualLeaveManager branchId={branchId} /> });
     }
 
