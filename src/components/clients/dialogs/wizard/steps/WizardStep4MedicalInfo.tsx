@@ -126,7 +126,7 @@ export function WizardStep4MedicalInfo({
   const sensoryImpairments = form.watch("medical_info.sensory_impairments") || [];
   return <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Medical and Mental</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Diagnosis</h2>
         <p className="text-gray-600">
           Complete medical history, conditions, medications, and health status.
         </p>
@@ -136,7 +136,7 @@ export function WizardStep4MedicalInfo({
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="medical" className="flex items-center gap-2">
             <Stethoscope className="h-4 w-4" />
-            Medical and Mental
+            Diagnosis
           </TabsTrigger>
           <TabsTrigger value="serviceband" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />

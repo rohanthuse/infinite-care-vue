@@ -33,7 +33,7 @@ export function WizardStep5AdminMedication({ form }: WizardStep5AdminMedicationP
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Admin Medication</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Medication</h2>
         <p className="text-gray-600">
           Medication administration details and requirements.
         </p>
