@@ -4,7 +4,7 @@ import {
   User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity, 
   Wrench, Utensils, Bath, ShieldAlert, Clipboard, ClipboardCheck,
-  FileBarChart2, FormInput, Stethoscope, Pill
+  FileBarChart2, FormInput, Stethoscope, Pill, Users
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -33,20 +33,20 @@ export const CarePlanTabBar: React.FC<CarePlanTabBarProps> = ({ activeTab, onCha
         <span>About Me</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="medicalmental" 
-        onClick={() => onChange("medicalmental")}
-        className={`flex items-center gap-1 ${activeTab === "medicalmental" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        value="diagnosis" 
+        onClick={() => onChange("diagnosis")}
+        className={`flex items-center gap-1 ${activeTab === "diagnosis" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
       >
         <Stethoscope className="h-4 w-4" />
-        <span>Medical and Mental</span>
+        <span>Diagnosis</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="adminmedication" 
-        onClick={() => onChange("adminmedication")}
-        className={`flex items-center gap-1 ${activeTab === "adminmedication" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        value="medication" 
+        onClick={() => onChange("medication")}
+        className={`flex items-center gap-1 ${activeTab === "medication" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
       >
         <Pill className="h-4 w-4" />
-        <span>Admin Medication</span>
+        <span>Medication</span>
       </TabsTrigger>
       <TabsTrigger 
         value="goals" 
@@ -151,6 +151,14 @@ export const CarePlanTabBar: React.FC<CarePlanTabBarProps> = ({ activeTab, onCha
       >
         <FileBarChart2 className="h-4 w-4" />
         <span>Events & Logs</span>
+      </TabsTrigger>
+      <TabsTrigger 
+        value="keycontacts" 
+        onClick={() => onChange("keycontacts")}
+        className={`flex items-center gap-1 ${activeTab === "keycontacts" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+      >
+        <Users className="h-4 w-4" />
+        <span>Key Contacts</span>
       </TabsTrigger>
     </TabsList>
   );
