@@ -33,9 +33,33 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   // Initialize saved plans from form data on mount
   useEffect(() => {
     const existingPlans = form.getValues("service_plans") || [];
-    const alreadySaved = existingPlans.filter((p: ServicePlanData) => p.is_saved);
-    if (alreadySaved.length > 0) {
-      setSavedPlans(alreadySaved);
+    // Map existing plans and mark them as saved
+    const mappedPlans = existingPlans
+      .filter((p: ServicePlanData) => p.is_saved || p.caption || p.service_name)
+      .map((plan: any) => ({
+        ...plan,
+        id: plan.id || crypto.randomUUID(),
+        caption: plan.caption || '',
+        service_id: plan.service_id || '',
+        service_name: plan.service_name || plan.name || '',
+        authority: plan.authority || '',
+        authority_category: plan.authority_category || '',
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        start_time: plan.start_time || '',
+        end_time: plan.end_time || '',
+        selected_days: plan.selected_days || [],
+        frequency: plan.frequency || '',
+        location: plan.location || '',
+        note: plan.note || plan.notes || '',
+        status: plan.status || 'active',
+        registered_on: plan.registered_on,
+        registered_by: plan.registered_by,
+        registered_by_name: plan.registered_by_name || '',
+        is_saved: true,
+      }));
+    if (mappedPlans.length > 0) {
+      setSavedPlans(mappedPlans);
     }
   }, []);
 
@@ -119,6 +143,7 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
       registered_by_name: editingIndex !== null 
         ? planData.registered_by_name 
         : getUserDisplayName(currentUser),
+      status: planData.status || 'active',
       is_saved: true,
     };
 

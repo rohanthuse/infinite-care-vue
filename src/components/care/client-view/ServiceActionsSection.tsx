@@ -113,7 +113,7 @@ export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionP
                           variant={action.status === 'active' ? 'default' : 'secondary'}
                           className={action.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
                         >
-                          {action.status === 'active' ? 'Active' : action.status === 'inactive' ? 'Inactive' : 'Unknown'}
+                          {action.status === 'active' ? 'Active' : action.status === 'inactive' ? 'Inactive' : 'Active'}
                         </Badge>
                       </TableCell>
                     </TableRow>
