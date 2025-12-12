@@ -41,6 +41,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { DaySelector } from "@/components/care/forms/DaySelector";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
 import { FREQUENCY_OPTIONS } from "@/types/servicePlan";
+import { getUserDisplayName } from "@/utils/userDisplayName";
 
 const formSchema = z.object({
   caption: z.string().min(1, "Caption is required"),
@@ -118,7 +119,7 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
       // Registration tracking
       registered_on: new Date().toISOString(),
       registered_by: currentUser?.id,
-      registered_by_name: currentUser?.fullName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Unknown',
+      registered_by_name: getUserDisplayName(currentUser),
       is_saved: true,
     };
     

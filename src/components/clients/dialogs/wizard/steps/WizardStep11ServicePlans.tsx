@@ -10,6 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { ServicePlansTable } from "@/components/care/forms/ServicePlansTable";
 import { ServicePlanForm } from "@/components/care/forms/ServicePlanForm";
 import { getDefaultServicePlan, ServicePlanData } from "@/types/servicePlan";
+import { getUserDisplayName } from "@/utils/userDisplayName";
 import { toast } from "sonner";
 
 interface WizardStep11ServicePlansProps {
@@ -117,7 +118,7 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
       registered_by: editingIndex !== null ? planData.registered_by : currentUser?.id,
       registered_by_name: editingIndex !== null 
         ? planData.registered_by_name 
-        : currentUser?.fullName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Unknown',
+        : getUserDisplayName(currentUser),
       is_saved: true,
     };
 
