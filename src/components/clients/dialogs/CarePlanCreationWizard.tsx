@@ -134,12 +134,13 @@ const wizardSteps = [
   { id: 14, name: "Service Actions", description: "Specific service actions" },
   { id: 15, name: "Documents", description: "Supporting documents" },
   { id: 16, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 17, name: "Key Contacts", description: "Emergency and family contacts" },
   // Child-specific steps (only shown for children/young persons) - placed before Review
-  { id: 17, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
-  { id: 18, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
-  { id: 19, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
+  { id: 18, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
+  { id: 19, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
+  { id: 20, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
   // Review is now last
-  { id: 20, name: "Review", description: "Review and finalize care plan" },
+  { id: 21, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
