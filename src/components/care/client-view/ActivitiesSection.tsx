@@ -1,11 +1,22 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Clock } from 'lucide-react';
+import { Activity, Clock, Sun, Sunrise, Sunset, Moon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface ActivitiesSectionProps {
   activities: any[];
 }
+
+// Helper to get time of day icon
+const getTimeOfDayIcon = (time: string) => {
+  const iconMap: Record<string, React.ReactNode> = {
+    morning: <Sunrise className="h-3 w-3" />,
+    afternoon: <Sun className="h-3 w-3" />,
+    evening: <Sunset className="h-3 w-3" />,
+    night: <Moon className="h-3 w-3" />,
+  };
+  return iconMap[time.toLowerCase()] || null;
+};
 
 export function ActivitiesSection({ activities }: ActivitiesSectionProps) {
   if (!activities || activities.length === 0) {
@@ -61,7 +72,30 @@ export function ActivitiesSection({ activities }: ActivitiesSectionProps) {
                       <p className="font-medium capitalize">{activity.frequency}</p>
                     </div>
                   )}
-                  {activity.time && (
+                  
+                  {/* Time of Day - supports multi-select array or single value */}
+                  {activity.time_of_day && (
+                    <div>
+                      <label className="text-muted-foreground">Time of Day</label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Array.isArray(activity.time_of_day) ? (
+                          activity.time_of_day.map((time: string, tidx: number) => (
+                            <Badge key={tidx} variant="outline" className="capitalize flex items-center gap-1">
+                              {getTimeOfDayIcon(time)}
+                              {time}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="capitalize flex items-center gap-1">
+                            {getTimeOfDayIcon(activity.time_of_day)}
+                            {activity.time_of_day}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {activity.time && !activity.time_of_day && (
                     <div>
                       <label className="text-muted-foreground">Time</label>
                       <p className="font-medium">{activity.time}</p>

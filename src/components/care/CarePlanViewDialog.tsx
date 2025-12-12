@@ -24,6 +24,7 @@ import { generateCarePlanDetailPDF } from '@/services/enhancedPdfGenerator';
 import { BasicInfoSection } from '@/components/care/client-view/BasicInfoSection';
 import { AboutMeSection } from '@/components/care/client-view/AboutMeSection';
 import { MedicalSection } from '@/components/care/client-view/MedicalSection';
+import { News2Section } from '@/components/care/client-view/News2Section';
 import { MedicationSection } from '@/components/care/client-view/MedicationSection';
 import { AdminMedicationSection } from '@/components/care/client-view/AdminMedicationSection';
 import { GoalsSection } from '@/components/care/client-view/GoalsSection';
@@ -36,6 +37,7 @@ import { ServicePlansSection } from '@/components/care/client-view/ServicePlansS
 import { ServiceActionsSection } from '@/components/care/client-view/ServiceActionsSection';
 import { DocumentsSection } from '@/components/care/client-view/DocumentsSection';
 import { ConsentSection } from '@/components/care/client-view/ConsentSection';
+import { KeyContactsSection } from '@/components/care/client-view/KeyContactsSection';
 import { ReviewSection } from '@/components/care/client-view/ReviewSection';
 import { BehaviorSupportSection } from '@/components/care/client-view/BehaviorSupportSection';
 import { EducationDevelopmentSection } from '@/components/care/client-view/EducationDevelopmentSection';
@@ -49,27 +51,29 @@ interface CarePlanViewDialogProps {
 }
 
 const viewSteps = [
-  { id: 1, name: "Basic Information", description: "Care plan title and basic details", childOnly: false },
+  { id: 1, name: "Basic Information", description: "Care plan details and personal information", childOnly: false },
   { id: 2, name: "About Me", description: "Client preferences and background", childOnly: false },
   { id: 3, name: "Diagnosis", description: "Health conditions and medications", childOnly: false },
-  { id: 4, name: "Medication Schedule", description: "Medication management and calendar", childOnly: false },
-  { id: 5, name: "Medication", description: "Medication administration details", childOnly: false },
-  { id: 6, name: "Goals", description: "Care goals and objectives", childOnly: false },
-  { id: 7, name: "Activities", description: "Daily activities and routines", childOnly: false },
-  { id: 8, name: "Personal Care", description: "Personal care requirements", childOnly: false },
-  { id: 9, name: "Dietary", description: "Dietary needs and restrictions", childOnly: false },
-  { id: 10, name: "Risk Assessments", description: "Safety and risk evaluations", childOnly: false },
-  { id: 11, name: "Equipment", description: "Required equipment and aids", childOnly: false },
-  { id: 12, name: "Service Plans", description: "Service delivery plans", childOnly: false },
-  { id: 13, name: "Service Actions", description: "Specific service actions", childOnly: false },
-  { id: 14, name: "Documents", description: "Supporting documents", childOnly: false },
-  { id: 15, name: "Consent", description: "Consent and capacity assessment", childOnly: false },
+  { id: 4, name: "NEWS2 Health Monitoring", description: "Vital signs monitoring configuration", childOnly: false },
+  { id: 5, name: "Medication Schedule", description: "Medication management and calendar", childOnly: false },
+  { id: 6, name: "Medication", description: "Medication administration details", childOnly: false },
+  { id: 7, name: "Goals", description: "Care goals and objectives", childOnly: false },
+  { id: 8, name: "Activities", description: "Daily activities and routines", childOnly: false },
+  { id: 9, name: "Personal Care", description: "Personal care requirements", childOnly: false },
+  { id: 10, name: "Dietary", description: "Dietary needs and restrictions", childOnly: false },
+  { id: 11, name: "Risk Assessments", description: "Safety and risk evaluations", childOnly: false },
+  { id: 12, name: "Equipment", description: "Required equipment and aids", childOnly: false },
+  { id: 13, name: "Service Plans", description: "Service delivery plans", childOnly: false },
+  { id: 14, name: "Service Actions", description: "Specific service actions", childOnly: false },
+  { id: 15, name: "Documents", description: "Supporting documents", childOnly: false },
+  { id: 16, name: "Consent", description: "Consent and capacity assessment", childOnly: false },
+  { id: 17, name: "Key Contacts", description: "Emergency and family contacts", childOnly: false },
   // Young Person (0-17 years) specific tabs
-  { id: 16, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
-  { id: 17, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
-  { id: 18, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
+  { id: 18, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
+  { id: 19, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
+  { id: 20, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
   // Review is always last
-  { id: 19, name: "Review", description: "Review and finalize care plan", childOnly: false },
+  { id: 21, name: "Review", description: "Review and finalize care plan", childOnly: false },
 ];
 
 // Transform care plan data for PDF generation
@@ -323,6 +327,19 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       ...safeObject(autoSaveData.consent),
     },
     
+    // Key Contacts
+    key_contacts: safeArray(autoSaveData.key_contacts || (carePlan as any).key_contacts),
+    
+    // GP Information
+    gp_info: {
+      ...safeObject(autoSaveData.gp_info || (carePlan as any).gp_info),
+    },
+    
+    // Pharmacy Information
+    pharmacy_info: {
+      ...safeObject(autoSaveData.pharmacy_info || (carePlan as any).pharmacy_info),
+    },
+    
     // Additional Notes
     additional_notes: safeString(carePlan.notes || autoSaveData.notes || autoSaveData.additional_notes),
   };
@@ -461,13 +478,13 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     }
 
     switch (currentStep) {
-      case 1: // Basic Information
+      case 1: // Basic Information (includes GP & Pharmacy)
         return <BasicInfoSection carePlan={wizardData} />;
       
       case 2: // About Me
         return <AboutMeSection aboutMe={wizardData.about_me} />;
       
-      case 3: // Medical and Mental
+      case 3: // Diagnosis / Medical and Mental
         return (
           <MedicalSection 
             medicalInfo={wizardData.medical_info}
@@ -477,53 +494,65 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
           />
         );
       
-      case 4: // Medication
+      case 4: // NEWS2 Health Monitoring (NEW - separate step)
+        return (
+          <News2Section 
+            enabled={wizardData.news2_monitoring_enabled}
+            frequency={wizardData.news2_monitoring_frequency}
+            notes={wizardData.news2_monitoring_notes}
+          />
+        );
+      
+      case 5: // Medication Schedule
         return <MedicationSection medications={medications} />;
 
-      case 5: // Admin Medication
+      case 6: // Medication Administration
         return <AdminMedicationSection adminMedication={wizardData.admin_medication || wizardData.medical_info?.admin_medication} />;
       
-      case 6: // Goals
+      case 7: // Goals
         return <GoalsSection goals={wizardData.goals || []} />;
       
-      case 7: // Activities
+      case 8: // Activities
         return <ActivitiesSection activities={wizardData.activities || []} />;
       
-      case 8: // Personal Care
+      case 9: // Personal Care
         return <PersonalCareSection personalCare={wizardData.personal_care} />;
       
-      case 9: // Dietary
+      case 10: // Dietary
         return <DietarySection dietary={wizardData.dietary} />;
       
-      case 10: // Risk Assessments
+      case 11: // Risk Assessments
         return <RiskAssessmentSection riskAssessments={wizardData.risk_assessments || []} />;
       
-      case 11: // Equipment
+      case 12: // Equipment
         return <EquipmentSection equipment={wizardData.equipment || []} />;
       
-      case 12: // Service Plans
+      case 13: // Service Plans
         return <ServicePlansSection servicePlans={wizardData.service_plans || []} />;
       
-      case 13: // Service Actions
+      case 14: // Service Actions
         return <ServiceActionsSection serviceActions={wizardData.service_actions || []} />;
       
-      case 14: // Documents
+      case 15: // Documents
         return <DocumentsSection documents={wizardData.documents || []} />;
       
-      case 15: // Consent
+      case 16: // Consent
         return <ConsentSection consent={wizardData.consent} />;
       
+      case 17: // Key Contacts (NEW)
+        return <KeyContactsSection keyContacts={wizardData.key_contacts || []} />;
+      
       // Young Person (0-17 years) specific tabs
-      case 16: // Behavior Support
+      case 18: // Behavior Support
         return <BehaviorSupportSection clientId={carePlanWithDetails.client_id} />;
       
-      case 17: // Education & Development
+      case 19: // Education & Development
         return <EducationDevelopmentSection clientId={carePlanWithDetails.client_id} />;
       
-      case 18: // Safeguarding & Risks
+      case 20: // Safeguarding & Risks
         return <SafeguardingRisksSection clientId={carePlanWithDetails.client_id} />;
       
-      case 19: // Review
+      case 21: // Review
         return <ReviewSection 
           carePlan={carePlanWithDetails} 
           additionalNotes={wizardData.additional_notes} 
