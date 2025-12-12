@@ -1,8 +1,9 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Stethoscope, Phone, Mail, MapPin, Building } from "lucide-react";
 import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useParams } from "react-router-dom";
 
@@ -317,76 +318,21 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
             )}
           />
 
-          {/* Personal Information Section */}
-          <div className="md:col-span-2 mt-8 border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
-            
+        </div>
+
+        {/* GP Information Section */}
+        <Card className="mt-8">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Stethoscope className="h-4 w-4 text-green-600" />
+              GP Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="personal_info.emergency_contact_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Emergency Contact Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter emergency contact name" 
-                        {...field} 
-                        className={field.value ? "bg-blue-50 border-blue-200" : ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="personal_info.emergency_contact_phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Emergency Contact Phone</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter phone number" 
-                        {...field} 
-                        className={field.value ? "bg-blue-50 border-blue-200" : ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="personal_info.emergency_contact_relationship"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Relationship to Client</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select relationship" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="spouse">Spouse</SelectItem>
-                        <SelectItem value="child">Child</SelectItem>
-                        <SelectItem value="parent">Parent</SelectItem>
-                        <SelectItem value="sibling">Sibling</SelectItem>
-                        <SelectItem value="friend">Friend</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="personal_info.gp_name"
+                name="gp_info.gp_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>GP Name</FormLabel>
@@ -394,7 +340,6 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                       <Input 
                         placeholder="Enter GP name" 
                         {...field} 
-                        className={field.value ? "bg-green-50 border-green-200" : ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -404,33 +349,75 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
 
               <FormField
                 control={form.control}
-                name="personal_info.gp_practice"
+                name="gp_info.gp_phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>GP Practice</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter GP practice name" 
-                        {...field} 
-                        className={field.value ? "bg-green-50 border-green-200" : ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="personal_info.gp_phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>GP Phone</FormLabel>
+                    <FormLabel className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      GP Phone Number
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Enter GP phone number" 
                         {...field} 
-                        className={field.value ? "bg-green-50 border-green-200" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gp_info.gp_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      GP Email
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter GP email" 
+                        type="email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gp_info.nhs_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NHS Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter NHS number" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gp_info.gp_address"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      GP Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter GP practice address" 
+                        {...field} 
                       />
                     </FormControl>
                     <FormMessage />
@@ -438,8 +425,99 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                 )}
               />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        {/* Pharmacy Contact Section */}
+        <Card className="mt-6">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building className="h-4 w-4 text-purple-600" />
+              Pharmacy Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="pharmacy_info.pharmacy_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pharmacy Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter pharmacy name" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pharmacy_info.pharmacy_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      Phone Number
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter pharmacy phone number" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pharmacy_info.pharmacy_address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      Pharmacy Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter pharmacy address" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pharmacy_info.pharmacy_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      Email
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter pharmacy email" 
+                        type="email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </Form>
     </div>
   );
