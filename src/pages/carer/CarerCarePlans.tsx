@@ -131,7 +131,7 @@ const CarerCarePlans: React.FC = () => {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-medium">
                       {carePlan.clientName.split(" ").map(name => name[0]).join("")}
                     </div>
                     <CardTitle className="text-lg">{carePlan.clientName}</CardTitle>

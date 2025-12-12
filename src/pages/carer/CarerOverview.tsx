@@ -64,7 +64,7 @@ const CarerOverview: React.FC = () => {
       case 'completed':
         return 'bg-green-100 text-green-700';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-600 text-white';
       case 'scheduled':
         return 'bg-gray-100 text-gray-700';
       case 'cancelled':

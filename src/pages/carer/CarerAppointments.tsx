@@ -223,7 +223,7 @@ const CarerAppointments: React.FC = () => {
       case 'completed':
         return 'bg-green-100 text-green-700';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-600 text-white';
       case 'assigned':
       case 'scheduled':
         return 'bg-gray-100 text-gray-700';
@@ -949,7 +949,7 @@ const CarerAppointments: React.FC = () => {
                       <div className="flex items-center gap-2 mb-4">
                         <Calendar className="h-5 w-5 text-blue-600" />
                         <h2 className="text-lg font-semibold text-blue-700">Today's Schedule</h2>
-                        <Badge className="bg-blue-100 text-blue-700">{categorized.today.length}</Badge>
+                        <Badge className="bg-blue-600 text-white border-0">{categorized.today.length}</Badge>
                       </div>
                       <div className="space-y-4">
                         {categorized.today.map(renderAppointmentCard)}

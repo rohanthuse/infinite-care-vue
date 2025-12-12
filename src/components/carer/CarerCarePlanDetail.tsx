@@ -308,7 +308,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-sm font-medium">
+              <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-sm font-medium">
                 {carePlan.clientName.split(" ").map(name => name[0]).join("")}
               </div>
             </Avatar>

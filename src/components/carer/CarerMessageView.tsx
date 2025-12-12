@@ -121,7 +121,7 @@ export const CarerMessageView = ({ threadId }: CarerMessageViewProps) => {
       case 'emergency':
         return 'bg-red-100 text-red-800 border-red-900';
       case 'shift':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-600 text-white border-blue-700';
       case 'general':
         return 'bg-gray-100 text-gray-800 border-gray-200';
       default:

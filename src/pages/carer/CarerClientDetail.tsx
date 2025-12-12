@@ -63,7 +63,7 @@ const CarerClientDetail: React.FC = () => {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center">
                 <User className="h-8 w-8" />
               </div>
               <div>

@@ -221,7 +221,7 @@ const CarerReports: React.FC = () => {
               <CardContent className="p-4 flex flex-col items-center text-center">
                 <div className={`p-2 rounded-full mb-2 ${
                   activeReport === option.id 
-                    ? "bg-blue-100 text-blue-700" 
+                    ? "bg-blue-600 text-white" 
                     : "bg-gray-100 text-gray-700"
                 }`}>
                   {option.icon}
