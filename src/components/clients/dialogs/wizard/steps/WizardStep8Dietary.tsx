@@ -425,15 +425,11 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
                   <div className="text-2xl font-bold text-blue-600">
                     {todayIntake?.total || 0} ml
                   </div>
-                  {(fluidTarget?.daily_intake_target_min_ml || fluidTarget?.daily_intake_target_max_ml) ? (
-                    <div className="text-xs text-muted-foreground">
-                      Target: {fluidTarget.daily_intake_target_min_ml || 0} – {fluidTarget.daily_intake_target_max_ml || fluidTarget.daily_intake_target_ml || 0} ml
-                    </div>
-                  ) : fluidTarget?.daily_intake_target_ml ? (
+                  {fluidTarget?.daily_intake_target_ml && (
                     <div className="text-xs text-muted-foreground">
                       Target: {fluidTarget.daily_intake_target_ml} ml
                     </div>
-                  ) : null}
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -457,22 +453,19 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
               <h4 className="text-sm font-medium">Fluid Balance Targets</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Daily Fluid Intake Target Range */}
-                <div className="md:col-span-2">
-                  <FormLabel>Daily Fluid Intake Target Range (ml)</FormLabel>
-                  <div className="flex items-center gap-2 mt-2">
+                <FormItem>
+                  <FormLabel>Daily Intake Target (ml)</FormLabel>
+                  <FormControl>
                     <Input
                       type="number"
-                      placeholder="Min (e.g., 1200)"
-                      defaultValue={fluidTarget?.daily_intake_target_min_ml || fluidTarget?.daily_intake_target_ml || ''}
+                      placeholder="e.g., 2000"
+                      defaultValue={fluidTarget?.daily_intake_target_ml || ''}
                       onBlur={(e) => {
                         const value = parseInt(e.target.value);
-                        if (clientId) {
+                        if (value && clientId) {
                           updateTargetMutation.mutate({
                             client_id: clientId,
-                            daily_intake_target_min_ml: value || null,
-                            daily_intake_target_max_ml: fluidTarget?.daily_intake_target_max_ml,
-                            daily_intake_target_ml: fluidTarget?.daily_intake_target_ml,
+                            daily_intake_target_ml: value,
                             daily_output_target_ml: fluidTarget?.daily_output_target_ml,
                             alert_threshold_percentage: fluidTarget?.alert_threshold_percentage,
                             notes: fluidTarget?.notes,
@@ -480,32 +473,8 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
                         }
                       }}
                     />
-                    <span className="text-muted-foreground font-medium">–</span>
-                    <Input
-                      type="number"
-                      placeholder="Max (e.g., 1500)"
-                      defaultValue={fluidTarget?.daily_intake_target_max_ml || ''}
-                      onBlur={(e) => {
-                        const value = parseInt(e.target.value);
-                        if (clientId) {
-                          updateTargetMutation.mutate({
-                            client_id: clientId,
-                            daily_intake_target_min_ml: fluidTarget?.daily_intake_target_min_ml,
-                            daily_intake_target_max_ml: value || null,
-                            daily_intake_target_ml: fluidTarget?.daily_intake_target_ml,
-                            daily_output_target_ml: fluidTarget?.daily_output_target_ml,
-                            alert_threshold_percentage: fluidTarget?.alert_threshold_percentage,
-                            notes: fluidTarget?.notes,
-                          });
-                        }
-                      }}
-                    />
-                    <span className="text-muted-foreground text-sm">ml</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter a range for daily fluid intake (e.g., 1200ml – 1500ml)
-                  </p>
-                </div>
+                  </FormControl>
+                </FormItem>
 
                 <FormItem>
                   <FormLabel>Daily Output Target (ml)</FormLabel>
