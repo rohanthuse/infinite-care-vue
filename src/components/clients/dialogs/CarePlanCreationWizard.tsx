@@ -236,6 +236,10 @@ export function CarePlanCreationWizard({
     },
   });
 
+  // forceNew = true when no carePlanId is provided (creating a new care plan)
+  // This prevents auto-loading of existing drafts for the client
+  const forceNew = !carePlanId;
+  
   const { 
     draftData, 
     isDraftLoading, 
@@ -243,12 +247,69 @@ export function CarePlanCreationWizard({
     autoSave, 
     isSaving,
     savedCarePlanId,
-  } = useCarePlanDraft(clientId, carePlanId);
+  } = useCarePlanDraft(clientId, carePlanId, forceNew);
 
   // Effective care plan ID for database operations
   const effectiveCarePlanId = savedCarePlanId || carePlanId;
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
+
+  // Reset form state when dialog opens for a NEW care plan (no carePlanId)
+  useEffect(() => {
+    if (isOpen && !carePlanId) {
+      console.log('Resetting form for new care plan - clientId:', clientId);
+      setClientDataLoaded(false);
+      setCurrentStep(1);
+      setStepError(null);
+      
+      // Reset form to clean default values
+      form.reset({
+        title: "",
+        provider_name: "",
+        provider_type: "staff",
+        staff_id: null,
+        start_date: new Date().toISOString().split('T')[0],
+        priority: "medium" as const,
+        care_plan_type: "standard",
+        personal_info: {},
+        about_me: {},
+        general: {},
+        medical_info: {
+          medication_manager: {
+            medications: [],
+            applicable: true
+          }
+        },
+        goals: [],
+        activities: [],
+        personal_care: {},
+        dietary: {},
+        risk_assessments: [],
+        risk_equipment_dietary: {},
+        risk_medication: {},
+        risk_dietary_food: {},
+        risk_warning_instructions: {},
+        risk_choking: {},
+        risk_pressure_damage: {},
+        equipment: {
+          equipment_blocks: [],
+          moving_handling: {},
+          environment_checks: {},
+          home_repairs: {
+            repair_needed: "",
+            repair_other: "",
+            contact_name: "",
+            contact_telephone: "",
+          },
+        },
+        service_plans: [],
+        service_actions: [],
+        documents: [],
+        consent: {},
+        additional_notes: "",
+      });
+    }
+  }, [isOpen, carePlanId, clientId, form]);
 
   // Debug logging for form state
   useEffect(() => {
