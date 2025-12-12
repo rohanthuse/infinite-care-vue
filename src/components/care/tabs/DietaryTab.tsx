@@ -247,11 +247,6 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                       <div className="p-4 bg-primary/10 rounded-lg">
                         <div className="text-sm text-muted-foreground">Intake</div>
                         <div className="text-2xl font-bold text-primary">{todayIntake?.total || 0} ml</div>
-                        {(dietaryInfo.fluid_intake_target_min_ml || dietaryInfo.fluid_intake_target_max_ml) && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Target: {dietaryInfo.fluid_intake_target_min_ml || 0} – {dietaryInfo.fluid_intake_target_max_ml || 0} ml
-                          </div>
-                        )}
                       </div>
                       <div className="p-4 bg-secondary/10 rounded-lg">
                         <div className="text-sm text-muted-foreground">Output</div>
