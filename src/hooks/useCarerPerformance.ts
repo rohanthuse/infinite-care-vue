@@ -1,8 +1,7 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface CarerPerformanceData {
+interface CarerPerformanceData {
   totalBookings: number;
   completedBookings: number;
   completionRate: number;
@@ -11,11 +10,24 @@ export interface CarerPerformanceData {
   monthlyEarnings: number;
   punctualityScore: number;
   clientRetentionRate: number;
+  lateArrivalCount: number;
+  missedBookingCount: number;
 }
 
 const fetchCarerPerformance = async (carerId: string): Promise<CarerPerformanceData> => {
   console.log('[fetchCarerPerformance] Fetching performance data for carer:', carerId);
   
+  // Get staff performance metrics
+  const { data: staffData, error: staffError } = await supabase
+    .from('staff')
+    .select('late_arrival_count, missed_booking_count, punctuality_score')
+    .eq('id', carerId)
+    .single();
+
+  if (staffError && staffError.code !== 'PGRST116') {
+    console.error('[fetchCarerPerformance] Staff error:', staffError);
+  }
+
   // Get total bookings
   const { data: allBookings, error: bookingsError } = await supabase
     .from('bookings')
@@ -58,8 +70,13 @@ const fetchCarerPerformance = async (carerId: string): Promise<CarerPerformanceD
     )
     .reduce((sum, b) => sum + (Number(b.revenue) || 0), 0) || 0;
 
-  // Mock punctuality and retention scores (would be calculated from real data)
-  const punctualityScore = Math.max(85, Math.min(100, 90 + Math.random() * 10));
+  // Use real punctuality data from staff table or calculate fallback
+  const lateArrivalCount = staffData?.late_arrival_count || 0;
+  const missedBookingCount = staffData?.missed_booking_count || 0;
+  const punctualityScore = staffData?.punctuality_score ?? 
+    (totalBookings > 0 ? Math.round(((totalBookings - lateArrivalCount) / totalBookings) * 100) : 100);
+  
+  // Client retention rate (mock for now - would need more complex calculation)
   const clientRetentionRate = Math.max(75, Math.min(100, 80 + Math.random() * 20));
 
   return {
@@ -70,7 +87,9 @@ const fetchCarerPerformance = async (carerId: string): Promise<CarerPerformanceD
     totalReviews,
     monthlyEarnings,
     punctualityScore,
-    clientRetentionRate
+    clientRetentionRate,
+    lateArrivalCount,
+    missedBookingCount,
   };
 };
 
@@ -79,8 +98,8 @@ export const useCarerPerformance = (carerId: string) => {
     queryKey: ['carer-performance', carerId],
     queryFn: () => fetchCarerPerformance(carerId),
     enabled: Boolean(carerId) && carerId.length > 0,
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

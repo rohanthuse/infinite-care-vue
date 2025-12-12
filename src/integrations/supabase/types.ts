@@ -851,6 +851,57 @@ export type Database = {
           },
         ]
       }
+      booking_alert_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          enable_late_start_alerts: boolean
+          enable_missed_booking_alerts: boolean
+          first_alert_delay_minutes: number
+          id: string
+          missed_booking_threshold_minutes: number
+          organization_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          enable_late_start_alerts?: boolean
+          enable_missed_booking_alerts?: boolean
+          first_alert_delay_minutes?: number
+          id?: string
+          missed_booking_threshold_minutes?: number
+          organization_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          enable_late_start_alerts?: boolean
+          enable_missed_booking_alerts?: boolean
+          first_alert_delay_minutes?: number
+          id?: string
+          missed_booking_threshold_minutes?: number
+          organization_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_alert_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_alert_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_change_requests: {
         Row: {
           admin_notes: string | null
@@ -1073,6 +1124,11 @@ export type Database = {
           id: string
           included_in_invoice_id: string | null
           is_invoiced: boolean | null
+          is_late_start: boolean | null
+          is_missed: boolean | null
+          late_start_minutes: number | null
+          late_start_notified_at: string | null
+          missed_notified_at: string | null
           notes: string | null
           organization_id: string | null
           reschedule_request_status: string | null
@@ -1097,6 +1153,11 @@ export type Database = {
           id?: string
           included_in_invoice_id?: string | null
           is_invoiced?: boolean | null
+          is_late_start?: boolean | null
+          is_missed?: boolean | null
+          late_start_minutes?: number | null
+          late_start_notified_at?: string | null
+          missed_notified_at?: string | null
           notes?: string | null
           organization_id?: string | null
           reschedule_request_status?: string | null
@@ -1121,6 +1182,11 @@ export type Database = {
           id?: string
           included_in_invoice_id?: string | null
           is_invoiced?: boolean | null
+          is_late_start?: boolean | null
+          is_missed?: boolean | null
+          late_start_minutes?: number | null
+          late_start_notified_at?: string | null
+          missed_notified_at?: string | null
           notes?: string | null
           organization_id?: string | null
           reschedule_request_status?: string | null
@@ -7877,11 +7943,14 @@ export type Database = {
           invitation_accepted_at: string | null
           invitation_sent_at: string | null
           last_name: string
+          late_arrival_count: number | null
+          missed_booking_count: number | null
           national_insurance_number: string | null
           organization_id: string | null
           phone: string | null
           photo_url: string | null
           profile_completed: boolean | null
+          punctuality_score: number | null
           qualifications: string[] | null
           salary_amount: number | null
           salary_frequency: string | null
@@ -7921,11 +7990,14 @@ export type Database = {
           invitation_accepted_at?: string | null
           invitation_sent_at?: string | null
           last_name: string
+          late_arrival_count?: number | null
+          missed_booking_count?: number | null
           national_insurance_number?: string | null
           organization_id?: string | null
           phone?: string | null
           photo_url?: string | null
           profile_completed?: boolean | null
+          punctuality_score?: number | null
           qualifications?: string[] | null
           salary_amount?: number | null
           salary_frequency?: string | null
@@ -7965,11 +8037,14 @@ export type Database = {
           invitation_accepted_at?: string | null
           invitation_sent_at?: string | null
           last_name?: string
+          late_arrival_count?: number | null
+          missed_booking_count?: number | null
           national_insurance_number?: string | null
           organization_id?: string | null
           phone?: string | null
           photo_url?: string | null
           profile_completed?: boolean | null
+          punctuality_score?: number | null
           qualifications?: string[] | null
           salary_amount?: number | null
           salary_frequency?: string | null
