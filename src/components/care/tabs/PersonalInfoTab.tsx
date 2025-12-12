@@ -1,6 +1,6 @@
 
 import React from "react";
-import { User, Phone, Mail, Calendar, MapPin, Heart, Edit } from "lucide-react";
+import { User, Phone, Mail, Calendar, MapPin, Heart, Edit, Building, Stethoscope } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,15 @@ interface PersonalInfoTabProps {
     gp_name?: string;
     gp_practice?: string;
     gp_phone?: string;
+    gp_email?: string;
+    gp_address?: string;
+    nhs_number?: string;
+    pharmacy_name?: string;
+    pharmacy_address?: string;
+    pharmacy_phone?: string;
+    pharmacy_email?: string;
   };
+  carePlanData?: any;
   medicalInfo?: {
     allergies?: string[];
     current_medications?: string[];
@@ -40,10 +48,15 @@ interface PersonalInfoTabProps {
 export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ 
   client, 
   personalInfo, 
+  carePlanData,
   medicalInfo,
   onEditPersonalInfo,
   onEditMedicalInfo 
 }) => {
+  // Get GP and pharmacy info from care plan auto_save_data if available
+  const gpInfo = carePlanData?.auto_save_data?.gp_info || personalInfo || {};
+  const pharmacyInfo = carePlanData?.auto_save_data?.pharmacy_info || {};
+
   // Handle loading state if client data is not available
   if (!client) {
     return (
@@ -59,76 +72,102 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Personal Information Section */}
+      {/* GP Information Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">Personal Information</CardTitle>
+              <Stethoscope className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-lg">GP Information</CardTitle>
             </div>
             <Button size="sm" variant="outline" onClick={onEditPersonalInfo}>
               <Edit className="h-4 w-4 mr-1" />
               Edit
             </Button>
           </div>
-          <CardDescription>Basic demographic and contact information</CardDescription>
+          <CardDescription>General Practitioner and NHS details</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
-                <p className="text-base">{client.first_name || ''} {client.last_name || ''}</p>
-              </div>
-              {client.preferred_name && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Preferred Name</h3>
-                  <p className="text-base">{client.preferred_name}</p>
-                </div>
-              )}
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Gender</h3>
-                <p className="text-base">{client.gender || 'Not specified'}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Name</h3>
+                <p className="text-base">{gpInfo.gp_name || 'Not provided'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Date of Birth</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Phone Number</h3>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">
-                    {client.date_of_birth ? format(new Date(client.date_of_birth), 'MMM dd, yyyy') : 'Not provided'}
-                  </p>
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{gpInfo.gp_phone || 'Not provided'}</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Email</h3>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{gpInfo.gp_email || 'Not provided'}</p>
                 </div>
               </div>
             </div>
             
             <div className="space-y-4">
               <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Address</h3>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{gpInfo.gp_address || 'Not provided'}</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">NHS Number</h3>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
+                  {gpInfo.nhs_number || 'Not provided'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pharmacy Contact Section */}
+      <Card>
+        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+          <div className="flex items-center gap-2">
+            <Building className="h-5 w-5 text-purple-600" />
+            <CardTitle className="text-lg">Pharmacy Contact</CardTitle>
+          </div>
+          <CardDescription>Pharmacy details for prescriptions and medication</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Pharmacy Name</h3>
+                <p className="text-base">{pharmacyInfo.pharmacy_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Phone Number</h3>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{pharmacyInfo.pharmacy_phone || 'Not provided'}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Pharmacy Address</h3>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{pharmacyInfo.pharmacy_address || 'Not provided'}</p>
+                </div>
+              </div>
+              <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">{client.email || 'Not provided'}</p>
+                  <p className="text-base">{pharmacyInfo.pharmacy_email || 'Not provided'}</p>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">{client.phone || 'Not provided'}</p>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Address</h3>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">{client.address || 'Not provided'}</p>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {client.status || 'Active'}
-                </Badge>
               </div>
             </div>
           </div>
@@ -157,105 +196,64 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Medical Information Section */}
+      {/* Client Basic Information */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-red-50 to-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-600" />
-              <CardTitle className="text-lg">Medical Information</CardTitle>
-            </div>
-            <Button size="sm" variant="outline" onClick={onEditMedicalInfo}>
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Client Information</CardTitle>
           </div>
-          <CardDescription>Medical conditions, allergies, and medications</CardDescription>
+          <CardDescription>Basic client details</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Allergies</h3>
-              {medicalInfo?.allergies && medicalInfo.allergies.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.allergies.map((allergy, index) => (
-                    <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                      {allergy}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">None recorded</p>
-              )}
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Current Medications</h3>
-              {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.current_medications.map((medication, index) => (
-                    <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {medication}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">None recorded</p>
-              )}
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Medical Conditions</h3>
-              {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.medical_conditions.map((condition, index) => (
-                    <Badge key={index} variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                      {condition}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">None recorded</p>
-              )}
-            </div>
-            
-            {medicalInfo?.medical_history && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Medical History</h3>
-                <p className="text-sm text-gray-700">{medicalInfo.medical_history}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
+                <p className="text-base">{client.first_name || ''} {client.last_name || ''}</p>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* GP Information Section */}
-      {(personalInfo?.gp_name || personalInfo?.gp_practice || personalInfo?.gp_phone) && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">GP Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {client.preferred_name && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Preferred Name</h3>
+                  <p className="text-base">{client.preferred_name}</p>
+                </div>
+              )}
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Name</h3>
-                <p className="text-base">{personalInfo.gp_name || 'Not provided'}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Date of Birth</h3>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">
+                    {client.date_of_birth ? format(new Date(client.date_of_birth), 'MMM dd, yyyy') : 'Not provided'}
+                  </p>
+                </div>
               </div>
+            </div>
+            
+            <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Practice</h3>
-                <p className="text-base">{personalInfo.gp_practice || 'Not provided'}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-gray-400" />
+                  <p className="text-base">{client.email || 'Not provided'}</p>
+                </div>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">{personalInfo.gp_phone || 'Not provided'}</p>
+                  <p className="text-base">{client.phone || 'Not provided'}</p>
                 </div>
               </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  {client.status || 'Active'}
+                </Badge>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
