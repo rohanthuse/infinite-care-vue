@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BranchLayout } from '@/components/branch-dashboard/BranchLayout';
 import { OrganizationCalendarView } from '@/components/organization-calendar/OrganizationCalendarView';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -6,11 +6,26 @@ import { useTenant } from '@/contexts/TenantContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useBranchDashboardNavigation } from '@/hooks/useBranchDashboardNavigation';
 import { AddClientDialog } from '@/components/AddClientDialog';
+import { useTriggerAlertProcessing } from '@/hooks/useLateBookingAlerts';
 
 export default function OrganizationCalendar() {
   const { organization, isLoading, error } = useTenant();
   const { id: branchId } = useBranchDashboardNavigation();
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const { mutate: triggerAlertProcessing } = useTriggerAlertProcessing();
+
+  // Auto-process late/missed bookings on mount and every 2 minutes
+  useEffect(() => {
+    // Process immediately on mount
+    triggerAlertProcessing();
+    
+    // Re-process every 2 minutes while on this page
+    const interval = setInterval(() => {
+      triggerAlertProcessing();
+    }, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [triggerAlertProcessing]);
 
   const handleNewClient = () => {
     setAddClientDialogOpen(true);
