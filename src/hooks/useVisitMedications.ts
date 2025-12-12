@@ -135,7 +135,7 @@ export const useVisitMedications = (visitRecordId?: string) => {
           )
         `)
         .eq('client_care_plans.client_id', clientId)
-        .eq('client_care_plans.status', 'active')
+        .in('client_care_plans.status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved'])
         .eq('status', 'active');
 
       if (medicationsError) {

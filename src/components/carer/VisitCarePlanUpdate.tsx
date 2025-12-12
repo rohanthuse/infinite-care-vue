@@ -39,8 +39,10 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
         .from('client_care_plans')
         .select('*')
         .eq('client_id', clientId)
-        .eq('status', 'active')
-        .single();
+        .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
       return data;
