@@ -34,6 +34,7 @@ export const ParameterForm: React.FC<ParameterFormProps> = ({
       tax: initialData?.tax || 0,
       registeredBy: initialData?.registered_by || 'Admin',
       registeredOn: initialData?.registered_on || new Date().toISOString().split('T')[0],
+      fieldCaption: initialData?.field_caption || '',
     },
   });
 
@@ -64,6 +65,12 @@ export const ParameterForm: React.FC<ParameterFormProps> = ({
         status: data.status,
         registered_by: data.registeredBy,
         registered_on: data.registeredOn,
+      };
+    } else if (parameterType === 'diagnosis') {
+      transformedData = {
+        title: data.title,
+        status: data.status,
+        field_caption: data.fieldCaption || null,
       };
     } else {
       transformedData = {
@@ -259,6 +266,22 @@ export const ParameterForm: React.FC<ParameterFormProps> = ({
                 )}
               />
             </>
+          )}
+
+          {parameterType === 'diagnosis' && (
+            <FormField
+              control={form.control}
+              name="fieldCaption"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter a brief description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
         </div>
 

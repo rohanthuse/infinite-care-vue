@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useDiagnosis } from "@/hooks/useDiagnosis";
 
 interface WizardStep4MedicalInfoProps {
   form: UseFormReturn<any>;
@@ -39,6 +41,7 @@ export function WizardStep4MedicalInfo({
   effectiveCarePlanId
 }: WizardStep4MedicalInfoProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { data: diagnosisOptions = [], isLoading: isLoadingDiagnosis } = useDiagnosis();
   
 
   // Service Band helper functions
@@ -86,14 +89,7 @@ export function WizardStep4MedicalInfo({
       setExpandedCategories(new Set(selectedCategories));
     }
   }, [form]);
-  const addMedicalCondition = () => {
-    const current = form.getValues("medical_info.medical_conditions") || [];
-    form.setValue("medical_info.medical_conditions", [...current, ""]);
-  };
-  const removeMedicalCondition = (index: number) => {
-    const current = form.getValues("medical_info.medical_conditions") || [];
-    form.setValue("medical_info.medical_conditions", current.filter((_, i) => i !== index));
-  };
+
   const addMedication = () => {
     const current = form.getValues("medical_info.current_medications") || [];
     form.setValue("medical_info.current_medications", [...current, ""]);
@@ -118,10 +114,20 @@ export function WizardStep4MedicalInfo({
     const current = form.getValues("medical_info.sensory_impairments") || [];
     form.setValue("medical_info.sensory_impairments", current.filter((_, i) => i !== index));
   };
-  const medicalConditions = form.watch("medical_info.medical_conditions") || [];
+
   const medications = form.watch("medical_info.current_medications") || [];
   const allergies = form.watch("medical_info.allergies") || [];
   const sensoryImpairments = form.watch("medical_info.sensory_impairments") || [];
+  const selectedDiagnoses = form.watch("medical_info.medical_conditions") || [];
+
+  // Map diagnosis data to MultiSelect format
+  const diagnosisMultiSelectOptions = diagnosisOptions
+    .filter(d => d.status === "Active")
+    .map(d => ({
+      value: d.id,
+      label: d.title,
+      description: d.field_caption || undefined
+    }));
   
   return (
     <div className="space-y-6">
@@ -134,28 +140,31 @@ export function WizardStep4MedicalInfo({
 
       <Form {...form}>
         <div className="space-y-8">
-          {/* Medical Conditions */}
+          {/* Diagnosis - Searchable MultiSelect */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <FormLabel className="text-base font-medium">Medical Conditions</FormLabel>
-              <Button type="button" onClick={addMedicalCondition} size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Condition
-              </Button>
-            </div>
-            {medicalConditions.map((_, index) => <div key={index} className="flex items-center gap-2">
-                <FormField control={form.control} name={`medical_info.medical_conditions.${index}`} render={({
-              field
-            }) => <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="Enter medical condition" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                <Button type="button" onClick={() => removeMedicalCondition(index)} size="sm" variant="outline">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>)}
+            <FormField
+              control={form.control}
+              name="medical_info.medical_conditions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-medium">Diagnosis</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={diagnosisMultiSelectOptions}
+                      selected={field.value || []}
+                      onSelectionChange={(selected) => {
+                        field.onChange(selected);
+                      }}
+                      placeholder={isLoadingDiagnosis ? "Loading diagnoses..." : "Search and select diagnoses..."}
+                      searchPlaceholder="Search diagnoses..."
+                      emptyText="No diagnoses found. Add them in Core Settings → Diagnosis."
+                      disabled={isLoadingDiagnosis}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           {/* Current Medications */}

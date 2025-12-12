@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, FileText, Calendar, Car, MessageSquare, PoundSterling, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2 } from "lucide-react";
+import { ChevronRight, FileText, Calendar, Car, MessageSquare, PoundSterling, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2, Stethoscope } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
 } from "@/components/ui/tabs";
@@ -28,6 +28,7 @@ import {
   type CommunicationType,
   type ExpenseType,
 } from "@/hooks/useKeyParameters";
+import { useDiagnosis, type Diagnosis } from "@/hooks/useDiagnosis";
 
 interface KeyParametersContentProps {
   branchId?: string;
@@ -57,6 +58,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
   const travelRates = useTravelRates();
   const communicationTypes = useCommunicationTypes();
   const expenseTypes = useExpenseTypes();
+  const diagnosis = useDiagnosis();
 
   const getParameterTypeTitle = (parameterType: string): string => {
     switch (parameterType) {
@@ -74,6 +76,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return "Expense Type";
       case "services":
         return "Service";
+      case "diagnosis":
+        return "Diagnosis";
       default:
         return "Parameter";
     }
@@ -95,6 +99,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return <PoundSterling className="h-5 w-5 text-muted-foreground" />;
       case "services":
         return <Briefcase className="h-5 w-5 text-muted-foreground" />;
+      case "diagnosis":
+        return <Stethoscope className="h-5 w-5 text-muted-foreground" />;
       default:
         return <ListChecks className="h-5 w-5 text-muted-foreground" />;
     }
@@ -114,6 +120,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return communicationTypes.data;
       case "expense-types":
         return expenseTypes.data;
+      case "diagnosis":
+        return diagnosis.data;
       default:
         return [];
     }
@@ -130,6 +138,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
       case "report-types":
       case "file-categories":
       case "communication-types":
+      case "diagnosis":
         return [
           { header: "Title", accessorKey: "title" },
           { header: "Status", accessorKey: "status", cell: statusCell },
@@ -177,6 +186,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return communicationTypes;
       case "expense-types":
         return expenseTypes;
+      case "diagnosis":
+        return diagnosis;
       default:
         return null;
     }
@@ -278,7 +289,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
       <Card className="mb-8 border-none shadow-md">
         <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 p-0 rounded-t-lg rounded-b-none border-b bg-muted">
+          <TabsList className="w-full grid grid-cols-4 md:grid-cols-8 p-0 rounded-t-lg rounded-b-none border-b bg-muted">
             <TabsTrigger 
               value="report-types" 
               className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
@@ -335,9 +346,17 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               <span className="hidden md:inline">Services</span>
               <span className="md:hidden">Services</span>
             </TabsTrigger>
+            <TabsTrigger 
+              value="diagnosis" 
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
+            >
+              <Stethoscope className="h-4 w-4" />
+              <span className="hidden md:inline">Diagnosis</span>
+              <span className="md:hidden">Diagnosis</span>
+            </TabsTrigger>
           </TabsList>
 
-          {["report-types", "file-categories", "bank-holidays", "travel-rates", "communication-types", "expense-types", "services"].map((paramType) => (
+          {["report-types", "file-categories", "bank-holidays", "travel-rates", "communication-types", "expense-types", "services", "diagnosis"].map((paramType) => (
             <TabsContent key={paramType} value={paramType} className="p-0 border-0">
               {paramType === 'services' ? (
                 <div className="p-4 border-t-0 rounded-b-lg bg-card">
