@@ -172,15 +172,18 @@ export function CarePlanCreationWizard({
   // Fetch client profile data first
   const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
   
+  // Determine if client is a child/young person
+  const isChild = React.useMemo(() => {
+    return clientProfile?.age_group === 'child' || clientProfile?.age_group === 'young_person';
+  }, [clientProfile?.age_group]);
+  
   // Filter steps based on client age group - using useMemo for reactivity
   const filteredSteps = React.useMemo(() => {
-    const isChild = clientProfile?.age_group === 'child' || clientProfile?.age_group === 'young_person';
-    
     if (!isChild) {
       return wizardSteps.filter(step => !step.childOnly);
     }
     return wizardSteps; // Show all steps for children/young persons
-  }, [clientProfile?.age_group]);
+  }, [isChild]);
   
   const totalSteps = filteredSteps.length;
   
@@ -737,6 +740,7 @@ export function CarePlanCreationWizard({
                       clientId={clientId} 
                       effectiveCarePlanId={effectiveCarePlanId} 
                       filteredSteps={filteredSteps}
+                      isChild={isChild}
                     />
                   </Form>
                 </div>

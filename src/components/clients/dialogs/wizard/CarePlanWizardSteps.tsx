@@ -31,9 +31,10 @@ interface CarePlanWizardStepsProps {
   clientId: string;
   effectiveCarePlanId?: string;
   filteredSteps?: any[];
+  isChild?: boolean;
 }
 
-export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCarePlanId, filteredSteps }: CarePlanWizardStepsProps) {
+export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCarePlanId, filteredSteps, isChild }: CarePlanWizardStepsProps) {
   const renderStep = () => {
     // Log current step for debugging
     console.log(`Rendering step ${currentStep}`, {
@@ -83,7 +84,7 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 20:
         return <SafeguardingRisksTab clientId={clientId} clientName="" />;
       case 21:
-        return <WizardStep14Review form={form} />;
+        return <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
         return <WizardStep1BasicInfo form={form} />;
