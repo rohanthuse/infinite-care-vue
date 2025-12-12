@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { X, Send, Paperclip, FileUp } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Send, Paperclip, FileUp, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useUnifiedSendMessage } from '@/hooks/useUnifiedMessaging';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 
 interface SupportReplyComposerProps {
@@ -19,12 +22,25 @@ export const SupportReplyComposer: React.FC<SupportReplyComposerProps> = ({
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [adminEyesOnly, setAdminEyesOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sendMessage = useUnifiedSendMessage();
   const { uploadFile, uploading: uploadingFiles } = useFileUpload();
+  
+  // Get current user role to default adminEyesOnly for admins
+  const { data: currentUser } = useUserRole();
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
 
   const isSending = sendMessage.isPending || uploadingFiles;
+
+  // Default adminEyesOnly to true for admin users
+  useEffect(() => {
+    if (currentUser) {
+      const isAdminUser = currentUser.role === 'super_admin' || currentUser.role === 'branch_admin';
+      setAdminEyesOnly(isAdminUser);
+    }
+  }, [currentUser?.role]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -87,7 +103,7 @@ export const SupportReplyComposer: React.FC<SupportReplyComposerProps> = ({
         messageType: 'support',
         priority: 'normal',
         actionRequired: false,
-        adminEyesOnly: false,
+        adminEyesOnly,
         attachments,
         notificationMethods: [],
       });
@@ -120,6 +136,22 @@ export const SupportReplyComposer: React.FC<SupportReplyComposerProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Admin Eyes Only checkbox for admins */}
+        {isAdmin && (
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="replyAdminEyesOnly"
+              checked={adminEyesOnly}
+              onCheckedChange={(checked) => setAdminEyesOnly(checked as boolean)}
+              disabled={isSending}
+            />
+            <Label htmlFor="replyAdminEyesOnly" className="text-sm flex items-center gap-1 cursor-pointer text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              Admin Eyes Only
+            </Label>
+          </div>
+        )}
+
         {/* Message Textarea */}
         <div className="space-y-2">
           <Textarea

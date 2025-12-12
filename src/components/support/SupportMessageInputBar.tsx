@@ -1,10 +1,13 @@
-import React, { useState, useRef, KeyboardEvent } from 'react';
+import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUnifiedSendMessage } from '@/hooks/useUnifiedMessaging';
-import { Paperclip, Send, X, Loader2 } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Paperclip, Send, X, Loader2, Eye } from 'lucide-react';
 
 interface SupportMessageInputBarProps {
   threadId: string;
@@ -15,10 +18,23 @@ export const SupportMessageInputBar: React.FC<SupportMessageInputBarProps> = ({
 }) => {
   const [content, setContent] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [adminEyesOnly, setAdminEyesOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { uploadFile, uploading } = useFileUpload();
   const sendMessage = useUnifiedSendMessage();
+  
+  // Get current user role to default adminEyesOnly for admins
+  const { data: currentUser } = useUserRole();
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+
+  // Default adminEyesOnly to true for admin users
+  useEffect(() => {
+    if (currentUser) {
+      const isAdminUser = currentUser.role === 'super_admin' || currentUser.role === 'branch_admin';
+      setAdminEyesOnly(isAdminUser);
+    }
+  }, [currentUser?.role]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -60,7 +76,7 @@ export const SupportMessageInputBar: React.FC<SupportMessageInputBarProps> = ({
         messageType: 'support',
         priority: 'normal',
         actionRequired: false,
-        adminEyesOnly: false,
+        adminEyesOnly,
         attachments,
         notificationMethods: []
       });
@@ -95,6 +111,22 @@ export const SupportMessageInputBar: React.FC<SupportMessageInputBarProps> = ({
 
   return (
     <div className="border-t border-border bg-card p-2 sm:p-3 shrink-0">
+      {/* Admin Eyes Only checkbox for admins */}
+      {isAdmin && (
+        <div className="flex items-center space-x-2 mb-2 px-1">
+          <Checkbox 
+            id="supportAdminEyesOnly"
+            checked={adminEyesOnly}
+            onCheckedChange={(checked) => setAdminEyesOnly(checked as boolean)}
+            disabled={isSending}
+          />
+          <Label htmlFor="supportAdminEyesOnly" className="text-xs flex items-center gap-1 cursor-pointer text-muted-foreground">
+            <Eye className="h-3 w-3" />
+            Admin Only
+          </Label>
+        </div>
+      )}
+
       {/* Attached files preview */}
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
