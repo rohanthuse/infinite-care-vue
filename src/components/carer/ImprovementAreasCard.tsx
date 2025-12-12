@@ -31,7 +31,7 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
       case 'medium':
         return 'bg-yellow-100 text-yellow-700 border-yellow-300';
       case 'low':
-        return 'bg-blue-100 text-blue-700 border-blue-300';
+        return 'bg-blue-600 text-white border-blue-700';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-300';
     }

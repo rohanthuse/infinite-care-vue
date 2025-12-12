@@ -68,7 +68,7 @@ const CarerClients: React.FC = () => {
             <Card key={client.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
                     <User className="h-6 w-6" />
                   </div>
                   <div>

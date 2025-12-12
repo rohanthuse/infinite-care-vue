@@ -121,7 +121,7 @@ const CarerAgreements = () => {
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-800">
+                      <Badge className="bg-blue-600 text-white border-0">
                         Awaiting Signature
                       </Badge>
                     </div>

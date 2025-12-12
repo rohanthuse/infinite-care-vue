@@ -50,7 +50,7 @@ const CarerEventsLogs: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'open': return 'bg-blue-600 text-white border-blue-700';
       case 'in-progress': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
       case 'closed': return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -67,7 +67,7 @@ const CarerEventsLogs: React.FC = () => {
       return { label: 'Follow-up Required', color: 'bg-orange-100 text-orange-800 border-orange-200' };
     }
     if (event.recorded_by_staff_id === staffId) {
-      return { label: 'Recorded By', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+      return { label: 'Recorded By', color: 'bg-blue-600 text-white border-blue-700' };
     }
     return { label: 'Assigned', color: 'bg-gray-100 text-gray-800 border-gray-200' };
   };

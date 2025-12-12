@@ -122,7 +122,7 @@ const CarerTraining: React.FC = () => {
   const getStatusColor = (status: TrainingStatus): string => {
     switch (status) {
       case "completed": return "bg-green-100 text-green-700";
-      case "in-progress": return "bg-blue-100 text-blue-700";
+      case "in-progress": return "bg-blue-600 text-white";
       case "expired": return "bg-red-100 text-red-700";
       case "not-started": return "bg-gray-100 text-gray-700";
       case "paused": return "bg-yellow-100 text-yellow-700";
@@ -135,7 +135,7 @@ const CarerTraining: React.FC = () => {
 
   const getCategoryColor = (category: TrainingCategory): string => {
     switch (category) {
-      case "core": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "core": return "bg-blue-600 text-white border-blue-700";
       case "mandatory": return "bg-red-100 text-red-700 border-red-200";
       case "specialized": return "bg-purple-100 text-purple-700 border-purple-200";
       case "optional": return "bg-gray-100 text-gray-700 border-gray-200";

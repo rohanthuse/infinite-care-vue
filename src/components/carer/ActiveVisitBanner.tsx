@@ -32,7 +32,7 @@ export const ActiveVisitBanner: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Play className="h-4 w-4 text-blue-600" />
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              <Badge variant="secondary" className="bg-blue-600 text-white border-0">
                 Visit in Progress
               </Badge>
             </div>

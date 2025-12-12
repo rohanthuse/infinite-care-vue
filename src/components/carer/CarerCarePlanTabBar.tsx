@@ -19,7 +19,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="personal" 
         onClick={() => onChange("personal")}
-        className={`flex items-center gap-1 ${activeTab === "personal" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "personal" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <User className="h-4 w-4" />
         <span>Personal</span>
@@ -27,7 +27,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="aboutme" 
         onClick={() => onChange("aboutme")}
-        className={`flex items-center gap-1 ${activeTab === "aboutme" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "aboutme" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Info className="h-4 w-4" />
         <span>About Me</span>
@@ -35,7 +35,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="goals" 
         onClick={() => onChange("goals")}
-        className={`flex items-center gap-1 ${activeTab === "goals" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "goals" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Activity className="h-4 w-4" />
         <span>Goals</span>
@@ -43,7 +43,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="activities" 
         onClick={() => onChange("activities")}
-        className={`flex items-center gap-1 ${activeTab === "activities" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "activities" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Calendar className="h-4 w-4" />
         <span>Activities</span>
@@ -51,7 +51,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="notes" 
         onClick={() => onChange("notes")}
-        className={`flex items-center gap-1 ${activeTab === "notes" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "notes" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <MessageCircle className="h-4 w-4" />
         <span>Notes</span>
@@ -59,7 +59,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="dietary" 
         onClick={() => onChange("dietary")}
-        className={`flex items-center gap-1 ${activeTab === "dietary" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "dietary" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Utensils className="h-4 w-4" />
         <span>Dietary</span>
@@ -67,7 +67,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="personalcare" 
         onClick={() => onChange("personalcare")}
-        className={`flex items-center gap-1 ${activeTab === "personalcare" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "personalcare" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Bath className="h-4 w-4" />
         <span>Personal Care</span>
@@ -75,7 +75,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="serviceplan" 
         onClick={() => onChange("serviceplan")}
-        className={`flex items-center gap-1 ${activeTab === "serviceplan" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "serviceplan" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <Clipboard className="h-4 w-4" />
         <span>Service Plan</span>
@@ -83,7 +83,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="serviceactions" 
         onClick={() => onChange("serviceactions")}
-        className={`flex items-center gap-1 ${activeTab === "serviceactions" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "serviceactions" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <ClipboardCheck className="h-4 w-4" />
         <span>Service Actions</span>
@@ -91,7 +91,7 @@ export const CarerCarePlanTabBar: React.FC<CarerCarePlanTabBarProps> = ({ active
       <TabsTrigger 
         value="eventslogs" 
         onClick={() => onChange("eventslogs")}
-        className={`flex items-center gap-1 ${activeTab === "eventslogs" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        className={`flex items-center gap-1 ${activeTab === "eventslogs" ? "data-[state=active]:bg-blue-600 data-[state=active]:text-white" : ""}`}
       >
         <FileBarChart2 className="h-4 w-4" />
         <span>Events & Logs</span>

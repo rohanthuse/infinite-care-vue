@@ -36,7 +36,7 @@ export const CarerAppointmentDetailDialog = ({
     const normalizedStatus = normalizeStatus(status);
     switch (normalizedStatus?.toLowerCase()) {
       case 'assigned':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-600 text-white border-blue-700';
       case 'in-progress':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'completed':

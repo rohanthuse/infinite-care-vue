@@ -147,7 +147,7 @@ const CarerSchedule: React.FC = () => {
         );
       case 'reassigned':
         return (
-          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+          <Badge className="bg-blue-600 text-white border-blue-700 text-xs">
             Reassigned
           </Badge>
         );
