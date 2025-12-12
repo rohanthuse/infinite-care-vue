@@ -145,6 +145,7 @@ export function EditBookingDialog({
     conflictingBookings: any[];
   } | null>(null);
   const [showOverlapAlert, setShowOverlapAlert] = useState(false);
+  const [failedCarerName, setFailedCarerName] = useState<string | null>(null);
   
   // Cancellation workflow state
   const [showCancellationDialog, setShowCancellationDialog] = useState(false);
@@ -542,6 +543,11 @@ export function EditBookingDialog({
           ...allConflictingBookings,
           ...result.conflictingBookings
         ];
+        
+        // Track the carer name that failed validation
+        const failedCarer = carers.find(c => c.id === staffId);
+        setFailedCarerName(failedCarer?.name || "Unknown Carer");
+        break; // Stop at first conflict
       }
     }
     
@@ -554,6 +560,9 @@ export function EditBookingDialog({
       setShowOverlapAlert(true);
       return false;
     }
+    
+    // Reset failed carer name on successful validation
+    setFailedCarerName(null);
     
     setValidationResult({ isValid: true, conflictingBookings: [] });
     return true;
@@ -1208,14 +1217,20 @@ export function EditBookingDialog({
         {/* Overlap Alert Dialog */}
         <BookingOverlapAlert
           open={showOverlapAlert}
-          onOpenChange={setShowOverlapAlert}
+          onOpenChange={(open) => {
+            setShowOverlapAlert(open);
+            if (!open) {
+              setFailedCarerName(null);
+            }
+          }}
           conflictingBookings={validationResult?.conflictingBookings || []}
-          carerName={booking?.carerName || "Unknown Carer"}
-          proposedTime={(form.getValues().start_time && isValidDate(new Date(form.getValues().start_time))) ? format(new Date(form.getValues().start_time), "HH:mm") : ""}
-          proposedDate={(form.getValues().start_time && isValidDate(new Date(form.getValues().start_time))) ? format(new Date(form.getValues().start_time), "yyyy-MM-dd") : ""}
+          carerName={failedCarerName || "Unknown Carer"}
+          proposedTime={`${form.getValues().start_time || ""} - ${form.getValues().end_time || ""}`}
+          proposedDate={form.getValues().booking_date ? format(form.getValues().booking_date, 'yyyy-MM-dd') : ""}
           availableCarers={[]} // Not applicable for editing
           onChooseDifferentCarer={() => {
             setShowOverlapAlert(false);
+            setFailedCarerName(null);
             // Clear current staff selection to prompt user to choose new carer
             form.setValue('staff_ids', []);
             // Reset validation state
@@ -1226,6 +1241,7 @@ export function EditBookingDialog({
           }}
           onModifyTime={() => {
             setShowOverlapAlert(false);
+            setFailedCarerName(null);
             // Reset validation state
             setValidationResult(null);
             toast.info("Adjust the start or end time to avoid conflicts with existing bookings", {
