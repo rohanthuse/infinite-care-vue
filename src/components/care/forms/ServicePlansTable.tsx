@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ServicePlanData } from "@/types/servicePlan";
 
 interface ServicePlansTableProps {
@@ -56,14 +57,15 @@ export function ServicePlansTable({
     <div className="border rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Caption</TableHead>
-            <TableHead>Service Name</TableHead>
-            <TableHead>Start Date</TableHead>
-            <TableHead>End Date</TableHead>
-            <TableHead>Registered On</TableHead>
-            <TableHead>Registered By</TableHead>
-            {!readOnly && <TableHead className="text-right">Actions</TableHead>}
+          <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold">Caption</TableHead>
+            <TableHead className="font-semibold">Service Name</TableHead>
+            <TableHead className="font-semibold">Start Date</TableHead>
+            <TableHead className="font-semibold">End Date</TableHead>
+            <TableHead className="font-semibold">Registered On</TableHead>
+            <TableHead className="font-semibold">Registered By</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            {!readOnly && <TableHead className="font-semibold text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -75,6 +77,14 @@ export function ServicePlansTable({
               <TableCell>{formatDate(plan.end_date)}</TableCell>
               <TableCell>{formatDateTime(plan.registered_on)}</TableCell>
               <TableCell>{plan.registered_by_name && plan.registered_by_name !== 'Unknown' ? plan.registered_by_name : "—"}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant={plan.status === 'active' ? 'default' : 'secondary'}
+                  className={plan.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                >
+                  {plan.status === 'active' ? 'Active' : plan.status === 'inactive' ? 'Inactive' : 'Active'}
+                </Badge>
+              </TableCell>
               {!readOnly && (
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">

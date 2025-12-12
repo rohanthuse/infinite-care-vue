@@ -23,33 +23,35 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
   useEffect(() => {
     const existingActions = form.getValues("service_actions") || [];
     if (existingActions.length > 0) {
-      // Map old format to new format if needed
-      const mappedActions = existingActions.map((action: any) => ({
-        id: action.id || crypto.randomUUID(),
-        action_type: action.action_type || 'new',
-        action_name: action.action_name || action.service_name || '',
-        has_instructions: action.has_instructions || false,
-        instructions: action.instructions || action.schedule_details || '',
-        required_written_outcome: action.required_written_outcome || false,
-        written_outcome: action.written_outcome || '',
-        is_service_specific: action.is_service_specific || false,
-        linked_service_id: action.linked_service_id || '',
-        linked_service_name: action.linked_service_name || '',
-        start_date: action.start_date,
-        end_date: action.end_date,
-        schedule_type: action.schedule_type || 'shift',
-        shift_times: action.shift_times || [],
-        start_time: action.start_time || '',
-        end_time: action.end_time || '',
-        selected_days: action.selected_days || [],
-        frequency: action.frequency || '',
-        notes: action.notes || '',
-        status: action.status || 'active',
-        registered_on: action.registered_on,
-        registered_by: action.registered_by,
-        registered_by_name: action.registered_by_name,
-        is_saved: true,
-      }));
+      // Map old format to new format if needed and mark as saved
+      const mappedActions = existingActions
+        .filter((action: any) => action.is_saved || action.action_name || action.service_name || action.name)
+        .map((action: any) => ({
+          id: action.id || crypto.randomUUID(),
+          action_type: action.action_type || 'new',
+          action_name: action.action_name || action.service_name || action.name || action.action || '',
+          has_instructions: action.has_instructions || false,
+          instructions: action.instructions || action.schedule_details || '',
+          required_written_outcome: action.required_written_outcome || false,
+          written_outcome: action.written_outcome || '',
+          is_service_specific: action.is_service_specific || false,
+          linked_service_id: action.linked_service_id || '',
+          linked_service_name: action.linked_service_name || '',
+          start_date: action.start_date,
+          end_date: action.end_date,
+          schedule_type: action.schedule_type || 'shift',
+          shift_times: action.shift_times || [],
+          start_time: action.start_time || '',
+          end_time: action.end_time || '',
+          selected_days: action.selected_days || [],
+          frequency: action.frequency || '',
+          notes: action.notes || '',
+          status: action.status || 'active',
+          registered_on: action.registered_on,
+          registered_by: action.registered_by,
+          registered_by_name: action.registered_by_name || '',
+          is_saved: true,
+        }));
       setSavedActions(mappedActions);
     }
   }, []);

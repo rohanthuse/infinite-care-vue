@@ -19,6 +19,9 @@ export interface ServicePlanData {
   location: string;
   note: string;
   
+  // Status
+  status?: 'active' | 'inactive';
+  
   // Registration tracking
   registered_on?: string;
   registered_by?: string;
@@ -58,6 +61,7 @@ export const getDefaultServicePlan = (authority?: string, authorityCategory?: st
   frequency: '',
   location: '',
   note: '',
+  status: 'active',
   registered_on: undefined,
   registered_by: undefined,
   registered_by_name: undefined,
