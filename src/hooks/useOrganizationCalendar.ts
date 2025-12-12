@@ -94,6 +94,9 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         staff_id,
         branch_id,
         service_id,
+        is_late_start,
+        is_missed,
+        late_start_minutes,
         clients (
           id,
           first_name,
@@ -112,6 +115,11 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         services (
           id,
           title
+        ),
+        visit_records (
+          visit_start_time,
+          arrival_delay_minutes,
+          late_arrival_reason
         )
       `)
       .gte('start_time', `${startDateStr}T00:00:00.000Z`)
@@ -141,6 +149,9 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
 
+        // Get visit record data if available
+        const visitRecord = booking.visit_records?.[0];
+        
         return {
         id: booking.id,
         type: 'booking' as const,
@@ -171,7 +182,12 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         location: booking.branches?.name,
         priority: 'medium' as const,
         clientId: booking.client_id,
-        staffIds: booking.staff_id ? [booking.staff_id] : []
+        staffIds: booking.staff_id ? [booking.staff_id] : [],
+        // Late/Missed tracking fields
+        isLateStart: booking.is_late_start || false,
+        isMissed: booking.is_missed || false,
+        lateStartMinutes: booking.late_start_minutes || visitRecord?.arrival_delay_minutes || 0,
+        actualStartTime: visitRecord?.visit_start_time || undefined
       };
       });
       
