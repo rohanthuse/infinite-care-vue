@@ -55,7 +55,8 @@ function mapAppointmentStatus(status: string): 'scheduled' | 'in-progress' | 'co
     'in-progress': 'in-progress',
     'completed': 'completed',
     'done': 'completed',
-    'cancelled': 'cancelled'
+    'cancelled': 'cancelled',
+    'missed': 'cancelled'
   };
   
   return statusMap[status?.toLowerCase()] || 'scheduled';
@@ -69,7 +70,8 @@ export function getAppointmentStatusColor(status: string): string {
     'confirmed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
     'completed': 'bg-gray-100 text-gray-800 border-gray-200',
     'done': 'bg-green-100 text-green-800 border-green-200',
-    'cancelled': 'bg-red-100 text-red-800 border-red-200'
+    'cancelled': 'bg-red-100 text-red-800 border-red-200',
+    'missed': 'bg-orange-100 text-orange-800 border-orange-200'
   };
   return statusColors[status?.toLowerCase()] || 'bg-secondary text-secondary-foreground';
 }

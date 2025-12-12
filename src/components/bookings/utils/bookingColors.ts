@@ -44,6 +44,11 @@ export const BOOKING_STATUS_COLORS = {
     solid: "bg-amber-500 border-amber-600",
     label: "Training"
   },
+  missed: {
+    light: "bg-orange-100 border-orange-300 text-orange-800",
+    solid: "bg-orange-500 border-orange-600",
+    label: "Missed"
+  },
   meeting: {
     light: "bg-indigo-50 border-indigo-400 text-indigo-900",
     solid: "bg-indigo-500 border-indigo-600",
