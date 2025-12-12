@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Heart, Globe, MessageSquare, Edit } from "lucide-react";
+import { Heart, Globe, MessageSquare, Edit, Home, Accessibility, FileText, Check, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,14 +27,69 @@ interface AboutMeTabProps {
     created_at: string;
     updated_at: string;
   } | null;
+  aboutMeData?: {
+    has_key_safe?: boolean;
+    requires_heating_help?: boolean;
+    home_type?: string;
+    living_status?: string;
+    is_visually_impaired?: boolean;
+    vision_description?: string;
+    is_hearing_impaired?: boolean;
+    hearing_description?: string;
+    mobility?: string;
+    communication_needs?: string;
+    how_i_communicate?: string;
+    ethnicity?: string;
+    living_arrangement?: string;
+    has_dnr?: boolean;
+    has_respect?: boolean;
+    has_dols?: boolean;
+    has_lpa?: boolean;
+  } | null;
   isLoadingPersonalInfo?: boolean;
   isLoadingPersonalCare?: boolean;
   onEditAboutMe?: () => void;
 }
 
+const HOME_TYPE_LABELS: Record<string, string> = {
+  house: 'House',
+  flat: 'Flat',
+  bungalow: 'Bungalow',
+  care_home: 'Care Home',
+  sheltered_housing: 'Sheltered Housing',
+  other: 'Other',
+};
+
+const LIVING_ARRANGEMENT_LABELS: Record<string, string> = {
+  lives_alone: 'Lives Alone',
+  with_spouse: 'With Spouse/Partner',
+  with_family: 'With Family',
+  with_carer: 'With Carer',
+  shared_accommodation: 'Shared Accommodation',
+  other: 'Other',
+};
+
+const renderYesNo = (label: string, value: boolean | undefined) => (
+  <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+    <span className="text-sm font-medium">{label}</span>
+    {value === true ? (
+      <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        <Check className="h-3 w-3 mr-1" /> Yes
+      </Badge>
+    ) : value === false ? (
+      <Badge variant="secondary" className="bg-muted text-muted-foreground">
+        <X className="h-3 w-3 mr-1" /> No
+      </Badge>
+    ) : (
+      <span className="text-sm text-muted-foreground italic">Not specified</span>
+    )}
+  </div>
+);
+
 export const AboutMeTab: React.FC<AboutMeTabProps> = ({ 
   personalInfo, 
   personalCare,
+  aboutMeData,
   isLoadingPersonalInfo = false,
   isLoadingPersonalCare = false,
   onEditAboutMe 
@@ -46,7 +100,7 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
       <div className="space-y-6">
         <Card>
           <CardContent className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <span className="ml-2">Loading information...</span>
           </CardContent>
         </Card>
@@ -56,18 +110,145 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* My Home Section */}
+      {aboutMeData && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">My Home</CardTitle>
+              </div>
+              <Button size="sm" variant="outline" onClick={onEditAboutMe}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+            <CardDescription>Home environment and living situation</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                {renderYesNo('Key Safe', aboutMeData.has_key_safe)}
+                {renderYesNo('Requires Heating Help', aboutMeData.requires_heating_help)}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Home Type</h3>
+                  <p className="text-base">
+                    {aboutMeData.home_type 
+                      ? HOME_TYPE_LABELS[aboutMeData.home_type] || aboutMeData.home_type 
+                      : 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Living Status</h3>
+                  <p className="text-base">{aboutMeData.living_status || 'Not specified'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* My Accessibility and Communication Section */}
+      {aboutMeData && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Accessibility className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">My Accessibility and Communication</CardTitle>
+            </div>
+            <CardDescription>Accessibility needs and communication preferences</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                {renderYesNo('Blind or Partially Sighted', aboutMeData.is_visually_impaired)}
+                {aboutMeData.is_visually_impaired && aboutMeData.vision_description && (
+                  <div className="pl-4 border-l-2 border-primary/30 mt-2">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Vision Description</h3>
+                    <p className="text-base">{aboutMeData.vision_description}</p>
+                  </div>
+                )}
+                {renderYesNo('Deaf or Hard of Hearing', aboutMeData.is_hearing_impaired)}
+                {aboutMeData.is_hearing_impaired && aboutMeData.hearing_description && (
+                  <div className="pl-4 border-l-2 border-primary/30 mt-2">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Hearing Description</h3>
+                    <p className="text-base">{aboutMeData.hearing_description}</p>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Mobility</h3>
+                  <p className="text-base">{aboutMeData.mobility || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Communication Needs</h3>
+                  <p className="text-base">{aboutMeData.communication_needs || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">How I Communicate</h3>
+                  <p className="text-base">{aboutMeData.how_i_communicate || 'Not specified'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Status & Legal Directives Section */}
+      {aboutMeData && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Status & Legal Directives</CardTitle>
+            </div>
+            <CardDescription>Legal status and advance directives</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Ethnicity</h3>
+                  <p className="text-base">{aboutMeData.ethnicity || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Living Arrangement</h3>
+                  <p className="text-base">
+                    {aboutMeData.living_arrangement 
+                      ? LIVING_ARRANGEMENT_LABELS[aboutMeData.living_arrangement] || aboutMeData.living_arrangement 
+                      : 'Not specified'}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {renderYesNo('DNR in Place', aboutMeData.has_dnr)}
+                {renderYesNo('ReSPECT in Place', aboutMeData.has_respect)}
+                {renderYesNo('DoLS in Place', aboutMeData.has_dols)}
+                {renderYesNo('LPA in Place', aboutMeData.has_lpa)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Cultural & Personal Preferences */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-purple-600" />
+              <Globe className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg">Cultural & Personal Preferences</CardTitle>
             </div>
-            <Button size="sm" variant="outline" onClick={onEditAboutMe}>
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
+            {!aboutMeData && (
+              <Button size="sm" variant="outline" onClick={onEditAboutMe}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            )}
           </div>
           <CardDescription>Cultural background and personal preferences</CardDescription>
         </CardHeader>
@@ -75,13 +256,13 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Cultural Preferences</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Cultural Preferences</h3>
                 <p className="text-base">{personalInfo?.cultural_preferences || 'Not specified'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Language Preferences</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Language Preferences</h3>
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-gray-400" />
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{personalInfo?.language_preferences || 'Not specified'}</p>
                 </div>
               </div>
@@ -89,11 +270,11 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Religion</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Religion</h3>
                 <p className="text-base">{personalInfo?.religion || 'Not specified'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Marital Status</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Marital Status</h3>
                 <p className="text-base">{personalInfo?.marital_status || 'Not specified'}</p>
               </div>
             </div>
@@ -103,9 +284,9 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
 
       {/* Care Preferences */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
+        <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-green-600" />
+            <Heart className="h-5 w-5 text-primary" />
             <CardTitle className="text-lg">Care Preferences</CardTitle>
           </div>
           <CardDescription>Personal care needs and preferences</CardDescription>
@@ -115,14 +296,14 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             <div className="space-y-4">
               {personalCare.personal_hygiene_needs && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Personal Hygiene Needs</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Personal Hygiene Needs</h3>
                   <p className="text-base">{personalCare.personal_hygiene_needs}</p>
                 </div>
               )}
               
               {personalCare.bathing_preferences && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Bathing Preferences</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Bathing Preferences</h3>
                   <p className="text-base">{personalCare.bathing_preferences}</p>
                 </div>
               )}
@@ -130,8 +311,8 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {personalCare.dressing_assistance_level && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Dressing Assistance</h3>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Dressing Assistance</h3>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       {personalCare.dressing_assistance_level}
                     </Badge>
                   </div>
@@ -139,8 +320,8 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                 
                 {personalCare.toileting_assistance_level && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Toileting Assistance</h3>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Toileting Assistance</h3>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       {personalCare.toileting_assistance_level}
                     </Badge>
                   </div>
@@ -149,28 +330,28 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
               
               {personalCare.sleep_patterns && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Sleep Patterns</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Sleep Patterns</h3>
                   <p className="text-base">{personalCare.sleep_patterns}</p>
                 </div>
               )}
               
               {personalCare.comfort_measures && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Comfort Measures</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Comfort Measures</h3>
                   <p className="text-base">{personalCare.comfort_measures}</p>
                 </div>
               )}
               
               {personalCare.behavioral_notes && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Behavioral Notes</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Behavioral Notes</h3>
                   <p className="text-base">{personalCare.behavioral_notes}</p>
                 </div>
               )}
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">No personal care information available</p>
+              <p className="text-muted-foreground">No personal care information available</p>
               <Button 
                 variant="outline" 
                 className="mt-4" 

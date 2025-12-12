@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
@@ -11,290 +10,686 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { YesNoToggle } from "@/components/care/forms/YesNoToggle";
+import { Home, Accessibility, FileText, Heart } from "lucide-react";
 
 interface WizardStep3AboutMeProps {
   form: UseFormReturn<any>;
 }
 
+const HOME_TYPE_OPTIONS = [
+  { value: 'house', label: 'House' },
+  { value: 'flat', label: 'Flat' },
+  { value: 'bungalow', label: 'Bungalow' },
+  { value: 'care_home', label: 'Care Home' },
+  { value: 'sheltered_housing', label: 'Sheltered Housing' },
+  { value: 'other', label: 'Other' },
+];
+
+const LIVING_ARRANGEMENT_OPTIONS = [
+  { value: 'lives_alone', label: 'Lives Alone' },
+  { value: 'with_spouse', label: 'With Spouse/Partner' },
+  { value: 'with_family', label: 'With Family' },
+  { value: 'with_carer', label: 'With Carer' },
+  { value: 'shared_accommodation', label: 'Shared Accommodation' },
+  { value: 'other', label: 'Other' },
+];
+
 export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
+  const watchVisuallyImpaired = form.watch("about_me.is_visually_impaired");
+  const watchHearingImpaired = form.watch("about_me.is_hearing_impaired");
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">About Me</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl font-semibold text-foreground mb-2">About Me</h2>
+        <p className="text-muted-foreground">
           Personal preferences, interests, and important information about the client.
         </p>
       </div>
 
       <Form {...form}>
         <div className="space-y-6">
-          <FormField
-            control={form.control}
-            name="about_me.life_history"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Life History</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Tell us about the client's background, career, family..."
-                    className="min-h-[100px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Section: My Home */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Home className="h-5 w-5 text-primary" />
+                My Home
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="about_me.has_key_safe"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you have a key safe?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="about_me.personality_traits"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Personality Traits</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Describe the client's personality, preferences, and characteristics..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="about_me.requires_heating_help"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you require help managing heating?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <FormField
-            control={form.control}
-            name="about_me.communication_style"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Communication Style</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="e.g., Direct, gentle, requires patience..."
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="about_me.home_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Home Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select home type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {HOME_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="about_me.important_people"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Important People</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="List important people in the client's life..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="about_me.living_status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Living Status</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., Independent, needs assistance..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          <FormField
-            control={form.control}
-            name="about_me.meaningful_activities"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Meaningful Activities</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Activities that bring joy and meaning to the client..."
-                    className="min-h-[80px]"
-                    {...field} 
+          {/* Section: My Accessibility and Communication */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Accessibility className="h-5 w-5 text-primary" />
+                My Accessibility and Communication
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="about_me.is_visually_impaired"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Are you blind or partially sighted?</FormLabel>
+                        <FormControl>
+                          <YesNoToggle
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.what_is_most_important_to_me"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>What is most important to me</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="What matters most to the client..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.how_to_communicate_with_me"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>How to communicate with me</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Best ways to communicate with the client..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.please_do"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Please do</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Things the client would like caregivers to do..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.please_dont"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Please don't</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Things the client would prefer caregivers not to do..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.my_wellness"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>My wellness</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Information about the client's wellness and wellbeing..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.how_and_when_to_support_me"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>How and when to support me</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Specific support needs and timing..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="about_me.also_worth_knowing_about_me"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Also worth knowing about me</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Additional important information about the client..."
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="about_me.date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="date"
-                      {...field} 
+                  
+                  {watchVisuallyImpaired && (
+                    <FormField
+                      control={form.control}
+                      name="about_me.vision_description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vision Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe vision condition and needs..."
+                              className="min-h-[80px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  )}
+                </div>
 
-            <FormField
-              control={form.control}
-              name="about_me.time"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Time</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="time"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="about_me.supported_to_write_this_by"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Supported to write this by</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Name of person who helped write this..."
-                    {...field} 
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="about_me.is_hearing_impaired"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Are you deaf or hard of hearing?</FormLabel>
+                        <FormControl>
+                          <YesNoToggle
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  
+                  {watchHearingImpaired && (
+                    <FormField
+                      control={form.control}
+                      name="about_me.hearing_description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hearing Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe hearing condition and needs..."
+                              className="min-h-[80px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="about_me.mobility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobility</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Describe mobility level and any aids used..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.communication_needs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Communication Needs</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Specific communication requirements..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.how_i_communicate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How I Communicate</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Preferred communication methods..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Section: Status & Legal Directives */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5 text-primary" />
+                Status & Legal Directives
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="about_me.ethnicity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ethnicity</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter ethnicity..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.living_arrangement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Living Arrangement</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select living arrangement" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {LIVING_ARRANGEMENT_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="about_me.has_dnr"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>DNR in place?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.has_respect"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ReSPECT in place?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.has_dols"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>DoLS in place?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.has_lpa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LPA in place?</FormLabel>
+                      <FormControl>
+                        <YesNoToggle
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Section: My Life & Personality (existing fields) */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Heart className="h-5 w-5 text-primary" />
+                My Life & Personality
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="about_me.life_history"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Life History</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Tell us about the client's background, career, family..."
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.personality_traits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personality Traits</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe the client's personality, preferences, and characteristics..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.communication_style"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Communication Style</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Direct, gentle, requires patience..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.important_people"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Important People</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List important people in the client's life..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.meaningful_activities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meaningful Activities</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Activities that bring joy and meaning to the client..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.what_is_most_important_to_me"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What is most important to me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="What matters most to the client..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.how_to_communicate_with_me"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How to communicate with me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Best ways to communicate with the client..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.please_do"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Please do</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Things the client would like caregivers to do..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.please_dont"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Please don't</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Things the client would prefer caregivers not to do..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.my_wellness"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>My wellness</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Information about the client's wellness and wellbeing..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.how_and_when_to_support_me"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How and when to support me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Specific support needs and timing..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.also_worth_knowing_about_me"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Also worth knowing about me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Additional important information about the client..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="about_me.date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="time"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="about_me.supported_to_write_this_by"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supported to write this by</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Name of person who helped write this..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
         </div>
       </Form>
     </div>

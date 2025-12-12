@@ -1,10 +1,29 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart } from 'lucide-react';
+import { Heart, Home, Accessibility, FileText, Check, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface AboutMeSectionProps {
   aboutMe: any;
 }
+
+const HOME_TYPE_LABELS: Record<string, string> = {
+  house: 'House',
+  flat: 'Flat',
+  bungalow: 'Bungalow',
+  care_home: 'Care Home',
+  sheltered_housing: 'Sheltered Housing',
+  other: 'Other',
+};
+
+const LIVING_ARRANGEMENT_LABELS: Record<string, string> = {
+  lives_alone: 'Lives Alone',
+  with_spouse: 'With Spouse/Partner',
+  with_family: 'With Family',
+  with_carer: 'With Carer',
+  shared_accommodation: 'Shared Accommodation',
+  other: 'Other',
+};
 
 export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
   const data = aboutMe || {};
@@ -35,81 +54,164 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
     );
   };
 
+  const renderYesNo = (label: string, value: boolean | undefined) => (
+    <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+      <span className="text-sm font-medium">{label}</span>
+      {value === true ? (
+        <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <Check className="h-3 w-3 mr-1" /> Yes
+        </Badge>
+      ) : value === false ? (
+        <Badge variant="secondary" className="bg-muted text-muted-foreground">
+          <X className="h-3 w-3 mr-1" /> No
+        </Badge>
+      ) : (
+        <span className="text-sm text-muted-foreground italic">Not specified</span>
+      )}
+    </div>
+  );
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" />
-          About Me
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Life & Personality */}
-        <div>
-          <h3 className="font-semibold text-base mb-3">My Life & Personality</h3>
+    <div className="space-y-6">
+      {/* My Home Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Home className="h-5 w-5 text-primary" />
+            My Home
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              {renderYesNo('Key Safe', data.has_key_safe)}
+              {renderYesNo('Requires Heating Help', data.requires_heating_help)}
+            </div>
+            <div className="space-y-4">
+              {renderField('Home Type', data.home_type ? HOME_TYPE_LABELS[data.home_type] || data.home_type : null)}
+              {renderField('Living Status', data.living_status)}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* My Accessibility and Communication Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Accessibility className="h-5 w-5 text-primary" />
+            My Accessibility and Communication
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              {renderYesNo('Blind or Partially Sighted', data.is_visually_impaired)}
+              {data.is_visually_impaired && data.vision_description && (
+                <div className="pl-4 border-l-2 border-primary/30">
+                  {renderField('Vision Description', data.vision_description)}
+                </div>
+              )}
+              {renderYesNo('Deaf or Hard of Hearing', data.is_hearing_impaired)}
+              {data.is_hearing_impaired && data.hearing_description && (
+                <div className="pl-4 border-l-2 border-primary/30">
+                  {renderField('Hearing Description', data.hearing_description)}
+                </div>
+              )}
+            </div>
+            <div className="space-y-4">
+              {renderField('Mobility', data.mobility)}
+              {renderField('Communication Needs', data.communication_needs)}
+              {renderField('How I Communicate', data.how_i_communicate)}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status & Legal Directives Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Status & Legal Directives
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              {renderField('Ethnicity', data.ethnicity)}
+              {renderField('Living Arrangement', data.living_arrangement ? LIVING_ARRANGEMENT_LABELS[data.living_arrangement] || data.living_arrangement : null)}
+            </div>
+            <div className="space-y-2">
+              {renderYesNo('DNR in Place', data.has_dnr)}
+              {renderYesNo('ReSPECT in Place', data.has_respect)}
+              {renderYesNo('DoLS in Place', data.has_dols)}
+              {renderYesNo('LPA in Place', data.has_lpa)}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Life & Personality Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" />
+            My Life & Personality
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField('Life History', data.life_history)}
             {renderField('Personality Traits', data.personality_traits)}
             {renderField('What is Most Important to Me', data.what_is_most_important_to_me)}
             {renderField('My Wellness', data.my_wellness)}
           </div>
-        </div>
 
-        {/* Communication & Support */}
-        <div>
-          <h3 className="font-semibold text-base mb-3">Communication & Support</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField('Communication Style', data.communication_style)}
             {renderField('How to Communicate with Me', data.how_to_communicate_with_me)}
             {renderField('How and When to Support Me', data.how_and_when_to_support_me)}
           </div>
-        </div>
 
-        {/* Preferences & Activities */}
-        <div>
-          <h3 className="font-semibold text-base mb-3">Preferences & Activities</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField('Meaningful Activities', data.meaningful_activities)}
             {renderField('Please Do', data.please_do)}
-            {renderField('Please Don\'t', data.please_dont)}
+            {renderField("Please Don't", data.please_dont)}
           </div>
-        </div>
 
-        {/* Important People & Additional Info */}
-        <div>
-          <h3 className="font-semibold text-base mb-3">Important People & Additional Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField('Important People', data.important_people)}
             {renderField('Also Worth Knowing About Me', data.also_worth_knowing_about_me)}
             {renderField('Supported to Write This By', data.supported_to_write_this_by)}
           </div>
-        </div>
 
-        {/* Legacy field mappings for backward compatibility */}
-        {(data.background || data.likes || data.dislikes || data.communication_preferences || data.cultural_religious_needs || data.daily_routine || data.hobbies) && (
-          <div>
-            <h3 className="font-semibold text-base mb-3">Additional Information (Legacy)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {data.background && renderField('Background & History', data.background)}
-              {data.likes && renderField('Likes & Interests', data.likes)}
-              {data.dislikes && renderField('Dislikes', data.dislikes)}
-              {data.communication_preferences && renderField('Communication Preferences', data.communication_preferences)}
-              {data.cultural_religious_needs && renderField('Cultural/Religious Needs', data.cultural_religious_needs)}
-              {data.daily_routine && renderField('Daily Routine Preferences', data.daily_routine)}
-              {data.hobbies && renderField('Hobbies & Activities', data.hobbies)}
+          {/* Legacy field mappings for backward compatibility */}
+          {(data.background || data.likes || data.dislikes || data.communication_preferences || data.cultural_religious_needs || data.daily_routine || data.hobbies) && (
+            <div>
+              <h3 className="font-semibold text-base mb-3">Additional Information (Legacy)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {data.background && renderField('Background & History', data.background)}
+                {data.likes && renderField('Likes & Interests', data.likes)}
+                {data.dislikes && renderField('Dislikes', data.dislikes)}
+                {data.communication_preferences && renderField('Communication Preferences', data.communication_preferences)}
+                {data.cultural_religious_needs && renderField('Cultural/Religious Needs', data.cultural_religious_needs)}
+                {data.daily_routine && renderField('Daily Routine Preferences', data.daily_routine)}
+                {data.hobbies && renderField('Hobbies & Activities', data.hobbies)}
+              </div>
+            </div>
+          )}
+
+          {/* Document Information */}
+          <div className="bg-muted/50 rounded p-3">
+            <label className="text-sm font-medium">Document Information</label>
+            <div className="mt-2 flex gap-4 text-sm">
+              <span>Date: {data.date || <span className="text-muted-foreground italic">Not specified</span>}</span>
+              <span>Time: {data.time || <span className="text-muted-foreground italic">Not specified</span>}</span>
             </div>
           </div>
-        )}
-
-        {/* Document Information */}
-        <div className="bg-muted/50 rounded p-3">
-          <label className="text-sm font-medium">Document Information</label>
-          <div className="mt-2 flex gap-4 text-sm">
-            <span>Date: {data.date || <span className="text-muted-foreground italic">Not specified</span>}</span>
-            <span>Time: {data.time || <span className="text-muted-foreground italic">Not specified</span>}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
