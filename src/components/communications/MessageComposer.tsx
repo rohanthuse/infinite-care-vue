@@ -3,6 +3,7 @@ import {
   X, Send, Clock, Save, BadgeCheck, Building2, 
   FileUp, Mail, Phone, User, Users, Bell, FileText
 } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,6 +91,10 @@ export const MessageComposer = ({
   const { data: adminContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
   const availableContacts = shouldUseClientRecipients ? availableRecipients : adminContacts;
   
+  // Get current user role to default adminEyesOnly for admins
+  const { data: currentUser } = useUserRole();
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+  
   // Filter contacts based on search term
   const filteredContacts = availableContacts.filter((contact: any) => 
     contact.name?.toLowerCase().includes(contactSearchTerm.toLowerCase())
@@ -100,6 +105,14 @@ export const MessageComposer = ({
   const { uploadFile, uploading: uploadingFiles } = useFileUpload();
   
   const isReply = !!selectedThreadId;
+
+  // Default adminEyesOnly to true for admin users (unless loading a draft)
+  useEffect(() => {
+    if (currentUser && !initialDraft) {
+      const isAdminUser = currentUser.role === 'super_admin' || currentUser.role === 'branch_admin';
+      setAdminEyesOnly(isAdminUser);
+    }
+  }, [currentUser?.role, initialDraft]);
 
   useEffect(() => {
     if (selectedContactId) {
