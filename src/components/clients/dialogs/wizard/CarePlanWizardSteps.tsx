@@ -19,6 +19,7 @@ import { WizardStep11ServicePlans } from "./steps/WizardStep11ServicePlans";
 import { WizardStep12ServiceActions } from "./steps/WizardStep12ServiceActions";
 import { WizardStep13Documents } from "./steps/WizardStep13Documents";
 import { WizardStepConsent } from "./steps/WizardStepConsent";
+import { WizardStepKeyContacts } from "./steps/WizardStepKeyContacts";
 import { WizardStep14Review } from "./steps/WizardStep14Review";
 import { BehaviorSupportTab } from "@/components/care/tabs/BehaviorSupportTab";
 import { EducationDevelopmentTab } from "@/components/care/tabs/EducationDevelopmentTab";
@@ -74,12 +75,14 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 16:
         return <WizardStepConsent form={form} />;
       case 17:
-        return <BehaviorSupportTab clientId={clientId} clientName="" />;
+        return <WizardStepKeyContacts form={form} />;
       case 18:
-        return <EducationDevelopmentTab clientId={clientId} clientName="" />;
+        return <BehaviorSupportTab clientId={clientId} clientName="" />;
       case 19:
-        return <SafeguardingRisksTab clientId={clientId} clientName="" />;
+        return <EducationDevelopmentTab clientId={clientId} clientName="" />;
       case 20:
+        return <SafeguardingRisksTab clientId={clientId} clientName="" />;
+      case 21:
         return <WizardStep14Review form={form} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
