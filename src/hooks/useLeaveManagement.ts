@@ -30,6 +30,8 @@ export interface AnnualLeave {
   is_recurring: boolean;
   created_by: string;
   created_at: string;
+  start_time?: string;
+  end_time?: string;
 }
 
 export interface CreateLeaveRequest {
@@ -47,6 +49,8 @@ export interface CreateAnnualLeave {
   leave_name: string;
   is_company_wide?: boolean;
   is_recurring?: boolean;
+  start_time?: string | null;
+  end_time?: string | null;
 }
 
 // Hook for staff leave requests

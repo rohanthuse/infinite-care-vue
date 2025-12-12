@@ -642,33 +642,39 @@ export type Database = {
           branch_id: string | null
           created_at: string
           created_by: string
+          end_time: string | null
           id: string
           is_company_wide: boolean
           is_recurring: boolean
           leave_date: string
           leave_name: string
+          start_time: string | null
           updated_at: string
         }
         Insert: {
           branch_id?: string | null
           created_at?: string
           created_by: string
+          end_time?: string | null
           id?: string
           is_company_wide?: boolean
           is_recurring?: boolean
           leave_date: string
           leave_name: string
+          start_time?: string | null
           updated_at?: string
         }
         Update: {
           branch_id?: string | null
           created_at?: string
           created_by?: string
+          end_time?: string | null
           id?: string
           is_company_wide?: boolean
           is_recurring?: boolean
           leave_date?: string
           leave_name?: string
+          start_time?: string | null
           updated_at?: string
         }
         Relationships: [

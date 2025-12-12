@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Calendar, Building2, RefreshCw } from 'lucide-react';
+import { Calendar, Building2, RefreshCw, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ViewLeaveDialogProps {
@@ -63,13 +63,25 @@ export const ViewLeaveDialog: React.FC<ViewLeaveDialogProps> = ({
             <p className="text-lg font-semibold">{leave.leave_name}</p>
           </div>
 
-          {/* Date */}
+          {/* Date & Time */}
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label className="text-sm text-muted-foreground">Date</Label>
               <p className="font-medium">
                 {format(new Date(leave.leave_date), "EEEE, MMMM d, yyyy")}
               </p>
+            </div>
+            
+            <div>
+              <Label className="text-sm text-muted-foreground">Time</Label>
+              {leave.start_time && leave.end_time ? (
+                <p className="font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  {leave.start_time.slice(0, 5)} - {leave.end_time.slice(0, 5)}
+                </p>
+              ) : (
+                <Badge variant="secondary">All Day</Badge>
+              )}
             </div>
           </div>
 
