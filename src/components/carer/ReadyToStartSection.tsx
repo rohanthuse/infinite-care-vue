@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, User, MapPin, Phone, Play, ClipboardList } from "lucide-react";
-import { CarePlanPreviewCollapsible } from "@/components/care/CarePlanPreviewSection";
+
 import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
 import { format, differenceInMinutes } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -210,29 +210,23 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
               {/* Care Plan Preview */}
               {(appointment.client_id || appointment.clients?.id) && (
                 <div className="mt-4 pt-4 border-t border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const clientId = appointment.client_id || appointment.clients?.id;
-                        const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim();
-                        if (clientId) {
-                          setSelectedClientForCarePlan({ clientId, clientName });
-                          setShowCarePlanDialog(true);
-                        }
-                      }}
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      View Care Plan Details
-                    </Button>
-                  </div>
-                  <CarePlanPreviewCollapsible 
-                    clientId={appointment.client_id || appointment.clients?.id || ''} 
-                    compact={true}
-                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const clientId = appointment.client_id || appointment.clients?.id;
+                      const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim();
+                      if (clientId) {
+                        setSelectedClientForCarePlan({ clientId, clientName });
+                        setShowCarePlanDialog(true);
+                      }
+                    }}
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    View Care Plan Details
+                  </Button>
                 </div>
               )}
             </CardContent>
