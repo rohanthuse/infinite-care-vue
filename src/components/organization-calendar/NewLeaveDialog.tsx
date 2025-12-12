@@ -27,6 +27,9 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
   const [startDate, setStartDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
   const [endDate, setEndDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
   const [description, setDescription] = useState('');
+  const [isAllDay, setIsAllDay] = useState(true);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
 
   const createAnnualLeave = useCreateAnnualLeave();
 
@@ -45,6 +48,9 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
     setStartDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
     setEndDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
     setDescription('');
+    setIsAllDay(true);
+    setStartTime('09:00');
+    setEndTime('17:00');
   };
 
   const handleScheduleLeave = async () => {
@@ -59,7 +65,9 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
         leave_name: title,
         leave_date: startDate,
         is_company_wide: true,
-        is_recurring: false
+        is_recurring: false,
+        start_time: isAllDay ? null : startTime,
+        end_time: isAllDay ? null : endTime
       });
 
       resetForm();
@@ -167,6 +175,42 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
               />
             </div>
           </div>
+
+          <div className="grid gap-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="allDay"
+                checked={isAllDay}
+                onChange={(e) => setIsAllDay(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              <Label htmlFor="allDay" className="cursor-pointer">All Day</Label>
+            </div>
+          </div>
+
+          {!isAllDay && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2">
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="description">Description (Optional)</Label>

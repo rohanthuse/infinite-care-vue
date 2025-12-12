@@ -31,6 +31,9 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   const [leaveName, setLeaveName] = useState('');
   const [isCompanyWideLeave, setIsCompanyWideLeave] = useState(isCompanyWide);
   const [isRecurring, setIsRecurring] = useState(false);
+  const [isAllDay, setIsAllDay] = useState(true);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
   
   // Filter states
   const [scopeFilter, setScopeFilter] = useState<"all" | "branch" | "company">("all");
@@ -61,7 +64,9 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
       leave_date: selectedDate.toISOString().split('T')[0],
       leave_name: leaveName.trim(),
       is_company_wide: isCompanyWideLeave,
-      is_recurring: isRecurring
+      is_recurring: isRecurring,
+      start_time: isAllDay ? null : startTime,
+      end_time: isAllDay ? null : endTime
     });
 
     // Reset form
@@ -69,6 +74,9 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
     setLeaveName('');
     setIsCompanyWideLeave(isCompanyWide);
     setIsRecurring(false);
+    setIsAllDay(true);
+    setStartTime('09:00');
+    setEndTime('17:00');
     setIsDialogOpen(false);
   };
 
@@ -169,6 +177,38 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                 </div>
 
                 <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="all-day"
+                      checked={isAllDay}
+                      onCheckedChange={(checked) => setIsAllDay(checked as boolean)}
+                    />
+                    <label htmlFor="all-day" className="text-sm font-medium">
+                      All Day
+                    </label>
+                  </div>
+
+                  {!isAllDay && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Start Time</label>
+                        <Input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">End Time</label>
+                        <Input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="company-wide"
@@ -297,8 +337,15 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                         )}
                       </div>
                     </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {format(new Date(leave.leave_date), 'EEEE, MMMM dd, yyyy')}
+                    {leave.start_time && leave.end_time ? (
+                      <span className="ml-2 text-primary">
+                        ({leave.start_time.slice(0, 5)} - {leave.end_time.slice(0, 5)})
+                      </span>
+                    ) : (
+                      <span className="ml-2 text-muted-foreground">(All Day)</span>
+                    )}
                   </p>
                 </div>
 
