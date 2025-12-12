@@ -41,20 +41,47 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
         
         console.log('[useBookingAttendance] Updating booking status from current to:', newStatus);
         
-        // Fetch current status for logging
+        // Fetch current booking data including start_time for late calculation
         const { data: currentBooking } = await supabase
           .from('bookings')
-          .select('status')
+          .select('status, start_time')
           .eq('id', data.bookingId)
           .single();
         
         console.log('[useBookingAttendance] Current booking status:', currentBooking?.status);
         
+        // Calculate late start info when starting a visit
+        let lateStartMinutes = 0;
+        let isLateStart = false;
+        
+        if (data.action === 'start_visit' && currentBooking?.start_time) {
+          const scheduledStart = new Date(currentBooking.start_time);
+          const actualStart = new Date();
+          lateStartMinutes = Math.floor((actualStart.getTime() - scheduledStart.getTime()) / (1000 * 60));
+          isLateStart = lateStartMinutes > 0;
+          
+          console.log('[useBookingAttendance] Late start calculation:', {
+            scheduledStart: scheduledStart.toISOString(),
+            actualStart: actualStart.toISOString(),
+            lateStartMinutes,
+            isLateStart
+          });
+        }
+        
+        // Build update object with late start info if applicable
+        const bookingUpdate: Record<string, any> = { 
+          status: newStatus
+        };
+        
+        if (data.action === 'start_visit' && isLateStart) {
+          bookingUpdate.is_late_start = true;
+          bookingUpdate.late_start_minutes = lateStartMinutes;
+          bookingUpdate.is_missed = false; // Clear missed flag since visit is now starting
+        }
+        
         const { error: bookingError } = await supabase
           .from('bookings')
-          .update({ 
-            status: newStatus
-          })
+          .update(bookingUpdate)
           .eq('id', data.bookingId);
 
         if (bookingError) {
@@ -86,24 +113,33 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
         
         console.log('[useBookingAttendance] Booking updated and verified successfully, new status:', updatedBooking.status);
 
-        // If starting visit and late arrival data provided, create/update visit record with late arrival info
-        if (data.action === 'start_visit' && (data.lateArrivalReason || data.arrivalDelayMinutes)) {
-          console.log('[useBookingAttendance] Recording late arrival information');
+        // If starting visit, always create/update visit record with actual start time and late info
+        if (data.action === 'start_visit') {
+          // Use calculated late minutes or provided value
+          const actualDelayMinutes = data.arrivalDelayMinutes || (isLateStart ? lateStartMinutes : 0);
+          
+          console.log('[useBookingAttendance] Recording visit start information:', {
+            isLate: isLateStart || actualDelayMinutes > 0,
+            delayMinutes: actualDelayMinutes,
+            reason: data.lateArrivalReason
+          });
           
           // Check if visit record exists
           const { data: existingVisit } = await supabase
             .from('visit_records')
             .select('id')
             .eq('booking_id', data.bookingId)
-            .single();
+            .maybeSingle();
 
           if (existingVisit) {
             // Update existing visit record
             const { error: visitError } = await supabase
               .from('visit_records')
               .update({
-                late_arrival_reason: data.lateArrivalReason,
-                arrival_delay_minutes: data.arrivalDelayMinutes,
+                visit_start_time: new Date().toISOString(),
+                late_arrival_reason: data.lateArrivalReason || null,
+                arrival_delay_minutes: actualDelayMinutes,
+                status: 'in_progress',
               })
               .eq('id', existingVisit.id);
 
@@ -111,7 +147,7 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
               console.error('[useBookingAttendance] Error updating visit record:', visitError);
             }
           } else {
-            // Create new visit record with late arrival info
+            // Create new visit record with actual start time
             const { data: booking } = await supabase
               .from('bookings')
               .select('client_id, staff_id, branch_id, start_time')
@@ -129,8 +165,8 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
                   visit_date: format(new Date(booking.start_time), 'yyyy-MM-dd'),
                   visit_start_time: new Date().toISOString(),
                   status: 'in_progress',
-                  late_arrival_reason: data.lateArrivalReason,
-                  arrival_delay_minutes: data.arrivalDelayMinutes,
+                  late_arrival_reason: data.lateArrivalReason || null,
+                  arrival_delay_minutes: actualDelayMinutes,
                 });
 
               if (createError) {

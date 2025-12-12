@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw, ClipboardList } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw, ClipboardList, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppointmentApprovalDialog from "@/components/bookings/AppointmentApprovalDialog";
 import { toast } from "sonner";
@@ -54,9 +54,27 @@ export function ViewBookingDialog({
   const [showApprovalForReschedule, setShowApprovalForReschedule] = React.useState(false);
   const [changeRequest, setChangeRequest] = React.useState<any>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [visitRecord, setVisitRecord] = React.useState<any>(null);
   
   // Fetch services from junction table
   const { data: bookingServices } = useBookingServices(booking?.id || '');
+  
+  // Fetch visit record for late arrival info
+  React.useEffect(() => {
+    const fetchVisitRecord = async () => {
+      if (!booking?.id) return;
+      
+      const { data } = await supabase
+        .from('visit_records')
+        .select('visit_start_time, arrival_delay_minutes, late_arrival_reason')
+        .eq('booking_id', booking.id)
+        .maybeSingle();
+      
+      setVisitRecord(data);
+    };
+    
+    if (open) fetchVisitRecord();
+  }, [open, booking?.id]);
   
   // Early validation - prevent dialog from opening with invalid data
   React.useEffect(() => {
@@ -785,6 +803,61 @@ export function ViewBookingDialog({
               )}
             </div>
           </div>
+
+          <Separator />
+
+          {/* Late Arrival Information */}
+          {(booking?.is_late_start || visitRecord?.arrival_delay_minutes > 0) && (
+            <div className="space-y-2">
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-medium mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Late Arrival Recorded
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Planned Time:</span>
+                    <span className="font-medium">{startTimeStr}</span>
+                  </div>
+                  {visitRecord?.visit_start_time && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Actual Arrival:</span>
+                      <span className="font-medium text-amber-700 dark:text-amber-400">
+                        {format(parseISO(visitRecord.visit_start_time), 'HH:mm')}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Late By:</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">
+                      {booking?.late_start_minutes || visitRecord?.arrival_delay_minutes || 0} minutes
+                    </span>
+                  </div>
+                  {visitRecord?.late_arrival_reason && (
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
+                      <span className="text-gray-600 dark:text-gray-400">Reason:</span>
+                      <p className="mt-1 text-gray-800 dark:text-gray-200">{visitRecord.late_arrival_reason}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Missed Booking Alert */}
+          {booking?.is_missed && (
+            <div className="space-y-2">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-center gap-2 text-red-800 dark:text-red-400 font-medium">
+                  <XCircle className="h-4 w-4" />
+                  Booking Marked as Missed
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  The carer did not start this visit on time and it was marked as missed.
+                </p>
+              </div>
+            </div>
+          )}
 
           <Separator />
 

@@ -9,7 +9,9 @@ import {
   AlertCircle,
   Calendar,
   User,
-  FileText
+  FileText,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { CalendarEvent } from '@/types/calendar';
 import { EventContextMenu } from './EventContextMenu';
@@ -85,7 +87,16 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
               {event.title}
             </span>
           </div>
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(event.status)} flex-shrink-0`} />
+          <div className="flex items-center gap-1">
+            {/* Late/Missed indicators */}
+            {event.isMissed && (
+              <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+            )}
+            {event.isLateStart && !event.isMissed && (
+              <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+            )}
+            <div className={`w-2 h-2 rounded-full ${getStatusColor(event.status)} flex-shrink-0`} />
+          </div>
         </div>
         
         {showTime && (
@@ -94,6 +105,12 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
             <span className="text-xs text-muted-foreground">
               {format(new Date(event.startTime), 'HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
             </span>
+            {/* Show late duration in compact view */}
+            {event.isLateStart && event.lateStartMinutes && event.lateStartMinutes > 0 && (
+              <span className="text-xs text-amber-600 font-medium">
+                (+{event.lateStartMinutes}m late)
+              </span>
+            )}
           </div>
         )}
         
@@ -122,6 +139,26 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Late Start Badge */}
+            {event.isLateStart && !event.isMissed && (
+              <Badge 
+                variant="outline"
+                className="text-xs bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Late ({event.lateStartMinutes}m)
+              </Badge>
+            )}
+            {/* Missed Badge */}
+            {event.isMissed && (
+              <Badge 
+                variant="outline"
+                className="text-xs bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"
+              >
+                <XCircle className="h-3 w-3 mr-1" />
+                Missed
+              </Badge>
+            )}
             <Badge 
               variant="secondary"
               className={`text-xs text-white ${getStatusColor(event.status)}`}
@@ -140,13 +177,29 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
           </div>
         </div>
 
-        {/* Time */}
+        {/* Time - Planned */}
         <div className="flex items-center gap-2 mb-2">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-foreground">
             {format(new Date(event.startTime), 'MMM d, HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
           </span>
         </div>
+        
+        {/* Actual Start Time - if late */}
+        {event.isLateStart && event.actualStartTime && (
+          <div className="flex items-center gap-2 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border-l-2 border-amber-500">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <div className="text-sm">
+              <span className="text-muted-foreground">Actual arrival: </span>
+              <span className="font-medium text-amber-700 dark:text-amber-400">
+                {format(new Date(event.actualStartTime), 'HH:mm')}
+              </span>
+              <span className="text-amber-600 ml-1">
+                ({event.lateStartMinutes}m late)
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Location */}
         {event.location && (

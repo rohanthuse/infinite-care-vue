@@ -17,6 +17,11 @@ export interface CalendarEvent {
   staffIds: string[];
   priority: 'low' | 'medium' | 'high';
   conflictsWith?: string[];
+  // Late/Missed tracking fields
+  isLateStart?: boolean;
+  isMissed?: boolean;
+  lateStartMinutes?: number;
+  actualStartTime?: string;
   _rawAppointmentData?: {
     id: string;
     appointment_type: string;
