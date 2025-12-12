@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { useServices } from "@/data/hooks/useServices";
 import { useClientAccountingSettings } from "@/hooks/useClientAccounting";
 import { useTenant } from "@/contexts/TenantContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { DaySelector } from "@/components/care/forms/DaySelector";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
 import { FREQUENCY_OPTIONS } from "@/types/servicePlan";
@@ -77,6 +78,7 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
   const { organization } = useTenant();
   const { data: services = [] } = useServices(organization?.id);
   const { data: accountingSettings } = useClientAccountingSettings(clientId);
+  const { data: currentUser } = useUserRole();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,6 +99,7 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const formattedData = {
+      id: crypto.randomUUID(),
       client_id: clientId,
       care_plan_id: carePlanId || null,
       caption: values.caption,
@@ -112,6 +115,11 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
       frequency: values.frequency || null,
       location: values.location || null,
       note: values.note || null,
+      // Registration tracking
+      registered_on: new Date().toISOString(),
+      registered_by: currentUser?.id,
+      registered_by_name: currentUser?.fullName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Unknown',
+      is_saved: true,
     };
     
     onSave(formattedData);

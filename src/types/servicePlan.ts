@@ -1,4 +1,7 @@
 export interface ServicePlanData {
+  // Identification
+  id?: string;
+  
   // General Section
   caption: string;
   start_date: Date | string | null;
@@ -15,6 +18,12 @@ export interface ServicePlanData {
   frequency: string;
   location: string;
   note: string;
+  
+  // Registration tracking
+  registered_on?: string;
+  registered_by?: string;
+  registered_by_name?: string;
+  is_saved?: boolean;
 }
 
 export const DAYS_OF_WEEK = [
@@ -35,6 +44,7 @@ export const FREQUENCY_OPTIONS = [
 ] as const;
 
 export const getDefaultServicePlan = (authority?: string, authorityCategory?: string): ServicePlanData => ({
+  id: crypto.randomUUID(),
   caption: '',
   start_date: null,
   end_date: null,
@@ -48,4 +58,8 @@ export const getDefaultServicePlan = (authority?: string, authorityCategory?: st
   frequency: '',
   location: '',
   note: '',
+  registered_on: undefined,
+  registered_by: undefined,
+  registered_by_name: undefined,
+  is_saved: false,
 });
