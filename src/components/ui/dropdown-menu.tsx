@@ -97,16 +97,28 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, onClick, ...props }, ref) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Force cleanup before calling the original onClick to prevent UI freeze
+    requestAnimationFrame(() => {
+      document.body.style.removeProperty('pointer-events');
+      document.documentElement.style.removeProperty('pointer-events');
+    });
+    onClick?.(e as unknown as React.MouseEvent<HTMLDivElement, MouseEvent>);
+  };
+
+  return (
+    <DropdownMenuPrimitive.Item
+      ref={ref}
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground",
+        className
+      )}
+      onClick={handleClick}
+      {...props}
+    />
+  );
+})
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
 const DropdownMenuLabel = React.forwardRef<
