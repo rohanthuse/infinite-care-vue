@@ -4992,6 +4992,7 @@ export type Database = {
           expense_date: string
           id: string
           is_invoiced: boolean | null
+          metadata: Json | null
           notes: string | null
           organization_id: string | null
           payment_method: string
@@ -5015,6 +5016,7 @@ export type Database = {
           expense_date?: string
           id?: string
           is_invoiced?: boolean | null
+          metadata?: Json | null
           notes?: string | null
           organization_id?: string | null
           payment_method?: string
@@ -5038,6 +5040,7 @@ export type Database = {
           expense_date?: string
           id?: string
           is_invoiced?: boolean | null
+          metadata?: Json | null
           notes?: string | null
           organization_id?: string | null
           payment_method?: string

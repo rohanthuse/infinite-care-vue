@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 export interface VisitExpenseData {
   booking_id: string;
@@ -11,6 +12,7 @@ export interface VisitExpenseData {
   amount: number;
   description: string;
   receipt_file?: File;
+  metadata?: Record<string, unknown>;
 }
 
 export function useVisitExpenseSubmission() {
@@ -55,6 +57,7 @@ export function useVisitExpenseSubmission() {
         receipt_url,
         created_by: carerProfile.id,
         is_invoiced: false,
+        metadata: (expenseData.metadata || {}) as Json,
       };
 
       console.log('[useVisitExpenseSubmission] Submitting expense:', expense);
