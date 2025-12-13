@@ -22,6 +22,7 @@ import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDial
 import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
 import { AddVisitExpenseDialog } from "@/components/carer/AddVisitExpenseDialog";
+import AppointmentExpensesList from "@/components/carer/AppointmentExpensesList";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -924,6 +925,10 @@ const CarerAppointments: React.FC = () => {
                         </div>
                       )}
                       
+                      {/* Expenses Section for Past Appointments */}
+                      {(appointment.status === 'completed' || appointment.status === 'done') && (
+                        <AppointmentExpensesList bookingId={appointment.id} />
+                      )}
                     </div>
                   )}
                 </div>
