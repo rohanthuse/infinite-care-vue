@@ -102,7 +102,18 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
               {isCompleted ? 'Completed' : isMissed ? 'Missed' : appointment.status || 'Unknown'}
             </Badge>
             
-            <DropdownMenu>
+            <DropdownMenu 
+              modal={false}
+              onOpenChange={(open) => {
+                if (!open) {
+                  // Ensure cleanup when menu closes
+                  requestAnimationFrame(() => {
+                    document.body.style.removeProperty('pointer-events');
+                    document.documentElement.style.removeProperty('pointer-events');
+                  });
+                }
+              }}
+            >
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
                   <MoreVertical className="h-4 w-4" />
