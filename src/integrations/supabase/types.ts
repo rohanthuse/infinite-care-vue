@@ -4982,6 +4982,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          booking_id: string | null
           branch_id: string
           category: string
           client_id: string | null
@@ -4990,6 +4991,7 @@ export type Database = {
           description: string
           expense_date: string
           id: string
+          is_invoiced: boolean | null
           notes: string | null
           organization_id: string | null
           payment_method: string
@@ -5003,6 +5005,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          booking_id?: string | null
           branch_id: string
           category: string
           client_id?: string | null
@@ -5011,6 +5014,7 @@ export type Database = {
           description: string
           expense_date?: string
           id?: string
+          is_invoiced?: boolean | null
           notes?: string | null
           organization_id?: string | null
           payment_method?: string
@@ -5024,6 +5028,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          booking_id?: string | null
           branch_id?: string
           category?: string
           client_id?: string | null
@@ -5032,6 +5037,7 @@ export type Database = {
           description?: string
           expense_date?: string
           id?: string
+          is_invoiced?: boolean | null
           notes?: string | null
           organization_id?: string | null
           payment_method?: string
@@ -5047,6 +5053,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
           {
