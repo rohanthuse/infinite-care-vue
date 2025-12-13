@@ -1,15 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { format, differenceInMinutes } from "date-fns";
 import { 
-  Calendar, 
   Clock, 
-  User, 
-  MapPin, 
   MoreVertical, 
-  Eye, 
   ClipboardList, 
   Receipt,
-  CheckCircle
+  CheckCircle2,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AppointmentExpensesList from "./AppointmentExpensesList";
@@ -32,13 +28,13 @@ interface PastAppointmentCardProps {
   getStatusColor: (status: string) => string;
 }
 
-const formatDurationHoursMinutes = (totalMinutes: number): string => {
-  if (totalMinutes <= 0) return '0m';
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
+const formatDuration = (minutes: number): string => {
+  if (minutes <= 0) return '0m';
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
 };
 
 const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
@@ -47,181 +43,123 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
   onCarePlanDetails,
   onAddExpense,
   formatAppointmentDate,
-  getStatusColor,
 }) => {
-  const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim();
+  const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim() || 'Unknown Client';
   const clientId = appointment.client_id || appointment.clients?.id;
   
-  // Calculate scheduled duration
+  // Time calculations
+  const scheduledStart = format(new Date(appointment.start_time), 'HH:mm');
+  const scheduledEnd = format(new Date(appointment.end_time), 'HH:mm');
   const scheduledDuration = Math.max(0, differenceInMinutes(
     new Date(appointment.end_time), 
     new Date(appointment.start_time)
   ));
 
-  // Get actual visit times from visit_records
+  // Actual visit times
   const visitRecord = appointment.visit_records?.[0];
-  const hasActualTimes = visitRecord?.visit_start_time;
+  const hasActualTimes = visitRecord?.visit_start_time && visitRecord?.visit_end_time;
   
-  // Calculate actual duration
-  const getActualDuration = () => {
-    if (!visitRecord) return null;
-    if (visitRecord.actual_duration_minutes && visitRecord.actual_duration_minutes > 0) {
-      return visitRecord.actual_duration_minutes;
-    }
-    if (visitRecord.visit_start_time && visitRecord.visit_end_time) {
-      let durationMins = differenceInMinutes(
-        new Date(visitRecord.visit_end_time), 
-        new Date(visitRecord.visit_start_time)
-      );
-      if (durationMins < 0) durationMins += 1440;
-      return Math.max(0, durationMins);
-    }
-    return null;
-  };
+  let actualStart = '';
+  let actualEnd = '';
+  let actualDuration = 0;
+  
+  if (hasActualTimes) {
+    actualStart = format(new Date(visitRecord.visit_start_time), 'HH:mm');
+    actualEnd = format(new Date(visitRecord.visit_end_time), 'HH:mm');
+    actualDuration = visitRecord.actual_duration_minutes || 
+      Math.max(0, differenceInMinutes(new Date(visitRecord.visit_end_time), new Date(visitRecord.visit_start_time)));
+  }
 
-  const actualDuration = getActualDuration();
+  // Status
+  const isCompleted = appointment.status === 'done' || appointment.status === 'completed';
+  const isMissed = appointment.status === 'missed';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Left Section - Primary Info */}
-          <div className="md:col-span-5 space-y-2">
-            {/* Client Name */}
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-foreground">{clientName || 'Unknown Client'}</span>
-            </div>
-            
-            {/* Visit Date */}
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                {formatAppointmentDate(appointment.start_time)}
-              </span>
-            </div>
-            
-            {/* Scheduled Time */}
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
-              </span>
-              <Badge variant="outline" className="text-xs ml-1">
-                {formatDurationHoursMinutes(scheduledDuration)}
-              </Badge>
-            </div>
-            
-            {/* Address */}
-            {appointment.clients?.address && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground truncate max-w-[200px]">
-                  {appointment.clients.address}
-                </span>
-              </div>
-            )}
-            
-            {/* Service */}
-            <div className="flex flex-wrap gap-1 mt-1">
-              {appointment.service_names && appointment.service_names.length > 0 ? (
-                appointment.service_names.slice(0, 2).map((name: string, idx: number) => (
-                  <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {name}
-                  </Badge>
-                ))
-              ) : (
-                <Badge variant="secondary" className="text-xs">
-                  {appointment.services?.title || 'N/A'}
-                </Badge>
-              )}
-              {appointment.service_names && appointment.service_names.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{appointment.service_names.length - 2}
-                </Badge>
-              )}
-            </div>
+    <Card className="hover:border-primary/20 transition-colors">
+      <CardContent className="p-0">
+        {/* Top Row - Primary Info */}
+        <div className="flex items-start justify-between p-4 pb-3">
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <h3 className="font-semibold text-foreground truncate">
+              {clientName}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {formatAppointmentDate(appointment.start_time)}
+            </p>
           </div>
           
-          {/* Middle Section - Visit Summary */}
-          <div className="md:col-span-4 md:border-l md:border-r md:px-4 space-y-3">
-            {hasActualTimes ? (
-              <>
-                {/* Actual Visit Time */}
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-green-600 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Actual Time
-                  </div>
-                  <div className="text-sm font-medium">
-                    {format(new Date(visitRecord.visit_start_time), 'HH:mm')} - {' '}
-                    {visitRecord.visit_end_time 
-                      ? format(new Date(visitRecord.visit_end_time), 'HH:mm')
-                      : 'In Progress'
-                    }
-                  </div>
-                </div>
-                
-                {/* Duration */}
-                {actualDuration !== null && (
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Duration</div>
-                    <div className="text-sm font-medium text-primary">
-                      {formatDurationHoursMinutes(actualDuration)}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground italic">
-                No actual times recorded
-              </div>
-            )}
-            
-            {/* Expenses Indicator - handled by AppointmentExpensesList */}
-            <AppointmentExpensesList bookingId={appointment.id} />
-          </div>
-          
-          {/* Right Section - Status & Actions */}
-          <div className="md:col-span-3 flex flex-col items-end gap-2">
-            {/* Status Badge */}
-            <Badge className={getStatusColor(appointment.status)}>
-              {appointment.status === 'assigned' ? 'Scheduled' : 
-               appointment.status === 'done' ? 'Completed' : 
-               appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge 
+              variant="secondary"
+              className={
+                isCompleted 
+                  ? 'bg-green-100 text-green-700 border-green-200' 
+                  : isMissed 
+                    ? 'bg-destructive/10 text-destructive' 
+                    : ''
+              }
+            >
+              {isCompleted ? 'Completed' : isMissed ? 'Missed' : appointment.status || 'Unknown'}
             </Badge>
             
-            {/* Revenue */}
-            {appointment.revenue && (
-              <div className="text-lg font-semibold text-foreground">
-                £{appointment.revenue}
-              </div>
-            )}
-            
-            {/* More Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
                   <MoreVertical className="h-4 w-4" />
-                  <span className="hidden sm:inline">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-popover">
-                <DropdownMenuItem onClick={() => onViewDetails(appointment)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="bg-popover">
                 <DropdownMenuItem onClick={() => onCarePlanDetails(clientId, clientName)}>
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Care Plan Details
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onAddExpense(appointment)}>
                   <Receipt className="h-4 w-4 mr-2" />
                   Add Expense
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Middle Row - Time Info */}
+        <div className="px-4 py-3 border-t border-border/50">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              <span>{scheduledStart} - {scheduledEnd}</span>
+              <span className="text-xs opacity-70">({formatDuration(scheduledDuration)})</span>
+            </div>
+            
+            {hasActualTimes && (
+              <>
+                <span className="text-muted-foreground/40">→</span>
+                <div className="flex items-center gap-1.5 text-green-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>{actualStart} - {actualEnd}</span>
+                  <span className="text-xs opacity-70">({formatDuration(actualDuration)})</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Row - Expenses & Action */}
+        <div className="px-4 py-3 border-t border-border/50">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <AppointmentExpensesList bookingId={appointment.id} />
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onViewDetails(appointment)}
+              className="flex-shrink-0 gap-1"
+            >
+              View Details
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </CardContent>
