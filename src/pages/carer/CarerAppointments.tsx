@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History, ClipboardList } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History, ClipboardList, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format, isToday, isTomorrow, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDurationHoursMinutes } from "@/lib/utils";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
@@ -834,38 +835,92 @@ const CarerAppointments: React.FC = () => {
                   
                   {getTimeInfo(appointment)}
                   
-                  {/* Show actual visit times for completed visits */}
-                  {(appointment.status === 'done' || appointment.status === 'completed') && 
-                   appointment.visit_records && 
-                   appointment.visit_records.length > 0 && 
-                   appointment.visit_records[0].visit_start_time && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <div className="text-xs font-semibold mb-2">Actual Visit Times</div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Start:</span>{' '}
-                          <span className="font-medium">
-                            {format(new Date(appointment.visit_records[0].visit_start_time), 'HH:mm')}
-                          </span>
+                  {/* Show visit times for completed visits */}
+                  {(appointment.status === 'done' || appointment.status === 'completed') && (
+                    <div className="mt-3 pt-3 border-t border-border space-y-3">
+                      
+                      {/* Scheduled Visit Times */}
+                      <div>
+                        <div className="text-xs font-semibold mb-2 text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Scheduled Visit Times
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">End:</span>{' '}
-                          <span className="font-medium">
-                            {appointment.visit_records[0].visit_end_time 
-                              ? format(new Date(appointment.visit_records[0].visit_end_time), 'HH:mm')
-                              : 'N/A'
-                            }
-                          </span>
-                        </div>
-                        {appointment.visit_records[0].actual_duration_minutes && (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground">Total Hours:</span>{' '}
-                            <span className="font-medium text-primary">
-                              {(appointment.visit_records[0].actual_duration_minutes / 60).toFixed(2)} hrs
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Start:</span>{' '}
+                            <span className="font-medium">
+                              {format(new Date(appointment.start_time), 'HH:mm')}
                             </span>
                           </div>
-                        )}
+                          <div>
+                            <span className="text-muted-foreground">End:</span>{' '}
+                            <span className="font-medium">
+                              {format(new Date(appointment.end_time), 'HH:mm')}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Duration:</span>{' '}
+                            <span className="font-medium">
+                              {formatDurationHoursMinutes(
+                                Math.max(0, differenceInMinutes(new Date(appointment.end_time), new Date(appointment.start_time)))
+                              )}
+                            </span>
+                          </div>
+                        </div>
                       </div>
+                      
+                      {/* Actual Visit Times - Only if visit_records exist */}
+                      {appointment.visit_records && 
+                       appointment.visit_records.length > 0 && 
+                       appointment.visit_records[0].visit_start_time && (
+                        <div>
+                          <div className="text-xs font-semibold mb-2 text-green-600 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Actual Visit Times
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Start:</span>{' '}
+                              <span className="font-medium text-green-700">
+                                {format(new Date(appointment.visit_records[0].visit_start_time), 'HH:mm')}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">End:</span>{' '}
+                              <span className="font-medium text-green-700">
+                                {appointment.visit_records[0].visit_end_time 
+                                  ? format(new Date(appointment.visit_records[0].visit_end_time), 'HH:mm')
+                                  : 'In Progress'
+                                }
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Duration:</span>{' '}
+                              <span className="font-medium text-primary">
+                                {(() => {
+                                  const record = appointment.visit_records[0];
+                                  // Use stored actual_duration_minutes if available
+                                  if (record.actual_duration_minutes && record.actual_duration_minutes > 0) {
+                                    return formatDurationHoursMinutes(record.actual_duration_minutes);
+                                  }
+                                  // Fallback: calculate from timestamps
+                                  if (record.visit_start_time && record.visit_end_time) {
+                                    let durationMins = differenceInMinutes(
+                                      new Date(record.visit_end_time), 
+                                      new Date(record.visit_start_time)
+                                    );
+                                    // Handle overnight visits
+                                    if (durationMins < 0) durationMins += 1440;
+                                    return formatDurationHoursMinutes(Math.max(0, durationMins));
+                                  }
+                                  return '—';
+                                })()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                     </div>
                   )}
                 </div>
