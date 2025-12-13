@@ -82,6 +82,7 @@ export function useCarerExpenseEdit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-by-booking'] });
       toast.success('Expense updated successfully');
     },
     onError: (error: Error) => {

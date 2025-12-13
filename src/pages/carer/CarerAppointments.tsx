@@ -22,6 +22,7 @@ import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDial
 import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
 import { AddVisitExpenseDialog } from "@/components/carer/AddVisitExpenseDialog";
+import PastAppointmentCard from "@/components/carer/PastAppointmentCard";
 import AppointmentExpensesList from "@/components/carer/AppointmentExpensesList";
 
 const CarerAppointments: React.FC = () => {
@@ -1147,7 +1148,26 @@ const CarerAppointments: React.FC = () => {
                   </div>
                   
                   <div className="space-y-4">
-                    {filterPastAppointments(categorized.past).map(renderAppointmentCard)}
+                    {filterPastAppointments(categorized.past).map((appointment: any) => (
+                      <PastAppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onViewDetails={(apt) => {
+                          setSelectedAppointment(apt);
+                          setShowDetailDialog(true);
+                        }}
+                        onCarePlanDetails={(clientId, clientName) => {
+                          setSelectedClientForCarePlan({ clientId, clientName });
+                          setShowCarePlanDialog(true);
+                        }}
+                        onAddExpense={(apt) => {
+                          setSelectedAppointmentForExpense(apt);
+                          setShowAddExpenseDialog(true);
+                        }}
+                        formatAppointmentDate={formatAppointmentDate}
+                        getStatusColor={getStatusColor}
+                      />
+                    ))}
                   </div>
                 </div>
               )}

@@ -1,33 +1,43 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Receipt, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Receipt, AlertCircle, Eye, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useExpensesByBooking, BookingExpense } from "@/hooks/useExpensesByBooking";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import ViewBookingExpenseDialog from "./ViewBookingExpenseDialog";
+import EditBookingExpenseDialog from "./EditBookingExpenseDialog";
 
 interface AppointmentExpensesListProps {
   bookingId: string;
-  onExpenseClick?: (expense: BookingExpense) => void;
 }
 
 const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
   bookingId,
-  onExpenseClick,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<BookingExpense | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  
+  const queryClient = useQueryClient();
   const { data: expenses = [], isLoading } = useExpensesByBooking(bookingId);
 
   if (isLoading) {
     return (
-      <div className="mt-3 pt-3 border-t border-border/50">
-        <Skeleton className="h-8 w-32" />
+      <div className="space-y-1">
+        <Skeleton className="h-6 w-24" />
       </div>
     );
   }
 
   if (expenses.length === 0) {
-    return null;
+    return (
+      <div className="text-xs text-muted-foreground italic">
+        No expenses added
+      </div>
+    );
   }
 
   const getStatusBadge = (status: string) => {
@@ -49,12 +59,28 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
     }).format(amount);
   };
 
+  const handleView = (expense: BookingExpense, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedExpense(expense);
+    setShowViewDialog(true);
+  };
+
+  const handleEdit = (expense: BookingExpense, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setSelectedExpense(expense);
+    setShowEditDialog(true);
+  };
+
+  const handleEditSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['expenses-by-booking', bookingId] });
+  };
+
   return (
-    <div className="mt-3 pt-3 border-t border-border/50">
+    <div className="space-y-2">
       <Button
         variant="ghost"
         size="sm"
-        className="w-full justify-between h-8 px-2 hover:bg-muted/50"
+        className="w-full justify-between h-7 px-2 hover:bg-muted/50"
         onClick={(e) => {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
@@ -72,29 +98,49 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
       </Button>
 
       {isExpanded && (
-        <div className="mt-2 space-y-2">
+        <div className="space-y-1.5">
           {expenses.map((expense) => (
             <div
               key={expense.id}
               className={cn(
-                "p-2 rounded-md border bg-card cursor-pointer transition-colors hover:bg-muted/50",
+                "p-2 rounded-md border bg-card transition-colors",
                 expense.status === 'rejected' && "border-red-200 bg-red-50/50"
               )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onExpenseClick?.(expense);
-              }}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="text-xs font-medium capitalize truncate">
                     {expense.category}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatCurrency(expense.amount)}
                   </span>
+                  {getStatusBadge(expense.status)}
                 </div>
-                {getStatusBadge(expense.status)}
+                
+                {/* Action Buttons */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => handleView(expense, e)}
+                    title="View Details"
+                  >
+                    <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                  {expense.status?.toLowerCase() === 'pending' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => handleEdit(expense, e)}
+                      title="Edit Expense"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
               </div>
               
               {expense.status === 'rejected' && expense.rejection_reason && (
@@ -107,6 +153,23 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
           ))}
         </div>
       )}
+
+      {/* View Dialog */}
+      <ViewBookingExpenseDialog
+        expense={selectedExpense}
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
+        onEdit={(expense) => handleEdit(expense)}
+      />
+
+      {/* Edit Dialog */}
+      <EditBookingExpenseDialog
+        expense={selectedExpense}
+        bookingId={bookingId}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 };
