@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Receipt, AlertCircle, Eye, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Receipt, AlertCircle, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useExpensesByBooking, BookingExpense } from "@/hooks/useExpensesByBooking";
-import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import ViewBookingExpenseDialog from "./ViewBookingExpenseDialog";
-import EditBookingExpenseDialog from "./EditBookingExpenseDialog";
 
 interface AppointmentExpensesListProps {
   bookingId: string;
@@ -19,9 +17,7 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<BookingExpense | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   
-  const queryClient = useQueryClient();
   const { data: expenses = [], isLoading } = useExpensesByBooking(bookingId);
 
   if (isLoading) {
@@ -43,12 +39,12 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-700 text-[10px] px-1.5">Approved</Badge>;
+        return <Badge variant="custom" className="bg-green-100 text-green-700 text-[10px] px-1.5">Approved</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-700 text-[10px] px-1.5">Rejected</Badge>;
+        return <Badge variant="custom" className="bg-red-100 text-red-700 text-[10px] px-1.5">Rejected</Badge>;
       case 'pending':
       default:
-        return <Badge className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5">Pending</Badge>;
+        return <Badge variant="custom" className="bg-amber-100 text-amber-700 text-[10px] px-1.5">Pending</Badge>;
     }
   };
 
@@ -63,16 +59,6 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
     e.stopPropagation();
     setSelectedExpense(expense);
     setShowViewDialog(true);
-  };
-
-  const handleEdit = (expense: BookingExpense, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setSelectedExpense(expense);
-    setShowEditDialog(true);
-  };
-
-  const handleEditSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['expenses-by-booking', bookingId] });
   };
 
   return (
@@ -129,17 +115,6 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
                   >
                     <Eye className="h-3.5 w-3.5 text-muted-foreground" />
                   </Button>
-                  {expense.status?.toLowerCase() === 'pending' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => handleEdit(expense, e)}
-                      title="Edit Expense"
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                  )}
                 </div>
               </div>
               
@@ -159,16 +134,6 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
         expense={selectedExpense}
         open={showViewDialog}
         onOpenChange={setShowViewDialog}
-        onEdit={(expense) => handleEdit(expense)}
-      />
-
-      {/* Edit Dialog */}
-      <EditBookingExpenseDialog
-        expense={selectedExpense}
-        bookingId={bookingId}
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        onSuccess={handleEditSuccess}
       />
     </div>
   );
