@@ -8,8 +8,7 @@ import {
   Car, 
   Utensils, 
   Stethoscope,
-  Receipt,
-  Pencil
+  Receipt
 } from "lucide-react";
 import {
   Dialog,
@@ -26,14 +25,12 @@ interface ViewBookingExpenseDialogProps {
   expense: BookingExpense | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit?: (expense: BookingExpense) => void;
 }
 
 const ViewBookingExpenseDialog: React.FC<ViewBookingExpenseDialogProps> = ({
   expense,
   open,
   onOpenChange,
-  onEdit,
 }) => {
   if (!expense) return null;
 
@@ -48,14 +45,14 @@ const ViewBookingExpenseDialog: React.FC<ViewBookingExpenseDialogProps> = ({
     switch (status?.toLowerCase()) {
       case 'approved':
         return (
-          <Badge className="bg-green-100 text-green-700 gap-1">
+          <Badge variant="custom" className="bg-green-100 text-green-700 gap-1">
             <CheckCircle className="h-3 w-3" />
             Approved
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge className="bg-red-100 text-red-700 gap-1">
+          <Badge variant="custom" className="bg-red-100 text-red-700 gap-1">
             <X className="h-3 w-3" />
             Rejected
           </Badge>
@@ -63,7 +60,7 @@ const ViewBookingExpenseDialog: React.FC<ViewBookingExpenseDialogProps> = ({
       case 'pending':
       default:
         return (
-          <Badge className="bg-yellow-100 text-yellow-700 gap-1">
+          <Badge variant="custom" className="bg-amber-100 text-amber-700 gap-1">
             <Clock className="h-3 w-3" />
             Pending Approval
           </Badge>
@@ -131,8 +128,6 @@ const ViewBookingExpenseDialog: React.FC<ViewBookingExpenseDialogProps> = ({
     );
   };
 
-  const canEdit = expense.status?.toLowerCase() === 'pending';
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -193,20 +188,7 @@ const ViewBookingExpenseDialog: React.FC<ViewBookingExpenseDialogProps> = ({
           <Separator />
 
           {/* Actions */}
-          <div className="flex justify-end gap-2">
-            {canEdit && onEdit && (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  onOpenChange(false);
-                  onEdit(expense);
-                }}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Expense
-              </Button>
-            )}
+          <div className="flex justify-end">
             <Button onClick={() => onOpenChange(false)}>
               Close
             </Button>
