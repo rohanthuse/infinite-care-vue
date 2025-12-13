@@ -123,10 +123,10 @@ export const AddVisitExpenseDialog: React.FC<AddVisitExpenseDialogProps> = ({
       return;
     }
 
-    // Build metadata based on category
+    // Build metadata based on category, always include client_name for notifications
     const metadata = expenseCategory
-      ? buildExpenseMetadata(expenseCategory, formData)
-      : {};
+      ? { ...buildExpenseMetadata(expenseCategory, formData), client_name: clientName }
+      : { client_name: clientName };
 
     await submitExpense.mutateAsync({
       booking_id: appointment.id,

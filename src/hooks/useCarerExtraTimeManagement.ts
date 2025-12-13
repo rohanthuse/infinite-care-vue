@@ -57,10 +57,29 @@ export const useCarerExtraTimeManagement = () => {
 
       if (error) throw error;
 
+      // Notify admins about the new extra time claim
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'submitted',
+            expense_id: extraTimeRecord.id,
+            staff_id: carerProfile.id,
+            staff_name: `${carerProfile.first_name || ''} ${carerProfile.last_name || ''}`.trim(),
+            branch_id: carerProfile.branch_id,
+            expense_source: 'extra_time',
+            expense_type: 'Extra Time',
+            amount: total_cost
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useCarerExtraTimeManagement] Failed to send notification:', notifyError);
+      }
+
       return extraTimeRecord;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-extra-time'] });
+      queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
     },
   });
 

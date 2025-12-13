@@ -907,6 +907,24 @@ export function useApproveExtraTime() {
         .single();
 
       if (error) throw error;
+
+      // Notify the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'approved',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: 'extra_time',
+            expense_type: 'Extra Time',
+            amount: data.total_cost
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useApproveExtraTime] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {
@@ -925,7 +943,7 @@ export function useRejectExtraTime() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+    mutationFn: async ({ id, branchId, reason }: { id: string; branchId: string; reason?: string }) => {
       const { data, error } = await supabase
         .from('extra_time_records')
         .update({ 
@@ -938,11 +956,31 @@ export function useRejectExtraTime() {
         .single();
 
       if (error) throw error;
+
+      // Notify the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'rejected',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: 'extra_time',
+            expense_type: 'Extra Time',
+            amount: data.total_cost,
+            rejection_reason: reason
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useRejectExtraTime] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-extra-time'] });
       toast.success('Extra time record rejected');
     },
     onError: (error) => {
@@ -1102,6 +1140,24 @@ export function useApproveTravelRecord() {
         .single();
 
       if (error) throw error;
+
+      // Notify the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'approved',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: 'travel_mileage',
+            expense_type: 'Travel & Mileage',
+            amount: data.total_cost
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useApproveTravelRecord] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {
@@ -1121,7 +1177,7 @@ export function useRejectTravelRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+    mutationFn: async ({ id, branchId, reason }: { id: string; branchId: string; reason?: string }) => {
       const { data, error } = await supabase
         .from('travel_records')
         .update({ 
@@ -1134,6 +1190,25 @@ export function useRejectTravelRecord() {
         .single();
 
       if (error) throw error;
+
+      // Notify the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'rejected',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: 'travel_mileage',
+            expense_type: 'Travel & Mileage',
+            amount: data.total_cost,
+            rejection_reason: reason
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useRejectTravelRecord] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {

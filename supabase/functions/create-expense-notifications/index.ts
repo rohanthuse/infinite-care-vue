@@ -220,7 +220,6 @@ serve(async (req) => {
         message: n.message,
         type: n.type,
         data: n.data,
-        is_read: false,
         created_at: new Date().toISOString()
       }));
 

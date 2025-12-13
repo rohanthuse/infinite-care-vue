@@ -52,6 +52,24 @@ export const useCarerTravelManagement = () => {
 
       if (error) throw error;
 
+      // Notify admins about the new travel claim
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'submitted',
+            expense_id: travelRecord.id,
+            staff_id: carerProfile.id,
+            staff_name: `${carerProfile.first_name || ''} ${carerProfile.last_name || ''}`.trim(),
+            branch_id: carerProfile.branch_id,
+            expense_source: 'travel_mileage',
+            expense_type: 'Travel & Mileage',
+            amount: total_cost
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useCarerTravelManagement] Failed to send notification:', notifyError);
+      }
+
       return travelRecord;
     },
     onSuccess: () => {
