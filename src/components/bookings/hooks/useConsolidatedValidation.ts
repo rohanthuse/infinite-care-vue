@@ -145,6 +145,19 @@ export function useConsolidatedValidation(branchId?: string) {
         const existingStart = new Date(booking.start_time);
         const existingEnd = new Date(booking.end_time);
 
+        // SANITY CHECK: Skip bookings with duration > 24 hours (likely corrupted data)
+        const durationHours = (existingEnd.getTime() - existingStart.getTime()) / (1000 * 60 * 60);
+        if (durationHours > 24 || durationHours < 0) {
+          console.warn('[useConsolidatedValidation] Skipping corrupted booking with invalid duration:', {
+            bookingId: booking.id,
+            durationHours: durationHours.toFixed(2),
+            startTime: booking.start_time,
+            endTime: booking.end_time,
+            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown'
+          });
+          return false; // Skip this corrupted booking
+        }
+
         // Strict overlap detection: any time intersection is blocked
         // Two intervals overlap if: start1 < end2 AND end1 > start2
         const hasOverlap = proposedStart.getTime() < existingEnd.getTime() && 
@@ -163,7 +176,8 @@ export function useConsolidatedValidation(branchId?: string) {
             end: proposedEnd.toISOString(),
             localTime: `${proposedStart.getHours()}:${proposedStart.getMinutes().toString().padStart(2, '0')} - ${proposedEnd.getHours()}:${proposedEnd.getMinutes().toString().padStart(2, '0')}`
           },
-          hasOverlap
+          hasOverlap,
+          durationHours: durationHours.toFixed(2)
         });
 
         return hasOverlap;
