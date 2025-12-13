@@ -46,11 +46,32 @@ export function useCarerExpenseManagement() {
         receipt_url,
         notes: expenseData.notes,
         created_by: carerProfile.id,
-        // organization_id will be automatically set by the database trigger
+        expense_source: 'general_claim',
       };
 
       console.log('Submitting expense:', expense);
-      return createExpenseMutation.mutateAsync(expense);
+      const result = await createExpenseMutation.mutateAsync(expense);
+
+      // Trigger notification for admins
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'submitted',
+            expense_id: result.id,
+            staff_id: carerProfile.id,
+            staff_name: `${carerProfile.first_name || ''} ${carerProfile.last_name || ''}`.trim(),
+            branch_id: carerProfile.branch_id,
+            expense_source: 'general_claim',
+            expense_type: expenseData.category,
+            amount: expenseData.amount
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useCarerExpenseManagement] Failed to send notification:', notifyError);
+      }
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });

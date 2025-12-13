@@ -4990,6 +4990,7 @@ export type Database = {
           created_by: string
           description: string
           expense_date: string
+          expense_source: string | null
           id: string
           is_invoiced: boolean | null
           metadata: Json | null
@@ -5014,6 +5015,7 @@ export type Database = {
           created_by: string
           description: string
           expense_date?: string
+          expense_source?: string | null
           id?: string
           is_invoiced?: boolean | null
           metadata?: Json | null
@@ -5038,6 +5040,7 @@ export type Database = {
           created_by?: string
           description?: string
           expense_date?: string
+          expense_source?: string | null
           id?: string
           is_invoiced?: boolean | null
           metadata?: Json | null
