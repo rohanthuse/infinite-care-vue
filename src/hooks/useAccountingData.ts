@@ -953,12 +953,28 @@ export function useApproveExpense() {
 
   return useMutation({
     mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      // Get the current auth user
+      const { data: authData } = await supabase.auth.getUser();
+      const authUserId = authData.user?.id;
+      
+      // Look up the staff record to get the staff ID (required by foreign key constraint)
+      let approvedByStaffId: string | null = null;
+      if (authUserId) {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('auth_user_id', authUserId)
+          .maybeSingle();
+        
+        approvedByStaffId = staffData?.id || null;
+      }
+      
       const { data, error } = await supabase
         .from('expenses')
         .update({ 
           status: 'approved',
           approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id
+          approved_by: approvedByStaffId
         })
         .eq('id', id)
         .select()
@@ -970,6 +986,7 @@ export function useApproveExpense() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-expenses'] });
       toast.success('Expense approved successfully');
     },
     onError: (error) => {
@@ -984,12 +1001,28 @@ export function useRejectExpense() {
 
   return useMutation({
     mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      // Get the current auth user
+      const { data: authData } = await supabase.auth.getUser();
+      const authUserId = authData.user?.id;
+      
+      // Look up the staff record to get the staff ID (required by foreign key constraint)
+      let approvedByStaffId: string | null = null;
+      if (authUserId) {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('auth_user_id', authUserId)
+          .maybeSingle();
+        
+        approvedByStaffId = staffData?.id || null;
+      }
+      
       const { data, error } = await supabase
         .from('expenses')
         .update({ 
           status: 'rejected',
           approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id
+          approved_by: approvedByStaffId
         })
         .eq('id', id)
         .select()
@@ -1001,6 +1034,7 @@ export function useRejectExpense() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-expenses'] });
       toast.success('Expense rejected');
     },
     onError: (error) => {
