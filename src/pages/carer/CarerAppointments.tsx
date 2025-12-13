@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History, ClipboardList, CheckCircle } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2, History, ClipboardList, CheckCircle, Receipt } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDialog";
 import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
+import { AddVisitExpenseDialog } from "@/components/carer/AddVisitExpenseDialog";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,6 +44,8 @@ const CarerAppointments: React.FC = () => {
     clientId: string;
     clientName: string;
   } | null>(null);
+  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [selectedAppointmentForExpense, setSelectedAppointmentForExpense] = useState<any>(null);
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
@@ -952,6 +955,22 @@ const CarerAppointments: React.FC = () => {
                     <ClipboardList className="h-3 w-3" />
                     Care Plan Details
                   </Button>
+                  {/* Add Expense button - only show for completed/past appointments */}
+                  {(appointment.status === 'completed' || appointment.status === 'done') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAppointmentForExpense(appointment);
+                        setShowAddExpenseDialog(true);
+                      }}
+                    >
+                      <Receipt className="h-3 w-3" />
+                      Add Expense
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -1163,6 +1182,13 @@ const CarerAppointments: React.FC = () => {
           onOpenChange={setShowCarePlanDialog}
         />
       )}
+
+      {/* Add Visit Expense Dialog */}
+      <AddVisitExpenseDialog
+        open={showAddExpenseDialog}
+        onOpenChange={setShowAddExpenseDialog}
+        appointment={selectedAppointmentForExpense}
+      />
     </div>
   );
 };
