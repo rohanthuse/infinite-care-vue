@@ -59,6 +59,23 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
     ).join(' ');
   };
 
+  const getSourceLabel = (source?: string, bookingId?: string) => {
+    switch (source) {
+      case 'past_booking':
+        return bookingId 
+          ? `Past Booking (${bookingId.slice(0, 8)}...)` 
+          : 'Past Booking';
+      case 'general_claim':
+        return 'Expense Claim';
+      case 'travel_mileage':
+        return 'Travel & Mileage';
+      case 'extra_time':
+        return 'Extra Time';
+      default:
+        return source || 'Unknown';
+    }
+  };
+
   if (expenses.length === 0) {
     return (
       <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-200">
@@ -75,6 +92,7 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
             <TableHead>Date</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Category</TableHead>
+            <TableHead>Source</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Payment Method</TableHead>
             <TableHead>Status</TableHead>
@@ -90,6 +108,11 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
               </TableCell>
               <TableCell>{expense.description}</TableCell>
               <TableCell>{formatCategory(expense.category)}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-muted text-muted-foreground text-xs whitespace-nowrap">
+                  {getSourceLabel(expense.expense_source, expense.booking_id)}
+                </Badge>
+              </TableCell>
               <TableCell className="font-medium">
                 £{expense.amount.toFixed(2)}
               </TableCell>

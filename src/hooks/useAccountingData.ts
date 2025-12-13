@@ -21,6 +21,8 @@ export interface ExpenseRecord {
   created_by: string;
   created_at: string;
   updated_at: string;
+  expense_source?: string;
+  booking_id?: string;
   staff?: {
     first_name: string;
     last_name: string;
@@ -187,7 +189,9 @@ export function useExpenses(branchId?: string) {
           approved_at,
           created_by,
           created_at,
-          updated_at
+          updated_at,
+          expense_source,
+          booking_id
         `)
         .eq('branch_id', branchId)
         .order('expense_date', { ascending: false });
@@ -981,6 +985,24 @@ export function useApproveExpense() {
         .single();
 
       if (error) throw error;
+
+      // Send notification to the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'approved',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: data.expense_source || 'general_claim',
+            expense_type: data.category,
+            amount: data.amount
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useApproveExpense] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {
@@ -1000,7 +1022,7 @@ export function useRejectExpense() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+    mutationFn: async ({ id, branchId, reason }: { id: string; branchId: string; reason?: string }) => {
       // Get the current auth user
       const { data: authData } = await supabase.auth.getUser();
       const authUserId = authData.user?.id;
@@ -1029,6 +1051,25 @@ export function useRejectExpense() {
         .single();
 
       if (error) throw error;
+
+      // Send notification to the carer
+      try {
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'rejected',
+            expense_id: id,
+            staff_id: data.staff_id,
+            branch_id: branchId,
+            expense_source: data.expense_source || 'general_claim',
+            expense_type: data.category,
+            amount: data.amount,
+            rejection_reason: reason
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useRejectExpense] Failed to send notification:', notifyError);
+      }
+
       return data;
     },
     onSuccess: (data) => {

@@ -36,6 +36,13 @@ const categoryLabels = {
   other: "Other"
 };
 
+const sourceLabels: Record<string, string> = {
+  past_booking: "Past Booking",
+  general_claim: "Expense Claim",
+  travel_mileage: "Travel & Mileage",
+  extra_time: "Extra Time"
+};
+
 const paymentMethodLabels = {
   credit_card: "Credit Card",
   cash: "Cash",
@@ -152,6 +159,21 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
                 {categoryLabels[expense.category as keyof typeof categoryLabels] || expense.category}
               </p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Source</p>
+              <Badge variant="outline" className="bg-muted text-muted-foreground mt-1">
+                {sourceLabels[(expense as any).expense_source as keyof typeof sourceLabels] || (expense as any).expense_source || 'Unknown'}
+              </Badge>
+            </div>
+            {(expense as any).booking_id && (
+              <div>
+                <p className="text-sm text-gray-500">Booking ID</p>
+                <p className="font-medium text-xs">{(expense as any).booking_id}</p>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

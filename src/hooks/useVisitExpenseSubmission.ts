@@ -58,6 +58,7 @@ export function useVisitExpenseSubmission() {
         created_by: carerProfile.id,
         is_invoiced: false,
         metadata: (expenseData.metadata || {}) as Json,
+        expense_source: 'past_booking',
       };
 
       console.log('[useVisitExpenseSubmission] Submitting expense:', expense);
@@ -69,6 +70,29 @@ export function useVisitExpenseSubmission() {
         .single();
 
       if (error) throw error;
+
+      // Trigger notification for admins
+      try {
+        const clientName = expenseData.metadata?.client_name as string || undefined;
+        await supabase.functions.invoke('create-expense-notifications', {
+          body: {
+            action: 'submitted',
+            expense_id: data.id,
+            staff_id: carerProfile.id,
+            staff_name: `${carerProfile.first_name || ''} ${carerProfile.last_name || ''}`.trim(),
+            branch_id: carerProfile.branch_id,
+            expense_source: 'past_booking',
+            expense_type: expenseData.expense_type_id,
+            amount: expenseData.amount,
+            client_name: clientName,
+            booking_id: expenseData.booking_id
+          }
+        });
+      } catch (notifyError) {
+        console.error('[useVisitExpenseSubmission] Failed to send notification:', notifyError);
+        // Don't throw - expense was created successfully
+      }
+
       return data;
     },
     onSuccess: () => {
