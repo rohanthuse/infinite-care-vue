@@ -107,7 +107,7 @@ serve(async (req) => {
             user_id: userId,
             title: 'New Expense Submitted',
             message,
-            type: 'expense_submitted',
+            type: 'info',
             category: 'info',
             data: {
               expense_id,
@@ -146,7 +146,7 @@ serve(async (req) => {
               user_id: admin.user_id,
               title: 'New Expense Submitted',
               message,
-              type: 'expense_submitted',
+              type: 'info',
               category: 'info',
               data: {
                 expense_id,
@@ -187,7 +187,7 @@ serve(async (req) => {
           user_id: staffData.auth_user_id,
           title: action === 'approved' ? 'Expense Approved' : 'Expense Rejected',
           message,
-          type: `expense_${action}`,
+          type: 'info',
           category: action === 'approved' ? 'success' : 'warning',
           data: {
             expense_id,
