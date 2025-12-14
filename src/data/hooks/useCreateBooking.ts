@@ -234,7 +234,7 @@ export function useCreateBooking(branchId?: string) {
               // Invalidate invoice queries
               await Promise.all([
                 invalidateWithRetry(['branch-invoices', bookingBranchId]),
-                invalidateWithRetry(['branch-booking-invoices', bookingBranchId]),
+                
                 invalidateWithRetry(['client-billing', data.client_id])
               ]);
             } else if ((result as any).skipped) {

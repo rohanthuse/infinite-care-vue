@@ -132,7 +132,7 @@ export function useCreateMultipleBookings(branchId?: string) {
                 // Invalidate invoice queries
                 await Promise.all([
                   queryClient.invalidateQueries({ queryKey: ['branch-invoices', firstBookingBranchId] }),
-                  queryClient.invalidateQueries({ queryKey: ['branch-booking-invoices', firstBookingBranchId] }),
+                  
                   ...data.map(b => queryClient.invalidateQueries({ queryKey: ['client-billing', b.client_id] }))
                 ]);
               }

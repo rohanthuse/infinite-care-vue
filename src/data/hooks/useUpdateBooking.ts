@@ -126,7 +126,7 @@ export function useUpdateBooking(branchId?: string) {
       queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
       queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", data.staff_id] });
       queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
-      queryClient.invalidateQueries({ queryKey: ["branch-booking-invoices"] });
+      
       queryClient.invalidateQueries({ queryKey: ["branch-invoices"] });
       queryClient.invalidateQueries({ queryKey: ["client-billing", data.client_id] });
       queryClient.invalidateQueries({ queryKey: ["booking-change-requests"] });
