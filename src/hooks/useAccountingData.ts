@@ -509,6 +509,7 @@ export function useExtraTimeRecords(branchId?: string) {
           updated_at
         `)
         .eq('branch_id', branchId)
+        .gt('extra_time_minutes', 0)
         .order('work_date', { ascending: false });
 
       if (error) {
