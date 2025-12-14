@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Receipt, AlertCircle, Eye } from "lucide-react";
+import { ChevronDown, ChevronUp, Receipt, AlertCircle, Eye, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useExpensesByBooking, BookingExpense } from "@/hooks/useExpensesByBooking";
+import { useBookingExtraTime } from "@/hooks/useBookingExtraTime";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import ViewBookingExpenseDialog from "./ViewBookingExpenseDialog";
@@ -18,9 +19,10 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
   const [selectedExpense, setSelectedExpense] = useState<BookingExpense | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   
-  const { data: expenses = [], isLoading } = useExpensesByBooking(bookingId);
+  const { data: expenses = [], isLoading: expensesLoading } = useExpensesByBooking(bookingId);
+  const { data: extraTime, isLoading: extraTimeLoading } = useBookingExtraTime(bookingId);
 
-  if (isLoading) {
+  if (expensesLoading || extraTimeLoading) {
     return (
       <div className="space-y-1">
         <Skeleton className="h-6 w-24" />
@@ -28,7 +30,11 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
     );
   }
 
-  if (expenses.length === 0) {
+  const hasExpenses = expenses.length > 0;
+  const hasExtraTime = !!extraTime;
+
+  // Only show "No expenses added" when BOTH are empty
+  if (!hasExpenses && !hasExtraTime) {
     return (
       <div className="text-xs text-muted-foreground italic">
         No expenses added
@@ -37,6 +43,18 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
   }
 
   const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return <Badge variant="custom" className="bg-green-100 text-green-700 text-[10px] px-1.5">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="custom" className="bg-red-100 text-red-700 text-[10px] px-1.5">Rejected</Badge>;
+      case 'pending':
+      default:
+        return <Badge variant="custom" className="bg-amber-100 text-amber-700 text-[10px] px-1.5">Pending</Badge>;
+    }
+  };
+
+  const getExtraTimeStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'approved':
         return <Badge variant="custom" className="bg-green-100 text-green-700 text-[10px] px-1.5">Approved</Badge>;
@@ -61,6 +79,9 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
     setShowViewDialog(true);
   };
 
+  // Calculate summary counts
+  const totalItems = expenses.length + (hasExtraTime ? 1 : 0);
+
   return (
     <div className="space-y-2">
       <Button
@@ -74,7 +95,13 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
       >
         <div className="flex items-center gap-2">
           <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium">Expenses ({expenses.length})</span>
+          <span className="text-xs font-medium">
+            {hasExpenses && hasExtraTime
+              ? `Expenses (${expenses.length}) + Extra Time`
+              : hasExpenses
+                ? `Expenses (${expenses.length})`
+                : 'Extra Time'}
+          </span>
         </div>
         {isExpanded ? (
           <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
@@ -85,6 +112,38 @@ const AppointmentExpensesList: React.FC<AppointmentExpensesListProps> = ({
 
       {isExpanded && (
         <div className="space-y-1.5">
+          {/* Extra Time Record */}
+          {hasExtraTime && (
+            <div
+              className={cn(
+                "p-2 rounded-md border bg-card transition-colors",
+                extraTime.status === 'rejected' && "border-red-200 bg-red-50/50",
+                extraTime.status === 'approved' && "border-green-200 bg-green-50/50",
+                extraTime.status === 'pending' && "border-amber-200 bg-amber-50/50"
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs font-medium">Extra Time</span>
+                  <span className="text-xs text-muted-foreground">
+                    {extraTime.extra_time_minutes} mins
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(extraTime.total_cost)}
+                  </span>
+                  {getExtraTimeStatusBadge(extraTime.status)}
+                </div>
+              </div>
+              {extraTime.reason && (
+                <div className="mt-1.5 text-[10px] text-muted-foreground line-clamp-2">
+                  {extraTime.reason}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Expense Records */}
           {expenses.map((expense) => (
             <div
               key={expense.id}
