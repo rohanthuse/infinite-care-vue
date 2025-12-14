@@ -3,6 +3,12 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { 
   Users, 
   Clock, 
   MapPin, 
@@ -139,15 +145,27 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Late Start Badge */}
+            {/* Late Start Badge with Tooltip */}
             {event.isLateStart && !event.isMissed && (
-              <Badge 
-                variant="outline"
-                className="text-xs bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
-              >
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Late ({event.lateStartMinutes}m)
-              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline"
+                      className="text-xs bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 cursor-help"
+                    >
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Late ({event.lateStartMinutes}m)
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">Late Arrival</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.lateArrivalReason || 'No reason specified'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             {/* Missed Badge */}
             {event.isMissed && (

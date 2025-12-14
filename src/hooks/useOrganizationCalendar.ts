@@ -187,7 +187,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         isLateStart: booking.is_late_start || false,
         isMissed: booking.is_missed || false,
         lateStartMinutes: booking.late_start_minutes || visitRecord?.arrival_delay_minutes || 0,
-        actualStartTime: visitRecord?.visit_start_time || undefined
+        actualStartTime: visitRecord?.visit_start_time || undefined,
+        lateArrivalReason: visitRecord?.late_arrival_reason || undefined
       };
       });
       

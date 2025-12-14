@@ -66,7 +66,17 @@ export function ViewBookingDialog({
       
       const { data } = await supabase
         .from('visit_records')
-        .select('visit_start_time, arrival_delay_minutes, late_arrival_reason')
+        .select(`
+          visit_start_time, 
+          arrival_delay_minutes, 
+          late_arrival_reason,
+          late_submitted_at,
+          late_submitted_by,
+          staff:late_submitted_by (
+            first_name,
+            last_name
+          )
+        `)
         .eq('booking_id', booking.id)
         .maybeSingle();
       
@@ -837,6 +847,24 @@ export function ViewBookingDialog({
                     <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
                       <span className="text-gray-600 dark:text-gray-400">Reason:</span>
                       <p className="mt-1 text-gray-800 dark:text-gray-200">{visitRecord.late_arrival_reason}</p>
+                    </div>
+                  )}
+                  {visitRecord?.late_submitted_by && (
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700 space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Reported By:</span>
+                        <span className="font-medium">
+                          {visitRecord.staff?.first_name} {visitRecord.staff?.last_name}
+                        </span>
+                      </div>
+                      {visitRecord?.late_submitted_at && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Reported At:</span>
+                          <span className="font-medium">
+                            {format(parseISO(visitRecord.late_submitted_at), 'd MMM yyyy, HH:mm')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

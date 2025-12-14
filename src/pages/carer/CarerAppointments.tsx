@@ -25,6 +25,7 @@ import { AddVisitExpenseDialog } from "@/components/carer/AddVisitExpenseDialog"
 import { AddAppointmentExtraTimeDialog } from "@/components/carer/AddAppointmentExtraTimeDialog";
 import PastAppointmentCard from "@/components/carer/PastAppointmentCard";
 import AppointmentExpensesList from "@/components/carer/AppointmentExpensesList";
+import { notifyAdminOfLateArrival } from "@/utils/notifyLateArrival";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -462,6 +463,26 @@ const CarerAppointments: React.FC = () => {
       });
 
       toast.dismiss('start-visit');
+
+      // Send admin notification about late arrival
+      const clientName = appointment.clients 
+        ? `${appointment.clients.first_name} ${appointment.clients.last_name}` 
+        : 'Unknown Client';
+      const carerName = carerContext.firstName && carerContext.lastName 
+        ? `${carerContext.firstName} ${carerContext.lastName}` 
+        : 'Carer';
+      
+      notifyAdminOfLateArrival({
+        bookingId: pendingBookingId,
+        branchId: branchId,
+        organizationId: appointment.organization_id,
+        carerName: carerName,
+        clientName: clientName,
+        minutesLate: lateArrivalInfo?.minutesLate || 0,
+        reason: reason,
+        startTime: new Date(appointment.start_time),
+        endTime: new Date(appointment.end_time),
+      });
 
       // Navigate to visit workflow
       navigate(createCarerPath(`/visit/${pendingBookingId}`));

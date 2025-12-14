@@ -22,6 +22,7 @@ export interface CalendarEvent {
   isMissed?: boolean;
   lateStartMinutes?: number;
   actualStartTime?: string;
+  lateArrivalReason?: string;
   _rawAppointmentData?: {
     id: string;
     appointment_type: string;
