@@ -95,10 +95,13 @@ export function useVisitExpenseSubmission() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['my-expenses'] });
       queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      // Invalidate booking-specific expenses query for immediate UI update
+      queryClient.invalidateQueries({ queryKey: ['expenses-by-booking', data.booking_id] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-by-booking'] });
       toast.success('Expense submitted successfully', {
         description: 'Your expense claim is pending approval'
       });

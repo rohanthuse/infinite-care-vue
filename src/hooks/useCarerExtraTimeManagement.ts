@@ -77,9 +77,12 @@ export const useCarerExtraTimeManagement = () => {
 
       return extraTimeRecord;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-extra-time'] });
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
+      // Invalidate booking-specific extra time query for immediate UI update
+      queryClient.invalidateQueries({ queryKey: ['booking-extra-time', data.booking_id] });
+      queryClient.invalidateQueries({ queryKey: ['booking-extra-time'] });
     },
   });
 
