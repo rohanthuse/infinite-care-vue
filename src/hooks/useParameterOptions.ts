@@ -138,7 +138,7 @@ export const useFileCategoryOptions = () => {
   });
 };
 
-// Hook for expense type options from database
+// Hook for expense type options from database (returns options for dropdowns)
 export const useExpenseTypeOptions = () => {
   const { organization } = useTenant();
   
@@ -181,6 +181,35 @@ export const useExpenseTypeOptions = () => {
         value: type.title.toLowerCase().replace(/\s+/g, '_'),
         label: type.title
       }));
+    },
+  });
+};
+
+// Hook for expense types with UUIDs (for saving to database)
+export const useExpenseTypesWithIds = () => {
+  const { organization } = useTenant();
+  
+  return useQuery({
+    queryKey: ['expense-types-with-ids', organization?.id],
+    queryFn: async () => {
+      let query = supabase
+        .from('expense_types')
+        .select('id, title')
+        .eq('status', 'Active')
+        .order('title');
+      
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+        
+      const { data: expenseTypes, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching expense types with IDs:', error);
+        return [];
+      }
+      
+      return expenseTypes || [];
     },
   });
 };
