@@ -56,7 +56,9 @@ export function useEligibleExtraTimeForInvoice(
           )
         `)
         .eq('client_id', clientId)
-        .eq('status', 'approved');
+        .eq('status', 'approved')
+        .gt('extra_time_minutes', 0)
+        .eq('invoiced', false);
 
       // Filter by date range if provided
       if (startDate) {
