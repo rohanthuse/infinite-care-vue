@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, PoundSterling, Calculator, Receipt } from 'lucide-react';
+import { PlusCircle, FileText, PoundSterling, Calculator } from 'lucide-react';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
@@ -26,7 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePDF } from '@/utils/invoicePdfGenerator';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import BookingInvoicesDataTable from './BookingInvoicesDataTable';
+
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -461,14 +461,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
 
       {/* Invoices and Payments Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-2 max-w-2xl">
           <TabsTrigger value="invoices" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             All Invoices
-          </TabsTrigger>
-          <TabsTrigger value="booking-invoices" className="flex items-center gap-2">
-            <Receipt className="h-4 w-4" />
-            Booking Invoices
           </TabsTrigger>
           <TabsTrigger value="payments" className="flex items-center gap-2">
             <PoundSterling className="h-4 w-4" />
@@ -499,16 +495,6 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           </div>
         </TabsContent>
 
-        <TabsContent value="booking-invoices" className="mt-6">
-          <div className="bg-white rounded-lg border p-6">
-            <BookingInvoicesDataTable 
-              branchId={branchId!}
-              onViewInvoice={handleViewInvoice}
-              onEditInvoice={handleEditInvoice}
-              onDownloadInvoice={handleDownloadInvoice}
-            />
-          </div>
-        </TabsContent>
 
         <TabsContent value="payments" className="mt-6">
           <div className="bg-white rounded-lg border p-6">
