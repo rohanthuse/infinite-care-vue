@@ -108,7 +108,7 @@ serve(async (req) => {
             title: 'New Expense Submitted',
             message,
             type: 'expense_submitted',
-            category: 'expense',
+            category: 'info',
             data: {
               expense_id,
               staff_id,
@@ -147,7 +147,7 @@ serve(async (req) => {
               title: 'New Expense Submitted',
               message,
               type: 'expense_submitted',
-              category: 'expense',
+              category: 'info',
               data: {
                 expense_id,
                 staff_id,
@@ -188,7 +188,7 @@ serve(async (req) => {
           title: action === 'approved' ? 'Expense Approved' : 'Expense Rejected',
           message,
           type: `expense_${action}`,
-          category: 'expense',
+          category: action === 'approved' ? 'success' : 'warning',
           data: {
             expense_id,
             expense_source,
