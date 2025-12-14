@@ -41,6 +41,10 @@ export function EligibleExpensesSection({
   isLoading,
   isLoadingExtraTime,
 }: EligibleExpensesSectionProps) {
+  // Validation: warn if onToggleExtraTime is missing when extra time records are provided
+  if (!onToggleExtraTime && extraTimeRecords.length > 0) {
+    console.warn('EligibleExpensesSection: onToggleExtraTime is required when extraTimeRecords are provided');
+  }
   const formatCurrency = (amount: number) => `£${amount.toFixed(2)}`;
   
   const formatDate = (dateStr: string) => {
@@ -100,9 +104,9 @@ export function EligibleExpensesSection({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">Select</TableHead>
-              <TableHead className="w-[100px]">Date</TableHead>
-              <TableHead className="w-[100px]">Type</TableHead>
-              <TableHead className="w-[100px]">Source</TableHead>
+              <TableHead className="w-[100px]">Booking Date</TableHead>
+              <TableHead className="w-[100px]">Expense Type</TableHead>
+              <TableHead className="w-[100px]">Reference</TableHead>
               <TableHead>Description</TableHead>
               <TableHead className="w-[120px]">Staff</TableHead>
               <TableHead className="w-[100px] text-right">Amount</TableHead>
@@ -194,14 +198,25 @@ export function EligibleExpensesSection({
       );
     }
 
+    // Handler for extra time checkbox click
+    const handleExtraTimeToggle = (recordId: string) => {
+      if (onToggleExtraTime) {
+        console.log('Toggling extra time:', recordId);
+        onToggleExtraTime(recordId);
+      } else {
+        console.error('onToggleExtraTime handler is not provided');
+      }
+    };
+
     return (
       <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">Select</TableHead>
-              <TableHead className="w-[100px]">Date</TableHead>
-              <TableHead className="w-[100px]">Duration</TableHead>
+              <TableHead className="w-[100px]">Work Date</TableHead>
+              <TableHead className="w-[100px]">Booking Ref</TableHead>
+              <TableHead className="w-[100px]">Extra Time</TableHead>
               <TableHead>Reason</TableHead>
               <TableHead className="w-[120px]">Staff</TableHead>
               <TableHead className="w-[100px] text-right">Amount</TableHead>
@@ -216,18 +231,26 @@ export function EligibleExpensesSection({
               return (
                 <TableRow 
                   key={record.id} 
-                  className={isDisabled ? 'opacity-50 bg-muted/30' : ''}
+                  className={isDisabled ? 'opacity-50 bg-muted/30' : 'cursor-pointer hover:bg-muted/50'}
+                  onClick={() => !isDisabled && handleExtraTimeToggle(record.id)}
                 >
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={isSelected}
-                      onCheckedChange={() => onToggleExtraTime?.(record.id)}
+                      onCheckedChange={() => handleExtraTimeToggle(record.id)}
                       disabled={isDisabled}
                       aria-label={`Select extra time ${record.reason || 'record'}`}
                     />
                   </TableCell>
                   <TableCell className="text-sm">
                     {formatDate(record.work_date)}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {record.booking_id ? (
+                      <Badge variant="outline" className="text-xs">
+                        Booking
+                      </Badge>
+                    ) : '-'}
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">
