@@ -322,7 +322,7 @@ export function CreateServiceReportDialog({
         </DialogHeader>
 
         {/* Scrollable Form Body */}
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 min-h-0 overflow-hidden px-6">
           <Form {...form}>
             <form id="service-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               
