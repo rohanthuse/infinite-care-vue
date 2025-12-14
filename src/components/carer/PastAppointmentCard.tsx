@@ -77,11 +77,9 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
     actualDuration = visitRecord.actual_duration_minutes || 
       Math.max(0, differenceInMinutes(new Date(visitRecord.visit_end_time), new Date(visitRecord.visit_start_time)));
     
-    // Calculate extra time (actual end - scheduled end)
-    calculatedExtraTime = Math.max(0, differenceInMinutes(
-      new Date(visitRecord.visit_end_time),
-      new Date(appointment.end_time)
-    ));
+    // Calculate extra time based on DURATION difference (not clock times)
+    // Extra Time = max(Actual Duration - Scheduled Duration, 0)
+    calculatedExtraTime = Math.max(0, actualDuration - scheduledDuration);
   }
 
   // Status
