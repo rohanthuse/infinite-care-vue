@@ -74,6 +74,7 @@ serve(async (req) => {
       title: string;
       message: string;
       type: string;
+      category: string;
       data: Record<string, unknown>;
     }[] = [];
 
@@ -81,7 +82,7 @@ serve(async (req) => {
       // Notify admins when a carer submits an expense
       console.log('[create-expense-notifications] Action: submitted - notifying admins');
 
-      // Get branch admins
+      // Get branch admins - admin_id is already the auth user id
       const { data: branchAdmins, error: branchAdminError } = await supabase
         .from('admin_branches')
         .select('admin_id')
@@ -91,44 +92,31 @@ serve(async (req) => {
         console.error('[create-expense-notifications] Error fetching branch admins:', branchAdminError);
       }
 
-      // Get profiles for admin auth_user_ids
-      const adminIds = branchAdmins?.map(a => a.admin_id) || [];
-      
-      if (adminIds.length > 0) {
-        const { data: adminProfiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('auth_user_id')
-          .in('id', adminIds);
+      const adminUserIds = branchAdmins?.map(a => a.admin_id).filter(Boolean) || [];
 
-        if (profileError) {
-          console.error('[create-expense-notifications] Error fetching admin profiles:', profileError);
-        }
+      let message = `${staff_name || 'A carer'} submitted a ${expense_type} expense of ${formattedAmount}`;
+      if (expense_source === 'past_booking' && client_name) {
+        message += ` (${sourceLabel} - ${client_name})`;
+      } else {
+        message += ` (${sourceLabel})`;
+      }
 
-        const adminUserIds = adminProfiles?.map(p => p.auth_user_id).filter(Boolean) || [];
-
-        let message = `${staff_name || 'A carer'} submitted a ${expense_type} expense of ${formattedAmount}`;
-        if (expense_source === 'past_booking' && client_name) {
-          message += ` (${sourceLabel} - ${client_name})`;
-        } else {
-          message += ` (${sourceLabel})`;
-        }
-
-        for (const userId of adminUserIds) {
-          if (userId) {
-            notifications.push({
-              user_id: userId,
-              title: 'New Expense Submitted',
-              message,
-              type: 'expense_submitted',
-              data: {
-                expense_id,
-                staff_id,
-                expense_source,
-                booking_id,
-                redirect_url: '/finance?tab=expenses'
-              }
-            });
-          }
+      for (const userId of adminUserIds) {
+        if (userId) {
+          notifications.push({
+            user_id: userId,
+            title: 'New Expense Submitted',
+            message,
+            type: 'expense_submitted',
+            category: 'expense',
+            data: {
+              expense_id,
+              staff_id,
+              expense_source,
+              booking_id,
+              redirect_url: '/finance?tab=expenses'
+            }
+          });
         }
       }
 
@@ -159,6 +147,7 @@ serve(async (req) => {
               title: 'New Expense Submitted',
               message,
               type: 'expense_submitted',
+              category: 'expense',
               data: {
                 expense_id,
                 staff_id,
@@ -199,6 +188,7 @@ serve(async (req) => {
           title: action === 'approved' ? 'Expense Approved' : 'Expense Rejected',
           message,
           type: `expense_${action}`,
+          category: 'expense',
           data: {
             expense_id,
             expense_source,
@@ -219,6 +209,7 @@ serve(async (req) => {
         title: n.title,
         message: n.message,
         type: n.type,
+        category: n.category,
         data: n.data,
         created_at: new Date().toISOString()
       }));
