@@ -5208,7 +5208,7 @@ export type Database = {
             foreignKeyName: "extra_time_records_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
-            referencedRelation: "staff"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
