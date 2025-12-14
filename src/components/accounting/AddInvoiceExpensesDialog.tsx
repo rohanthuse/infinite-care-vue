@@ -201,6 +201,7 @@ export function AddInvoiceExpensesDialog({
     const hasSelectedExpenses = selectedEligibleExpenseIds.length > 0;
     const hasSelectedExtraTime = selectedExtraTimeIds.length > 0;
 
+    // Validation: at least one item must be selected
     if (!hasManualExpenses && !hasSelectedExpenses && !hasSelectedExtraTime) {
       toast({
         title: "No expenses added",
@@ -210,6 +211,7 @@ export function AddInvoiceExpensesDialog({
       return;
     }
 
+    // Validation: invoice ID is required
     if (!invoiceId) {
       toast({
         title: "No invoice selected",
@@ -219,7 +221,19 @@ export function AddInvoiceExpensesDialog({
       return;
     }
 
+    // Debug logging - what we're about to save
+    console.log('Saving to invoice:', {
+      invoiceId,
+      manualExpenses: expenses.length,
+      selectedExpenses: selectedEligibleExpenseIds.length,
+      selectedExtraTime: selectedExtraTimeIds.length,
+      selectedExtraTimeIds,
+    });
+
     try {
+      let expensesSaved = 0;
+      let extraTimeSaved = 0;
+
       // Convert selected eligible expenses to InvoiceExpenseEntry format
       const selectedEligibleExpenses: InvoiceExpenseEntry[] = eligibleExpenses?.allExpenses
         .filter(e => selectedEligibleExpenseIds.includes(e.id) && !e.is_invoiced)
@@ -246,21 +260,41 @@ export function AddInvoiceExpensesDialog({
 
       // Save expenses if any
       if (allExpenses.length > 0) {
-        await createInvoiceExpenseEntries.mutateAsync({
+        console.log('Creating expense entries:', allExpenses.length);
+        const result = await createInvoiceExpenseEntries.mutateAsync({
           invoiceId,
           expenses: allExpenses,
           organizationId: organization?.id || undefined,
           sourceExpenseIds,
         });
+        expensesSaved = result?.length || allExpenses.length;
+        console.log('Expense entries created:', expensesSaved);
       }
 
       // Mark extra time as invoiced if any selected
       if (hasSelectedExtraTime) {
-        await markExtraTimeAsInvoiced.mutateAsync({
+        console.log('Marking extra time as invoiced:', selectedExtraTimeIds);
+        const result = await markExtraTimeAsInvoiced.mutateAsync({
           extraTimeIds: selectedExtraTimeIds,
           invoiceId,
         });
+        extraTimeSaved = result?.count || selectedExtraTimeIds.length;
+        console.log('Extra time marked as invoiced:', extraTimeSaved);
       }
+
+      // Show comprehensive success toast
+      const successParts = [];
+      if (expensesSaved > 0) {
+        successParts.push(`${expensesSaved} expense(s)`);
+      }
+      if (extraTimeSaved > 0) {
+        successParts.push(`${extraTimeSaved} extra time record(s)`);
+      }
+
+      toast({
+        title: "Expenses added successfully",
+        description: `Added ${successParts.join(' and ')} to invoice.`,
+      });
 
       // Reset and close
       setExpenses([]);
@@ -271,7 +305,7 @@ export function AddInvoiceExpensesDialog({
       console.error("Error saving expenses to invoice:", error);
       toast({
         title: "Failed to save expenses",
-        description: "An error occurred while saving the expenses.",
+        description: error instanceof Error ? error.message : "An error occurred while saving the expenses.",
         variant: "destructive",
       });
     }

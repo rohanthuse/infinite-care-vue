@@ -133,13 +133,15 @@ export function useMarkExtraTimeAsInvoiced() {
 
       return { count: extraTimeIds.length };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Extra time marked as invoiced successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['invoice-extra-time-entries'] });
       queryClient.invalidateQueries({ queryKey: ['eligible-extra-time-for-invoice'] });
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['client-billing'] });
       queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-expense-entries'] });
     },
     onError: (error) => {
       console.error('Error marking extra time as invoiced:', error);
