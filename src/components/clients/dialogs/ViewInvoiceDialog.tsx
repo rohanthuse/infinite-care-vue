@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, Download, Loader2, FileText } from "lucide-react";
+import { Eye, Download, Loader2, FileText, Receipt, Timer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, isValid } from "date-fns";
 import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
-import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
+import { generateInvoicePDF, InvoiceExpenseEntryForPdf, InvoiceExtraTimeEntryForPdf } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useToast } from "@/hooks/use-toast";
 import { InvoiceLedgerView } from "@/components/accounting/InvoiceLedgerView";
 import { supabase } from "@/integrations/supabase/client";
 import { InvoiceCancelledBookingsSection } from "./InvoiceCancelledBookingsSection";
+import { useInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
+import { useInvoiceExtraTimeEntries, calculateExtraTimeTotals } from "@/hooks/useInvoiceExtraTimeEntries";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -44,6 +46,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   const [isDownloading, setIsDownloading] = useState(false);
   const [showLedgerView, setShowLedgerView] = useState(false);
   const { toast } = useToast();
+
+  // Fetch expense and extra time entries for this invoice
+  const { data: expenseEntries = [] } = useInvoiceExpenseEntries(invoice?.id);
+  const { data: extraTimeEntries = [] } = useInvoiceExtraTimeEntries(invoice?.id);
+
+  // Calculate expense totals
+  const expensesTotal = expenseEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const extraTimeTotals = calculateExtraTimeTotals(extraTimeEntries);
 
   const handleDownload = async () => {
     if (!invoice) {
@@ -84,6 +94,28 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         }
       }
 
+      // Prepare expense entries for PDF
+      const pdfExpenseEntries: InvoiceExpenseEntryForPdf[] = expenseEntries.map(e => ({
+        id: e.id,
+        expense_type_name: e.expense_type_name || 'Expense',
+        date: e.date,
+        amount: e.amount || 0,
+        description: e.description,
+        staff_name: e.staff_name,
+        booking_reference: null,
+      }));
+
+      // Prepare extra time entries for PDF
+      const pdfExtraTimeEntries: InvoiceExtraTimeEntryForPdf[] = extraTimeEntries.map(e => ({
+        id: e.id,
+        work_date: e.work_date,
+        extra_time_minutes: e.extra_time_minutes,
+        total_cost: e.total_cost,
+        reason: e.reason,
+        staff_name: e.staff_name,
+        booking_id: e.booking_id,
+      }));
+
       await generateInvoicePDF({
         invoice,
         clientName,
@@ -95,7 +127,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
           address: orgData?.address || 'Organisation Address',
           email: orgData?.contact_email || 'contact@organisation.com',
           phone: orgData?.contact_phone
-        }
+        },
+        expenseEntries: pdfExpenseEntries,
+        extraTimeEntries: pdfExtraTimeEntries,
       });
       
       toast({
@@ -349,6 +383,90 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <span>Grand Total(£):</span>
                     <span>{formatCurrency(grandTotal)}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Additional Expenses Section */}
+          {expenseEntries.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Receipt className="h-5 w-5 text-amber-600" />
+                Additional Expenses
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Staff</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenseEntries.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell>{expense.date ? formatDateSafe(expense.date) : '-'}</TableCell>
+                      <TableCell>{expense.expense_type_name || '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{expense.description || '-'}</TableCell>
+                      <TableCell>{expense.staff_name || '-'}</TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrency(expense.amount || 0)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-3 flex justify-end">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Expenses Subtotal:</span>
+                  <span className="ml-2 font-semibold">{formatCurrency(expensesTotal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Extra Time Charges Section */}
+          {extraTimeEntries.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Timer className="h-5 w-5 text-blue-600" />
+                Extra Time Charges
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Staff</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {extraTimeEntries.map((record) => {
+                    const hours = Math.floor(record.extra_time_minutes / 60);
+                    const mins = record.extra_time_minutes % 60;
+                    const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                    
+                    return (
+                      <TableRow key={record.id}>
+                        <TableCell>{formatDateSafe(record.work_date)}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">{durationStr}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">{record.reason || '-'}</TableCell>
+                        <TableCell>{record.staff_name || '-'}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(record.total_cost)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <div className="mt-3 flex justify-end">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Extra Time Subtotal ({extraTimeTotals.formattedTime}):</span>
+                  <span className="ml-2 font-semibold">{formatCurrency(extraTimeTotals.totalCost)}</span>
                 </div>
               </div>
             </div>
