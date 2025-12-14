@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { InvoiceCancelledBookingsSection } from "./InvoiceCancelledBookingsSection";
 import { useInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
 import { useInvoiceExtraTimeEntries, calculateExtraTimeTotals } from "@/hooks/useInvoiceExtraTimeEntries";
+import { useInvoiceCancelledBookings } from "@/hooks/useInvoiceCancelledBookings";
+import { Calculator } from "lucide-react";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -47,13 +49,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   const [showLedgerView, setShowLedgerView] = useState(false);
   const { toast } = useToast();
 
-  // Fetch expense and extra time entries for this invoice
+  // Fetch expense, extra time, and cancelled booking entries for this invoice
   const { data: expenseEntries = [] } = useInvoiceExpenseEntries(invoice?.id);
   const { data: extraTimeEntries = [] } = useInvoiceExtraTimeEntries(invoice?.id);
+  const { data: cancelledBookings = [] } = useInvoiceCancelledBookings(invoice?.id);
 
   // Calculate expense totals
   const expensesTotal = expenseEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
   const extraTimeTotals = calculateExtraTimeTotals(extraTimeEntries);
+  
+  // Calculate cancelled booking fees (staff payment amounts for cancelled bookings)
+  const cancelledBookingFees = cancelledBookings.reduce((sum, b) => {
+    if (b.suspension_honor_staff_payment && b.staff_payment_amount) {
+      return sum + b.staff_payment_amount;
+    }
+    return sum;
+  }, 0);
 
   const handleDownload = async () => {
     if (!invoice) {
@@ -367,22 +378,11 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 </TableBody>
               </Table>
               
-              {/* Total Amount Summary */}
-              <div className="mt-6 space-y-3 border-t pt-4">
-                <h4 className="font-semibold text-base mb-3">Total Amount Summary</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal (before VAT):</span>
-                    <span className="font-medium">{formatCurrency(subtotalBeforeVat)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total VAT(£):</span>
-                    <span className="font-medium">{formatCurrency(totalVatAmount)}</span>
-                  </div>
-                  <div className="flex justify-between text-base font-semibold border-t border-border pt-2">
-                    <span>Grand Total(£):</span>
-                    <span>{formatCurrency(grandTotal)}</span>
-                  </div>
+              {/* Line Items Subtotal */}
+              <div className="mt-3 flex justify-end">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Line Items Subtotal:</span>
+                  <span className="ml-2 font-semibold">{formatCurrency(subtotalBeforeVat)}</span>
                 </div>
               </div>
             </div>
@@ -474,6 +474,67 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
           {/* Cancelled Bookings Section */}
           <InvoiceCancelledBookingsSection invoiceId={invoice.id} />
+
+          {/* Comprehensive Invoice Total Summary - AFTER Cancelled Bookings */}
+          <div className="bg-muted/30 rounded-lg p-4 border border-border">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-primary" />
+              Invoice Total Summary
+            </h3>
+            <div className="space-y-3">
+              {/* Service Charges (Line Items) */}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Service Charges (Line Items):</span>
+                <span className="font-medium">{formatCurrency(subtotalBeforeVat)}</span>
+              </div>
+              
+              {/* Additional Expenses */}
+              {expensesTotal > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Additional Expenses:</span>
+                  <span className="font-medium">{formatCurrency(expensesTotal)}</span>
+                </div>
+              )}
+              
+              {/* Extra Time Charges */}
+              {extraTimeTotals.totalCost > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Extra Time Charges ({extraTimeTotals.formattedTime}):</span>
+                  <span className="font-medium">{formatCurrency(extraTimeTotals.totalCost)}</span>
+                </div>
+              )}
+              
+              {/* Cancelled Booking Fees */}
+              {cancelledBookingFees > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Cancelled Booking Fees:</span>
+                  <span className="font-medium">{formatCurrency(cancelledBookingFees)}</span>
+                </div>
+              )}
+              
+              {/* Subtotal before VAT */}
+              <div className="flex justify-between text-sm border-t border-border pt-2">
+                <span className="text-muted-foreground">Subtotal (before VAT):</span>
+                <span className="font-medium">
+                  {formatCurrency(subtotalBeforeVat + expensesTotal + extraTimeTotals.totalCost + cancelledBookingFees)}
+                </span>
+              </div>
+              
+              {/* VAT */}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">VAT (20%):</span>
+                <span className="font-medium">{formatCurrency(totalVatAmount)}</span>
+              </div>
+              
+              {/* Grand Total */}
+              <div className="flex justify-between text-lg font-bold border-t-2 border-primary/30 pt-3 mt-2">
+                <span className="text-foreground">GRAND TOTAL:</span>
+                <span className="text-primary">
+                  {formatCurrency(subtotalBeforeVat + expensesTotal + extraTimeTotals.totalCost + cancelledBookingFees + totalVatAmount)}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Payment History */}
           {invoice.payment_records && invoice.payment_records.length > 0 && (
