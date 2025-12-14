@@ -54,6 +54,7 @@ export const useClientPortalInvoices = (clientId: string) => {
           payment_records(*)
         `)
         .eq('client_id', clientId)
+        .not('sent_date', 'is', null) // Only show invoices that have been sent to client
         .order('invoice_date', { ascending: false });
 
       if (error) throw error;

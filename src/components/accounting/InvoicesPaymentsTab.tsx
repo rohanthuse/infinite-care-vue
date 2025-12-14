@@ -9,6 +9,7 @@ import { EnhancedCreateInvoiceDialog } from './EnhancedCreateInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
+import { SendToClientDialog } from './SendToClientDialog';
 import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { InvoicePeriodSelector, type PeriodDetails } from './InvoicePeriodSelector';
@@ -17,6 +18,7 @@ import { BulkGenerationProgressDialog } from './BulkGenerationProgressDialog';
 import { BulkGenerationResultsDialog } from './BulkGenerationResultsDialog';
 import { InvoiceGenerationWidget } from './InvoiceGenerationWidget';
 import { useBulkInvoiceGeneration } from '@/hooks/useBulkInvoiceGeneration';
+import { useSendInvoiceToClient } from '@/hooks/useSendInvoiceToClient';
 import type { BulkGenerationProgress, BulkGenerationResult } from '@/hooks/useBulkInvoiceGeneration';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
@@ -53,6 +55,14 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [isInvoicePeriodOpen, setIsInvoicePeriodOpen] = useState(false);
   const [selectedInvoicePeriod, setSelectedInvoicePeriod] = useState<PeriodDetails | null>(null);
   
+  // Send to Client state
+  const [sendToClientDialogOpen, setSendToClientDialogOpen] = useState(false);
+  const [selectedInvoiceForSend, setSelectedInvoiceForSend] = useState<{
+    id: string;
+    invoiceNumber: string;
+    isResend: boolean;
+  } | null>(null);
+  
   // Bulk generation states
   const [showBulkPreview, setShowBulkPreview] = useState(false);
   const [showBulkProgress, setShowBulkProgress] = useState(false);
@@ -64,6 +74,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   });
 
   const { generateBulkInvoices } = useBulkInvoiceGeneration();
+  const sendInvoiceToClient = useSendInvoiceToClient();
   const queryClient = useQueryClient();
   
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
@@ -390,6 +401,30 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     }
   };
 
+  // Handler for sending invoice to client portal
+  const handleSendToClient = (invoiceId: string, invoiceNumber: string, isResend: boolean) => {
+    setSelectedInvoiceForSend({ id: invoiceId, invoiceNumber, isResend });
+    setSendToClientDialogOpen(true);
+  };
+
+  // Confirm sending invoice to client
+  const confirmSendToClient = () => {
+    if (selectedInvoiceForSend) {
+      sendInvoiceToClient.mutate(
+        { invoiceId: selectedInvoiceForSend.id, branchId },
+        {
+          onSuccess: () => {
+            setSendToClientDialogOpen(false);
+            setSelectedInvoiceForSend(null);
+          },
+          onError: () => {
+            // Error is handled by the hook
+          },
+        }
+      );
+    }
+  };
+
   if (!branchId) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -488,6 +523,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               onRecordPayment={handleRecordPayment}
               onCreateInvoice={handleCreateInvoice}
               onExportInvoice={handleDownloadInvoice}
+              onSendToClient={handleSendToClient}
               onDeleteInvoice={(invoiceId) => {
                 console.log(`Invoice ${invoiceId} deleted successfully`);
               }}
@@ -589,6 +625,19 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           if (!open) setSelectedPaymentForView(null);
         }}
         paymentId={selectedPaymentForView}
+      />
+
+      {/* Send to Client Dialog */}
+      <SendToClientDialog
+        open={sendToClientDialogOpen}
+        onOpenChange={(open) => {
+          setSendToClientDialogOpen(open);
+          if (!open) setSelectedInvoiceForSend(null);
+        }}
+        onConfirm={confirmSendToClient}
+        isLoading={sendInvoiceToClient.isPending}
+        invoiceNumber={selectedInvoiceForSend?.invoiceNumber}
+        isResend={selectedInvoiceForSend?.isResend}
       />
 
       {/* Client Selection Modal for Invoice Creation */}
