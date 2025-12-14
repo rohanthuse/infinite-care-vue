@@ -59,7 +59,7 @@ export function useInvoiceExtraTimeEntries(invoiceId?: string) {
   });
 }
 
-// Mark extra time records as invoiced
+// Mark extra time records as invoiced and update invoice total
 export function useMarkExtraTimeAsInvoiced() {
   const queryClient = useQueryClient();
 
@@ -73,7 +73,24 @@ export function useMarkExtraTimeAsInvoiced() {
     }) => {
       if (extraTimeIds.length === 0) return { count: 0 };
 
-      const { error } = await supabase
+      // First, get the total cost of selected extra time records
+      const { data: extraTimeRecords, error: fetchError } = await supabase
+        .from('extra_time_records')
+        .select('total_cost')
+        .in('id', extraTimeIds);
+
+      if (fetchError) {
+        console.error('Error fetching extra time records:', fetchError);
+        throw fetchError;
+      }
+
+      const extraTimeTotalCost = (extraTimeRecords || []).reduce(
+        (sum, record) => sum + (record.total_cost || 0), 
+        0
+      );
+
+      // Mark extra time records as invoiced
+      const { error: updateError } = await supabase
         .from('extra_time_records')
         .update({ 
           invoiced: true, 
@@ -81,7 +98,38 @@ export function useMarkExtraTimeAsInvoiced() {
         })
         .in('id', extraTimeIds);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Error marking extra time as invoiced:', updateError);
+        throw updateError;
+      }
+
+      // Update invoice total if there's extra time cost to add
+      if (extraTimeTotalCost > 0) {
+        // Get current invoice total
+        const { data: invoice, error: invoiceError } = await supabase
+          .from('client_billing')
+          .select('total_amount, amount')
+          .eq('id', invoiceId)
+          .maybeSingle();
+
+        if (invoiceError) {
+          console.error('Error fetching invoice:', invoiceError);
+          throw invoiceError;
+        }
+
+        const currentTotal = invoice?.total_amount || invoice?.amount || 0;
+        const newTotal = currentTotal + extraTimeTotalCost;
+
+        const { error: updateTotalError } = await supabase
+          .from('client_billing')
+          .update({ total_amount: newTotal })
+          .eq('id', invoiceId);
+
+        if (updateTotalError) {
+          console.error('Error updating invoice total:', updateTotalError);
+          throw updateTotalError;
+        }
+      }
 
       return { count: extraTimeIds.length };
     },
@@ -89,6 +137,9 @@ export function useMarkExtraTimeAsInvoiced() {
       queryClient.invalidateQueries({ queryKey: ['invoice-extra-time-entries'] });
       queryClient.invalidateQueries({ queryKey: ['eligible-extra-time-for-invoice'] });
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['client-billing'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
     },
     onError: (error) => {
       console.error('Error marking extra time as invoiced:', error);

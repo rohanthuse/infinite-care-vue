@@ -87,13 +87,21 @@ export function useEligibleInvoiceExpenses(
         status: exp.status,
       }));
 
-      // Categorize expenses
-      const bookingExpenses = expenses.filter(e => e.booking_id);
-      const travelExpenses = expenses.filter(e => 
-        e.category === 'travel_expenses' || e.category === 'mileage'
+      // Categorize expenses - ensure no duplicates across tabs
+      const isTravelCategory = (category: string) => 
+        category === 'travel_expenses' || category === 'mileage';
+      
+      // Travel expenses: category is travel/mileage (regardless of booking_id)
+      const travelExpenses = expenses.filter(e => isTravelCategory(e.category));
+      
+      // Booking expenses: has booking_id AND is NOT travel/mileage
+      const bookingExpenses = expenses.filter(e => 
+        e.booking_id && !isTravelCategory(e.category)
       );
+      
+      // Other expenses: no booking_id AND not travel/mileage
       const otherExpenses = expenses.filter(e => 
-        !e.booking_id && e.category !== 'travel_expenses' && e.category !== 'mileage'
+        !e.booking_id && !isTravelCategory(e.category)
       );
 
       return {
