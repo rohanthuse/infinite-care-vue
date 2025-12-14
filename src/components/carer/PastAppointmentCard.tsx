@@ -6,7 +6,8 @@ import {
   ClipboardList, 
   Receipt,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Timer
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AppointmentExpensesList from "./AppointmentExpensesList";
+import { useBookingExtraTime } from "@/hooks/useBookingExtraTime";
 
 interface PastAppointmentCardProps {
   appointment: any;
   onViewDetails: (appointment: any) => void;
   onCarePlanDetails: (clientId: string, clientName: string) => void;
   onAddExpense: (appointment: any) => void;
+  onAddExtraTime?: (appointment: any) => void;
   formatAppointmentDate: (dateString: string) => string;
   getStatusColor: (status: string) => string;
 }
@@ -42,10 +45,14 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
   onViewDetails,
   onCarePlanDetails,
   onAddExpense,
+  onAddExtraTime,
   formatAppointmentDate,
 }) => {
   const clientName = `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim() || 'Unknown Client';
   const clientId = appointment.client_id || appointment.clients?.id;
+  
+  // Check for existing extra time claim for this booking
+  const { data: existingExtraTime, isLoading: isLoadingExtraTime } = useBookingExtraTime(appointment.id);
   
   // Time calculations
   const scheduledStart = format(new Date(appointment.start_time), 'HH:mm');
@@ -62,17 +69,46 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
   let actualStart = '';
   let actualEnd = '';
   let actualDuration = 0;
+  let calculatedExtraTime = 0;
   
   if (hasActualTimes) {
     actualStart = format(new Date(visitRecord.visit_start_time), 'HH:mm');
     actualEnd = format(new Date(visitRecord.visit_end_time), 'HH:mm');
     actualDuration = visitRecord.actual_duration_minutes || 
       Math.max(0, differenceInMinutes(new Date(visitRecord.visit_end_time), new Date(visitRecord.visit_start_time)));
+    
+    // Calculate extra time (actual end - scheduled end)
+    calculatedExtraTime = Math.max(0, differenceInMinutes(
+      new Date(visitRecord.visit_end_time),
+      new Date(appointment.end_time)
+    ));
   }
 
   // Status
   const isCompleted = appointment.status === 'done' || appointment.status === 'completed';
   const isMissed = appointment.status === 'missed';
+  
+  // Can add extra time only if completed, has actual times, and extra time exists
+  const canAddExtraTime = isCompleted && hasActualTimes && calculatedExtraTime > 0 && !existingExtraTime && onAddExtraTime;
+  
+  // Extra time status badge
+  const getExtraTimeStatusBadge = () => {
+    if (!existingExtraTime) return null;
+    
+    const statusConfig: Record<string, { className: string; label: string }> = {
+      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: '🟡 Extra Time: Pending' },
+      approved: { className: 'bg-green-100 text-green-700 border-green-200', label: '✅ Extra Time: Approved' },
+      rejected: { className: 'bg-red-100 text-red-700 border-red-200', label: '❌ Extra Time: Rejected' },
+    };
+    
+    const config = statusConfig[existingExtraTime.status] || statusConfig.pending;
+    
+    return (
+      <Badge variant="outline" className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
 
   return (
     <Card className="hover:border-primary/20 transition-colors">
@@ -124,10 +160,16 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Care Plan Details
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onAddExpense(appointment)}>
+              <DropdownMenuItem onClick={() => onAddExpense(appointment)}>
                   <Receipt className="h-4 w-4 mr-2" />
                   Add Expense
                 </DropdownMenuItem>
+                {canAddExtraTime && (
+                  <DropdownMenuItem onClick={() => onAddExtraTime(appointment)}>
+                    <Timer className="h-4 w-4 mr-2" />
+                    Add Extra Time
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -154,6 +196,13 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Extra Time Status Badge */}
+        {existingExtraTime && (
+          <div className="px-4 py-2 border-t border-border/50">
+            {getExtraTimeStatusBadge()}
+          </div>
+        )}
 
         {/* Bottom Row - Expenses & Action */}
         <div className="px-4 py-3 border-t border-border/50">

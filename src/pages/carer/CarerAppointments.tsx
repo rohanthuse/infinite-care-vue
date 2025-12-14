@@ -22,6 +22,7 @@ import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDial
 import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 import { CarePlanDetailsDialog } from "@/components/care/CarePlanDetailsDialog";
 import { AddVisitExpenseDialog } from "@/components/carer/AddVisitExpenseDialog";
+import { AddAppointmentExtraTimeDialog } from "@/components/carer/AddAppointmentExtraTimeDialog";
 import PastAppointmentCard from "@/components/carer/PastAppointmentCard";
 import AppointmentExpensesList from "@/components/carer/AppointmentExpensesList";
 
@@ -48,6 +49,8 @@ const CarerAppointments: React.FC = () => {
   } | null>(null);
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
   const [selectedAppointmentForExpense, setSelectedAppointmentForExpense] = useState<any>(null);
+  const [showAddExtraTimeDialog, setShowAddExtraTimeDialog] = useState(false);
+  const [selectedAppointmentForExtraTime, setSelectedAppointmentForExtraTime] = useState<any>(null);
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
@@ -1164,6 +1167,10 @@ const CarerAppointments: React.FC = () => {
                           setSelectedAppointmentForExpense(apt);
                           setShowAddExpenseDialog(true);
                         }}
+                        onAddExtraTime={(apt) => {
+                          setSelectedAppointmentForExtraTime(apt);
+                          setShowAddExtraTimeDialog(true);
+                        }}
                         formatAppointmentDate={formatAppointmentDate}
                         getStatusColor={getStatusColor}
                       />
@@ -1213,6 +1220,13 @@ const CarerAppointments: React.FC = () => {
         open={showAddExpenseDialog}
         onOpenChange={setShowAddExpenseDialog}
         appointment={selectedAppointmentForExpense}
+      />
+
+      {/* Add Appointment Extra Time Dialog */}
+      <AddAppointmentExtraTimeDialog
+        open={showAddExtraTimeDialog}
+        onOpenChange={setShowAddExtraTimeDialog}
+        appointment={selectedAppointmentForExtraTime}
       />
     </div>
   );

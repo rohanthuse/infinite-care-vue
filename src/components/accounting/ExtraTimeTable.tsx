@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle, Link } from "lucide-react";
 import { ExtraTimeRecord } from "@/hooks/useAccountingData";
 
 interface ExtraTimeTableProps {
@@ -81,8 +81,14 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
               <TableRow key={record.id}>
                 <TableCell>
                   <div>
-                    <div className="font-medium">
+                    <div className="font-medium flex items-center gap-2">
                       {record.staff ? `${record.staff.first_name} ${record.staff.last_name}` : 'Unknown Staff'}
+                      {record.booking_id && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200">
+                          <Link className="h-3 w-3 mr-1" />
+                          Visit Linked
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-gray-500">{record.staff_id}</div>
                   </div>
