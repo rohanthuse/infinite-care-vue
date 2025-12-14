@@ -17,6 +17,7 @@ interface BookingWithDetails {
   missed_notified_at: string | null;
   branch_id: string;
   organization_id: string;
+  notes: string | null;
   client: {
     id: string;
     first_name: string;
@@ -29,11 +30,17 @@ interface BookingWithDetails {
     last_name: string;
     late_arrival_count: number;
     missed_booking_count: number;
+    auth_user_id: string | null;
   } | null;
   service: {
     id: string;
     title: string;
   } | null;
+}
+
+interface VisitRecord {
+  id: string;
+  visit_start_time: string | null;
 }
 
 interface AlertSettings {
@@ -60,7 +67,7 @@ serve(async (req) => {
     const now = new Date();
     
     // Fetch bookings that are past their start time but not yet started
-    // Status should be 'confirmed' or 'assigned' (not started)
+    // Status should be 'confirmed' or 'assigned' (not started, not cancelled, not rescheduled)
     const { data: lateBookings, error: bookingsError } = await supabase
       .from('bookings')
       .select(`
@@ -74,6 +81,7 @@ serve(async (req) => {
         missed_notified_at,
         branch_id,
         organization_id,
+        notes,
         client:client_id (
           id,
           first_name,
@@ -85,7 +93,8 @@ serve(async (req) => {
           first_name,
           last_name,
           late_arrival_count,
-          missed_booking_count
+          missed_booking_count,
+          auth_user_id
         ),
         service:service_id (
           id,
@@ -94,7 +103,9 @@ serve(async (req) => {
       `)
       .in('status', ['confirmed', 'assigned'])
       .lt('start_time', now.toISOString())
-      .is('cancelled_at', null);
+      .is('cancelled_at', null)
+      .neq('cancellation_request_status', 'approved')
+      .neq('reschedule_request_status', 'approved');
 
     if (bookingsError) {
       console.error('[process-late-booking-alerts] Error fetching bookings:', bookingsError);
@@ -135,11 +146,30 @@ serve(async (req) => {
 
     for (const booking of lateBookings as BookingWithDetails[]) {
       const startTime = new Date(booking.start_time);
+      const endTime = new Date(booking.end_time);
       const minutesLate = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+      const isPastEndTime = now.getTime() > endTime.getTime();
       
-      console.log(`[process-late-booking-alerts] Booking ${booking.id}: ${minutesLate} minutes late`);
+      console.log(`[process-late-booking-alerts] Booking ${booking.id}: ${minutesLate} minutes late, past end time: ${isPastEndTime}`);
 
-      // First Alert: Send immediately when booking is late (after first_alert_delay_minutes)
+      // Check if visit was started by looking at visit_records
+      const { data: visitRecord } = await supabase
+        .from('visit_records')
+        .select('id, visit_start_time')
+        .eq('booking_id', booking.id)
+        .maybeSingle();
+
+      const visitWasStarted = visitRecord?.visit_start_time !== null && visitRecord?.visit_start_time !== undefined;
+      
+      console.log(`[process-late-booking-alerts] Booking ${booking.id}: visit started: ${visitWasStarted}`);
+
+      // Skip if visit was already started
+      if (visitWasStarted) {
+        console.log(`[process-late-booking-alerts] Skipping booking ${booking.id} - visit already started`);
+        continue;
+      }
+
+      // First Alert: Send when booking start time has passed (after first_alert_delay_minutes)
       if (
         settings.enable_late_start_alerts &&
         minutesLate >= settings.first_alert_delay_minutes &&
@@ -147,8 +177,8 @@ serve(async (req) => {
       ) {
         console.log(`[process-late-booking-alerts] Creating first alert for booking ${booking.id}`);
         
-        // Create notification for Super Admins
-        await createNotification(supabase, {
+        // Create notification for Admins
+        await createAdminNotification(supabase, {
           booking,
           type: 'late_start',
           minutesLate,
@@ -168,28 +198,36 @@ serve(async (req) => {
         firstAlertsCreated++;
       }
 
-      // Second Alert (Missed Booking): After grace period
+      // MISSED BOOKING: When current time is past the scheduled END TIME and visit was never started
       if (
         settings.enable_missed_booking_alerts &&
-        minutesLate >= settings.missed_booking_threshold_minutes &&
+        isPastEndTime &&
+        !visitWasStarted &&
         !booking.missed_notified_at
       ) {
-        console.log(`[process-late-booking-alerts] Creating missed booking alert for booking ${booking.id}`);
+        console.log(`[process-late-booking-alerts] Creating missed booking alert for booking ${booking.id} - past end time and no visit started`);
         
-        // Create missed booking notification
-        await createNotification(supabase, {
+        // Create missed booking notification for Admins
+        await createAdminNotification(supabase, {
           booking,
           type: 'missed_booking',
           minutesLate,
           settings,
         });
 
-        // Update booking to mark as missed
+        // Create missed booking notification for Carer
+        await createCarerNotification(supabase, booking);
+
+        // Update booking to mark as MISSED with status change
         await supabase
           .from('bookings')
           .update({
+            status: 'missed',  // Update status to 'missed'
             is_missed: true,
             missed_notified_at: now.toISOString(),
+            notes: booking.notes 
+              ? `${booking.notes}\n\nAuto – Visit not started` 
+              : 'Auto – Visit not started',  // Store missed reason
           })
           .eq('id', booking.id);
 
@@ -204,7 +242,7 @@ serve(async (req) => {
             .from('bookings')
             .select('*', { count: 'exact', head: true })
             .eq('staff_id', booking.staff.id)
-            .in('status', ['completed', 'in_progress', 'confirmed', 'assigned']);
+            .in('status', ['completed', 'in_progress', 'confirmed', 'assigned', 'missed']);
 
           const total = totalBookings || 1;
           const punctualityScore = Math.max(0, Math.round(((total - newLateCount) / total) * 100));
@@ -249,7 +287,53 @@ serve(async (req) => {
   }
 });
 
-async function createNotification(
+// Create notification for assigned carer when booking is marked as missed
+async function createCarerNotification(
+  supabase: any,
+  booking: BookingWithDetails
+) {
+  if (!booking.staff?.auth_user_id) {
+    console.log(`[process-late-booking-alerts] No auth_user_id for staff, skipping carer notification`);
+    return;
+  }
+
+  const clientName = booking.client 
+    ? `${booking.client.first_name} ${booking.client.last_name}` 
+    : 'Unknown Client';
+  
+  const startTime = new Date(booking.start_time);
+  const endTime = new Date(booking.end_time);
+  const timeSlot = `${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} – ${endTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+
+  const notification = {
+    user_id: booking.staff.auth_user_id,
+    branch_id: booking.branch_id,
+    title: 'Booking Marked as Missed',
+    message: `Your scheduled visit from ${timeSlot} for ${clientName} was marked as Missed because the visit was not started.`,
+    type: 'booking_missed',
+    category: 'booking',  // Required field
+    priority: 'high',
+    data: JSON.stringify({
+      booking_id: booking.id,
+      client_name: clientName,
+      scheduled_time: timeSlot,
+      reason: 'Auto – Visit not started',
+    }),
+    read: false,
+    created_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase.from('notifications').insert(notification);
+  
+  if (error) {
+    console.error('[process-late-booking-alerts] Error creating carer notification:', error);
+  } else {
+    console.log(`[process-late-booking-alerts] Created carer notification for staff ${booking.staff.id}`);
+  }
+}
+
+// Create notifications for admins (super admins and branch admins)
+async function createAdminNotification(
   supabase: any,
   params: {
     booking: BookingWithDetails;
@@ -273,7 +357,7 @@ async function createNotification(
   
   const startTime = new Date(booking.start_time);
   const endTime = new Date(booking.end_time);
-  const timeSlot = `${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  const timeSlot = `${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} – ${endTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
   
   let title: string;
   let message: string;
@@ -285,7 +369,7 @@ async function createNotification(
     priority = 'high';
   } else {
     title = 'Missed Booking Alert';
-    message = `${carerName} missed the booking for ${clientName} - Grace period exceeded (${minutesLate} minutes late)`;
+    message = `Booking scheduled from ${timeSlot} was auto marked as Missed (Visit not started). Carer: ${carerName}, Client: ${clientName}`;
     priority = 'critical';
   }
 
@@ -299,6 +383,7 @@ async function createNotification(
     scheduled_time: timeSlot,
     minutes_late: minutesLate,
     status: type === 'late_start' ? 'Booking not started on time' : 'Missed Booking / Late Arrival by Carer',
+    missed_reason: type === 'missed_booking' ? 'Auto – Visit not started' : undefined,
   });
 
   // Get Super Admins to notify
@@ -318,12 +403,14 @@ async function createNotification(
   superAdmins?.forEach((sa: { user_id: string }) => recipientIds.add(sa.user_id));
   branchAdmins?.forEach((ba: { admin_id: string }) => recipientIds.add(ba.admin_id));
 
-  // Create notifications for each admin
+  // Create notifications for each admin with all required fields
   const notifications = Array.from(recipientIds).map(userId => ({
     user_id: userId,
+    branch_id: booking.branch_id,  // Include branch_id
     title,
     message,
     type: type === 'late_start' ? 'booking_late_start' : 'booking_missed',
+    category: 'booking',  // Required field - prevents null constraint error
     priority,
     data: details,
     read: false,
@@ -334,9 +421,9 @@ async function createNotification(
     const { error } = await supabase.from('notifications').insert(notifications);
     
     if (error) {
-      console.error('[process-late-booking-alerts] Error creating notifications:', error);
+      console.error('[process-late-booking-alerts] Error creating admin notifications:', error);
     } else {
-      console.log(`[process-late-booking-alerts] Created ${notifications.length} notifications for ${type}`);
+      console.log(`[process-late-booking-alerts] Created ${notifications.length} admin notifications for ${type}`);
     }
   }
 }
