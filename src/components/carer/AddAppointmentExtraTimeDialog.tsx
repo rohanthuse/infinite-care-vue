@@ -73,10 +73,9 @@ export const AddAppointmentExtraTimeDialog: React.FC<AddAppointmentExtraTimeDial
     ? Math.max(0, differenceInMinutes(actualEnd, actualStart)) 
     : 0;
 
-  // Calculate max extra time (actual end - scheduled end)
-  const calculatedExtraTime = actualEnd 
-    ? Math.max(0, differenceInMinutes(actualEnd, scheduledEnd))
-    : 0;
+  // Calculate extra time based on DURATION difference (not clock times)
+  // Extra Time = max(Actual Duration - Scheduled Duration, 0)
+  const calculatedExtraTime = Math.max(0, actualDuration - scheduledDuration);
 
   // Reset form when dialog opens
   useEffect(() => {
