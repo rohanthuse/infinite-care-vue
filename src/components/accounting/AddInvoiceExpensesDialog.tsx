@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Receipt, Plus, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
@@ -36,6 +36,7 @@ import { useEligibleExtraTimeForInvoice } from "@/hooks/useEligibleExtraTimeForI
 import { useMarkExtraTimeAsInvoiced } from "@/hooks/useInvoiceExtraTimeEntries";
 import { useTenant } from "@/contexts/TenantContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useExpenseTypesWithIds } from "@/hooks/useParameterOptions";
 
 interface AddInvoiceExpensesDialogProps {
   open: boolean;
@@ -66,6 +67,9 @@ export function AddInvoiceExpensesDialog({
   const createInvoiceExpenseEntries = useCreateInvoiceExpenseEntries();
   const markExtraTimeAsInvoiced = useMarkExtraTimeAsInvoiced();
   
+  // Fetch expense types for UUID lookup
+  const { data: expenseTypesWithIds = [] } = useExpenseTypesWithIds();
+  
   // Fetch existing expense entries for this invoice
   const { data: existingEntries = [] } = useInvoiceExpenseEntries(invoiceId || undefined);
   
@@ -82,6 +86,47 @@ export function AddInvoiceExpensesDialog({
     startDate,
     endDate
   );
+
+  // Helper to map category string to expense type UUID
+  const getExpenseTypeId = useCallback((category: string): string | null => {
+    // Map common category strings to expected expense type titles
+    const categoryToTitleMap: Record<string, string> = {
+      'travel_expenses': 'Travel Expenses',
+      'mileage': 'Mileage',
+      'equipment_purchase': 'Equipment Purchase',
+      'training_costs': 'Training Costs',
+      'client_visit': 'Client Visit',
+      'medical_supplies': 'Medical Supplies',
+      'office_supplies': 'Office Supplies',
+      'utilities': 'Utilities',
+      'professional_services': 'Professional Services',
+      'travel': 'Travel Expenses',
+      'equipment': 'Equipment Purchase',
+      'training': 'Training Costs',
+    };
+    
+    const title = categoryToTitleMap[category] || category;
+    
+    // Try exact match first
+    let expenseType = expenseTypesWithIds.find(
+      (et) => et.title?.toLowerCase() === title.toLowerCase()
+    );
+    
+    // If not found, try partial match
+    if (!expenseType) {
+      expenseType = expenseTypesWithIds.find(
+        (et) => et.title?.toLowerCase().includes(category.toLowerCase().replace(/_/g, ' '))
+      );
+    }
+    
+    // Return the first available expense type as fallback
+    if (!expenseType && expenseTypesWithIds.length > 0) {
+      console.warn(`No expense type found for category: ${category}, using first available`);
+      return expenseTypesWithIds[0].id;
+    }
+    
+    return expenseType?.id || null;
+  }, [expenseTypesWithIds]);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -237,22 +282,45 @@ export function AddInvoiceExpensesDialog({
       // Convert selected eligible expenses to InvoiceExpenseEntry format
       const selectedEligibleExpenses: InvoiceExpenseEntry[] = eligibleExpenses?.allExpenses
         .filter(e => selectedEligibleExpenseIds.includes(e.id) && !e.is_invoiced)
-        .map(e => ({
-          id: uuidv4(),
-          expense_id: e.id,
-          expense_type_id: e.category,
-          expense_type_name: getCategoryLabel(e.category),
-          date: e.expense_date,
-          amount: e.amount,
-          admin_cost_percentage: 0,
-          description: e.description,
-          pay_staff: !!e.staff_id,
-          staff_id: e.staff_id,
-          staff_name: e.staff_name || null,
-          pay_staff_amount: null,
-          booking_reference: e.booking_id ? `Booking` : undefined,
-          source_type: e.booking_id ? 'booking' : (e.category === 'travel_expenses' || e.category === 'mileage' ? 'travel' : 'claim'),
-        })) || [];
+        .map(e => {
+          const expenseTypeId = getExpenseTypeId(e.category);
+          
+          if (!expenseTypeId) {
+            console.warn(`Skipping expense ${e.id}: no valid expense type for category "${e.category}"`);
+          }
+          
+          const sourceType: 'booking' | 'claim' | 'manual' | 'travel' = e.booking_id 
+            ? 'booking' 
+            : (e.category === 'travel_expenses' || e.category === 'mileage' ? 'travel' : 'claim');
+          
+          return {
+            id: uuidv4(),
+            expense_id: e.id,
+            expense_type_id: expenseTypeId, // Now using UUID instead of category string
+            expense_type_name: getCategoryLabel(e.category),
+            date: e.expense_date,
+            amount: e.amount,
+            admin_cost_percentage: 0,
+            description: e.description,
+            pay_staff: !!e.staff_id,
+            staff_id: e.staff_id,
+            staff_name: e.staff_name || null,
+            pay_staff_amount: null,
+            booking_reference: e.booking_id ? `Booking` : undefined,
+            source_type: sourceType,
+          };
+        })
+        .filter(e => e.expense_type_id !== null) as InvoiceExpenseEntry[] || [];
+
+      // Validate that we have expense types loaded
+      if (selectedEligibleExpenseIds.length > 0 && expenseTypesWithIds.length === 0) {
+        toast({
+          title: "Error loading expense types",
+          description: "Please wait for expense types to load and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Combine manual and selected expenses
       const allExpenses = [...expenses, ...selectedEligibleExpenses];
