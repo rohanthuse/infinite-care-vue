@@ -32,6 +32,8 @@ import { EligibleExpensesSection } from "./EligibleExpensesSection";
 import { InvoiceExpenseEntry } from "@/types/invoiceExpense";
 import { useCreateInvoiceExpenseEntries, useInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
 import { useEligibleInvoiceExpenses, EligibleExpense } from "@/hooks/useEligibleInvoiceExpenses";
+import { useEligibleExtraTimeForInvoice } from "@/hooks/useEligibleExtraTimeForInvoice";
+import { useMarkExtraTimeAsInvoiced } from "@/hooks/useInvoiceExtraTimeEntries";
 import { useTenant } from "@/contexts/TenantContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -57,10 +59,12 @@ export function AddInvoiceExpensesDialog({
   const { organization } = useTenant();
   const [expenses, setExpenses] = useState<InvoiceExpenseEntry[]>([]);
   const [selectedEligibleExpenseIds, setSelectedEligibleExpenseIds] = useState<string[]>([]);
+  const [selectedExtraTimeIds, setSelectedExtraTimeIds] = useState<string[]>([]);
   const [addExpenseDialogOpen, setAddExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<InvoiceExpenseEntry | null>(null);
   
   const createInvoiceExpenseEntries = useCreateInvoiceExpenseEntries();
+  const markExtraTimeAsInvoiced = useMarkExtraTimeAsInvoiced();
   
   // Fetch existing expense entries for this invoice
   const { data: existingEntries = [] } = useInvoiceExpenseEntries(invoiceId || undefined);
@@ -72,11 +76,19 @@ export function AddInvoiceExpensesDialog({
     endDate
   );
 
+  // Fetch eligible extra time for this client/period
+  const { data: eligibleExtraTime, isLoading: isLoadingExtraTime } = useEligibleExtraTimeForInvoice(
+    clientId,
+    startDate,
+    endDate
+  );
+
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setExpenses([]);
       setSelectedEligibleExpenseIds([]);
+      setSelectedExtraTimeIds([]);
       setEditingExpense(null);
     }
   }, [open]);
@@ -120,7 +132,15 @@ export function AddInvoiceExpensesDialog({
       .reduce((sum, e) => sum + e.amount, 0);
   }, [eligibleExpenses, selectedEligibleExpenseIds]);
 
-  const grandTotal = totalAmount + selectedEligibleTotal;
+  // Calculate total for selected extra time
+  const selectedExtraTimeTotal = useMemo(() => {
+    if (!eligibleExtraTime) return 0;
+    return eligibleExtraTime.extraTimeRecords
+      .filter(r => selectedExtraTimeIds.includes(r.id) && !r.invoiced)
+      .reduce((sum, r) => sum + r.total_cost, 0);
+  }, [eligibleExtraTime, selectedExtraTimeIds]);
+
+  const grandTotal = totalAmount + selectedEligibleTotal + selectedExtraTimeTotal;
 
   // CRUD operations for manual expenses
   const handleAddExpense = (newExpense: InvoiceExpenseEntry) => {
@@ -166,15 +186,25 @@ export function AddInvoiceExpensesDialog({
     );
   };
 
+  // Toggle extra time selection
+  const handleToggleExtraTime = (extraTimeId: string) => {
+    setSelectedExtraTimeIds(prev =>
+      prev.includes(extraTimeId)
+        ? prev.filter(id => id !== extraTimeId)
+        : [...prev, extraTimeId]
+    );
+  };
+
   // Save all expenses to invoice
   const handleSaveToInvoice = async () => {
     const hasManualExpenses = expenses.length > 0;
     const hasSelectedExpenses = selectedEligibleExpenseIds.length > 0;
+    const hasSelectedExtraTime = selectedExtraTimeIds.length > 0;
 
-    if (!hasManualExpenses && !hasSelectedExpenses) {
+    if (!hasManualExpenses && !hasSelectedExpenses && !hasSelectedExtraTime) {
       toast({
         title: "No expenses added",
-        description: "Please add or select at least one expense before saving.",
+        description: "Please add or select at least one expense or extra time before saving.",
         variant: "destructive",
       });
       return;
@@ -214,16 +244,28 @@ export function AddInvoiceExpensesDialog({
       const allExpenses = [...expenses, ...selectedEligibleExpenses];
       const sourceExpenseIds = selectedEligibleExpenses.map(e => e.expense_id).filter(Boolean) as string[];
 
-      await createInvoiceExpenseEntries.mutateAsync({
-        invoiceId,
-        expenses: allExpenses,
-        organizationId: organization?.id || undefined,
-        sourceExpenseIds,
-      });
+      // Save expenses if any
+      if (allExpenses.length > 0) {
+        await createInvoiceExpenseEntries.mutateAsync({
+          invoiceId,
+          expenses: allExpenses,
+          organizationId: organization?.id || undefined,
+          sourceExpenseIds,
+        });
+      }
+
+      // Mark extra time as invoiced if any selected
+      if (hasSelectedExtraTime) {
+        await markExtraTimeAsInvoiced.mutateAsync({
+          extraTimeIds: selectedExtraTimeIds,
+          invoiceId,
+        });
+      }
 
       // Reset and close
       setExpenses([]);
       setSelectedEligibleExpenseIds([]);
+      setSelectedExtraTimeIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving expenses to invoice:", error);
@@ -238,6 +280,7 @@ export function AddInvoiceExpensesDialog({
   const handleCancel = () => {
     setExpenses([]);
     setSelectedEligibleExpenseIds([]);
+    setSelectedExtraTimeIds([]);
     setEditingExpense(null);
     onOpenChange(false);
   };
@@ -287,9 +330,13 @@ export function AddInvoiceExpensesDialog({
                     bookingExpenses={eligibleExpenses?.bookingExpenses || []}
                     travelExpenses={eligibleExpenses?.travelExpenses || []}
                     otherExpenses={eligibleExpenses?.otherExpenses || []}
+                    extraTimeRecords={eligibleExtraTime?.extraTimeRecords || []}
                     selectedExpenseIds={selectedEligibleExpenseIds}
+                    selectedExtraTimeIds={selectedExtraTimeIds}
                     onToggleExpense={handleToggleEligibleExpense}
+                    onToggleExtraTime={handleToggleExtraTime}
                     isLoading={isLoadingEligible}
+                    isLoadingExtraTime={isLoadingExtraTime}
                   />
                   
                   <Separator />
@@ -401,17 +448,20 @@ export function AddInvoiceExpensesDialog({
               </div>
 
               {/* Grand Total Summary */}
-              {(expenses.length > 0 || selectedEligibleExpenseIds.length > 0) && (
+              {(expenses.length > 0 || selectedEligibleExpenseIds.length > 0 || selectedExtraTimeIds.length > 0) && (
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">Total Expenses to Add:</span>
+                    <span className="font-medium">Total to Add to Invoice:</span>
                     <span className="text-xl font-bold text-primary">
                       {formatCurrency(grandTotal)}
                     </span>
                   </div>
-                  <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                     {selectedEligibleExpenseIds.length > 0 && (
                       <span>• {selectedEligibleExpenseIds.length} approved expense(s): {formatCurrency(selectedEligibleTotal)}</span>
+                    )}
+                    {selectedExtraTimeIds.length > 0 && (
+                      <span>• {selectedExtraTimeIds.length} extra time record(s): {formatCurrency(selectedExtraTimeTotal)}</span>
                     )}
                     {expenses.length > 0 && (
                       <span>• {expenses.length} manual expense(s): {formatCurrency(totalAmount)}</span>
@@ -423,14 +473,14 @@ export function AddInvoiceExpensesDialog({
           </ScrollArea>
 
           <DialogFooter className="flex-shrink-0 gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={handleCancel} disabled={createInvoiceExpenseEntries.isPending}>
+            <Button variant="outline" onClick={handleCancel} disabled={createInvoiceExpenseEntries.isPending || markExtraTimeAsInvoiced.isPending}>
               Cancel
             </Button>
             <Button
               onClick={handleSaveToInvoice}
-              disabled={createInvoiceExpenseEntries.isPending || (expenses.length === 0 && selectedEligibleExpenseIds.length === 0)}
+              disabled={createInvoiceExpenseEntries.isPending || markExtraTimeAsInvoiced.isPending || (expenses.length === 0 && selectedEligibleExpenseIds.length === 0 && selectedExtraTimeIds.length === 0)}
             >
-              {createInvoiceExpenseEntries.isPending ? "Saving..." : "Save to Invoice"}
+              {(createInvoiceExpenseEntries.isPending || markExtraTimeAsInvoiced.isPending) ? "Saving..." : "Save to Invoice"}
             </Button>
           </DialogFooter>
         </DialogContent>

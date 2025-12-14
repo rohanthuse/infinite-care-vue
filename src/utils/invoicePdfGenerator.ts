@@ -29,6 +29,16 @@ export interface InvoiceExpenseEntryForPdf {
   booking_reference?: string | null;
 }
 
+export interface InvoiceExtraTimeEntryForPdf {
+  id: string;
+  work_date: string;
+  extra_time_minutes: number;
+  total_cost: number;
+  reason: string | null;
+  staff_name?: string | null;
+  booking_id?: string | null;
+}
+
 export interface InvoicePdfData {
   invoice: EnhancedClientBilling;
   clientName: string;
@@ -45,13 +55,14 @@ export interface InvoicePdfData {
     logoBase64?: string | null;
   };
   expenseEntries?: InvoiceExpenseEntryForPdf[];
+  extraTimeEntries?: InvoiceExtraTimeEntryForPdf[];
 }
 
 export const generateInvoicePDF = (data: InvoicePdfData) => {
   try {
     console.log('Starting PDF generation with data:', data);
     
-    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo, expenseEntries = [] } = data;
+    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo, expenseEntries = [], extraTimeEntries = [] } = data;
     
     // Validate required data
     if (!invoice) {
@@ -341,8 +352,78 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
       yPosition += 10;
     }
 
+    // ===== EXTRA TIME CHARGES SECTION =====
+    let extraTimeTotal = 0;
+    if (extraTimeEntries && extraTimeEntries.length > 0) {
+      // Add section header
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+      doc.text('Extra Time Charges', margin, yPosition);
+      yPosition += 8;
+
+      // Prepare extra time table data
+      const extraTimeTableData = extraTimeEntries.map(record => {
+        extraTimeTotal += record.total_cost;
+        const hours = Math.floor(record.extra_time_minutes / 60);
+        const mins = record.extra_time_minutes % 60;
+        const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        
+        return [
+          record.work_date ? formatDateSafe(record.work_date) : '-',
+          durationStr,
+          record.reason || '-',
+          record.staff_name || '-',
+          record.total_cost.toFixed(2)
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Duration', 'Reason', 'Staff', 'Amount (£)']],
+        body: extraTimeTableData,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [219, 234, 254], // Blue-100
+          textColor: [29, 78, 216], // Blue-700
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'left',
+          cellPadding: 3
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [55, 65, 81],
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Date
+          1: { cellWidth: 25 }, // Duration
+          2: { cellWidth: 60 }, // Reason
+          3: { cellWidth: 40 }, // Staff
+          4: { halign: 'right', cellWidth: 25, fontStyle: 'bold' } // Amount
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPosition = (doc as any).lastAutoTable?.finalY + 5 || yPosition + 30;
+
+      // Extra time subtotal
+      const extraTimeTotalBoxWidth = 70;
+      const extraTimeTotalBoxX = pageWidth - margin - extraTimeTotalBoxWidth;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+      doc.text('Extra Time Subtotal:', extraTimeTotalBoxX, yPosition);
+      doc.setFont(undefined, 'bold');
+      doc.text(`£${extraTimeTotal.toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+      
+      yPosition += 10;
+    }
+
     // ===== GRAND TOTAL SECTION (Blue background box) =====
-    const grandTotal = servicesTotal + expensesTotal;
+    const grandTotal = servicesTotal + expensesTotal + extraTimeTotal;
     const totalBoxWidth = 70;
     const totalBoxHeight = 12;
     const totalBoxX = pageWidth - margin - totalBoxWidth;
