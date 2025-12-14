@@ -3,16 +3,99 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2 } from "lucide-react";
+import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2, Clock, Car, Receipt } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useClientPortalInvoices, getInvoiceDisplayStatus } from "@/hooks/useClientPortalInvoices";
+import { useClientInvoiceExpenses } from "@/hooks/useClientInvoiceExpenses";
+import { useClientInvoiceExtraTime, formatDuration } from "@/hooks/useClientInvoiceExtraTime";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { format } from "date-fns";
 import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { supabase } from "@/integrations/supabase/client";
+
+// Component to display expenses for an invoice
+const InvoiceExpensesSection: React.FC<{ invoiceId: string }> = ({ invoiceId }) => {
+  const { data: expenses, isLoading } = useClientInvoiceExpenses(invoiceId);
+
+  if (isLoading) return null;
+  if (!expenses || expenses.length === 0) return null;
+
+  const travelExpenses = expenses.filter(e => e.category === 'travel' || e.category === 'mileage');
+  const otherExpenses = expenses.filter(e => e.category === 'other');
+
+  return (
+    <div className="mb-4">
+      <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <Receipt className="h-4 w-4" />
+        Expenses Breakdown:
+      </h5>
+      <div className="bg-gray-50 rounded p-3 space-y-3">
+        {travelExpenses.length > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+              <Car className="h-3 w-3" />
+              Travel & Mileage
+            </div>
+            <div className="space-y-1">
+              {travelExpenses.map((expense) => (
+                <div key={expense.id} className="flex justify-between text-sm">
+                  <span>{expense.description}</span>
+                  <span>{formatCurrency(expense.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {otherExpenses.length > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-500 mb-1">Other Expenses</div>
+            <div className="space-y-1">
+              {otherExpenses.map((expense) => (
+                <div key={expense.id} className="flex justify-between text-sm">
+                  <span>{expense.description}</span>
+                  <span>{formatCurrency(expense.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Component to display extra time for an invoice
+const InvoiceExtraTimeSection: React.FC<{ invoiceId: string }> = ({ invoiceId }) => {
+  const { data: extraTimeItems, isLoading } = useClientInvoiceExtraTime(invoiceId);
+
+  if (isLoading) return null;
+  if (!extraTimeItems || extraTimeItems.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <Clock className="h-4 w-4" />
+        Extra Time Details:
+      </h5>
+      <div className="bg-amber-50 rounded p-3 space-y-1">
+        {extraTimeItems.map((item) => (
+          <div key={item.id} className="flex justify-between text-sm">
+            <div>
+              <span>{item.description}</span>
+              <span className="text-gray-500 ml-2">
+                ({formatDuration(item.duration_minutes)} @ {formatCurrency(item.rate_per_hour)}/hr)
+              </span>
+            </div>
+            <span className="font-medium">{formatCurrency(item.total_cost)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ClientPayments = () => {
   const [activeTab, setActiveTab] = useState("invoices");
@@ -239,6 +322,11 @@ const ClientPayments = () => {
                               <span className="text-gray-500">Service Date:</span> {format(new Date(invoice.service_provided_date), 'MMM d, yyyy')}
                             </div>
                           )}
+                          {invoice.start_date && invoice.end_date && (
+                            <div className="text-sm">
+                              <span className="text-gray-500">Service Period:</span> {format(new Date(invoice.start_date), 'MMM d')} - {format(new Date(invoice.end_date), 'MMM d, yyyy')}
+                            </div>
+                          )}
                           {isPaid && invoice.paid_date && (
                             <div className="text-sm">
                               <span className="text-gray-500">Paid Date:</span> {format(new Date(invoice.paid_date), 'MMM d, yyyy')}
@@ -265,7 +353,7 @@ const ClientPayments = () => {
                         </div>
                       </div>
                       
-                      {/* Line Items */}
+                      {/* Line Items / Services */}
                       {invoice.line_items && invoice.line_items.length > 0 && (
                         <div className="mb-4">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">Services Provided:</h5>
@@ -276,6 +364,42 @@ const ClientPayments = () => {
                                 <span>{formatCurrency(item.line_total)}</span>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Expenses Section */}
+                      <InvoiceExpensesSection invoiceId={invoice.id} />
+
+                      {/* Extra Time Section */}
+                      <InvoiceExtraTimeSection invoiceId={invoice.id} />
+
+                      {/* Tax & Total Summary */}
+                      {(invoice.tax_amount || invoice.vat_amount || invoice.net_amount) && (
+                        <div className="mb-4 border-t pt-3">
+                          <div className="space-y-1 text-sm">
+                            {invoice.net_amount && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Subtotal:</span>
+                                <span>{formatCurrency(invoice.net_amount)}</span>
+                              </div>
+                            )}
+                            {invoice.tax_amount && invoice.tax_amount > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Tax:</span>
+                                <span>{formatCurrency(invoice.tax_amount)}</span>
+                              </div>
+                            )}
+                            {invoice.vat_amount && invoice.vat_amount > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">VAT:</span>
+                                <span>{formatCurrency(invoice.vat_amount)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-semibold pt-1 border-t">
+                              <span>Total:</span>
+                              <span>{formatCurrency(invoice.total_amount || invoice.amount)}</span>
+                            </div>
                           </div>
                         </div>
                       )}

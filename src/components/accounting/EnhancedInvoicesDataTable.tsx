@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2, MoreVertical, Mail, Receipt } from 'lucide-react';
+import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2, MoreVertical, Mail, Receipt, UserCheck } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ interface EnhancedInvoicesDataTableProps {
   onLockInvoice?: (invoiceId: string) => void;
   onUnlockInvoice?: (invoiceId: string) => void;
   onSendInvoice?: (invoiceId: string) => void;
+  onSendToClient?: (invoiceId: string, invoiceNumber: string, isAlreadySent: boolean) => void;
   onExportInvoice?: (invoiceId: string) => void;
   onDeleteInvoice?: (invoiceId: string) => void;
 }
@@ -44,6 +45,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   onLockInvoice,
   onUnlockInvoice,
   onSendInvoice,
+  onSendToClient,
   onExportInvoice,
   onDeleteInvoice
 }) => {
@@ -316,12 +318,14 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices?.map(invoice => {
+          {invoices?.map(invoice => {
             const isLocked = invoice.is_locked || invoice.status === 'confirmed';
             const canEdit = !isLocked && ['draft', 'ready_to_charge'].includes(invoice.status);
             const canLock = !isLocked && invoice.status === 'ready_to_charge';
             const canSend = !isLocked && ['ready_to_charge', 'confirmed'].includes(invoice.status);
             const canDelete = ['draft', 'pending', 'cancelled'].includes(invoice.status);
+            const canSendToClient = ['ready_to_charge', 'confirmed', 'sent', 'pending'].includes(invoice.status) && !['draft', 'cancelled'].includes(invoice.status);
+            const isAlreadySentToClient = Boolean(invoice.sent_date);
             return <TableRow key={invoice.id} className="hover:bg-muted/50">
                   <TableCell>
                     <Checkbox
@@ -437,6 +441,16 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                             <Mail className="mr-2 h-4 w-4" />
                             <span>Send via Email</span>
                           </DropdownMenuItem>
+                          
+                          {canSendToClient && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDropdownAction(() => onSendToClient?.(invoice.id, invoice.invoice_number, isAlreadySentToClient))}
+                              className="text-primary focus:text-primary"
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              <span>{isAlreadySentToClient ? 'Resend to Client' : 'Send to Client'}</span>
+                            </DropdownMenuItem>
+                          )}
                           
                           <DropdownMenuItem onClick={() => handleOpenExpenses(invoice)}>
                             <Receipt className="mr-2 h-4 w-4" />
