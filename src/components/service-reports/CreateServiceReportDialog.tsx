@@ -14,8 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
-import { format } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart } from 'lucide-react';
+import { format, differenceInMinutes } from 'date-fns';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -33,7 +33,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { formatSafeDate } from '@/lib/dateUtils';
-
+import { formatDurationHoursMinutes } from '@/lib/utils';
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   booking_id: z.string().optional(),
@@ -279,10 +279,25 @@ export function CreateServiceReportDialog({
 
   const isDataLoading = isLoadingTasks || isLoadingVitals;
 
+  // Calculate scheduled times from preSelectedBooking
+  const scheduledStartTime = preSelectedBooking?.start_time ? new Date(preSelectedBooking.start_time) : null;
+  const scheduledEndTime = preSelectedBooking?.end_time ? new Date(preSelectedBooking.end_time) : null;
+  const scheduledDurationMins = scheduledStartTime && scheduledEndTime 
+    ? differenceInMinutes(scheduledEndTime, scheduledStartTime)
+    : null;
+
+  // Calculate actual times from visitRecord
+  const actualStartTime = visitRecord?.visit_start_time ? new Date(visitRecord.visit_start_time) : null;
+  const actualEndTime = visitRecord?.visit_end_time ? new Date(visitRecord.visit_end_time) : null;
+  const actualDurationMins = actualStartTime && actualEndTime 
+    ? differenceInMinutes(actualEndTime, actualStartTime)
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col">
+        {/* Fixed Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
           <div className="flex items-start gap-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={existingReport?.clients?.avatar_url} />
@@ -306,9 +321,10 @@ export function CreateServiceReportDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
+        {/* Scrollable Form Body */}
+        <ScrollArea className="flex-1 px-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+            <form id="service-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               
               {/* Loading State */}
               {isDataLoading && visitRecordId && (
@@ -322,50 +338,93 @@ export function CreateServiceReportDialog({
                 </Card>
               )}
 
+              {/* Visit Timing Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Timer className="h-5 w-5" />
+                    Visit Timing Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Scheduled Time Column */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Scheduled Time
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Start</p>
+                          <p className="font-medium">
+                            {scheduledStartTime ? format(scheduledStartTime, 'h:mm a') : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">End</p>
+                          <p className="font-medium">
+                            {scheduledEndTime ? format(scheduledEndTime, 'h:mm a') : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs text-muted-foreground">Duration</p>
+                          <p className="font-medium text-primary">
+                            {scheduledDurationMins !== null ? formatDurationHoursMinutes(scheduledDurationMins) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actual Time Column */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Actual Time
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Start</p>
+                          <p className="font-medium">
+                            {actualStartTime ? format(actualStartTime, 'h:mm a') : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">End</p>
+                          <p className="font-medium">
+                            {actualEndTime ? format(actualEndTime, 'h:mm a') : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs text-muted-foreground">Duration</p>
+                          <p className="font-medium text-primary">
+                            {actualDurationMins !== null ? formatDurationHoursMinutes(actualDurationMins) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Service Date */}
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-muted-foreground">Service Date</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {formatSafeDate(serviceDate, 'PPP')}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Visit Summary Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
+                    <FileText className="h-5 w-5" />
                     Visit Summary
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Service Date</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {formatSafeDate(serviceDate, 'PPP')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Duration</p>
-                      <p className="font-medium flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {serviceDuration} minutes
-                      </p>
-                    </div>
-                    {visitRecord?.visit_start_time && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Start Time</p>
-                        <p className="font-medium">
-                          {formatSafeDate(visitRecord.visit_start_time, 'p')}
-                        </p>
-                      </div>
-                    )}
-                    {visitRecord?.visit_end_time && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">End Time</p>
-                        <p className="font-medium">
-                          {formatSafeDate(visitRecord.visit_end_time, 'p')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
                   {/* Services Provided */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Services Provided</p>
@@ -386,12 +445,15 @@ export function CreateServiceReportDialog({
 
                   {/* Visit Summary Text */}
                   {visitRecord?.visit_summary && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Visit Summary</p>
-                      <p className="text-sm bg-muted/50 p-3 rounded-md">
-                        {visitRecord.visit_summary}
-                      </p>
-                    </div>
+                    <>
+                      <Separator />
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Visit Notes</p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {visitRecord.visit_summary}
+                        </p>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -682,25 +744,30 @@ export function CreateServiceReportDialog({
                 </Card>
               )}
 
-              {/* Submit Buttons */}
-              <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-background pb-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createServiceReport.isPending || updateServiceReport.isPending}>
-                  {mode === 'edit' 
-                    ? (updateServiceReport.isPending ? 'Updating...' : 'Update Report')
-                    : (createServiceReport.isPending ? 'Saving...' : 'Save Report')
-                  }
-                </Button>
-              </div>
             </form>
           </Form>
         </ScrollArea>
+
+        {/* Fixed Footer with Action Buttons */}
+        <div className="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0 bg-background">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            form="service-report-form"
+            disabled={createServiceReport.isPending || updateServiceReport.isPending}
+          >
+            {mode === 'edit' 
+              ? (updateServiceReport.isPending ? 'Updating...' : 'Update Report')
+              : (createServiceReport.isPending ? 'Saving...' : 'Save Report')
+            }
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
