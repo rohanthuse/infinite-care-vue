@@ -132,15 +132,23 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
             .maybeSingle();
 
           if (existingVisit) {
-            // Update existing visit record
+            // Update existing visit record with audit trail
+            const visitUpdateData: Record<string, any> = {
+              visit_start_time: new Date().toISOString(),
+              late_arrival_reason: data.lateArrivalReason || null,
+              arrival_delay_minutes: actualDelayMinutes,
+              status: 'in_progress',
+            };
+            
+            // Add audit trail if late arrival reason provided
+            if (data.lateArrivalReason) {
+              visitUpdateData.late_submitted_by = data.staffId;
+              visitUpdateData.late_submitted_at = new Date().toISOString();
+            }
+            
             const { error: visitError } = await supabase
               .from('visit_records')
-              .update({
-                visit_start_time: new Date().toISOString(),
-                late_arrival_reason: data.lateArrivalReason || null,
-                arrival_delay_minutes: actualDelayMinutes,
-                status: 'in_progress',
-              })
+              .update(visitUpdateData)
               .eq('id', existingVisit.id);
 
             if (visitError) {
@@ -154,7 +162,7 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
               .eq('id', data.bookingId)
               .single();
 
-            if (booking) {
+            if (booking && booking.branch_id) {
               const { error: createError } = await supabase
                 .from('visit_records')
                 .insert({
@@ -167,6 +175,8 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
                   status: 'in_progress',
                   late_arrival_reason: data.lateArrivalReason || null,
                   arrival_delay_minutes: actualDelayMinutes,
+                  late_submitted_by: data.lateArrivalReason ? data.staffId : null,
+                  late_submitted_at: data.lateArrivalReason ? new Date().toISOString() : null,
                 });
 
               if (createError) {

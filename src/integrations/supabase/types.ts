@@ -11142,6 +11142,8 @@ export type Database = {
           created_at: string
           id: string
           late_arrival_reason: string | null
+          late_submitted_at: string | null
+          late_submitted_by: string | null
           location_data: Json | null
           organization_id: string | null
           staff_id: string | null
@@ -11165,6 +11167,8 @@ export type Database = {
           created_at?: string
           id?: string
           late_arrival_reason?: string | null
+          late_submitted_at?: string | null
+          late_submitted_by?: string | null
           location_data?: Json | null
           organization_id?: string | null
           staff_id?: string | null
@@ -11188,6 +11192,8 @@ export type Database = {
           created_at?: string
           id?: string
           late_arrival_reason?: string | null
+          late_submitted_at?: string | null
+          late_submitted_by?: string | null
           location_data?: Json | null
           organization_id?: string | null
           staff_id?: string | null
@@ -11220,6 +11226,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_records_late_submitted_by_fkey"
+            columns: ["late_submitted_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
           {
