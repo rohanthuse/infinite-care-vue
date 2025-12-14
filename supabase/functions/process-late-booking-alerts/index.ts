@@ -98,7 +98,7 @@ serve(async (req) => {
         ),
         service:service_id (
           id,
-          name
+          title
         )
       `)
       .in('status', ['confirmed', 'assigned'])
