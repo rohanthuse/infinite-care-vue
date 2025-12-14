@@ -19,6 +19,16 @@ const formatDateSafe = (date: string | Date, formatString: string = 'dd/MM/yyyy'
   }
 };
 
+export interface InvoiceExpenseEntryForPdf {
+  id: string;
+  expense_type_name: string;
+  date: string | null;
+  amount: number;
+  description: string | null;
+  staff_name: string | null;
+  booking_reference?: string | null;
+}
+
 export interface InvoicePdfData {
   invoice: EnhancedClientBilling;
   clientName: string;
@@ -34,13 +44,14 @@ export interface InvoicePdfData {
     registrationNumber?: string;
     logoBase64?: string | null;
   };
+  expenseEntries?: InvoiceExpenseEntryForPdf[];
 }
 
 export const generateInvoicePDF = (data: InvoicePdfData) => {
   try {
     console.log('Starting PDF generation with data:', data);
     
-    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo } = data;
+    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo, expenseEntries = [] } = data;
     
     // Validate required data
     if (!invoice) {
@@ -261,7 +272,77 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
     yPosition = (doc as any).lastAutoTable?.finalY + 10 || yPosition + 50;
 
+    // Calculate services subtotal
+    const servicesTotal = invoice.line_items?.reduce((sum, item) => sum + (item.line_total || 0), 0) || invoice.amount || 0;
+
+    // ===== ADDITIONAL EXPENSES SECTION =====
+    let expensesTotal = 0;
+    if (expenseEntries && expenseEntries.length > 0) {
+      // Add section header
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+      doc.text('Additional Expenses', margin, yPosition);
+      yPosition += 8;
+
+      // Prepare expense table data
+      const expenseTableData = expenseEntries.map(expense => {
+        expensesTotal += expense.amount;
+        return [
+          expense.date ? formatDateSafe(expense.date) : '-',
+          expense.expense_type_name || 'Expense',
+          expense.description || '-',
+          expense.booking_reference || '-',
+          expense.amount.toFixed(2)
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Type', 'Description', 'Reference', 'Amount (£)']],
+        body: expenseTableData,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [254, 243, 199], // Amber-100
+          textColor: [180, 83, 9], // Amber-700
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'left',
+          cellPadding: 3
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [55, 65, 81],
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Date
+          1: { cellWidth: 35 }, // Type
+          2: { cellWidth: 60 }, // Description
+          3: { cellWidth: 30 }, // Reference
+          4: { halign: 'right', cellWidth: 25, fontStyle: 'bold' } // Amount
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPosition = (doc as any).lastAutoTable?.finalY + 5 || yPosition + 30;
+
+      // Expenses subtotal
+      const expensesTotalBoxWidth = 70;
+      const expensesTotalBoxX = pageWidth - margin - expensesTotalBoxWidth;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+      doc.text('Expenses Subtotal:', expensesTotalBoxX, yPosition);
+      doc.setFont(undefined, 'bold');
+      doc.text(`£${expensesTotal.toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+      
+      yPosition += 10;
+    }
+
     // ===== GRAND TOTAL SECTION (Blue background box) =====
+    const grandTotal = servicesTotal + expensesTotal;
     const totalBoxWidth = 70;
     const totalBoxHeight = 12;
     const totalBoxX = pageWidth - margin - totalBoxWidth;
@@ -273,7 +354,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     doc.setFont(undefined, 'bold');
     doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
     doc.text('Grand Total:', totalBoxX + 5, yPosition + 8);
-    doc.text(formatCurrency(invoice.total_amount || invoice.amount || 0), totalBoxX + totalBoxWidth - 5, yPosition + 8, { align: 'right' });
+    doc.text(formatCurrency(invoice.total_amount || grandTotal), totalBoxX + totalBoxWidth - 5, yPosition + 8, { align: 'right' });
 
     yPosition += totalBoxHeight + 15;
 

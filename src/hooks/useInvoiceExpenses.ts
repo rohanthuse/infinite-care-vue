@@ -23,7 +23,7 @@ export function useInvoiceExpenseEntries(invoiceId?: string) {
   });
 }
 
-// Create invoice expense entries
+// Create invoice expense entries with duplicate prevention and invoice total update
 export function useCreateInvoiceExpenseEntries() {
   const queryClient = useQueryClient();
 
@@ -31,14 +31,18 @@ export function useCreateInvoiceExpenseEntries() {
     mutationFn: async ({ 
       invoiceId, 
       expenses,
-      organizationId 
+      organizationId,
+      sourceExpenseIds = [],
     }: { 
       invoiceId: string; 
       expenses: InvoiceExpenseEntry[];
       organizationId?: string;
+      sourceExpenseIds?: string[]; // IDs of source expenses to mark as invoiced
     }) => {
+      // Prepare expense entries for insertion
       const expenseEntries = expenses.map(expense => ({
         invoice_id: invoiceId,
+        expense_id: expense.expense_id || null,
         expense_type_id: expense.expense_type_id,
         expense_type_name: expense.expense_type_name,
         date: expense.date,
@@ -52,17 +56,62 @@ export function useCreateInvoiceExpenseEntries() {
         organization_id: organizationId,
       }));
 
-      const { data, error } = await supabase
+      // Insert expense entries
+      const { data: insertedEntries, error: insertError } = await supabase
         .from('invoice_expense_entries')
         .insert(expenseEntries)
         .select();
 
-      if (error) throw error;
-      return data;
+      if (insertError) throw insertError;
+
+      // Mark source expenses as invoiced if any
+      if (sourceExpenseIds.length > 0) {
+        const { error: updateError } = await supabase
+          .from('expenses')
+          .update({ is_invoiced: true })
+          .in('id', sourceExpenseIds);
+
+        if (updateError) {
+          console.error('Error marking expenses as invoiced:', updateError);
+          // Don't throw - entries are already created
+        }
+      }
+
+      // Calculate total expense amount and update invoice
+      const totalExpenseAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+      if (totalExpenseAmount > 0) {
+        // Get current invoice amount
+        const { data: invoiceData, error: fetchError } = await supabase
+          .from('client_billing')
+          .select('amount, total_amount')
+          .eq('id', invoiceId)
+          .single();
+
+        if (!fetchError && invoiceData) {
+          const currentTotal = invoiceData.total_amount || invoiceData.amount || 0;
+          const newTotal = currentTotal + totalExpenseAmount;
+
+          // Update invoice total
+          const { error: updateInvoiceError } = await supabase
+            .from('client_billing')
+            .update({ total_amount: newTotal })
+            .eq('id', invoiceId);
+
+          if (updateInvoiceError) {
+            console.error('Error updating invoice total:', updateInvoiceError);
+          }
+        }
+      }
+
+      return insertedEntries;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice-expense-entries'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['client-billing'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['eligible-invoice-expenses'] });
       toast.success('Expenses added to invoice successfully');
     },
     onError: (error) => {
@@ -72,21 +121,62 @@ export function useCreateInvoiceExpenseEntries() {
   });
 }
 
-// Delete invoice expense entry
+// Delete invoice expense entry with total recalculation
 export function useDeleteInvoiceExpenseEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entryId: string) => {
-      const { error } = await supabase
+    mutationFn: async ({ entryId, invoiceId }: { entryId: string; invoiceId: string }) => {
+      // Get the expense entry first to know the amount and source expense ID
+      const { data: entry, error: fetchError } = await supabase
+        .from('invoice_expense_entries')
+        .select('amount, expense_id')
+        .eq('id', entryId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete the entry
+      const { error: deleteError } = await supabase
         .from('invoice_expense_entries')
         .delete()
         .eq('id', entryId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // If linked to source expense, mark it as not invoiced
+      if (entry?.expense_id) {
+        await supabase
+          .from('expenses')
+          .update({ is_invoiced: false })
+          .eq('id', entry.expense_id);
+      }
+
+      // Update invoice total
+      if (entry?.amount) {
+        const { data: invoiceData } = await supabase
+          .from('client_billing')
+          .select('total_amount')
+          .eq('id', invoiceId)
+          .single();
+
+        if (invoiceData) {
+          const newTotal = Math.max(0, (invoiceData.total_amount || 0) - entry.amount);
+          await supabase
+            .from('client_billing')
+            .update({ total_amount: newTotal })
+            .eq('id', invoiceId);
+        }
+      }
+
+      return { entryId };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice-expense-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['client-billing'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['eligible-invoice-expenses'] });
       toast.success('Expense entry removed from invoice');
     },
     onError: (error) => {

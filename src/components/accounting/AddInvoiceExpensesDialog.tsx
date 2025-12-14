@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Receipt, Plus, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -26,15 +28,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { AddNewExpenseEntryDialog } from "./AddNewExpenseEntryDialog";
+import { EligibleExpensesSection } from "./EligibleExpensesSection";
 import { InvoiceExpenseEntry } from "@/types/invoiceExpense";
-import { useCreateInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
+import { useCreateInvoiceExpenseEntries, useInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
+import { useEligibleInvoiceExpenses, EligibleExpense } from "@/hooks/useEligibleInvoiceExpenses";
 import { useTenant } from "@/contexts/TenantContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AddInvoiceExpensesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoiceId: string | null;
   branchId: string;
+  clientId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export function AddInvoiceExpensesDialog({
@@ -42,12 +50,36 @@ export function AddInvoiceExpensesDialog({
   onOpenChange,
   invoiceId,
   branchId,
+  clientId,
+  startDate,
+  endDate,
 }: AddInvoiceExpensesDialogProps) {
   const { organization } = useTenant();
   const [expenses, setExpenses] = useState<InvoiceExpenseEntry[]>([]);
+  const [selectedEligibleExpenseIds, setSelectedEligibleExpenseIds] = useState<string[]>([]);
   const [addExpenseDialogOpen, setAddExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<InvoiceExpenseEntry | null>(null);
+  
   const createInvoiceExpenseEntries = useCreateInvoiceExpenseEntries();
+  
+  // Fetch existing expense entries for this invoice
+  const { data: existingEntries = [] } = useInvoiceExpenseEntries(invoiceId || undefined);
+  
+  // Fetch eligible expenses for this client/period
+  const { data: eligibleExpenses, isLoading: isLoadingEligible } = useEligibleInvoiceExpenses(
+    clientId,
+    startDate,
+    endDate
+  );
+
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      setExpenses([]);
+      setSelectedEligibleExpenseIds([]);
+      setEditingExpense(null);
+    }
+  }, [open]);
 
   // Formatting helpers
   const formatCurrency = (amount: number | null) => {
@@ -69,7 +101,7 @@ export function AddInvoiceExpensesDialog({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
-  // Calculate totals
+  // Calculate totals for manually added expenses
   const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalStaffPayment = expenses.reduce(
     (sum, exp) => sum + (exp.pay_staff_amount || 0),
@@ -80,13 +112,23 @@ export function AddInvoiceExpensesDialog({
     0
   );
 
-  // CRUD operations
+  // Calculate total for selected eligible expenses
+  const selectedEligibleTotal = useMemo(() => {
+    if (!eligibleExpenses) return 0;
+    return eligibleExpenses.allExpenses
+      .filter(e => selectedEligibleExpenseIds.includes(e.id) && !e.is_invoiced)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [eligibleExpenses, selectedEligibleExpenseIds]);
+
+  const grandTotal = totalAmount + selectedEligibleTotal;
+
+  // CRUD operations for manual expenses
   const handleAddExpense = (newExpense: InvoiceExpenseEntry) => {
     setExpenses((prev) => [...prev, newExpense]);
     setAddExpenseDialogOpen(false);
     toast({
       title: "Expense added",
-      description: "The expense has been added successfully.",
+      description: "The expense has been added to the list.",
     });
   };
 
@@ -103,7 +145,7 @@ export function AddInvoiceExpensesDialog({
     setAddExpenseDialogOpen(false);
     toast({
       title: "Expense updated",
-      description: "The expense has been updated successfully.",
+      description: "The expense has been updated.",
     });
   };
 
@@ -115,11 +157,24 @@ export function AddInvoiceExpensesDialog({
     });
   };
 
+  // Toggle eligible expense selection
+  const handleToggleEligibleExpense = (expenseId: string) => {
+    setSelectedEligibleExpenseIds(prev =>
+      prev.includes(expenseId)
+        ? prev.filter(id => id !== expenseId)
+        : [...prev, expenseId]
+    );
+  };
+
+  // Save all expenses to invoice
   const handleSaveToInvoice = async () => {
-    if (expenses.length === 0) {
+    const hasManualExpenses = expenses.length > 0;
+    const hasSelectedExpenses = selectedEligibleExpenseIds.length > 0;
+
+    if (!hasManualExpenses && !hasSelectedExpenses) {
       toast({
         title: "No expenses added",
-        description: "Please add at least one expense before saving.",
+        description: "Please add or select at least one expense before saving.",
         variant: "destructive",
       });
       return;
@@ -135,14 +190,40 @@ export function AddInvoiceExpensesDialog({
     }
 
     try {
+      // Convert selected eligible expenses to InvoiceExpenseEntry format
+      const selectedEligibleExpenses: InvoiceExpenseEntry[] = eligibleExpenses?.allExpenses
+        .filter(e => selectedEligibleExpenseIds.includes(e.id) && !e.is_invoiced)
+        .map(e => ({
+          id: uuidv4(),
+          expense_id: e.id,
+          expense_type_id: e.category,
+          expense_type_name: getCategoryLabel(e.category),
+          date: e.expense_date,
+          amount: e.amount,
+          admin_cost_percentage: 0,
+          description: e.description,
+          pay_staff: !!e.staff_id,
+          staff_id: e.staff_id,
+          staff_name: e.staff_name || null,
+          pay_staff_amount: null,
+          booking_reference: e.booking_id ? `Booking` : undefined,
+          source_type: e.booking_id ? 'booking' : (e.category === 'travel_expenses' || e.category === 'mileage' ? 'travel' : 'claim'),
+        })) || [];
+
+      // Combine manual and selected expenses
+      const allExpenses = [...expenses, ...selectedEligibleExpenses];
+      const sourceExpenseIds = selectedEligibleExpenses.map(e => e.expense_id).filter(Boolean) as string[];
+
       await createInvoiceExpenseEntries.mutateAsync({
         invoiceId,
-        expenses,
+        expenses: allExpenses,
         organizationId: organization?.id || undefined,
+        sourceExpenseIds,
       });
 
       // Reset and close
       setExpenses([]);
+      setSelectedEligibleExpenseIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving expenses to invoice:", error);
@@ -156,11 +237,11 @@ export function AddInvoiceExpensesDialog({
 
   const handleCancel = () => {
     setExpenses([]);
+    setSelectedEligibleExpenseIds([]);
     setEditingExpense(null);
     onOpenChange(false);
   };
 
-  // Close nested dialog handler
   const handleNestedDialogClose = (open: boolean) => {
     setAddExpenseDialogOpen(open);
     if (!open) {
@@ -168,153 +249,186 @@ export function AddInvoiceExpensesDialog({
     }
   };
 
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      travel_expenses: 'Travel',
+      mileage: 'Mileage',
+      equipment_purchase: 'Equipment',
+      training_costs: 'Training',
+      client_visit_: 'Client Visit',
+      medical_supplies: 'Medical',
+      office_supplies: 'Office',
+    };
+    return labels[category] || category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   if (!invoiceId) return null;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[1100px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5 text-primary" />
               Add Invoice Expenses
             </DialogTitle>
             <DialogDescription>
-              Add detailed expense entries to this invoice. Each expense can include
-              staff payment information.
+              Select from approved expenses or add new expense entries to this invoice.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto py-4 space-y-4">
-            {/* Add New Expense Button */}
-            <div className="flex justify-start">
-              <Button
-                onClick={() => setAddExpenseDialogOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add New Expense
-              </Button>
-            </div>
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+            <div className="space-y-6 pr-4">
+              {/* Eligible Expenses Section */}
+              {clientId && (
+                <>
+                  <EligibleExpensesSection
+                    bookingExpenses={eligibleExpenses?.bookingExpenses || []}
+                    travelExpenses={eligibleExpenses?.travelExpenses || []}
+                    otherExpenses={eligibleExpenses?.otherExpenses || []}
+                    selectedExpenseIds={selectedEligibleExpenseIds}
+                    onToggleExpense={handleToggleEligibleExpense}
+                    isLoading={isLoadingEligible}
+                  />
+                  
+                  <Separator />
+                </>
+              )}
 
-            {/* Empty State */}
-            {expenses.length === 0 && (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/10">
-                <Receipt className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-4 text-muted-foreground font-medium">
-                  No expenses added yet
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Click "Add New Expense" to get started
-                </p>
+              {/* Manual Expense Entry Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Manual Expense Entries</h3>
+                  <Button
+                    onClick={() => setAddExpenseDialogOpen(true)}
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Manual Expense
+                  </Button>
+                </div>
+
+                {/* Empty State */}
+                {expenses.length === 0 && (
+                  <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/10">
+                    <Receipt className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <p className="mt-3 text-muted-foreground text-sm">
+                      No manual expenses added
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Click "Add Manual Expense" for custom entries
+                    </p>
+                  </div>
+                )}
+
+                {/* Manual Expenses Table */}
+                {expenses.length > 0 && (
+                  <>
+                    {/* Summary Bar */}
+                    <div className="flex flex-wrap gap-4 justify-between items-center px-4 py-3 bg-muted/50 rounded-md border">
+                      <div className="text-sm">
+                        <span className="font-medium">{expenses.length}</span> manual expense(s)
+                      </div>
+                      <div className="text-sm">
+                        Amount:{" "}
+                        <span className="font-bold">{formatCurrency(totalAmount)}</span>
+                      </div>
+                      <div className="text-sm">
+                        Staff Payment:{" "}
+                        <span className="font-bold">{formatCurrency(totalStaffPayment)}</span>
+                      </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="border rounded-lg overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[150px]">Expense Type</TableHead>
+                            <TableHead className="w-[100px]">Date</TableHead>
+                            <TableHead className="w-[100px]">Amount</TableHead>
+                            <TableHead className="w-[200px]">Description</TableHead>
+                            <TableHead className="w-[120px]">Staff</TableHead>
+                            <TableHead className="w-[100px]">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {expenses.map((expense) => (
+                            <TableRow key={expense.id}>
+                              <TableCell className="font-medium">
+                                {expense.expense_type_name}
+                              </TableCell>
+                              <TableCell>{formatDate(expense.date)}</TableCell>
+                              <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                              <TableCell>
+                                {truncateText(expense.description, 40)}
+                              </TableCell>
+                              <TableCell>{expense.staff_name || "-"}</TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditExpense(expense)}
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteExpense(expense.id)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
 
-            {/* Expenses Table */}
-            {expenses.length > 0 && (
-              <>
-                {/* Summary Bar */}
-                <div className="flex flex-wrap gap-4 justify-between items-center px-4 py-3 bg-muted/50 rounded-md border">
-                  <div className="text-sm">
-                    <span className="font-medium">{expenses.length}</span> expense(s)
-                  </div>
-                  <div className="text-sm">
-                    Total Amount:{" "}
-                    <span className="font-bold">{formatCurrency(totalAmount)}</span>
-                  </div>
-                  <div className="text-sm">
-                    Total Staff Payment:{" "}
-                    <span className="font-bold">
-                      {formatCurrency(totalStaffPayment)}
+              {/* Grand Total Summary */}
+              {(expenses.length > 0 || selectedEligibleExpenseIds.length > 0) && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total Expenses to Add:</span>
+                    <span className="text-xl font-bold text-primary">
+                      {formatCurrency(grandTotal)}
                     </span>
                   </div>
-                  <div className="text-sm">
-                    Total Admin Cost:{" "}
-                    <span className="font-bold">
-                      {formatCurrency(totalAdminCost)}
-                    </span>
+                  <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                    {selectedEligibleExpenseIds.length > 0 && (
+                      <span>• {selectedEligibleExpenseIds.length} approved expense(s): {formatCurrency(selectedEligibleTotal)}</span>
+                    )}
+                    {expenses.length > 0 && (
+                      <span>• {expenses.length} manual expense(s): {formatCurrency(totalAmount)}</span>
+                    )}
                   </div>
                 </div>
+              )}
+            </div>
+          </ScrollArea>
 
-                {/* Table */}
-                <div className="border rounded-lg overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[150px]">Expense Type</TableHead>
-                        <TableHead className="w-[110px]">Date</TableHead>
-                        <TableHead className="w-[100px]">Amount</TableHead>
-                        <TableHead className="w-[110px]">Admin Cost %</TableHead>
-                        <TableHead className="w-[200px]">Description</TableHead>
-                        <TableHead className="w-[90px]">Pay Staff</TableHead>
-                        <TableHead className="w-[150px]">Staff Name</TableHead>
-                        <TableHead className="w-[130px]">Staff Amount</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {expenses.map((expense) => (
-                        <TableRow key={expense.id}>
-                          <TableCell className="font-medium">
-                            {expense.expense_type_name}
-                          </TableCell>
-                          <TableCell>{formatDate(expense.date)}</TableCell>
-                          <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                          <TableCell>{expense.admin_cost_percentage}%</TableCell>
-                          <TableCell>
-                            {truncateText(expense.description, 50)}
-                          </TableCell>
-                          <TableCell>
-                            {expense.pay_staff ? (
-                              <span className="text-green-600 font-medium">Yes</span>
-                            ) : (
-                              <span className="text-muted-foreground">No</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{expense.staff_name || "-"}</TableCell>
-                          <TableCell>
-                            {formatCurrency(expense.pay_staff_amount)}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleEditExpense(expense)}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteExpense(expense.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            )}
-          </div>
-
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex-shrink-0 gap-2 pt-4 border-t">
             <Button variant="outline" onClick={handleCancel} disabled={createInvoiceExpenseEntries.isPending}>
               Cancel
             </Button>
             <Button
               onClick={handleSaveToInvoice}
-              disabled={createInvoiceExpenseEntries.isPending || expenses.length === 0}
+              disabled={createInvoiceExpenseEntries.isPending || (expenses.length === 0 && selectedEligibleExpenseIds.length === 0)}
             >
               {createInvoiceExpenseEntries.isPending ? "Saving..." : "Save to Invoice"}
             </Button>

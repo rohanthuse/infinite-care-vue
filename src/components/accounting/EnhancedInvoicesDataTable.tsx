@@ -61,7 +61,12 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   
   // Expenses dialog state
   const [expensesDialogOpen, setExpensesDialogOpen] = useState(false);
-  const [selectedInvoiceForExpenses, setSelectedInvoiceForExpenses] = useState<string | null>(null);
+  const [selectedInvoiceForExpenses, setSelectedInvoiceForExpenses] = useState<{
+    id: string;
+    clientId: string;
+    startDate: string | null;
+    endDate: string | null;
+  } | null>(null);
   
   // Controlled dropdown state to prevent UI freeze when opening dialogs
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -196,10 +201,15 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   };
 
   // Handler for opening Expenses dialog
-  const handleOpenExpenses = (invoiceId: string) => {
+  const handleOpenExpenses = (invoice: any) => {
     setOpenDropdownId(null);
     setTimeout(() => {
-      setSelectedInvoiceForExpenses(invoiceId);
+      setSelectedInvoiceForExpenses({
+        id: invoice.id,
+        clientId: invoice.client_id,
+        startDate: invoice.start_date,
+        endDate: invoice.end_date,
+      });
       setExpensesDialogOpen(true);
     }, 0);
   };
@@ -428,7 +438,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                             <span>Send via Email</span>
                           </DropdownMenuItem>
                           
-                          <DropdownMenuItem onClick={() => handleOpenExpenses(invoice.id)}>
+                          <DropdownMenuItem onClick={() => handleOpenExpenses(invoice)}>
                             <Receipt className="mr-2 h-4 w-4" />
                             <span>Expenses</span>
                           </DropdownMenuItem>
@@ -497,8 +507,11 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
       <AddInvoiceExpensesDialog
         open={expensesDialogOpen}
         onOpenChange={setExpensesDialogOpen}
-        invoiceId={selectedInvoiceForExpenses}
+        invoiceId={selectedInvoiceForExpenses?.id || null}
         branchId={branchId}
+        clientId={selectedInvoiceForExpenses?.clientId}
+        startDate={selectedInvoiceForExpenses?.startDate || undefined}
+        endDate={selectedInvoiceForExpenses?.endDate || undefined}
       />
 
       {/* Empty State */}
