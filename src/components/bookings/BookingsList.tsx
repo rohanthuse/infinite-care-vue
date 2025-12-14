@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2
+  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, AlertTriangle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,6 +14,8 @@ import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
 import { useDeleteMultipleBookings } from "@/hooks/useDeleteMultipleBookings";
+import { useForceDeleteBooking } from "@/hooks/useForceDeleteBooking";
+import { useBookingRelatedRecords, BookingRelatedRecords } from "@/hooks/useBookingRelatedRecords";
 import { useUserRole } from "@/hooks/useUserRole";
 import { BookingBulkActionsBar } from "./BookingBulkActionsBar";
 import { cn } from "@/lib/utils";
@@ -28,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BookingsListProps {
   bookings: Booking[];
@@ -49,10 +52,14 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
+  const [relatedRecordsInfo, setRelatedRecordsInfo] = useState<BookingRelatedRecords | null>(null);
   const itemsPerPage = 10;
   
   const deleteBooking = useDeleteBooking(branchId);
   const deleteMultipleBookings = useDeleteMultipleBookings(branchId);
+  const forceDeleteBooking = useForceDeleteBooking(branchId);
+  const { isLoading: isCheckingRelated, checkRelatedRecords, reset: resetRelatedRecords } = useBookingRelatedRecords();
   const { data: userRole } = useUserRole();
   
   // Check if user can delete bookings (admins only)
@@ -155,9 +162,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     }
   };
 
-  // Handle delete booking click
-  const handleDeleteClick = (booking: Booking) => {
+  // Handle delete booking click - check for related records first
+  const handleDeleteClick = async (booking: Booking) => {
     setDeleteBookingId(booking.id);
+    setShowForceDeleteConfirm(false);
+    setRelatedRecordsInfo(null);
+    
+    // Check for related records
+    const records = await checkRelatedRecords(booking.id);
+    if (records?.hasRelatedRecords) {
+      setRelatedRecordsInfo(records);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -170,6 +185,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     if (!booking) {
       console.log('[BookingsList] Booking not found in list');
       setDeleteBookingId(null);
+      resetRelatedRecords();
+      return;
+    }
+    
+    // If there are related records and user hasn't confirmed force delete yet
+    if (relatedRecordsInfo?.hasRelatedRecords && !showForceDeleteConfirm) {
+      setShowForceDeleteConfirm(true);
       return;
     }
     
@@ -179,21 +201,33 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     const safetyTimeout = setTimeout(() => {
       console.warn('[BookingsList] Delete operation timed out, forcing dialog close');
       setDeleteBookingId(null);
+      resetRelatedRecords();
     }, 15000); // 15 second timeout
     
     try {
-      // Wait for mutation AND all refetches to complete
-      await deleteBooking.mutateAsync({
-        bookingId: booking.id,
-        clientId: booking.clientId,
-        staffId: booking.carerId,
-      });
+      // Use force delete if there are related records, otherwise use normal delete
+      if (relatedRecordsInfo?.hasRelatedRecords) {
+        await forceDeleteBooking.mutateAsync({
+          bookingId: booking.id,
+          clientId: booking.clientId,
+          staffId: booking.carerId,
+        });
+      } else {
+        await deleteBooking.mutateAsync({
+          bookingId: booking.id,
+          clientId: booking.clientId,
+          staffId: booking.carerId,
+        });
+      }
       
       console.log('[BookingsList] Delete mutation and refetches completed successfully');
       clearTimeout(safetyTimeout);
       
-      // Close dialog
+      // Close dialog and reset state
       setDeleteBookingId(null);
+      setShowForceDeleteConfirm(false);
+      setRelatedRecordsInfo(null);
+      resetRelatedRecords();
       
       // Force cleanup of any lingering Radix UI state
       setTimeout(() => {
@@ -206,6 +240,9 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       console.error('[BookingsList] Delete mutation failed:', error);
       clearTimeout(safetyTimeout);
       setDeleteBookingId(null);
+      setShowForceDeleteConfirm(false);
+      setRelatedRecordsInfo(null);
+      resetRelatedRecords();
       forceModalCleanup();
     }
   };
@@ -645,37 +682,92 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         open={!!deleteBookingId} 
         onOpenChange={(open) => {
           // Only allow closing if not pending
-          if (!open && !deleteBooking.isPending) {
+          const isPending = deleteBooking.isPending || forceDeleteBooking.isPending || isCheckingRelated;
+          if (!open && !isPending) {
             setDeleteBookingId(null);
-          } else if (!open && deleteBooking.isPending) {
+            setShowForceDeleteConfirm(false);
+            setRelatedRecordsInfo(null);
+            resetRelatedRecords();
+          } else if (!open && isPending) {
             console.log('[BookingsList] Preventing dialog close during deletion');
           }
         }}
       >
         <AlertDialogContent>
-          {deleteBooking.isPending && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          {(deleteBooking.isPending || forceDeleteBooking.isPending || isCheckingRelated) && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
               <div className="flex flex-col items-center gap-2">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                <p className="text-sm text-muted-foreground">Deleting booking...</p>
+                <p className="text-sm text-muted-foreground">
+                  {isCheckingRelated ? "Checking related records..." : "Deleting booking..."}
+                </p>
               </div>
             </div>
           )}
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this booking? This action cannot be undone.
-              The booking will be permanently removed from the system.
+            <AlertDialogTitle className="flex items-center gap-2">
+              {relatedRecordsInfo?.hasRelatedRecords && (
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              )}
+              {relatedRecordsInfo?.hasRelatedRecords ? "Cannot Delete Booking" : "Delete Booking"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {relatedRecordsInfo?.hasRelatedRecords ? (
+                  <>
+                    <p>This booking has related records that prevent it from being deleted:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm bg-muted/50 p-3 rounded-md">
+                      {relatedRecordsInfo.bookingServicesCount > 0 && (
+                        <li>{relatedRecordsInfo.bookingServicesCount} Booking Service record{relatedRecordsInfo.bookingServicesCount > 1 ? 's' : ''}</li>
+                      )}
+                      {relatedRecordsInfo.expensesCount > 0 && (
+                        <li>{relatedRecordsInfo.expensesCount} Expense record{relatedRecordsInfo.expensesCount > 1 ? 's' : ''}</li>
+                      )}
+                      {relatedRecordsInfo.extraTimeRecordsCount > 0 && (
+                        <li>{relatedRecordsInfo.extraTimeRecordsCount} Extra Time record{relatedRecordsInfo.extraTimeRecordsCount > 1 ? 's' : ''}</li>
+                      )}
+                    </ul>
+                    {showForceDeleteConfirm ? (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Warning:</strong> You are about to permanently delete this booking and ALL related records. This action cannot be undone!
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <p className="font-medium">Do you still want to delete this booking? All related records will be permanently deleted.</p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    Are you sure you want to delete this booking? This action cannot be undone.
+                    The booking will be permanently removed from the system.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel 
+              disabled={deleteBooking.isPending || forceDeleteBooking.isPending}
+              onClick={() => {
+                setShowForceDeleteConfirm(false);
+                setRelatedRecordsInfo(null);
+                resetRelatedRecords();
+              }}
+            >
+              {relatedRecordsInfo?.hasRelatedRecords ? "No, Cancel" : "Cancel"}
+            </AlertDialogCancel>
             <Button
               onClick={handleConfirmDelete}
-              disabled={deleteBooking.isPending}
+              disabled={deleteBooking.isPending || forceDeleteBooking.isPending || isCheckingRelated}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
+              {(deleteBooking.isPending || forceDeleteBooking.isPending) 
+                ? "Deleting..." 
+                : relatedRecordsInfo?.hasRelatedRecords 
+                  ? "Yes, Force Delete" 
+                  : "Delete Booking"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

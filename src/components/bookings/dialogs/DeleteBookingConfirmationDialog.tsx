@@ -24,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getBookingStatusColor, getBookingStatusLabel } from "../utils/bookingColors";
 import { cn } from "@/lib/utils";
+import { useForceDeleteBooking } from "@/hooks/useForceDeleteBooking";
+import { useBookingRelatedRecords, BookingRelatedRecords } from "@/hooks/useBookingRelatedRecords";
 
 interface DeleteBookingConfirmationDialogProps {
   open: boolean;
@@ -72,6 +74,11 @@ export function DeleteBookingConfirmationDialog({
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
+  const [relatedRecordsInfo, setRelatedRecordsInfo] = useState<BookingRelatedRecords | null>(null);
+  
+  const forceDeleteBooking = useForceDeleteBooking(booking.branchId);
+  const { isLoading: isCheckingRelated, checkRelatedRecords, reset: resetRelatedRecords } = useBookingRelatedRecords();
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -81,8 +88,18 @@ export function DeleteBookingConfirmationDialog({
       setClientBookings([]);
       setSelectedBookings([]);
       setHasFetched(false);
+      setShowForceDeleteConfirm(false);
+      setRelatedRecordsInfo(null);
+      resetRelatedRecords();
+      
+      // Check for related records when dialog opens
+      checkRelatedRecords(booking.id).then(records => {
+        if (records?.hasRelatedRecords) {
+          setRelatedRecordsInfo(records);
+        }
+      });
     }
-  }, [open]);
+  }, [open, booking.id]);
 
   // Fetch client bookings in date range
   const fetchClientBookingsInRange = async () => {
@@ -168,7 +185,23 @@ export function DeleteBookingConfirmationDialog({
   // Handle delete action
   const handleDelete = async () => {
     if (deleteMode === 'single') {
-      await onDeleteSingle();
+      // If there are related records and user hasn't confirmed force delete yet
+      if (relatedRecordsInfo?.hasRelatedRecords && !showForceDeleteConfirm) {
+        setShowForceDeleteConfirm(true);
+        return;
+      }
+      
+      // Use force delete if there are related records
+      if (relatedRecordsInfo?.hasRelatedRecords) {
+        await forceDeleteBooking.mutateAsync({
+          bookingId: booking.id,
+          clientId: booking.clientId,
+          staffId: booking.carerId,
+        });
+        onOpenChange(false);
+      } else {
+        await onDeleteSingle();
+      }
     } else {
       const bookingsToDelete = clientBookings.filter((b) =>
         selectedBookings.includes(b.id)
@@ -179,32 +212,90 @@ export function DeleteBookingConfirmationDialog({
 
   // Check if delete button should be disabled
   const isDeleteDisabled = useMemo(() => {
-    if (isDeleting) return true;
+    if (isDeleting || forceDeleteBooking.isPending || isCheckingRelated) return true;
     if (deleteMode === 'all-client' && selectedBookings.length === 0) return true;
     return false;
-  }, [isDeleting, deleteMode, selectedBookings.length]);
+  }, [isDeleting, forceDeleteBooking.isPending, isCheckingRelated, deleteMode, selectedBookings.length]);
 
   // Get delete button text
   const getDeleteButtonText = () => {
-    if (isDeleting) return "Deleting...";
-    if (deleteMode === 'single') return "Delete This Booking";
-    return `Delete ${selectedBookings.length} Booking${selectedBookings.length !== 1 ? 's' : ''}`;
+    if (isDeleting || forceDeleteBooking.isPending) return "Deleting...";
+    if (deleteMode === 'single') {
+      if (relatedRecordsInfo?.hasRelatedRecords) {
+        return showForceDeleteConfirm ? "Yes, Force Delete" : "Delete This Booking";
+      }
+      return "Delete This Booking";
+    }
+    return `Delete ${selectedBookings.length} Booking${selectedBookings.length !== 1 ? 's' : ''}`
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        {(isCheckingRelated || forceDeleteBooking.isPending) && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">
+                {isCheckingRelated ? "Checking related records..." : "Deleting booking..."}
+              </p>
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-destructive" />
-            Delete Booking
+            {relatedRecordsInfo?.hasRelatedRecords && deleteMode === 'single' ? (
+              <>
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Cannot Delete Booking
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Delete Booking
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Choose how you want to delete bookings for this client.
+            {relatedRecordsInfo?.hasRelatedRecords && deleteMode === 'single'
+              ? "This booking has related records that prevent it from being deleted."
+              : "Choose how you want to delete bookings for this client."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Related Records Warning - Show when single mode and has related records */}
+          {relatedRecordsInfo?.hasRelatedRecords && deleteMode === 'single' && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardContent className="pt-4">
+                <p className="text-sm mb-2">This booking has related records:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {relatedRecordsInfo.bookingServicesCount > 0 && (
+                    <li>{relatedRecordsInfo.bookingServicesCount} Booking Service record{relatedRecordsInfo.bookingServicesCount > 1 ? 's' : ''}</li>
+                  )}
+                  {relatedRecordsInfo.expensesCount > 0 && (
+                    <li>{relatedRecordsInfo.expensesCount} Expense record{relatedRecordsInfo.expensesCount > 1 ? 's' : ''}</li>
+                  )}
+                  {relatedRecordsInfo.extraTimeRecordsCount > 0 && (
+                    <li>{relatedRecordsInfo.extraTimeRecordsCount} Extra Time record{relatedRecordsInfo.extraTimeRecordsCount > 1 ? 's' : ''}</li>
+                  )}
+                </ul>
+                {showForceDeleteConfirm ? (
+                  <Alert variant="destructive" className="mt-3">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Warning:</strong> You are about to permanently delete this booking and ALL related records. This action cannot be undone!
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-sm font-medium mt-3">
+                    Do you still want to delete this booking? All related records will be permanently deleted.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Current Booking Info */}
           <Card className="bg-muted/50">
             <CardContent className="pt-4">
