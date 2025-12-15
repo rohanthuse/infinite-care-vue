@@ -325,6 +325,40 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         }
       }
 
+      // Fetch cancelled bookings for the invoice period
+      let cancelledBookingsForPdf: any[] = [];
+      if (invoiceData.start_date && invoiceData.end_date) {
+        const { data: cancelledData } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            start_time,
+            cancellation_reason,
+            suspension_honor_staff_payment,
+            staff_payment_amount,
+            staff:staff_id (first_name, last_name)
+          `)
+          .eq('client_id', invoiceData.client_id)
+          .eq('status', 'cancelled')
+          .eq('suspension_honor_staff_payment', true)
+          .gte('start_time', invoiceData.start_date)
+          .lte('start_time', `${invoiceData.end_date}T23:59:59`);
+
+        if (cancelledData) {
+          cancelledBookingsForPdf = cancelledData
+            .filter((b: any) => b.staff_payment_amount)
+            .map((b: any) => ({
+              id: b.id,
+              start_time: b.start_time,
+              cancellation_reason: b.cancellation_reason,
+              staff_name: b.staff?.first_name && b.staff?.last_name 
+                ? `${b.staff.first_name} ${b.staff.last_name}` 
+                : null,
+              staff_payment_amount: b.staff_payment_amount,
+            }));
+        }
+      }
+
       await generateInvoicePDF({
         invoice: {
           ...invoiceData,
@@ -346,7 +380,8 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           website: orgData?.website,
           registrationNumber: orgData?.registration_number,
           logoBase64
-        }
+        },
+        cancelledBookings: cancelledBookingsForPdf
       });
 
       toast.success(`Invoice ${invoiceData.invoice_number} downloaded successfully.`);

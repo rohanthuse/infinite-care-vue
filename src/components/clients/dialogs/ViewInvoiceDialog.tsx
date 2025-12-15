@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, isValid } from "date-fns";
 import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
-import { generateInvoicePDF, InvoiceExpenseEntryForPdf, InvoiceExtraTimeEntryForPdf } from "@/utils/invoicePdfGenerator";
+import { generateInvoicePDF, InvoiceExpenseEntryForPdf, InvoiceExtraTimeEntryForPdf, InvoiceCancelledBookingForPdf } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useToast } from "@/hooks/use-toast";
@@ -127,6 +127,19 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         booking_id: e.booking_id,
       }));
 
+      // Prepare cancelled bookings for PDF
+      const pdfCancelledBookings: InvoiceCancelledBookingForPdf[] = cancelledBookings
+        .filter(b => b.suspension_honor_staff_payment && b.staff_payment_amount)
+        .map(b => ({
+          id: b.id,
+          start_time: b.start_time,
+          cancellation_reason: b.cancellation_reason,
+          staff_name: b.staff_first_name && b.staff_last_name 
+            ? `${b.staff_first_name} ${b.staff_last_name}` 
+            : null,
+          staff_payment_amount: b.staff_payment_amount,
+        }));
+
       await generateInvoicePDF({
         invoice,
         clientName,
@@ -141,6 +154,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         },
         expenseEntries: pdfExpenseEntries,
         extraTimeEntries: pdfExtraTimeEntries,
+        cancelledBookings: pdfCancelledBookings,
       });
       
       toast({
