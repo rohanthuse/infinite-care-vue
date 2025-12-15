@@ -709,16 +709,52 @@ export const usePayrollBookingIntegration = () => {
         
         const grossPay = basicSalary + overtimePay + approvedExtraTimePayment + travelReimbursement + cancelledBookingPayment;
         
-        // Calculate deductions (basic estimates - should be configurable)
-        const taxRate = 0.20; // 20% tax estimate
-        const niRate = 0.12; // 12% NI estimate
-        const pensionRate = 0.03; // 3% pension estimate
+        // Fetch staff-specific deduction settings
+        const { data: deductionSettings } = await supabase
+          .from('staff_deduction_settings')
+          .select('*')
+          .eq('staff_id', staffId)
+          .eq('is_active', true)
+          .order('effective_from', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Calculate deductions using staff-specific settings or defaults
+        let taxRate = 0.20; // Default 20%
+        let niRate = 0.12; // Default 12%
+        let pensionRate = 0.03; // Default 3%
+        let otherDeductionsTotal = 0;
+
+        if (deductionSettings) {
+          // Use staff-specific rates
+          taxRate = deductionSettings.use_custom_tax_rate 
+            ? (deductionSettings.tax_rate / 100)
+            : (deductionSettings.tax_rate / 100); // Use stored rate
+          
+          niRate = deductionSettings.use_custom_ni_rate
+            ? (deductionSettings.ni_rate / 100)
+            : (deductionSettings.ni_rate / 100);
+          
+          pensionRate = deductionSettings.pension_opted_in
+            ? (deductionSettings.pension_percentage / 100)
+            : 0;
+
+          // Calculate other deductions
+          const otherDeductions = deductionSettings.other_deductions as { name: string; type: string; amount: number }[] || [];
+          otherDeductionsTotal = otherDeductions.reduce((total, deduction) => {
+            if (deduction.type === 'fixed') {
+              return total + deduction.amount;
+            } else {
+              return total + (grossPay * (deduction.amount / 100));
+            }
+          }, 0);
+        }
 
         const taxDeduction = grossPay * taxRate;
         const niDeduction = grossPay * niRate;
         const pensionDeduction = grossPay * pensionRate;
         
-        const netPay = grossPay - taxDeduction - niDeduction - pensionDeduction;
+        const netPay = grossPay - taxDeduction - niDeduction - pensionDeduction - otherDeductionsTotal;
 
         // Count bookings by type
         const completedBookings = calculationData.bookings.filter(b => b.status !== 'cancelled').length;
@@ -750,7 +786,7 @@ export const usePayrollBookingIntegration = () => {
           tax_deduction: taxDeduction,
           ni_deduction: niDeduction,
           pension_deduction: pensionDeduction,
-          other_deductions: 0,
+          other_deductions: otherDeductionsTotal,
           net_pay: netPay,
           payment_status: 'pending' as const,
           payment_method: 'bank_transfer' as const,
