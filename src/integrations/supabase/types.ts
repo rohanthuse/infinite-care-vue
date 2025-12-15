@@ -6358,7 +6358,7 @@ export type Database = {
       }
       medical_conditions: {
         Row: {
-          category_id: string
+          category_id: string | null
           created_at: string
           field_caption: string | null
           id: string
@@ -6368,7 +6368,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          category_id: string
+          category_id?: string | null
           created_at?: string
           field_caption?: string | null
           id?: string
@@ -6378,7 +6378,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          category_id?: string
+          category_id?: string | null
           created_at?: string
           field_caption?: string | null
           id?: string
