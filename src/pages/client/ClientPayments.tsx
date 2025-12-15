@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2, Clock, Car, Receipt, XCircle, ChevronDown, ChevronUp, Eye, FileText } from "lucide-react";
+import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2, Clock, Car, Receipt, XCircle, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currencyFormatter";
@@ -25,11 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 // Component to display expenses for an invoice
 const InvoiceExpensesSection: React.FC<{ invoiceId: string }> = ({ invoiceId }) => {
@@ -183,7 +178,7 @@ const InvoiceStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   }
 };
 
-// Collapsible Invoice Row Component
+// Invoice Row Component with proper table structure
 const InvoiceRow: React.FC<{
   invoice: any;
   clientName: string;
@@ -202,27 +197,46 @@ const InvoiceRow: React.FC<{
   const isPaid = displayStatus === 'paid' || remainingBalance <= 0;
 
   return (
-    <Collapsible open={isExpanded} onOpenChange={onToggle}>
-      <TableRow className="hover:bg-muted/50 cursor-pointer" onClick={onToggle}>
-        <TableCell className="font-medium">
+    <>
+      {/* Main Invoice Row */}
+      <TableRow 
+        className="hover:bg-muted/50 cursor-pointer border-b" 
+        onClick={onToggle}
+      >
+        {/* Invoice Number */}
+        <TableCell className="font-medium py-4 w-[130px]">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            {invoice.invoice_number}
+            <FileText className="h-4 w-4 text-primary shrink-0" />
+            <span className="truncate">{invoice.invoice_number}</span>
           </div>
         </TableCell>
-        <TableCell className="hidden sm:table-cell">
-          {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
+        
+        {/* Invoice Date - Always visible */}
+        <TableCell className="py-4 w-[110px]">
+          <span className="text-foreground">
+            {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
+          </span>
         </TableCell>
-        <TableCell className="hidden md:table-cell">
-          {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+        
+        {/* Due Date - Always visible */}
+        <TableCell className="py-4 w-[110px]">
+          <span className={displayStatus === 'overdue' ? 'text-destructive font-medium' : 'text-foreground'}>
+            {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+          </span>
         </TableCell>
-        <TableCell className="font-semibold">
+        
+        {/* Amount - Right aligned */}
+        <TableCell className="py-4 w-[100px] text-right font-semibold text-foreground">
           {formatCurrency(invoice.total_amount || invoice.amount)}
         </TableCell>
-        <TableCell>
+        
+        {/* Status Badge */}
+        <TableCell className="py-4 w-[100px]">
           <InvoiceStatusBadge status={displayStatus} />
         </TableCell>
-        <TableCell className="text-right">
+        
+        {/* Actions */}
+        <TableCell className="py-4 w-[160px]">
           <div className="flex items-center justify-end gap-1">
             {!isPaid && remainingBalance > 0 && (
               <Button
@@ -231,7 +245,7 @@ const InvoiceRow: React.FC<{
                   e.stopPropagation();
                   onPayInvoice(invoice);
                 }}
-                className="h-8"
+                className="h-8 text-xs"
               >
                 Pay Now
               </Button>
@@ -248,55 +262,73 @@ const InvoiceRow: React.FC<{
             >
               <Download className="h-4 w-4" />
             </Button>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </TableCell>
       </TableRow>
-      <CollapsibleContent asChild>
-        <tr>
-          <td colSpan={6} className="p-0">
-            <div className="bg-muted/30 p-4 border-t">
-              {/* Invoice Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
+
+      {/* Expanded Details Row */}
+      {isExpanded && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={6} className="p-0 border-b-2 border-border">
+            <div className="bg-muted/30 p-5 border-t border-border">
+              {/* Invoice Details Header */}
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border">
+                <FileText className="h-5 w-5 text-primary" />
+                <h4 className="font-semibold text-foreground">Invoice Details</h4>
+              </div>
+
+              {/* Invoice Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">{invoice.description}</p>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Invoice Date:</span>{' '}
-                    <span className="font-medium">{format(new Date(invoice.invoice_date), 'MMM d, yyyy')}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Due Date:</span>{' '}
-                    <span className="font-medium">{format(new Date(invoice.due_date), 'MMM d, yyyy')}</span>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wide">Invoice Date</span>
+                      <span className="font-medium text-foreground">{format(new Date(invoice.invoice_date), 'MMM d, yyyy')}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wide">Due Date</span>
+                      <span className={`font-medium ${displayStatus === 'overdue' ? 'text-destructive' : 'text-foreground'}`}>
+                        {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+                      </span>
+                    </div>
                   </div>
                   {invoice.service_provided_date && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Service Date:</span>{' '}
-                      <span className="font-medium">{format(new Date(invoice.service_provided_date), 'MMM d, yyyy')}</span>
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wide">Service Date</span>
+                      <span className="font-medium text-foreground">{format(new Date(invoice.service_provided_date), 'MMM d, yyyy')}</span>
                     </div>
                   )}
                   {invoice.start_date && invoice.end_date && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Service Period:</span>{' '}
-                      <span className="font-medium">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wide">Service Period</span>
+                      <span className="font-medium text-foreground">
                         {format(new Date(invoice.start_date), 'MMM d')} - {format(new Date(invoice.end_date), 'MMM d, yyyy')}
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {invoice.payment_records && invoice.payment_records.length > 0 && (
                     <>
                       <div className="text-sm">
-                        <span className="text-muted-foreground">Amount Paid:</span>{' '}
-                        <span className="font-medium text-green-600">
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wide">Amount Paid</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">
                           {formatCurrency(
                             invoice.payment_records.reduce((sum: number, payment: any) => sum + payment.payment_amount, 0)
                           )}
@@ -304,7 +336,7 @@ const InvoiceRow: React.FC<{
                       </div>
                       {remainingBalance > 0 && (
                         <div className="text-sm">
-                          <span className="text-muted-foreground">Remaining Balance:</span>{' '}
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wide">Remaining Balance</span>
                           <span className="font-semibold text-destructive">{formatCurrency(remainingBalance)}</span>
                         </div>
                       )}
@@ -312,8 +344,8 @@ const InvoiceRow: React.FC<{
                   )}
                   {isPaid && invoice.paid_date && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Paid Date:</span>{' '}
-                      <span className="font-medium text-green-600">{format(new Date(invoice.paid_date), 'MMM d, yyyy')}</span>
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wide">Paid Date</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{format(new Date(invoice.paid_date), 'MMM d, yyyy')}</span>
                     </div>
                   )}
                 </div>
@@ -321,16 +353,16 @@ const InvoiceRow: React.FC<{
 
               {/* Line Items / Services */}
               {invoice.line_items && invoice.line_items.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                <div className="mb-5">
+                  <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
                     Services Provided
                   </h5>
-                  <div className="bg-background rounded-lg border p-3 space-y-1">
+                  <div className="bg-background rounded-lg border p-4 space-y-2">
                     {invoice.line_items.map((item: any, index: number) => (
                       <div key={index} className="flex justify-between text-sm">
                         <span className="text-foreground">{item.description} (x{item.quantity})</span>
-                        <span className="font-medium">{formatCurrency(item.line_total)}</span>
+                        <span className="font-medium text-foreground">{formatCurrency(item.line_total)}</span>
                       </div>
                     ))}
                   </div>
@@ -348,30 +380,31 @@ const InvoiceRow: React.FC<{
 
               {/* Tax & Total Summary */}
               {(invoice.tax_amount || invoice.vat_amount || invoice.net_amount) && (
-                <div className="mb-4 bg-background rounded-lg border p-3">
-                  <div className="space-y-1 text-sm">
+                <div className="mb-5 bg-background rounded-lg border p-4">
+                  <h5 className="text-sm font-semibold text-foreground mb-3">Payment Summary</h5>
+                  <div className="space-y-2 text-sm">
                     {invoice.net_amount && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal:</span>
-                        <span>{formatCurrency(invoice.net_amount)}</span>
+                        <span className="text-foreground">{formatCurrency(invoice.net_amount)}</span>
                       </div>
                     )}
                     {invoice.tax_amount && invoice.tax_amount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Tax:</span>
-                        <span>{formatCurrency(invoice.tax_amount)}</span>
+                        <span className="text-foreground">{formatCurrency(invoice.tax_amount)}</span>
                       </div>
                     )}
                     {invoice.vat_amount && invoice.vat_amount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">VAT:</span>
-                        <span>{formatCurrency(invoice.vat_amount)}</span>
+                        <span className="text-foreground">{formatCurrency(invoice.vat_amount)}</span>
                       </div>
                     )}
                     <Separator className="my-2" />
                     <div className="flex justify-between font-semibold text-base">
-                      <span>Total:</span>
-                      <span>{formatCurrency(invoice.total_amount || invoice.amount)}</span>
+                      <span className="text-foreground">Total:</span>
+                      <span className="text-foreground">{formatCurrency(invoice.total_amount || invoice.amount)}</span>
                     </div>
                   </div>
                 </div>
@@ -379,9 +412,9 @@ const InvoiceRow: React.FC<{
 
               {/* Payment History */}
               {invoice.payment_records && invoice.payment_records.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground mb-2">Payment History</h5>
-                  <div className="bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800 p-3 space-y-1">
+                <div className="mb-5">
+                  <h5 className="text-sm font-semibold text-foreground mb-3">Payment History</h5>
+                  <div className="bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800 p-4 space-y-2">
                     {invoice.payment_records.map((payment: any, index: number) => (
                       <div key={index} className="flex justify-between text-sm">
                         <span className="text-foreground">
@@ -397,7 +430,7 @@ const InvoiceRow: React.FC<{
               )}
 
               {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-2 border-t">
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
                 {!isPaid && remainingBalance > 0 && (
                   <Button onClick={() => onPayInvoice(invoice)}>
                     <CreditCard className="h-4 w-4 mr-2" />
@@ -410,10 +443,10 @@ const InvoiceRow: React.FC<{
                 </Button>
               </div>
             </div>
-          </td>
-        </tr>
-      </CollapsibleContent>
-    </Collapsible>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 };
 
@@ -584,16 +617,16 @@ const ClientPayments = () => {
             
             {/* Invoices Table */}
             {invoices && invoices.length > 0 ? (
-              <div className="rounded-lg border border-border overflow-hidden">
+              <div className="rounded-lg border border-border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">Invoice No</TableHead>
-                      <TableHead className="hidden sm:table-cell font-semibold">Date</TableHead>
-                      <TableHead className="hidden md:table-cell font-semibold">Due Date</TableHead>
-                      <TableHead className="font-semibold">Amount</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="text-right font-semibold">Actions</TableHead>
+                      <TableHead className="font-semibold w-[130px]">Invoice No</TableHead>
+                      <TableHead className="font-semibold w-[110px]">Invoice Date</TableHead>
+                      <TableHead className="font-semibold w-[110px]">Due Date</TableHead>
+                      <TableHead className="font-semibold w-[100px] text-right">Amount</TableHead>
+                      <TableHead className="font-semibold w-[100px]">Status</TableHead>
+                      <TableHead className="font-semibold w-[160px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
