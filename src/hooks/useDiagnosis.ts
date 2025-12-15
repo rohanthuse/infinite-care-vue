@@ -63,7 +63,7 @@ export function useDiagnosis() {
       const itemWithOrg = { 
         ...newItem, 
         organization_id: organization.id,
-        category_id: null // Optional field, can be null
+        // category_id is nullable - can be omitted for Core Settings diagnosis entries
       };
       console.log('Creating diagnosis:', itemWithOrg);
       const { data, error } = await supabase
