@@ -2005,9 +2005,37 @@ export const exportEventsListToPDF = (events: ExportableEvent[], filename: strin
   pdf.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 
+// Client share sections interface for PDF generation
+interface ClientPdfSections {
+  personalInfo?: boolean;
+  generalInfo?: boolean;
+  carePlans?: boolean;
+  rates?: boolean;
+  invoices?: boolean;
+  notes?: boolean;
+  medicalInfo?: boolean;
+  emergencyContacts?: boolean;
+}
+
 // Export Client Profile to PDF with comprehensive information
-export const exportClientProfileToPDF = async (clientId: string, filename?: string) => {
+export const exportClientProfileToPDF = async (
+  clientId: string, 
+  filename?: string,
+  selectedSections?: ClientPdfSections
+) => {
   const pdf = new jsPDF();
+  
+  // Default to all sections if none specified
+  const sections = selectedSections || {
+    personalInfo: true,
+    generalInfo: true,
+    carePlans: true,
+    rates: true,
+    invoices: true,
+    notes: true,
+    medicalInfo: true,
+    emergencyContacts: true,
+  };
   
   try {
     // Step 1: Fetch client data
