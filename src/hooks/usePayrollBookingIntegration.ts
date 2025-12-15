@@ -56,8 +56,13 @@ interface PayrollCalculationData {
 
 // Safe helper to extract date part from ISO string or date string
 const safeDatePart = (dateStr: string | undefined | null): string => {
-  if (!dateStr) return '';
-  return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  try {
+    return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  } catch (error) {
+    console.warn('[safeDatePart] Error parsing date string:', dateStr, error);
+    return '';
+  }
 };
 
 // Day name mapping for rate schedule matching
@@ -140,52 +145,72 @@ const matchRateSchedule = (
   rateSchedules: StaffRateSchedule[],
   bankHolidays: string[]
 ): { rate: number; source: string; isBankHoliday: boolean } => {
-  const bookingDate = parseISO(booking.start_time);
-  const bookingDateStr = format(bookingDate, 'yyyy-MM-dd');
-  const bookingTime = format(bookingDate, 'HH:mm');
-  const dayName = dayNameMap[getDay(bookingDate)];
-  const isBankHoliday = bankHolidays.includes(bookingDateStr);
+  const defaultResult = { rate: 12.00, source: 'Default Rate', isBankHoliday: false };
+  
+  try {
+    // Guard for missing booking or start_time
+    if (!booking?.start_time || typeof booking.start_time !== 'string') {
+      console.warn('[matchRateSchedule] Booking missing valid start_time:', booking?.id);
+      return defaultResult;
+    }
 
-  // Find matching rate schedule
-  for (const schedule of rateSchedules) {
-    if (!schedule.is_active) continue;
+    const bookingDate = parseISO(booking.start_time);
+    
+    // Check if parsing was successful
+    if (!bookingDate || isNaN(bookingDate.getTime())) {
+      console.warn('[matchRateSchedule] Invalid booking start_time:', booking.start_time);
+      return defaultResult;
+    }
 
-    // Check date range
-    if (schedule.start_date && bookingDateStr < schedule.start_date) continue;
-    if (schedule.end_date && bookingDateStr > schedule.end_date) continue;
+    const bookingDateStr = format(bookingDate, 'yyyy-MM-dd');
+    const bookingTime = format(bookingDate, 'HH:mm');
+    const dayName = dayNameMap[getDay(bookingDate)];
+    const isBankHoliday = bankHolidays.includes(bookingDateStr);
 
-    // Check service type match
-    if (schedule.service_type_codes && schedule.service_type_codes.length > 0) {
-      if (!booking.service_id || !schedule.service_type_codes.includes(booking.service_id)) {
-        continue;
+    // Find matching rate schedule
+    for (const schedule of rateSchedules) {
+      if (!schedule.is_active) continue;
+
+      // Check date range
+      if (schedule.start_date && bookingDateStr < schedule.start_date) continue;
+      if (schedule.end_date && bookingDateStr > schedule.end_date) continue;
+
+      // Check service type match
+      if (schedule.service_type_codes && schedule.service_type_codes.length > 0) {
+        if (!booking.service_id || !schedule.service_type_codes.includes(booking.service_id)) {
+          continue;
+        }
       }
+
+      // Check day of week
+      if (schedule.days_covered && schedule.days_covered.length > 0) {
+        if (!schedule.days_covered.includes(dayName)) continue;
+      }
+
+      // Check time range
+      if (schedule.time_from && schedule.time_until) {
+        if (bookingTime < schedule.time_from || bookingTime > schedule.time_until) continue;
+      }
+
+      // Found matching schedule - apply rate with bank holiday multiplier if applicable
+      let rate = schedule.base_rate;
+      if (isBankHoliday && schedule.bank_holiday_multiplier > 1) {
+        rate = rate * schedule.bank_holiday_multiplier;
+      }
+
+      return {
+        rate,
+        source: `${schedule.rate_category} (${schedule.authority_type})`,
+        isBankHoliday
+      };
     }
 
-    // Check day of week
-    if (schedule.days_covered && schedule.days_covered.length > 0) {
-      if (!schedule.days_covered.includes(dayName)) continue;
-    }
-
-    // Check time range
-    if (schedule.time_from && schedule.time_until) {
-      if (bookingTime < schedule.time_from || bookingTime > schedule.time_until) continue;
-    }
-
-    // Found matching schedule - apply rate with bank holiday multiplier if applicable
-    let rate = schedule.base_rate;
-    if (isBankHoliday && schedule.bank_holiday_multiplier > 1) {
-      rate = rate * schedule.bank_holiday_multiplier;
-    }
-
-    return {
-      rate,
-      source: `${schedule.rate_category} (${schedule.authority_type})`,
-      isBankHoliday
-    };
+    // Default fallback rate
+    return { ...defaultResult, isBankHoliday };
+  } catch (error) {
+    console.error('[matchRateSchedule] Error processing booking:', booking?.id, error);
+    return defaultResult;
   }
-
-  // Default fallback rate
-  return { rate: 12.00, source: 'Default Rate', isBankHoliday };
 };
 
 export const usePayrollBookingIntegration = () => {
@@ -291,50 +316,128 @@ export const usePayrollBookingIntegration = () => {
     }
 
     return (bookings || []).map(booking => {
-      const scheduledStart = parseISO(booking.start_time);
-      const scheduledEnd = parseISO(booking.end_time);
-      const scheduledMinutes = differenceInMinutes(scheduledEnd, scheduledStart);
+      try {
+        // Validate required fields
+        if (!booking.start_time || !booking.end_time) {
+          console.warn('[getBookingTimeData] Booking missing start/end time:', booking.id);
+          return {
+            bookingId: booking.id,
+            clientId: booking.client_id || '',
+            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown Client',
+            staffId: booking.staff_id || '',
+            staffName: booking.staff ? `${booking.staff.first_name} ${booking.staff.last_name}` : 'Unknown Staff',
+            startTime: booking.start_time || '',
+            endTime: booking.end_time || '',
+            actualStartTime: booking.start_time || '',
+            actualEndTime: booking.end_time || '',
+            status: booking.status || 'unknown',
+            serviceId: booking.service_id,
+            serviceName: booking.services?.title || 'No Service',
+            scheduledMinutes: 0,
+            actualMinutes: 0,
+            extraMinutes: 0,
+            staffPaymentType: 'none',
+            staffPaymentAmount: null,
+          };
+        }
 
-      // Try to find actual times from attendance records
-      const attendanceRecord = attendanceData.find(record => 
-        record.notes && record.notes.includes(booking.id)
-      );
+        const scheduledStart = parseISO(booking.start_time);
+        const scheduledEnd = parseISO(booking.end_time);
+        
+        // Check if parsing was successful
+        if (isNaN(scheduledStart.getTime()) || isNaN(scheduledEnd.getTime())) {
+          console.warn('[getBookingTimeData] Invalid booking times:', booking.id, booking.start_time, booking.end_time);
+          return {
+            bookingId: booking.id,
+            clientId: booking.client_id || '',
+            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown Client',
+            staffId: booking.staff_id || '',
+            staffName: booking.staff ? `${booking.staff.first_name} ${booking.staff.last_name}` : 'Unknown Staff',
+            startTime: booking.start_time,
+            endTime: booking.end_time,
+            actualStartTime: booking.start_time,
+            actualEndTime: booking.end_time,
+            status: booking.status || 'unknown',
+            serviceId: booking.service_id,
+            serviceName: booking.services?.title || 'No Service',
+            scheduledMinutes: 0,
+            actualMinutes: 0,
+            extraMinutes: 0,
+            staffPaymentType: 'none',
+            staffPaymentAmount: null,
+          };
+        }
 
-      let actualMinutes = scheduledMinutes;
-      let actualStartTime = booking.start_time;
-      let actualEndTime = booking.end_time;
+        const scheduledMinutes = differenceInMinutes(scheduledEnd, scheduledStart);
 
-      if (attendanceRecord && attendanceRecord.check_in_time && attendanceRecord.check_out_time) {
-        // Calculate actual time from attendance
-        const checkIn = new Date(`${attendanceRecord.attendance_date}T${attendanceRecord.check_in_time}`);
-        const checkOut = new Date(`${attendanceRecord.attendance_date}T${attendanceRecord.check_out_time}`);
-        actualMinutes = differenceInMinutes(checkOut, checkIn);
-        actualStartTime = checkIn.toISOString();
-        actualEndTime = checkOut.toISOString();
+        // Try to find actual times from attendance records
+        const attendanceRecord = attendanceData.find(record => 
+          record.notes && record.notes.includes(booking.id)
+        );
+
+        let actualMinutes = scheduledMinutes;
+        let actualStartTime = booking.start_time;
+        let actualEndTime = booking.end_time;
+
+        if (attendanceRecord && attendanceRecord.check_in_time && attendanceRecord.check_out_time) {
+          try {
+            // Calculate actual time from attendance
+            const checkIn = new Date(`${attendanceRecord.attendance_date}T${attendanceRecord.check_in_time}`);
+            const checkOut = new Date(`${attendanceRecord.attendance_date}T${attendanceRecord.check_out_time}`);
+            if (!isNaN(checkIn.getTime()) && !isNaN(checkOut.getTime())) {
+              actualMinutes = differenceInMinutes(checkOut, checkIn);
+              actualStartTime = checkIn.toISOString();
+              actualEndTime = checkOut.toISOString();
+            }
+          } catch (attendanceError) {
+            console.warn('[getBookingTimeData] Error processing attendance record:', attendanceError);
+          }
+        }
+
+        const extraMinutes = Math.max(0, actualMinutes - scheduledMinutes);
+
+        return {
+          bookingId: booking.id,
+          clientId: booking.client_id,
+          clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown Client',
+          staffId: booking.staff_id,
+          staffName: booking.staff ? `${booking.staff.first_name} ${booking.staff.last_name}` : 'Unknown Staff',
+          startTime: booking.start_time,
+          endTime: booking.end_time,
+          actualStartTime,
+          actualEndTime,
+          status: booking.status,
+          serviceId: booking.service_id,
+          serviceName: booking.services?.title || 'No Service',
+          scheduledMinutes,
+          actualMinutes,
+          extraMinutes,
+          // Include cancellation payment details
+          staffPaymentType: (booking as any).staff_payment_type || 'none',
+          staffPaymentAmount: (booking as any).staff_payment_amount || null,
+        };
+      } catch (error) {
+        console.error('[getBookingTimeData] Error processing booking:', booking.id, error);
+        return {
+          bookingId: booking.id,
+          clientId: booking.client_id || '',
+          clientName: 'Unknown Client',
+          staffId: booking.staff_id || '',
+          staffName: 'Unknown Staff',
+          startTime: booking.start_time || '',
+          endTime: booking.end_time || '',
+          actualStartTime: booking.start_time || '',
+          actualEndTime: booking.end_time || '',
+          status: booking.status || 'unknown',
+          serviceId: booking.service_id,
+          serviceName: 'No Service',
+          scheduledMinutes: 0,
+          actualMinutes: 0,
+          extraMinutes: 0,
+          staffPaymentType: 'none',
+          staffPaymentAmount: null,
+        };
       }
-
-      const extraMinutes = Math.max(0, actualMinutes - scheduledMinutes);
-
-      return {
-        bookingId: booking.id,
-        clientId: booking.client_id,
-        clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown Client',
-        staffId: booking.staff_id,
-        staffName: booking.staff ? `${booking.staff.first_name} ${booking.staff.last_name}` : 'Unknown Staff',
-        startTime: booking.start_time,
-        endTime: booking.end_time,
-        actualStartTime,
-        actualEndTime,
-        status: booking.status,
-        serviceId: booking.service_id,
-        serviceName: booking.services?.title || 'No Service',
-        scheduledMinutes,
-        actualMinutes,
-        extraMinutes,
-        // Include cancellation payment details
-        staffPaymentType: (booking as any).staff_payment_type || 'none',
-        staffPaymentAmount: (booking as any).staff_payment_amount || null,
-      };
     });
   };
 
@@ -398,15 +501,25 @@ export const usePayrollBookingIntegration = () => {
       baseHourlyRate = activeRateSchedules[0].base_rate || 12.00;
     }
 
-    // Apply rate schedules to bookings
+    // Apply rate schedules to bookings with error handling
     const bookingsWithRates = bookingData.map(booking => {
-      const rateMatch = matchRateSchedule(booking, activeRateSchedules, bankHolidays);
-      return {
-        ...booking,
-        appliedRate: rateMatch.rate,
-        rateSource: rateMatch.source,
-        isBankHoliday: rateMatch.isBankHoliday
-      };
+      try {
+        const rateMatch = matchRateSchedule(booking, activeRateSchedules, bankHolidays);
+        return {
+          ...booking,
+          appliedRate: rateMatch.rate,
+          rateSource: rateMatch.source,
+          isBankHoliday: rateMatch.isBankHoliday
+        };
+      } catch (error) {
+        console.error('[calculatePayrollFromBookings] Error applying rate to booking:', booking.bookingId, error);
+        return {
+          ...booking,
+          appliedRate: baseHourlyRate,
+          rateSource: 'Default Rate (Error)',
+          isBankHoliday: false
+        };
+      }
     });
 
     // Get attendance records for the period
