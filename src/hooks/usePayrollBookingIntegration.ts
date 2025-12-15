@@ -719,40 +719,19 @@ export const usePayrollBookingIntegration = () => {
           .limit(1)
           .maybeSingle();
 
-        // Calculate deductions using staff-specific settings or defaults
-        let taxRate = 0.20; // Default 20%
-        let niRate = 0.12; // Default 12%
-        let pensionRate = 0.03; // Default 3%
+        // Calculate deductions using staff-specific fixed amounts or defaults
+        let taxDeduction = 0;
+        let niDeduction = 0;
+        let pensionDeduction = 0;
         let otherDeductionsTotal = 0;
 
         if (deductionSettings) {
-          // Use staff-specific rates
-          taxRate = deductionSettings.use_custom_tax_rate 
-            ? (deductionSettings.tax_rate / 100)
-            : (deductionSettings.tax_rate / 100); // Use stored rate
-          
-          niRate = deductionSettings.use_custom_ni_rate
-            ? (deductionSettings.ni_rate / 100)
-            : (deductionSettings.ni_rate / 100);
-          
-          pensionRate = deductionSettings.pension_opted_in
-            ? (deductionSettings.pension_percentage / 100)
-            : 0;
-
-          // Calculate other deductions
-          const otherDeductions = deductionSettings.other_deductions as { name: string; type: string; amount: number }[] || [];
-          otherDeductionsTotal = otherDeductions.reduce((total, deduction) => {
-            if (deduction.type === 'fixed') {
-              return total + deduction.amount;
-            } else {
-              return total + (grossPay * (deduction.amount / 100));
-            }
-          }, 0);
+          // Use fixed amount fields (new simplified approach)
+          taxDeduction = deductionSettings.tax_amount || 0;
+          niDeduction = deductionSettings.ni_amount || 0;
+          pensionDeduction = deductionSettings.pension_amount || 0;
+          otherDeductionsTotal = deductionSettings.other_deductions_amount || 0;
         }
-
-        const taxDeduction = grossPay * taxRate;
-        const niDeduction = grossPay * niRate;
-        const pensionDeduction = grossPay * pensionRate;
         
         const netPay = grossPay - taxDeduction - niDeduction - pensionDeduction - otherDeductionsTotal;
 

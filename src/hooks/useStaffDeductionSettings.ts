@@ -14,27 +14,33 @@ export interface StaffDeductionSettings {
   branch_id?: string;
   organization_id?: string;
   
-  // Tax Settings
+  // Fixed Amount Deductions (new simplified fields)
+  tax_amount: number;
+  ni_amount: number;
+  pension_amount: number;
+  other_deductions_amount: number;
+  
+  // Legacy Tax Settings (kept for backward compatibility)
   tax_code: string;
   tax_rate: number;
   use_custom_tax_rate: boolean;
   
-  // National Insurance Settings
+  // Legacy National Insurance Settings
   ni_category: string;
   ni_rate: number;
   use_custom_ni_rate: boolean;
   
-  // Pension Settings
+  // Legacy Pension Settings
   pension_opted_in: boolean;
   pension_percentage: number;
   employer_pension_percentage: number;
   pension_provider?: string;
   
-  // Student Loan Settings
+  // Legacy Student Loan Settings
   has_student_loan: boolean;
   student_loan_plan?: string;
   
-  // Other Deductions
+  // Legacy Other Deductions (array format)
   other_deductions: OtherDeduction[];
   
   // Metadata
