@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff } from "lucide-react";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+import { useStaffLeaveAvailability, validateCarersLeaveConflict } from "@/hooks/useStaffLeaveAvailability";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,12 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MultiSelect } from "@/components/ui/multi-select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -173,6 +180,15 @@ export function NewBookingDialog({
 
   // Fetch clients and staff data
   const { clients, isLoading: isLoadingClients } = useBranchStaffAndClients(branchId || "");
+  
+  // Build carer names map for validation
+  const carerNamesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    carers.forEach(c => {
+      map.set(c.id, c.name || `${c.first_name} ${c.last_name}`);
+    });
+    return map;
+  }, [carers]);
 
   // Filter carers based on search query
   const filteredCarers = useMemo(() => {
@@ -259,6 +275,17 @@ export function NewBookingDialog({
       ],
     },
   });
+  
+  // Watch the fromDate to check leave availability (must be after form declaration)
+  const watchedFromDate = form.watch("fromDate");
+  
+  // Leave availability check for the booking date
+  const { 
+    isStaffOnLeave, 
+    getLeaveInfo, 
+    approvedLeaves, 
+    isLoading: isLoadingLeaves 
+  } = useStaffLeaveAvailability(branchId, watchedFromDate);
 
   // Reset form and close dialog safely
   const handleClose = () => {
@@ -325,6 +352,23 @@ export function NewBookingDialog({
   }, [bookingMode, form.watch("fromDate"), form]);
 
   function onSubmit(data: z.infer<typeof formSchema>) {
+    // Check for leave conflicts before submitting
+    if (!data.assignLater && data.carerIds && data.carerIds.length > 0) {
+      const leaveValidation = validateCarersLeaveConflict(
+        data.carerIds,
+        approvedLeaves,
+        data.fromDate,
+        carerNamesMap
+      );
+      
+      if (leaveValidation.hasConflict) {
+        toast.error("Cannot assign staff on leave", {
+          description: leaveValidation.errorMessage,
+        });
+        return;
+      }
+    }
+    
     // Prepare booking data based on mode
     const bookingData = {
       ...data,
@@ -654,19 +698,62 @@ export function NewBookingDialog({
                                 </div>
                               ) : (
                                 <div className="p-1">
+                                  <TooltipProvider>
                                   {filteredCarers.map((carer) => {
                                     const isSelected = field.value?.includes(carer.id);
                                     const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
                                     const isActive = carer.status === 'Active';
-                                    const statusColor = isActive 
-                                      ? 'bg-success text-white'
-                                      : 'bg-warning text-white';
+                                    const onLeave = isStaffOnLeave(carer.id);
+                                    const leaveInfo = getLeaveInfo(carer.id);
+                                    
+                                    // Determine status badge
+                                    let statusBadge = null;
+                                    if (onLeave && leaveInfo) {
+                                      statusBadge = (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Badge className="text-xs bg-amber-500 text-white flex items-center gap-1">
+                                              <CalendarOff className="h-3 w-3" />
+                                              On Leave
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent className="max-w-xs">
+                                            <p className="font-medium">{carerName} is on {leaveInfo.leaveType} leave</p>
+                                            <p className="text-xs text-muted-foreground">{leaveInfo.formattedRange}</p>
+                                            <p className="text-xs text-destructive mt-1">Cannot be assigned to bookings during this period</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      );
+                                    } else if (isActive) {
+                                      statusBadge = (
+                                        <Badge className="text-xs bg-success text-white">
+                                          Active
+                                        </Badge>
+                                      );
+                                    } else {
+                                      statusBadge = (
+                                        <Badge className="text-xs bg-warning text-white">
+                                          {carer.status || 'Inactive'}
+                                        </Badge>
+                                      );
+                                    }
                                     
                                     return (
                                       <div
                                         key={carer.id}
-                                        className="flex items-center justify-between space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                        className={cn(
+                                          "flex items-center justify-between space-x-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer",
+                                          onLeave 
+                                            ? "opacity-60 bg-muted/50" 
+                                            : "hover:bg-accent hover:text-accent-foreground"
+                                        )}
                                         onClick={() => {
+                                          if (onLeave) {
+                                            toast.warning("Staff on Leave", {
+                                              description: `${carerName} is on ${leaveInfo?.leaveType} leave (${leaveInfo?.formattedRange}) and cannot be assigned.`,
+                                            });
+                                            return;
+                                          }
                                           const currentValue = field.value || [];
                                           if (isSelected) {
                                             field.onChange(currentValue.filter((id: string) => id !== carer.id));
@@ -678,19 +765,18 @@ export function NewBookingDialog({
                                         <div className="flex items-center space-x-2 flex-1">
                                           <Checkbox
                                             checked={isSelected}
+                                            disabled={onLeave}
                                             className="pointer-events-none"
                                           />
-                                          <span className="flex-1">{carerName}</span>
+                                          <span className={cn("flex-1", onLeave && "line-through text-muted-foreground")}>
+                                            {carerName}
+                                          </span>
                                         </div>
-                                        <Badge 
-                                          variant={isActive ? "success" : "warning"} 
-                                          className={cn("text-xs", statusColor)}
-                                        >
-                                          {carer.status || 'Active'}
-                                        </Badge>
+                                        {statusBadge}
                                       </div>
                                     );
                                   })}
+                                  </TooltipProvider>
                                 </div>
                               )}
                             </div>
@@ -703,13 +789,15 @@ export function NewBookingDialog({
                             {field.value.map((carerId) => {
                               const carer = carers.find(c => c.id === carerId);
                               const carerName = carer?.name || `${carer?.first_name} ${carer?.last_name}` || 'Unknown';
+                              const onLeave = isStaffOnLeave(carerId);
                               
                               return (
                                 <Badge
                                   key={carerId}
-                                  variant="secondary"
-                                  className="text-xs px-2 py-1"
+                                  variant={onLeave ? "destructive" : "secondary"}
+                                  className={cn("text-xs px-2 py-1", onLeave && "bg-amber-500")}
                                 >
+                                  {onLeave && <CalendarOff className="h-3 w-3 mr-1" />}
                                   {carerName}
                                   <X 
                                     className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
@@ -724,12 +812,46 @@ export function NewBookingDialog({
                           </div>
                         )}
                         
+                        {/* Warning for staff on leave */}
+                        {field.value && field.value.length > 0 && (
+                          (() => {
+                            const carersOnLeave = field.value
+                              .filter(id => isStaffOnLeave(id))
+                              .map(id => {
+                                const carer = carers.find(c => c.id === id);
+                                const leaveInfo = getLeaveInfo(id);
+                                return {
+                                  name: carer?.name || `${carer?.first_name} ${carer?.last_name}`,
+                                  leaveInfo,
+                                };
+                              });
+                            
+                            if (carersOnLeave.length > 0) {
+                              return (
+                                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md text-sm mt-2">
+                                  <CalendarOff className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-medium text-red-800 dark:text-red-300">
+                                      Staff on Approved Leave
+                                    </p>
+                                    <p className="text-red-700 dark:text-red-400 text-xs mt-1">
+                                      {carersOnLeave.map(c => `${c.name} (${c.leaveInfo?.formattedRange})`).join(', ')} 
+                                      {' '}cannot be assigned to bookings during their leave period.
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()
+                        )}
+                        
                         {/* Warning for non-active carers */}
                         {field.value && field.value.length > 0 && (
                           (() => {
                             const nonActiveCarers = field.value
                               .map(id => carers.find(c => c.id === id))
-                              .filter(c => c && c.status !== 'Active');
+                              .filter(c => c && c.status !== 'Active' && !isStaffOnLeave(c.id));
                             
                             if (nonActiveCarers.length > 0) {
                               return (

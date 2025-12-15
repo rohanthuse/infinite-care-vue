@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format, parse } from "date-fns";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
-import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle, CalendarOff } from "lucide-react";
 import { getBookingStatusColor, getBookingStatusLabel, BOOKING_STATUS_COLORS, BookingStatusType } from "../utils/bookingColors";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
+import { useStaffLeaveAvailability, validateCarersLeaveConflict } from "@/hooks/useStaffLeaveAvailability";
 import { BookingValidationAlert } from "../BookingValidationAlert";
 import { BookingOverlapAlert } from "../BookingOverlapAlert";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -138,6 +145,40 @@ export function EditBookingDialog({
   // Consolidated validation system
   const { validateBooking, isValidating } = useConsolidatedValidation(branchId);
   
+  // Form must be declared before using form.watch
+  const form = useForm<EditBookingFormData>({
+    resolver: zodResolver(editBookingSchema),
+    defaultValues: {
+      booking_date: undefined as Date | undefined,
+      start_time: "",
+      end_time: "",
+      service_ids: [],
+      staff_ids: [],
+      assign_later: false,
+      notes: "",
+      status: "",
+    },
+  });
+  
+  // Watch booking date for leave availability check
+  const watchedBookingDate = form.watch("booking_date");
+  
+  // Leave availability check for the booking date
+  const { 
+    isStaffOnLeave, 
+    getLeaveInfo, 
+    approvedLeaves,
+  } = useStaffLeaveAvailability(branchId, watchedBookingDate);
+  
+  // Build carer names map for validation
+  const carerNamesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    carers.forEach(c => {
+      map.set(c.id, c.name || 'Unknown');
+    });
+    return map;
+  }, [carers]);
+  
   // Validation states
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
@@ -164,20 +205,6 @@ export function EditBookingDialog({
   
   // Track unassigned booking ID separately (for "Assign Carer Later" bookings)
   const [unassignedBookingId, setUnassignedBookingId] = React.useState<string | null>(null);
-
-  const form = useForm<EditBookingFormData>({
-    resolver: zodResolver(editBookingSchema),
-    defaultValues: {
-      booking_date: undefined as Date | undefined,
-      start_time: "",
-      end_time: "",
-      service_ids: [],
-      staff_ids: [],
-      assign_later: false,
-      notes: "",
-      status: "",
-    },
-  });
 
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
