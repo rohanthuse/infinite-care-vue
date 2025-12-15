@@ -20,9 +20,6 @@ const accountingSettingsSchema = z.object({
 
 const bankDetailsSchema = z.object({
   bank_name: z.string().nullable(),
-  bank_account_holder: z.string().nullable(),
-  bank_account_number: z.string().nullable(),
-  bank_sort_code: z.string().nullable(),
 });
 
 type AccountingSettingsFormValues = z.infer<typeof accountingSettingsSchema>;
@@ -33,7 +30,7 @@ interface CarerGeneralTabProps {
   branchId?: string;
 }
 
-export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId, branchId }) => {
+export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => {
   const [activeSubTab, setActiveSubTab] = useState("general-accounting");
   
   const { data: settings, isLoading } = useStaffGeneralSettings(carerId);
@@ -52,9 +49,6 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId, branc
     resolver: zodResolver(bankDetailsSchema),
     defaultValues: {
       bank_name: null,
-      bank_account_holder: null,
-      bank_account_number: null,
-      bank_sort_code: null,
     },
   });
 
@@ -68,9 +62,6 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId, branc
 
       bankForm.reset({
         bank_name: settings.bank_name,
-        bank_account_holder: settings.bank_account_holder,
-        bank_account_number: settings.bank_account_number,
-        bank_sort_code: settings.bank_sort_code,
       });
     }
   }, [settings, accountingForm, bankForm]);
@@ -250,63 +241,9 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId, branc
                       )}
                     />
 
-                    <FormField
-                      control={bankForm.control}
-                      name="bank_account_holder"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Account Holder Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Name as it appears on the account"
-                              {...field}
-                              value={field.value || ''}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={bankForm.control}
-                        name="bank_account_number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Account Number</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="8 digit account number"
-                                maxLength={8}
-                                {...field}
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={bankForm.control}
-                        name="bank_sort_code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sort Code</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="00-00-00"
-                                maxLength={8}
-                                {...field}
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Additional bank details (account number, sort code) can be added via a database migration if needed.
+                    </p>
 
                     <div className="flex justify-end pt-4">
                       <Button 
