@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle2, XCircle, Search, Filter, Eye, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Filter, Eye, Clock, AlertTriangle, Pencil, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLeaveRequests, useUpdateLeaveRequest, type LeaveRequest } from "@/hooks/useLeaveManagement";
@@ -17,6 +17,8 @@ import { useLeaveBookingConflicts, type AffectedBooking } from "@/hooks/useLeave
 import { AffectedBookingsSection } from "@/components/leave/AffectedBookingsSection";
 import { ReassignBookingDialog } from "@/components/leave/ReassignBookingDialog";
 import { CancelBookingDialog } from "@/components/leave/CancelBookingDialog";
+import { EditLeaveDialog } from "@/components/leave/EditLeaveDialog";
+import { CancelLeaveDialog } from "@/components/leave/CancelLeaveDialog";
 
 interface LeaveRequestsListProps {
   branchId: string;
@@ -36,6 +38,11 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
   const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<AffectedBooking | null>(null);
+  
+  // Edit/Cancel leave state
+  const [editLeaveDialogOpen, setEditLeaveDialogOpen] = useState(false);
+  const [cancelLeaveDialogOpen, setCancelLeaveDialogOpen] = useState(false);
+  const [selectedLeaveForAction, setSelectedLeaveForAction] = useState<LeaveRequest | null>(null);
 
   const { data: leaveRequests = [], isLoading } = useLeaveRequests(branchId);
   const updateLeaveRequest = useUpdateLeaveRequest();
@@ -116,6 +123,16 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
 
   const handleBookingResolved = (bookingId: string) => {
     setResolvedBookingIds(prev => new Set([...prev, bookingId]));
+  };
+  
+  const handleEditLeave = (request: LeaveRequest) => {
+    setSelectedLeaveForAction(request);
+    setEditLeaveDialogOpen(true);
+  };
+
+  const handleCancelLeave = (request: LeaveRequest) => {
+    setSelectedLeaveForAction(request);
+    setCancelLeaveDialogOpen(true);
   };
   
   // Calculate if approval should be blocked
@@ -306,6 +323,7 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
                     <TableHead>Status</TableHead>
                     <TableHead>Requested</TableHead>
                     <TableHead>Reviewer</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -342,6 +360,30 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {request.status === 'approved' && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditLeave(request)}
+                              className="h-8 px-2"
+                              title="Edit Leave"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCancelLeave(request)}
+                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Cancel Leave"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -481,6 +523,21 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
         booking={selectedBooking}
         carerName={selectedRequest?.staff_name || ''}
         onSuccess={handleBookingResolved}
+      />
+
+      {/* Edit Leave Dialog */}
+      <EditLeaveDialog
+        open={editLeaveDialogOpen}
+        onOpenChange={setEditLeaveDialogOpen}
+        leaveRequest={selectedLeaveForAction}
+        branchId={branchId}
+      />
+
+      {/* Cancel Leave Dialog */}
+      <CancelLeaveDialog
+        open={cancelLeaveDialogOpen}
+        onOpenChange={setCancelLeaveDialogOpen}
+        leaveRequest={selectedLeaveForAction}
       />
     </div>
   );
