@@ -33,6 +33,7 @@ import { CarerHobbiesTab } from "@/components/carer-profile/CarerHobbiesTab";
 import { CarerMeetingsTab } from "@/components/carer-profile/CarerMeetingsTab";
 import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
 import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
+import { CarerGeneralTab } from "@/components/carer-profile/CarerGeneralTab";
 import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
 import { CarerComplianceTab } from "@/components/carer-profile/CarerComplianceTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
@@ -255,6 +256,7 @@ const CarerProfilePage: React.FC = () => {
                 <TabsList className="flex w-max gap-1 p-1">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
+                  <TabsTrigger value="general">General</TabsTrigger>
                   <TabsTrigger value="communication">Communication</TabsTrigger>
                   <TabsTrigger value="suspend">Suspend</TabsTrigger>
                   <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -279,6 +281,7 @@ const CarerProfilePage: React.FC = () => {
               
               <TabsContent value="overview"><CarerOverviewTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="personal"><CarerPersonalDetailsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="general"><CarerGeneralTab carerId={carerId || ''} branchId={branchId} /></TabsContent>
               <TabsContent value="communication"><CarerCommunicationTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="suspend"><CarerSuspendTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="notes"><CarerNotesTab carerId={carerId || ''} /></TabsContent>
