@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from "react";
 import { 
   User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
-  AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
+  AlertTriangle, Star, GraduationCap, FileText, ClipboardList,
   Award, Heart, DollarSign, Settings, MessageCircle, ArrowRightLeft, Sliders
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +39,7 @@ import { CarerGeneralTab } from "@/components/carer-profile/CarerGeneralTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { CarerProfileSummaryCard } from "@/components/carer-profile/CarerProfileSummaryCard";
 import { TransferBranchDialog } from "@/components/carers/TransferBranchDialog";
+import { CarerProfileNavigation } from "@/components/carer-profile/CarerProfileNavigation";
 
 interface ViewFullCarerProfileDialogProps {
   carerId: string;
@@ -48,6 +48,69 @@ interface ViewFullCarerProfileDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Grouped tab structure for better organization
+const tabGroups = [
+  {
+    id: "profile",
+    label: "Profile",
+    icon: User,
+    tabs: [
+      { value: "overview", label: "Overview", icon: User },
+      { value: "personal", label: "Personal Details", icon: User },
+      { value: "essentials", label: "Essentials", icon: CheckCircle },
+      { value: "statement", label: "Supporting Statement", icon: FileText },
+      { value: "hobbies", label: "Hobbies & Interests", icon: Heart },
+    ]
+  },
+  {
+    id: "employment",
+    label: "Employment",
+    icon: Briefcase,
+    tabs: [
+      { value: "general", label: "General Settings", icon: Sliders },
+      { value: "employment", label: "Employment History", icon: Briefcase },
+      { value: "work-type", label: "Work Type Preferences", icon: Briefcase },
+      { value: "skills", label: "Skills Matrix", icon: Award },
+      { value: "settings", label: "Settings", icon: Settings },
+    ]
+  },
+  {
+    id: "payroll",
+    label: "Payroll",
+    icon: DollarSign,
+    tabs: [
+      { value: "rate", label: "Rate Schedules", icon: DollarSign },
+      { value: "attendance", label: "Attendance", icon: Calendar },
+    ]
+  },
+  {
+    id: "compliance",
+    label: "Compliance",
+    icon: FileText,
+    tabs: [
+      { value: "documents", label: "Documents", icon: FileText },
+      { value: "training", label: "Training & Qualifications", icon: GraduationCap },
+      { value: "forms", label: "Forms", icon: ClipboardList },
+      { value: "quality", label: "Quality Assurance", icon: Star },
+    ]
+  },
+  {
+    id: "activity",
+    label: "Activity",
+    icon: MessageCircle,
+    tabs: [
+      { value: "notes", label: "Notes", icon: MessageCircle },
+      { value: "communication", label: "Communication", icon: Mail },
+      { value: "contacts", label: "Important Contacts", icon: Phone },
+      { value: "meetings", label: "Meetings", icon: Calendar },
+      { value: "suspend", label: "Suspend / Status", icon: AlertTriangle },
+    ]
+  },
+];
+
+// Flat tabs list for content rendering
+const allTabs = tabGroups.flatMap(group => group.tabs);
 
 export function ViewFullCarerProfileDialog({
   carerId,
@@ -61,30 +124,6 @@ export function ViewFullCarerProfileDialog({
   const [activeTab, setActiveTab] = useState("overview");
   const [photoKey, setPhotoKey] = useState(0);
 
-  const tabs = [
-    { value: "overview", label: "Overview", icon: User },
-    { value: "personal", label: "Personal", icon: User },
-    { value: "general", label: "General", icon: Sliders },
-    { value: "communication", label: "Communication", icon: Mail },
-    { value: "suspend", label: "Suspend", icon: AlertTriangle },
-    { value: "notes", label: "Notes", icon: MessageCircle },
-    { value: "quality", label: "Quality", icon: Star },
-    { value: "documents", label: "Documents", icon: FileText },
-    { value: "attendance", label: "Attendance", icon: Calendar },
-    { value: "essentials", label: "Essentials", icon: CheckCircle },
-    { value: "employment", label: "Employment", icon: Briefcase },
-    { value: "training", label: "Training", icon: GraduationCap },
-    { value: "statement", label: "Statement", icon: FileText },
-    { value: "contacts", label: "Contacts", icon: Phone },
-    { value: "forms", label: "Forms", icon: ClipboardList },
-    { value: "skills", label: "Skills", icon: Award },
-    { value: "work-type", label: "Work Type", icon: Briefcase },
-    { value: "hobbies", label: "Hobbies", icon: Heart },
-    { value: "meetings", label: "Meetings", icon: Calendar },
-    { value: "rate", label: "Rate", icon: DollarSign },
-    { value: "settings", label: "Settings", icon: Settings },
-  ];
-  
   const { data: carer, isLoading, error } = useCarerProfileById(carerId);
 
   const forceUIUnlock = useCallback(() => {
@@ -215,28 +254,11 @@ export function ViewFullCarerProfileDialog({
               />
               
               <ScrollArea className="flex-1 min-h-0">
-                <div className="p-6 space-y-1">
-                  {tabs.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.value;
-                    return (
-                      <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "text-foreground hover:bg-muted hover:text-primary"
-                        )}
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate text-left">{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <CarerProfileNavigation
+                  tabGroups={tabGroups}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                />
               </ScrollArea>
             </div>
 
@@ -245,10 +267,10 @@ export function ViewFullCarerProfileDialog({
               {/* Tab Title Header */}
               <div className="border-b border-border px-6 py-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  {React.createElement(tabs.find(t => t.value === activeTab)?.icon || User, { 
+                  {React.createElement(allTabs.find(t => t.value === activeTab)?.icon || User, { 
                     className: "h-4 w-4" 
                   })}
-                  {tabs.find(t => t.value === activeTab)?.label || "Overview"}
+                  {allTabs.find(t => t.value === activeTab)?.label || "Overview"}
                 </h3>
               </div>
 
