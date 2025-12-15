@@ -25,8 +25,26 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
     low: 'bg-green-100 text-green-800',
   };
 
-  const gpInfo = carePlan.gp_info || {};
-  const pharmacyInfo = carePlan.pharmacy_info || {};
+  // GP Info - handle both field name patterns (gp_name vs name)
+  const gpInfoRaw = carePlan.gp_info || {};
+  const gpInfo = {
+    name: gpInfoRaw.gp_name || gpInfoRaw.name || '',
+    surgery_name: gpInfoRaw.surgery_name || gpInfoRaw.gp_surgery_name || '',
+    phone: gpInfoRaw.gp_phone || gpInfoRaw.phone || '',
+    email: gpInfoRaw.gp_email || gpInfoRaw.email || '',
+    address: gpInfoRaw.gp_address || gpInfoRaw.address || '',
+    nhs_number: gpInfoRaw.nhs_number || gpInfoRaw.client_nhs_number || '',
+  };
+  
+  // Pharmacy Info - handle both field name patterns (pharmacy_name vs name)
+  const pharmacyInfoRaw = carePlan.pharmacy_info || {};
+  const pharmacyInfo = {
+    name: pharmacyInfoRaw.pharmacy_name || pharmacyInfoRaw.name || '',
+    phone: pharmacyInfoRaw.pharmacy_phone || pharmacyInfoRaw.phone || '',
+    email: pharmacyInfoRaw.pharmacy_email || pharmacyInfoRaw.email || '',
+    address: pharmacyInfoRaw.pharmacy_address || pharmacyInfoRaw.address || '',
+  };
+  
   const hasGpInfo = gpInfo.name || gpInfo.phone || gpInfo.email || gpInfo.address;
   const hasPharmacyInfo = pharmacyInfo.name || pharmacyInfo.phone || pharmacyInfo.email || pharmacyInfo.address;
 
