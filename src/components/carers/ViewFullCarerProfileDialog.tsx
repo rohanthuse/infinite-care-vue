@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { 
   User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
   AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
-  Award, Heart, DollarSign, Settings, MessageCircle, ArrowRightLeft
+  Award, Heart, DollarSign, Settings, MessageCircle, ArrowRightLeft, Sliders
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,7 @@ import { CarerDocumentsTab } from "@/components/carer-profile/CarerDocumentsTab"
 import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
 import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
 import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
+import { CarerGeneralTab } from "@/components/carer-profile/CarerGeneralTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { CarerProfileSummaryCard } from "@/components/carer-profile/CarerProfileSummaryCard";
 import { TransferBranchDialog } from "@/components/carers/TransferBranchDialog";
@@ -63,6 +64,7 @@ export function ViewFullCarerProfileDialog({
   const tabs = [
     { value: "overview", label: "Overview", icon: User },
     { value: "personal", label: "Personal", icon: User },
+    { value: "general", label: "General", icon: Sliders },
     { value: "communication", label: "Communication", icon: Mail },
     { value: "suspend", label: "Suspend", icon: AlertTriangle },
     { value: "notes", label: "Notes", icon: MessageCircle },
@@ -256,6 +258,7 @@ export function ViewFullCarerProfileDialog({
                   <div className="animate-in fade-in-50 duration-300">
                     {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
                     {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
+                    {activeTab === "general" && <CarerGeneralTab carerId={carerId} branchId={branchId} />}
                     {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
                     {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
                     {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
