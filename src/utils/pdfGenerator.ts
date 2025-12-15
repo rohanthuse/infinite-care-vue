@@ -381,12 +381,37 @@ export const generateNews2PDF = (
   doc.save(`NEWS2_${patient.name.replace(/\s+/g, "_")}_${formattedDate}.pdf`);
 };
 
-// New function to generate Carer Profile PDF
+// Staff share sections interface for PDF generation
+interface StaffPdfSections {
+  personalInfo?: boolean;
+  generalSettings?: boolean;
+  rateSchedules?: boolean;
+  availability?: boolean;
+  qualifications?: boolean;
+  documents?: boolean;
+  notes?: boolean;
+  bankDetails?: boolean;
+}
+
+// New function to generate Carer Profile PDF with optional section filtering
 export const generateCarerProfilePDF = (
   carer: any,
-  branchId: string
+  branchId: string,
+  selectedSections?: StaffPdfSections
 ) => {
   const doc = new jsPDF();
+  
+  // Default to all sections if none specified
+  const sections = selectedSections || {
+    personalInfo: true,
+    generalSettings: true,
+    rateSchedules: true,
+    availability: true,
+    qualifications: true,
+    documents: true,
+    notes: true,
+    bankDetails: true,
+  };
   
   // Add logo or header
   doc.setFontSize(20);
@@ -402,101 +427,123 @@ export const generateCarerProfilePDF = (
   doc.setFontSize(10);
   doc.text(`Generated on: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, 20, 50);
   
+  let yPos = 70;
+  
   // Personal Information Section
-  doc.setFontSize(14);
-  doc.setTextColor(0, 83, 156);
-  doc.text("Personal Information", 20, 70);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  let yPos = 80;
-  
-  const personalInfo = [
-    [`Full Name:`, `${carer.first_name} ${carer.last_name}`],
-    [`Email:`, carer.email || 'Not provided'],
-    [`Phone:`, carer.phone || 'Not provided'],
-    [`Address:`, carer.address || 'Not provided'],
-    [`Date of Birth:`, carer.date_of_birth ? format(new Date(carer.date_of_birth), "dd MMM yyyy") : 'Not provided'],
-  ];
-  
-  personalInfo.forEach(([label, value]) => {
-    doc.text(label, 20, yPos);
-    doc.text(value, 80, yPos);
-    yPos += 8;
-  });
-  
-  // Employment Details Section
-  yPos += 10;
-  doc.setFontSize(14);
-  doc.setTextColor(0, 83, 156);
-  doc.text("Employment Details", 20, yPos);
-  yPos += 10;
-  
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  
-  const employmentInfo = [
-    [`Hire Date:`, carer.hire_date ? format(new Date(carer.hire_date), "dd MMM yyyy") : 'Not provided'],
-    [`Status:`, carer.status || 'Not provided'],
-    [`Experience:`, carer.experience || 'Not provided'],
-    [`Specialization:`, carer.specialization || 'Not provided'],
-    [`Availability:`, carer.availability || 'Not provided'],
-  ];
-  
-  employmentInfo.forEach(([label, value]) => {
-    doc.text(label, 20, yPos);
-    doc.text(value, 80, yPos);
-    yPos += 8;
-  });
-  
-  // Professional Information Section
-  yPos += 10;
-  doc.setFontSize(14);
-  doc.setTextColor(0, 83, 156);
-  doc.text("Professional Information", 20, yPos);
-  yPos += 10;
-  
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  
-  if (carer.qualifications && carer.qualifications.length > 0) {
-    doc.text("Qualifications:", 20, yPos);
-    yPos += 8;
-    carer.qualifications.forEach((qual: string) => {
-      doc.text(`• ${qual}`, 25, yPos);
-      yPos += 6;
+  if (sections.personalInfo) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Personal Information", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    const personalInfo = [
+      [`Full Name:`, `${carer.first_name} ${carer.last_name}`],
+      [`Email:`, carer.email || 'Not provided'],
+      [`Phone:`, carer.phone || 'Not provided'],
+      [`Address:`, carer.address || 'Not provided'],
+      [`Date of Birth:`, carer.date_of_birth ? format(new Date(carer.date_of_birth), "dd MMM yyyy") : 'Not provided'],
+    ];
+    
+    personalInfo.forEach(([label, value]) => {
+      doc.text(label, 20, yPos);
+      doc.text(value, 80, yPos);
+      yPos += 8;
     });
-  } else {
-    doc.text("Qualifications: Not provided", 20, yPos);
-    yPos += 8;
+    yPos += 5;
   }
   
-  // DBS Information Section
-  yPos += 10;
-  doc.setFontSize(14);
-  doc.setTextColor(0, 83, 156);
-  doc.text("DBS Information", 20, yPos);
-  yPos += 10;
-  
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  
-  const dbsInfo = [
-    [`DBS Status:`, carer.dbs_status || 'Not provided'],
-    [`DBS Issue Date:`, carer.dbs_issue_date ? format(new Date(carer.dbs_issue_date), "dd MMM yyyy") : 'Not provided'],
-    [`DBS Expiry Date:`, carer.dbs_expiry_date ? format(new Date(carer.dbs_expiry_date), "dd MMM yyyy") : 'Not provided'],
-    [`DBS Certificate Number:`, carer.dbs_certificate_number || 'Not provided'],
-  ];
-  
-  dbsInfo.forEach(([label, value]) => {
-    doc.text(label, 20, yPos);
-    doc.text(value, 80, yPos);
-    yPos += 8;
-  });
-  
-  // Bank Details Section (if available)
-  if (carer.bank_name || carer.account_number || carer.sort_code) {
+  // Employment Details / General Settings Section
+  if (sections.generalSettings) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Employment Details", 20, yPos);
     yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    const employmentInfo = [
+      [`Hire Date:`, carer.hire_date ? format(new Date(carer.hire_date), "dd MMM yyyy") : 'Not provided'],
+      [`Status:`, carer.status || 'Not provided'],
+      [`Experience:`, carer.experience || 'Not provided'],
+      [`Specialization:`, carer.specialization || 'Not provided'],
+    ];
+    
+    employmentInfo.forEach(([label, value]) => {
+      doc.text(label, 20, yPos);
+      doc.text(value, 80, yPos);
+      yPos += 8;
+    });
+    yPos += 5;
+  }
+  
+  // Availability Section
+  if (sections.availability) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Availability", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Availability: ${carer.availability || 'Not provided'}`, 20, yPos);
+    yPos += 13;
+  }
+  
+  // Qualifications / Professional Information Section
+  if (sections.qualifications) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Professional Information", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    if (carer.qualifications && carer.qualifications.length > 0) {
+      doc.text("Qualifications:", 20, yPos);
+      yPos += 8;
+      carer.qualifications.forEach((qual: string) => {
+        doc.text(`• ${qual}`, 25, yPos);
+        yPos += 6;
+      });
+    } else {
+      doc.text("Qualifications: Not provided", 20, yPos);
+      yPos += 8;
+    }
+    yPos += 5;
+  }
+  
+  // Documents / DBS Information Section
+  if (sections.documents) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("DBS Information", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    const dbsInfo = [
+      [`DBS Status:`, carer.dbs_status || 'Not provided'],
+      [`DBS Issue Date:`, carer.dbs_issue_date ? format(new Date(carer.dbs_issue_date), "dd MMM yyyy") : 'Not provided'],
+      [`DBS Expiry Date:`, carer.dbs_expiry_date ? format(new Date(carer.dbs_expiry_date), "dd MMM yyyy") : 'Not provided'],
+      [`DBS Certificate Number:`, carer.dbs_certificate_number || 'Not provided'],
+    ];
+    
+    dbsInfo.forEach(([label, value]) => {
+      doc.text(label, 20, yPos);
+      doc.text(value, 80, yPos);
+      yPos += 8;
+    });
+    yPos += 5;
+  }
+  
+  // Bank Details Section (sensitive)
+  if (sections.bankDetails && (carer.bank_name || carer.account_number || carer.sort_code)) {
     doc.setFontSize(14);
     doc.setTextColor(0, 83, 156);
     doc.text("Bank Details", 20, yPos);
