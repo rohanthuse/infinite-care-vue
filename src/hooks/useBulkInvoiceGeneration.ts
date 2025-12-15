@@ -232,6 +232,14 @@ export const useBulkInvoiceGeneration = () => {
         const calculator = new VisitBillingCalculator(typedRateSchedules, false);
         const billingSummary = calculator.calculateVisitsBilling(visits);
 
+        // 4c-2. Calculate total booked time from all scheduled booking times
+        const totalBookedMinutes = clientData.bookings.reduce((sum, booking) => {
+          const duration = Math.round(
+            (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
+          );
+          return sum + duration;
+        }, 0);
+
         // 4d. Add extra time costs to the billing
         const extraTimeCost = clientExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0);
         const totalWithExtraTime = billingSummary.total_amount + extraTimeCost;
@@ -268,7 +276,7 @@ export const useBulkInvoiceGeneration = () => {
             invoice_type: 'automatic',
             invoice_method: periodDetails.type,
             bill_to_type: 'private',
-            booked_time_minutes: billingSummary.total_billable_minutes,
+            booked_time_minutes: totalBookedMinutes, // Use sum of scheduled booking durations
             generated_from_booking: true
           })
           .select()

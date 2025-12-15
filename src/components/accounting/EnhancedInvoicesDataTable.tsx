@@ -225,11 +225,30 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   const formatDate = (dateString: string) => {
     return dateString ? new Date(dateString).toLocaleDateString('en-GB') : '-';
   };
-  const formatTime = (minutes: number) => {
-    if (!minutes) return '-';
+  const formatBookedTime = (minutes: number | null | undefined, isBookingBased: boolean | null | undefined) => {
+    // Show N/A for non-booking invoices (manual invoices)
+    if (!isBookingBased) {
+      return <span className="text-muted-foreground">N/A</span>;
+    }
+    if (!minutes || minutes === 0) {
+      return <span className="text-muted-foreground">-</span>;
+    }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${mins}m`;
+  };
+
+  const formatActualTime = (minutes: number | null | undefined) => {
+    if (!minutes || minutes === 0) {
+      return <span className="text-muted-foreground">-</span>;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${mins}m`;
   };
   if (isLoading) {
     return <div className="space-y-4">
@@ -344,10 +363,10 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                   <TableCell>{formatDate(invoice.start_date)}</TableCell>
                   <TableCell>{formatDate(invoice.end_date)}</TableCell>
                   <TableCell className="text-center">
-                    {formatTime(invoice.booked_time_minutes)}
+                    {formatBookedTime(invoice.booked_time_minutes, invoice.generated_from_booking)}
                   </TableCell>
                   <TableCell className="text-center">
-                    {formatTime(invoice.actual_time_minutes)}
+                    {formatActualTime(invoice.actual_time_minutes)}
                   </TableCell>
                   <TableCell>
                     <div>

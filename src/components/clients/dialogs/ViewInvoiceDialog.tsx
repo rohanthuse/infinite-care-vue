@@ -310,6 +310,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <span className="text-foreground">{formatDateSafe(invoice.service_provided_date)}</span>
                   </div>
                 )}
+                {/* Booked Time - only for booking-based invoices */}
+                {invoice.generated_from_booking ? (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booked Time:</span>
+                    <span className="text-foreground">
+                      {invoice.booked_time_minutes && invoice.booked_time_minutes > 0 
+                        ? `${Math.floor(invoice.booked_time_minutes / 60)}h ${invoice.booked_time_minutes % 60}m`
+                        : '-'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booked Time:</span>
+                    <span className="text-muted-foreground">N/A (Manual Invoice)</span>
+                  </div>
+                )}
               </div>
             </div>
             

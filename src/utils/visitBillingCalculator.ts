@@ -75,7 +75,7 @@ export class VisitBillingCalculator {
       vat_amount: vatAmount,
       total_amount: totalAmount,
       total_billable_hours: Math.floor(totalMinutes / 60),
-      total_billable_minutes: totalMinutes % 60
+      total_billable_minutes: totalMinutes // Return full total minutes, not remainder
     };
   }
 
