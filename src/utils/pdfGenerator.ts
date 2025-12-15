@@ -542,6 +542,56 @@ export const generateCarerProfilePDF = (
     yPos += 5;
   }
   
+  // Rate Schedules Section
+  if (sections.rateSchedules) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Rate Schedules", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    const rateInfo = [
+      [`Pay Rate:`, carer.pay_rate ? `£${carer.pay_rate}/hr` : 'Not provided'],
+      [`Pay Frequency:`, carer.pay_frequency || 'Not provided'],
+      [`Contract Type:`, carer.contract_type || 'Not provided'],
+      [`Overtime Rate:`, carer.overtime_rate ? `£${carer.overtime_rate}/hr` : 'Not provided'],
+      [`Weekend Rate:`, carer.weekend_rate ? `£${carer.weekend_rate}/hr` : 'Not provided'],
+      [`Holiday Rate:`, carer.holiday_rate ? `£${carer.holiday_rate}/hr` : 'Not provided'],
+    ];
+    
+    rateInfo.forEach(([label, value]) => {
+      doc.text(label, 20, yPos);
+      doc.text(value, 80, yPos);
+      yPos += 8;
+    });
+    yPos += 5;
+  }
+  
+  // Notes Section
+  if (sections.notes) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Notes", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    if (carer.notes) {
+      const notesText = doc.splitTextToSize(carer.notes, 170);
+      notesText.forEach((line: string) => {
+        doc.text(line, 20, yPos);
+        yPos += 6;
+      });
+    } else {
+      doc.text("No notes available", 20, yPos);
+      yPos += 8;
+    }
+    yPos += 5;
+  }
+  
   // Bank Details Section (sensitive)
   if (sections.bankDetails && (carer.bank_name || carer.account_number || carer.sort_code)) {
     doc.setFontSize(14);
