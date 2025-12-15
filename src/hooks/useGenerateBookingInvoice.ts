@@ -138,10 +138,16 @@ export const useGenerateBookingInvoice = () => {
     const calculator = new VisitBillingCalculator(rateSchedules as any[], false);
     const billingSummary = calculator.calculateVisitsBilling([visit]);
 
+    // Calculate booked time directly from scheduled booking times (not billing duration)
+    const bookedTimeMinutes = Math.round(
+      (new Date(typedBooking.end_time).getTime() - new Date(typedBooking.start_time).getTime()) / 60000
+    );
+
     console.log('[generateInvoiceForBooking] Calculated billing:', {
       net: billingSummary.net_amount,
       vat: billingSummary.vat_amount,
-      total: billingSummary.total_amount
+      total: billingSummary.total_amount,
+      bookedTimeMinutes
     });
 
     // 6. Generate unique invoice number
@@ -170,7 +176,7 @@ export const useGenerateBookingInvoice = () => {
         invoice_type: 'booking',
         generated_from_booking: true,
         service_provided_date: format(new Date(typedBooking.start_time), 'yyyy-MM-dd'),
-        booked_time_minutes: billingSummary.total_billable_minutes
+        booked_time_minutes: bookedTimeMinutes // Use scheduled booking duration
       })
       .select()
       .single();
