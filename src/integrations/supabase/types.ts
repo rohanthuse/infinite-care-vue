@@ -8324,6 +8324,109 @@ export type Database = {
           },
         ]
       }
+      staff_deduction_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          created_by: string | null
+          effective_from: string | null
+          effective_until: string | null
+          employer_pension_percentage: number | null
+          has_student_loan: boolean | null
+          id: string
+          is_active: boolean | null
+          ni_category: string | null
+          ni_rate: number | null
+          notes: string | null
+          organization_id: string | null
+          other_deductions: Json | null
+          pension_opted_in: boolean | null
+          pension_percentage: number | null
+          pension_provider: string | null
+          staff_id: string
+          student_loan_plan: string | null
+          tax_code: string | null
+          tax_rate: number | null
+          updated_at: string | null
+          use_custom_ni_rate: boolean | null
+          use_custom_tax_rate: boolean | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          employer_pension_percentage?: number | null
+          has_student_loan?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          ni_category?: string | null
+          ni_rate?: number | null
+          notes?: string | null
+          organization_id?: string | null
+          other_deductions?: Json | null
+          pension_opted_in?: boolean | null
+          pension_percentage?: number | null
+          pension_provider?: string | null
+          staff_id: string
+          student_loan_plan?: string | null
+          tax_code?: string | null
+          tax_rate?: number | null
+          updated_at?: string | null
+          use_custom_ni_rate?: boolean | null
+          use_custom_tax_rate?: boolean | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          employer_pension_percentage?: number | null
+          has_student_loan?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          ni_category?: string | null
+          ni_rate?: number | null
+          notes?: string | null
+          organization_id?: string | null
+          other_deductions?: Json | null
+          pension_opted_in?: boolean | null
+          pension_percentage?: number | null
+          pension_provider?: string | null
+          staff_id?: string
+          student_loan_plan?: string | null
+          tax_code?: string | null
+          tax_rate?: number | null
+          updated_at?: string | null
+          use_custom_ni_rate?: boolean | null
+          use_custom_tax_rate?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_deduction_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_deduction_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_deduction_settings_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_documents: {
         Row: {
           created_at: string | null
