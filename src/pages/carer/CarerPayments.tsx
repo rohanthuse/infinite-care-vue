@@ -39,7 +39,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, DollarSign, Plus, Receipt, Clock, Car, TrendingUp, Wallet, Eye, Search, Download, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useCarerPayments } from '@/hooks/useCarerPayments';
 import { useCarerProfile } from '@/hooks/useCarerProfile';
-import { exportPayrollPayslip } from '@/utils/payslipPdfGenerator';
+import { exportPayrollPayslip, OrganizationInfo } from '@/utils/payslipPdfGenerator';
+import { useTenant } from '@/contexts/TenantContext';
 import { useExpenseTypeOptions } from '@/hooks/useParameterOptions';
 import { useMyExpenses } from '@/hooks/useMyExpenses';
 import { useMyTravel } from '@/hooks/useMyTravel';
@@ -63,6 +64,7 @@ import { DeleteClaimDialog } from '@/components/carer/DeleteClaimDialog';
 
 const CarerPayments: React.FC = () => {
   const { toast } = useToast();
+  const { organization } = useTenant();
   const { data: carerProfile } = useCarerProfile();
   const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
 
@@ -168,7 +170,17 @@ const CarerPayments: React.FC = () => {
   const handleDownloadPayslip = (payment: any) => {
     const payrollRecord = payrollLookup.get(payment.id);
     if (payrollRecord) {
-      exportPayrollPayslip(payrollRecord);
+      // Build organization info for PDF
+      const orgInfo: OrganizationInfo | undefined = organization ? {
+        name: organization.name || 'Company',
+        address: organization.address || '',
+        email: organization.contact_email || organization.billing_email || '',
+        phone: organization.contact_phone || undefined,
+        logoBase64: null,
+        registrationNumber: undefined,
+      } : undefined;
+
+      exportPayrollPayslip(payrollRecord, orgInfo);
     } else {
       toast({ title: "Error", description: "Payroll record not found", variant: "destructive" });
     }
