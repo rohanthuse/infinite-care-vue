@@ -23,13 +23,17 @@ import {
   Zap,
   TrendingUp,
   DollarSign,
-  FileText
+  FileText,
+  Car,
+  XCircle,
+  Ban
 } from 'lucide-react';
 import { usePayrollBookingIntegration } from '@/hooks/usePayrollBookingIntegration';
 import { useStaffList } from '@/hooks/useAccountingData';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { toast } from 'sonner';
+import { travelPaymentTypeLabels } from '@/hooks/useStaffTravelPayment';
 
 interface PayrollBookingIntegrationProps {
   branchId: string;
@@ -157,20 +161,38 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
         recordId: existingPayroll.id,
         paymentStatus: existingPayroll.payment_status,
         paymentMethod: existingPayroll.payment_method,
-        notes: existingPayroll.notes
+        notes: existingPayroll.notes,
+        // Enhanced fields not available from existing record
+        travelCompensation: 0,
+        cancelledBookingPayment: 0,
+        approvedExtraTimePayment: 0,
+        rateSchedulesApplied: false,
+        travelPaymentType: null,
+        extraTimeRecords: [],
+        travelRecords: []
       };
     } else if (calculationData) {
-      // Fall back to calculated data from bookings
-      const grossPay = (calculationData.regularHours * calculationData.basHourlyRate) + 
+      // Calculate booking-based pay using applied rates
+      const completedBookingsPay = calculationData.bookings
+        .filter(b => b.status !== 'cancelled')
+        .reduce((sum, booking) => {
+          const hours = (booking.actualMinutes || booking.scheduledMinutes) / 60;
+          const rate = booking.appliedRate || calculationData.basHourlyRate;
+          return sum + (hours * rate);
+        }, 0);
+
+      const grossPay = completedBookingsPay + 
                        (calculationData.overtimeHours * calculationData.overtimeRate) +
-                       (calculationData.extraTimeHours * calculationData.overtimeRate);
+                       calculationData.approvedExtraTimePayment +
+                       calculationData.travelCompensation +
+                       calculationData.cancelledBookingPayment;
+
       return {
         ...calculationData,
         grossPay,
-        basicSalary: calculationData.regularHours * calculationData.basHourlyRate,
-        overtimePay: (calculationData.overtimeHours * calculationData.overtimeRate) +
-                     (calculationData.extraTimeHours * calculationData.overtimeRate),
-        bonus: 0,
+        basicSalary: completedBookingsPay,
+        overtimePay: calculationData.overtimeHours * calculationData.overtimeRate,
+        bonus: calculationData.travelCompensation + calculationData.cancelledBookingPayment,
         taxDeduction: 0,
         niDeduction: 0,
         pensionDeduction: 0,
@@ -181,6 +203,10 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
     }
     return null;
   }, [existingPayroll, calculationData]);
+
+  // Separate bookings by status
+  const completedBookings = displayData?.bookings?.filter(b => b.status !== 'cancelled') || [];
+  const cancelledPaidBookings = displayData?.bookings?.filter(b => b.status === 'cancelled') || [];
 
   return (
     <>
@@ -292,6 +318,29 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                   </div>
                 )}
 
+                {/* Rate Schedule Indicator */}
+                {!displayData.isExisting && (
+                  <div className={`border rounded-lg p-3 ${displayData.rateSchedulesApplied ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <div className="flex items-center gap-2">
+                      {displayData.rateSchedulesApplied ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <span className="text-sm text-green-700 font-medium">
+                            Staff rate schedules applied
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          <span className="text-sm text-amber-700 font-medium">
+                            Using default rates (no rate schedules found)
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card>
@@ -311,9 +360,9 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       <div className="text-center">
                         <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-green-600">
-                          {displayData.bookings?.length || 0}
+                          {completedBookings.length}
                         </div>
-                        <div className="text-sm text-gray-500">Bookings</div>
+                        <div className="text-sm text-gray-500">Completed Bookings</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -321,11 +370,11 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                   <Card>
                     <CardContent className="p-4">
                       <div className="text-center">
-                        <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                        <XCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-amber-600">
-                          {displayData.overtimeHours.toFixed(1)}h
+                          {cancelledPaidBookings.length}
                         </div>
-                        <div className="text-sm text-gray-500">Overtime</div>
+                        <div className="text-sm text-gray-500">Cancelled (Paid)</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -367,18 +416,41 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       </div>
                     )}
                     
-                    {/* Extra Time */}
-                    {displayData.extraTimeHours > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-sm">
-                          Extra Time ({displayData.extraTimeHours.toFixed(1)}h @ £{displayData.overtimeRate.toFixed(2)}/h)
+                    {/* Extra Time - Only Approved */}
+                    {!displayData.isExisting && displayData.approvedExtraTimePayment > 0 && (
+                      <div className="flex justify-between text-blue-700">
+                        <span className="text-sm flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Approved Extra Time ({displayData.extraTimeRecords?.length || 0} records)
                         </span>
-                        <span className="font-medium">£{(displayData.extraTimeHours * displayData.overtimeRate).toFixed(2)}</span>
+                        <span className="font-medium">£{displayData.approvedExtraTimePayment.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {/* Travel Compensation */}
+                    {!displayData.isExisting && displayData.travelCompensation > 0 && (
+                      <div className="flex justify-between text-green-700">
+                        <span className="text-sm flex items-center gap-1">
+                          <Car className="h-3 w-3" />
+                          Travel ({travelPaymentTypeLabels[displayData.travelPaymentType as keyof typeof travelPaymentTypeLabels] || 'N/A'})
+                        </span>
+                        <span className="font-medium">£{displayData.travelCompensation.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {/* Cancelled Booking Payment */}
+                    {!displayData.isExisting && displayData.cancelledBookingPayment > 0 && (
+                      <div className="flex justify-between text-amber-700">
+                        <span className="text-sm flex items-center gap-1">
+                          <Ban className="h-3 w-3" />
+                          Cancelled Bookings (Paid) ({cancelledPaidBookings.length})
+                        </span>
+                        <span className="font-medium">£{displayData.cancelledBookingPayment.toFixed(2)}</span>
                       </div>
                     )}
                     
-                    {/* Bonuses/Allowances */}
-                    {displayData.bonus > 0 && (
+                    {/* Bonuses/Allowances (for existing records) */}
+                    {displayData.isExisting && displayData.bonus > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span className="text-sm">Bonuses / Allowances</span>
                         <span className="font-medium">£{displayData.bonus.toFixed(2)}</span>
@@ -432,19 +504,66 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                   </CardContent>
                 </Card>
 
-                {/* Bookings List */}
-                {displayData.bookings && displayData.bookings.length > 0 && (
+                {/* Completed Bookings List */}
+                {completedBookings.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        Included Bookings ({displayData.bookings.length})
+                        Completed Bookings ({completedBookings.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {displayData.bookings.map((booking) => (
+                        {completedBookings.map((booking) => (
                           <div key={booking.bookingId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div>
+                              <div className="font-medium text-sm">{booking.clientName}</div>
+                              <div className="text-xs text-gray-500">
+                                {format(new Date(booking.startTime), 'MMM dd, HH:mm')} - 
+                                {format(new Date(booking.endTime), 'HH:mm')}
+                                {booking.serviceName && <span className="ml-2 text-blue-600">({booking.serviceName})</span>}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="default" className="bg-green-100 text-green-700">
+                                  {booking.status}
+                                </Badge>
+                                {booking.isBankHoliday && (
+                                  <Badge variant="outline" className="text-amber-600 border-amber-300">
+                                    Bank Holiday
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {((booking.actualMinutes || booking.scheduledMinutes) / 60).toFixed(1)}h @ £{(booking.appliedRate || displayData.basHourlyRate).toFixed(2)}
+                                {booking.extraMinutes > 0 && (
+                                  <span className="text-amber-600"> (+{booking.extraMinutes}m)</span>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400">{booking.rateSource || 'Default Rate'}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Cancelled Bookings (Paid) List */}
+                {cancelledPaidBookings.length > 0 && (
+                  <Card className="border-amber-200">
+                    <CardHeader className="bg-amber-50/50">
+                      <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
+                        <XCircle className="h-4 w-4" />
+                        Cancelled Bookings - Staff Payable ({cancelledPaidBookings.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {cancelledPaidBookings.map((booking) => (
+                          <div key={booking.bookingId} className="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-100">
                             <div>
                               <div className="font-medium text-sm">{booking.clientName}</div>
                               <div className="text-xs text-gray-500">
@@ -453,15 +572,77 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                               </div>
                             </div>
                             <div className="text-right">
-                              <Badge variant={booking.status === 'done' ? 'default' : 'secondary'}>
-                                {booking.status}
+                              <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-100">
+                                Cancelled - {booking.staffPaymentType || 'Full'} Pay
                               </Badge>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {(booking.actualMinutes || booking.scheduledMinutes) / 60}h
-                                {booking.extraMinutes > 0 && (
-                                  <span className="text-amber-600"> (+{booking.extraMinutes}m)</span>
-                                )}
+                              <div className="text-xs text-amber-700 mt-1 font-medium">
+                                {booking.staffPaymentAmount 
+                                  ? `£${booking.staffPaymentAmount.toFixed(2)}`
+                                  : `${((booking.scheduledMinutes / 60)).toFixed(1)}h`
+                                }
                               </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Travel Records */}
+                {!displayData.isExisting && displayData.travelRecords && displayData.travelRecords.length > 0 && (
+                  <Card className="border-green-200">
+                    <CardHeader className="bg-green-50/50">
+                      <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+                        <Car className="h-4 w-4" />
+                        Approved Travel Records ({displayData.travelRecords.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {displayData.travelRecords.map((record: any) => (
+                          <div key={record.id} className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-100">
+                            <div>
+                              <div className="text-sm">{format(new Date(record.travel_date), 'MMM dd')}</div>
+                              <div className="text-xs text-gray-500">
+                                {record.start_location} → {record.end_location}
+                              </div>
+                            </div>
+                            <div className="text-right text-sm">
+                              <div>{record.distance_miles?.toFixed(1)} miles</div>
+                              <div className="text-green-700 font-medium">£{record.total_cost?.toFixed(2)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Extra Time Records */}
+                {!displayData.isExisting && displayData.extraTimeRecords && displayData.extraTimeRecords.length > 0 && (
+                  <Card className="border-blue-200">
+                    <CardHeader className="bg-blue-50/50">
+                      <CardTitle className="text-sm flex items-center gap-2 text-blue-800">
+                        <Clock className="h-4 w-4" />
+                        Approved Extra Time ({displayData.extraTimeRecords.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {displayData.extraTimeRecords.map((record: any) => (
+                          <div key={record.id} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
+                            <div>
+                              <div className="text-sm">{format(new Date(record.work_date), 'MMM dd')}</div>
+                              <div className="text-xs text-gray-500">
+                                {record.extra_time_minutes} minutes extra
+                              </div>
+                            </div>
+                            <div className="text-right text-sm">
+                              <Badge variant="outline" className="text-green-600 border-green-300">
+                                Approved
+                              </Badge>
+                              <div className="text-blue-700 font-medium mt-1">£{record.total_cost?.toFixed(2)}</div>
                             </div>
                           </div>
                         ))}

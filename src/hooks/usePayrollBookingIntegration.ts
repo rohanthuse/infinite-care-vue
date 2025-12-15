@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, differenceInMinutes, isWeekend, getDay } from 'date-fns';
+import { TravelPaymentType, calculateTravelCompensation } from './useStaffTravelPayment';
+import { StaffRateSchedule } from './useStaffAccounting';
 
 interface BookingTimeData {
   bookingId: string;
@@ -22,6 +24,10 @@ interface BookingTimeData {
   // Cancellation payment fields
   staffPaymentType?: string;
   staffPaymentAmount?: number;
+  // Rate applied
+  appliedRate?: number;
+  rateSource?: string;
+  isBankHoliday?: boolean;
 }
 
 interface PayrollCalculationData {
@@ -40,7 +46,24 @@ interface PayrollCalculationData {
   travelRecords: any[];
   basHourlyRate: number;
   overtimeRate: number;
+  // New fields for enhanced breakdown
+  travelPaymentType: TravelPaymentType | null;
+  travelCompensation: number;
+  cancelledBookingPayment: number;
+  approvedExtraTimePayment: number;
+  rateSchedulesApplied: boolean;
 }
+
+// Day name mapping for rate schedule matching
+const dayNameMap: Record<number, string> = {
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday'
+};
 
 // Get existing payroll record from database
 const getExistingPayrollRecord = async (
@@ -74,6 +97,77 @@ const getExistingPayrollRecord = async (
   }
 
   return data;
+};
+
+// Fetch bank holidays for the period
+const fetchBankHolidays = async (startDate: string, endDate: string): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from('bank_holidays')
+    .select('registered_on')
+    .gte('registered_on', startDate.split('T')[0])
+    .lte('registered_on', endDate.split('T')[0])
+    .eq('status', 'active');
+
+  if (error) {
+    console.error('Error fetching bank holidays:', error);
+    return [];
+  }
+
+  return (data || []).map(h => h.registered_on);
+};
+
+// Match booking to appropriate rate schedule
+const matchRateSchedule = (
+  booking: any,
+  rateSchedules: StaffRateSchedule[],
+  bankHolidays: string[]
+): { rate: number; source: string; isBankHoliday: boolean } => {
+  const bookingDate = parseISO(booking.start_time);
+  const bookingDateStr = format(bookingDate, 'yyyy-MM-dd');
+  const bookingTime = format(bookingDate, 'HH:mm');
+  const dayName = dayNameMap[getDay(bookingDate)];
+  const isBankHoliday = bankHolidays.includes(bookingDateStr);
+
+  // Find matching rate schedule
+  for (const schedule of rateSchedules) {
+    if (!schedule.is_active) continue;
+
+    // Check date range
+    if (schedule.start_date && bookingDateStr < schedule.start_date) continue;
+    if (schedule.end_date && bookingDateStr > schedule.end_date) continue;
+
+    // Check service type match
+    if (schedule.service_type_codes && schedule.service_type_codes.length > 0) {
+      if (!booking.service_id || !schedule.service_type_codes.includes(booking.service_id)) {
+        continue;
+      }
+    }
+
+    // Check day of week
+    if (schedule.days_covered && schedule.days_covered.length > 0) {
+      if (!schedule.days_covered.includes(dayName)) continue;
+    }
+
+    // Check time range
+    if (schedule.time_from && schedule.time_until) {
+      if (bookingTime < schedule.time_from || bookingTime > schedule.time_until) continue;
+    }
+
+    // Found matching schedule - apply rate with bank holiday multiplier if applicable
+    let rate = schedule.base_rate;
+    if (isBankHoliday && schedule.bank_holiday_multiplier > 1) {
+      rate = rate * schedule.bank_holiday_multiplier;
+    }
+
+    return {
+      rate,
+      source: `${schedule.rate_category} (${schedule.authority_type})`,
+      isBankHoliday
+    };
+  }
+
+  // Default fallback rate
+  return { rate: 12.00, source: 'Default Rate', isBankHoliday };
 };
 
 export const usePayrollBookingIntegration = () => {
@@ -202,21 +296,57 @@ export const usePayrollBookingIntegration = () => {
     // Get booking time data
     const bookingData = await getBookingTimeData(branchId, payPeriodStart, payPeriodEnd, staffId);
 
-    // Get staff information and rates - remove hourly_rate column that doesn't exist
+    // Get staff information including travel payment type
     const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select(`
         id,
         first_name,
-        last_name
+        last_name,
+        travel_payment_type
       `)
       .eq('id', staffId)
       .single();
 
     if (staffError) throw staffError;
 
-    // Get default hourly rate or use minimum wage as fallback
-    const baseHourlyRate = 12.00; // Default minimum wage - should be configurable
+    const travelPaymentType = (staff?.travel_payment_type as TravelPaymentType) || null;
+
+    // Fetch staff rate schedules
+    const { data: rateSchedules, error: rateError } = await supabase
+      .from('staff_rate_schedules')
+      .select('*')
+      .eq('staff_id', staffId)
+      .eq('is_active', true)
+      .order('start_date', { ascending: false });
+
+    if (rateError) {
+      console.error('Error fetching rate schedules:', rateError);
+    }
+
+    const activeRateSchedules: StaffRateSchedule[] = rateSchedules || [];
+    const rateSchedulesApplied = activeRateSchedules.length > 0;
+
+    // Fetch bank holidays for the period
+    const bankHolidays = await fetchBankHolidays(payPeriodStart, payPeriodEnd);
+
+    // Calculate default hourly rate from rate schedules or use fallback
+    let baseHourlyRate = 12.00; // Default minimum wage fallback
+    if (activeRateSchedules.length > 0) {
+      // Use the first active rate's base_rate as default
+      baseHourlyRate = activeRateSchedules[0].base_rate || 12.00;
+    }
+
+    // Apply rate schedules to bookings
+    const bookingsWithRates = bookingData.map(booking => {
+      const rateMatch = matchRateSchedule(booking, activeRateSchedules, bankHolidays);
+      return {
+        ...booking,
+        appliedRate: rateMatch.rate,
+        rateSource: rateMatch.source,
+        isBankHoliday: rateMatch.isBankHoliday
+      };
+    });
 
     // Get attendance records for the period
     const { data: attendanceRecords, error: attendanceError } = await supabase
@@ -229,30 +359,45 @@ export const usePayrollBookingIntegration = () => {
 
     if (attendanceError) throw attendanceError;
 
-    // Get extra time records
+    // Get APPROVED extra time records only
     const { data: extraTimeRecords, error: extraTimeError } = await supabase
       .from('extra_time_records')
       .select('*')
       .eq('staff_id', staffId)
+      .eq('status', 'approved') // Only include approved extra time
       .gte('work_date', payPeriodStart.split('T')[0])
       .lte('work_date', payPeriodEnd.split('T')[0]);
 
     if (extraTimeError) throw extraTimeError;
 
-    // Get travel records
+    // Get APPROVED travel records only
     const { data: travelRecords, error: travelError } = await supabase
       .from('travel_records')
       .select('*')
       .eq('staff_id', staffId)
+      .eq('status', 'approved') // Only include approved travel
       .gte('travel_date', payPeriodStart.split('T')[0])
       .lte('travel_date', payPeriodEnd.split('T')[0]);
 
     if (travelError) throw travelError;
 
+    // Calculate travel compensation based on staff's preference
+    const travelCompensationData = calculateTravelCompensation(
+      travelRecords || [],
+      travelPaymentType,
+      baseHourlyRate
+    );
+
+    // Calculate approved extra time payment
+    const approvedExtraTimePayment = (extraTimeRecords || []).reduce(
+      (sum, record) => sum + (record.total_cost || 0),
+      0
+    );
+
     // Calculate totals
-    const totalScheduledMinutes = bookingData.reduce((sum, booking) => sum + booking.scheduledMinutes, 0);
-    const totalActualMinutes = bookingData.reduce((sum, booking) => sum + (booking.actualMinutes || booking.scheduledMinutes), 0);
-    const totalExtraMinutes = bookingData.reduce((sum, booking) => sum + booking.extraMinutes, 0);
+    const totalScheduledMinutes = bookingsWithRates.reduce((sum, booking) => sum + booking.scheduledMinutes, 0);
+    const totalActualMinutes = bookingsWithRates.reduce((sum, booking) => sum + (booking.actualMinutes || booking.scheduledMinutes), 0);
+    const totalExtraMinutes = bookingsWithRates.reduce((sum, booking) => sum + booking.extraMinutes, 0);
 
     const totalScheduledHours = totalScheduledMinutes / 60;
     const totalActualHours = totalActualMinutes / 60;
@@ -264,6 +409,24 @@ export const usePayrollBookingIntegration = () => {
 
     const overtimeRate = baseHourlyRate * 1.5; // Time and a half for overtime
 
+    // Calculate cancellation payment from cancelled bookings with payment
+    const cancelledBookingPayment = bookingsWithRates
+      .filter(b => b.status === 'cancelled' && b.staffPaymentType && b.staffPaymentType !== 'none')
+      .reduce((sum, booking) => {
+        if (booking.staffPaymentAmount) {
+          return sum + booking.staffPaymentAmount;
+        }
+        // Calculate based on type if no explicit amount
+        const hourlyRate = booking.appliedRate || baseHourlyRate;
+        const hours = booking.scheduledMinutes / 60;
+        const fullAmount = hourlyRate * hours;
+        switch (booking.staffPaymentType) {
+          case 'full': return sum + fullAmount;
+          case 'half': return sum + (fullAmount / 2);
+          default: return sum;
+        }
+      }, 0);
+
     return {
       staffId,
       staffName: staff ? `${staff.first_name} ${staff.last_name}` : 'Unknown Staff',
@@ -274,12 +437,18 @@ export const usePayrollBookingIntegration = () => {
       regularHours,
       overtimeHours,
       extraTimeHours,
-      bookings: bookingData,
+      bookings: bookingsWithRates,
       attendanceRecords: attendanceRecords || [],
       extraTimeRecords: extraTimeRecords || [],
       travelRecords: travelRecords || [],
       basHourlyRate: baseHourlyRate,
-      overtimeRate
+      overtimeRate,
+      // Enhanced fields
+      travelPaymentType,
+      travelCompensation: travelCompensationData.totalAmount,
+      cancelledBookingPayment,
+      approvedExtraTimePayment,
+      rateSchedulesApplied
     };
   };
 
@@ -339,39 +508,25 @@ export const usePayrollBookingIntegration = () => {
         // Calculate payroll data from bookings
         const calculationData = await calculatePayrollFromBookings(branchId, staffId, payPeriodStart, payPeriodEnd);
 
-        // Calculate travel reimbursement from APPROVED records only
-        const approvedTravelRecords = (calculationData.travelRecords || []).filter(
-          (r: any) => r.status === 'approved'
-        );
-        const travelReimbursement = approvedTravelRecords.reduce(
-          (sum: number, record: any) => sum + (record.total_cost || 0),
-          0
-        );
+        // Use pre-calculated values from enhanced calculation
+        const travelReimbursement = calculationData.travelCompensation;
+        const cancelledBookingPayment = calculationData.cancelledBookingPayment;
+        const approvedExtraTimePayment = calculationData.approvedExtraTimePayment;
 
-        // Calculate cancellation payment from cancelled bookings with payment
-        const cancelledBookingPayment = calculationData.bookings
-          .filter(b => b.status === 'cancelled' && b.staffPaymentType && b.staffPaymentType !== 'none')
+        // Calculate booking-based pay using applied rates
+        const completedBookingsPay = calculationData.bookings
+          .filter(b => b.status !== 'cancelled')
           .reduce((sum, booking) => {
-            if (booking.staffPaymentAmount) {
-              return sum + booking.staffPaymentAmount;
-            }
-            // Calculate based on type if no explicit amount
-            const hourlyRate = calculationData.basHourlyRate;
-            const hours = booking.scheduledMinutes / 60;
-            const fullAmount = hourlyRate * hours;
-            switch (booking.staffPaymentType) {
-              case 'full': return sum + fullAmount;
-              case 'half': return sum + (fullAmount / 2);
-              default: return sum;
-            }
+            const hours = (booking.actualMinutes || booking.scheduledMinutes) / 60;
+            const rate = booking.appliedRate || calculationData.basHourlyRate;
+            return sum + (hours * rate);
           }, 0);
 
         // Calculate pay components
-        const basicSalary = calculationData.regularHours * calculationData.basHourlyRate;
+        const basicSalary = completedBookingsPay;
         const overtimePay = calculationData.overtimeHours * calculationData.overtimeRate;
-        const extraTimePay = calculationData.extraTimeHours * calculationData.overtimeRate;
         
-        const grossPay = basicSalary + overtimePay + extraTimePay + travelReimbursement + cancelledBookingPayment;
+        const grossPay = basicSalary + overtimePay + approvedExtraTimePayment + travelReimbursement + cancelledBookingPayment;
         
         // Calculate deductions (basic estimates - should be configurable)
         const taxRate = 0.20; // 20% tax estimate
@@ -384,6 +539,19 @@ export const usePayrollBookingIntegration = () => {
         
         const netPay = grossPay - taxDeduction - niDeduction - pensionDeduction;
 
+        // Count bookings by type
+        const completedBookings = calculationData.bookings.filter(b => b.status !== 'cancelled').length;
+        const cancelledPaidBookings = calculationData.bookings.filter(b => b.status === 'cancelled').length;
+
+        // Create detailed notes
+        const notesDetails = [
+          `Bookings: ${completedBookings} completed`,
+          cancelledPaidBookings > 0 ? `${cancelledPaidBookings} cancelled (paid £${cancelledBookingPayment.toFixed(2)})` : null,
+          `Travel: £${travelReimbursement.toFixed(2)} (${calculationData.travelPaymentType || 'none'})`,
+          `Extra Time: £${approvedExtraTimePayment.toFixed(2)} (${calculationData.extraTimeRecords.length} approved)`,
+          calculationData.rateSchedulesApplied ? 'Rate schedules applied' : 'Default rates used'
+        ].filter(Boolean).join(' | ');
+
         // Create payroll record
         const payrollRecord = {
           branch_id: branchId,
@@ -395,8 +563,8 @@ export const usePayrollBookingIntegration = () => {
           hourly_rate: calculationData.basHourlyRate,
           overtime_rate: calculationData.overtimeRate,
           basic_salary: basicSalary,
-          overtime_pay: overtimePay + extraTimePay,
-          bonus: 0,
+          overtime_pay: overtimePay + approvedExtraTimePayment,
+          bonus: travelReimbursement + cancelledBookingPayment, // Travel and cancelled booking payments as bonus/allowance
           gross_pay: grossPay,
           tax_deduction: taxDeduction,
           ni_deduction: niDeduction,
@@ -406,7 +574,7 @@ export const usePayrollBookingIntegration = () => {
           payment_status: 'pending' as const,
           payment_method: 'bank_transfer' as const,
           payment_date: payPeriodEnd.split('T')[0],
-          notes: `Auto-generated from ${calculationData.bookings.length} bookings, ${calculationData.attendanceRecords.length} attendance records, ${approvedTravelRecords.length} approved travel records (£${travelReimbursement.toFixed(2)} travel), and £${cancelledBookingPayment.toFixed(2)} cancelled booking payments`,
+          notes: notesDetails,
           created_by: createdBy
         };
 
