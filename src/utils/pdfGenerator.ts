@@ -381,16 +381,35 @@ export const generateNews2PDF = (
   doc.save(`NEWS2_${patient.name.replace(/\s+/g, "_")}_${formattedDate}.pdf`);
 };
 
-// Staff share sections interface for PDF generation
+// Staff share sections interface for PDF generation - expanded to 21 modules
 interface StaffPdfSections {
+  // Personal Details
   personalInfo?: boolean;
+  communication?: boolean;
+  staffEmergencyContacts?: boolean;
+  staffHobbies?: boolean;
+  // Employment & Settings
   generalSettings?: boolean;
+  employmentHistory?: boolean;
+  typeOfWork?: boolean;
+  settings?: boolean;
+  bankDetails?: boolean;
+  // Rates & Availability
   rateSchedules?: boolean;
   availability?: boolean;
+  // Qualifications & Training
   qualifications?: boolean;
+  training?: boolean;
+  skills?: boolean;
+  supportingStatement?: boolean;
+  // Compliance & Records
   documents?: boolean;
+  essentials?: boolean;
+  attendance?: boolean;
+  forms?: boolean;
+  meetings?: boolean;
+  // Notes
   notes?: boolean;
-  bankDetails?: boolean;
 }
 
 // New function to generate Carer Profile PDF with optional section filtering
@@ -404,13 +423,26 @@ export const generateCarerProfilePDF = (
   // Default to all sections if none specified
   const sections = selectedSections || {
     personalInfo: true,
+    communication: false,
+    staffEmergencyContacts: false,
+    staffHobbies: false,
     generalSettings: true,
-    rateSchedules: true,
+    employmentHistory: false,
+    typeOfWork: false,
+    settings: false,
+    bankDetails: false,
+    rateSchedules: false,
     availability: true,
-    qualifications: true,
-    documents: true,
-    notes: true,
-    bankDetails: true,
+    qualifications: false,
+    training: false,
+    skills: false,
+    supportingStatement: false,
+    documents: false,
+    essentials: false,
+    attendance: false,
+    forms: false,
+    meetings: false,
+    notes: false,
   };
   
   // Add logo or header
