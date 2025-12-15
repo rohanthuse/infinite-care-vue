@@ -129,16 +129,39 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
   const { organization } = useTenant();
   const breakdown = parsePayrollNotes(payrollRecord.notes);
 
-  const handleExportPayslip = () => {
+  // Helper function to convert image URL to base64
+  const getLogoBase64 = async (logoUrl: string): Promise<string | null> => {
     try {
+      const response = await fetch(logoUrl);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Failed to fetch logo:', error);
+      return null;
+    }
+  };
+
+  const handleExportPayslip = async () => {
+    try {
+      // Fetch logo as base64 if available
+      let logoBase64: string | null = null;
+      if (organization?.logo_url) {
+        logoBase64 = await getLogoBase64(organization.logo_url);
+      }
+
       // Build organization info for PDF
       const orgInfo: OrganizationInfo | undefined = organization ? {
         name: organization.name || 'Company',
         address: organization.address || '',
         email: organization.contact_email || organization.billing_email || '',
         phone: organization.contact_phone || undefined,
-        logoBase64: null, // logo_url would need to be fetched as base64
-        registrationNumber: undefined, // registration_number not in Organization context type
+        logoBase64: logoBase64,
+        registrationNumber: undefined,
       } : undefined;
 
       exportPayrollPayslip(payrollRecord, orgInfo);

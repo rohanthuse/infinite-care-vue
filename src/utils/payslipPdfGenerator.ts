@@ -170,7 +170,7 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.3);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
+  yPosition += 5; // Reduced from 10 to 5 for less vertical spacing
 
   // ===== PAYSLIP TITLE (Centered, Blue) =====
   doc.setFontSize(18);
@@ -179,7 +179,7 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   const titleText = 'PAYSLIP';
   const titleWidth = doc.getTextWidth(titleText);
   doc.text(titleText, (pageWidth - titleWidth) / 2, yPosition);
-  yPosition += 12;
+  yPosition += 10; // Reduced from 12
 
   // ===== PAY PERIOD BANNER (Blue gradient background) =====
   const bannerHeight = 10;
@@ -193,14 +193,14 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   const bannerText = `${periodMonth} Pay Statement`;
   const bannerTextWidth = doc.getTextWidth(bannerText);
   doc.text(bannerText, (pageWidth - bannerTextWidth) / 2, yPosition + 6.5);
-  yPosition += bannerHeight + 12;
+  yPosition += bannerHeight + 10; // Reduced from 12
 
   // ===== TWO-COLUMN LAYOUT: Employee Info & Payroll Info =====
   const leftColX = margin;
   const rightColX = pageWidth - margin;
   const colYStart = yPosition;
 
-  // LEFT COLUMN - Employee Details
+  // LEFT COLUMN - Employee Details (without Staff ID)
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont(undefined, 'bold');
@@ -209,14 +209,9 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   doc.text(employeeName, leftColX + 32, colYStart);
 
   doc.setFont(undefined, 'bold');
-  doc.text('Staff ID: ', leftColX, colYStart + 5);
+  doc.text('Email: ', leftColX, colYStart + 5);
   doc.setFont(undefined, 'normal');
-  doc.text(record.staff_id.substring(0, 8) + '...', leftColX + 32, colYStart + 5);
-
-  doc.setFont(undefined, 'bold');
-  doc.text('Email: ', leftColX, colYStart + 10);
-  doc.setFont(undefined, 'normal');
-  doc.text(employeeEmail, leftColX + 32, colYStart + 10);
+  doc.text(employeeEmail, leftColX + 32, colYStart + 5);
 
   // RIGHT COLUMN - Payroll Details (Right-aligned)
   doc.setFontSize(9);
@@ -232,7 +227,7 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
     doc.text(`Ref: ${record.payment_reference}`, rightColX, colYStart + 15, { align: 'right' });
   }
 
-  yPosition = colYStart + 25;
+  yPosition = colYStart + 20; // Reduced from 25
 
   // ===== EARNINGS TABLE (Invoice-style) =====
   doc.setFontSize(11);
@@ -339,6 +334,9 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
 
   yPosition = (doc as any).lastAutoTable?.finalY + 3 || yPosition + 35;
 
+  // Footer reserved space - ensure content doesn't overlap
+  const footerReservedY = pageHeight - 40;
+
   // Deductions Total Row
   doc.setFillColor(lightRedRgb[0], lightRedRgb[1], lightRedRgb[2]);
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 8, 1, 1, 'F');
@@ -347,11 +345,18 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   doc.setTextColor(darkRedRgb[0], darkRedRgb[1], darkRedRgb[2]);
   doc.text('TOTAL DEDUCTIONS', margin + 5, yPosition + 5.5);
   doc.text(`-${formatCurrency(totalDeductions)}`, pageWidth - margin - 5, yPosition + 5.5, { align: 'right' });
-  yPosition += 18;
+  yPosition += 12; // Reduced from 18
 
   // ===== PAYMENT SUMMARY (Right-aligned box) =====
   const summaryBoxWidth = 85;
   const summaryBoxX = pageWidth - margin - summaryBoxWidth;
+  
+  // Check if we have enough space before footer
+  const summaryContentHeight = 35; // Approximate height needed for summary
+  if (yPosition + summaryContentHeight > footerReservedY) {
+    doc.addPage();
+    yPosition = margin;
+  }
   
   // Gross Pay
   doc.setFontSize(9);
@@ -371,7 +376,7 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.3);
   doc.line(summaryBoxX, yPosition, pageWidth - margin, yPosition);
-  yPosition += 7;
+  yPosition += 6; // Reduced from 7
 
   // NET PAY Box (Highlighted)
   const netPayBoxHeight = 12;
@@ -384,27 +389,33 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   doc.text('NET PAY:', summaryBoxX + 5, yPosition + 6);
   doc.text(formatCurrency(record.net_pay), pageWidth - margin - 5, yPosition + 6, { align: 'right' });
   
-  yPosition += netPayBoxHeight + 15;
+  yPosition += netPayBoxHeight + 10; // Reduced from 15
 
   // ===== NOTES SECTION (if available) =====
   if (record.notes) {
+    // Check if notes would overlap with footer
+    const notesHeight = 20; // Approximate
+    if (yPosition + notesHeight > footerReservedY) {
+      doc.addPage();
+      yPosition = margin;
+    }
+    
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 8;
+    yPosition += 6; // Reduced from 8
 
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
     doc.text('Notes', margin, yPosition);
-    yPosition += 6;
+    yPosition += 5; // Reduced from 6
 
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
     const splitNotes = doc.splitTextToSize(record.notes, pageWidth - 2 * margin);
     doc.text(splitNotes, margin, yPosition);
-    yPosition += splitNotes.length * 4 + 10;
   }
 
   // ===== FOOTER =====
