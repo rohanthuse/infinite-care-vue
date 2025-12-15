@@ -298,11 +298,42 @@ const CarerPayments: React.FC = () => {
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="history">Payment History</TabsTrigger>
-          <TabsTrigger value="expenses">My Expense Claims</TabsTrigger>
-          <TabsTrigger value="travel">Travel & Mileage</TabsTrigger>
-          <TabsTrigger value="extratime">Extra Time</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 rounded-lg h-auto flex-wrap gap-1">
+          <TabsTrigger 
+            value="history" 
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
+          >
+            <Wallet className="h-4 w-4 mr-2" />
+            Payment History
+          </TabsTrigger>
+          <TabsTrigger 
+            value="payslips" 
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Payslips
+          </TabsTrigger>
+          <TabsTrigger 
+            value="expenses" 
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
+          >
+            <Receipt className="h-4 w-4 mr-2" />
+            My Expense Claims
+          </TabsTrigger>
+          <TabsTrigger 
+            value="travel" 
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
+          >
+            <Car className="h-4 w-4 mr-2" />
+            Travel & Mileage
+          </TabsTrigger>
+          <TabsTrigger 
+            value="extratime" 
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Extra Time
+          </TabsTrigger>
         </TabsList>
 
         {/* Payment History Tab */}
@@ -339,6 +370,112 @@ const CarerPayments: React.FC = () => {
                         <TableCell>{payment.type === 'salary' && (<Button variant="ghost" size="sm" onClick={() => handleDownloadPayslip(payment)} className="gap-1" disabled={!payrollLookup.has(payment.id)}><FileText className="h-4 w-4" />Payslip</Button>)}</TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payslips Tab - NEW */}
+        <TabsContent value="payslips">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>My Payslips</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : (paymentsData?.carerPayroll?.length || 0) === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No payslips found. Payslips will appear here once payroll is processed by admin.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payroll Period</TableHead>
+                      <TableHead className="text-right">Total Hours</TableHead>
+                      <TableHead className="text-right">Total Earnings</TableHead>
+                      <TableHead className="text-right">Deductions</TableHead>
+                      <TableHead className="text-right">Net Pay</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentsData?.carerPayroll?.map((payroll) => {
+                      const totalDeductions = 
+                        payroll.tax_deduction + 
+                        payroll.ni_deduction + 
+                        payroll.pension_deduction + 
+                        payroll.other_deductions;
+                      const totalHours = payroll.regular_hours + payroll.overtime_hours;
+                      
+                      return (
+                        <TableRow key={payroll.id}>
+                          <TableCell>
+                            <div className="font-medium">
+                              {format(new Date(payroll.pay_period_start), 'dd MMM')} - {format(new Date(payroll.pay_period_end), 'dd MMM yyyy')}
+                            </div>
+                            {payroll.payment_date && (
+                              <div className="text-xs text-muted-foreground">
+                                Paid: {format(new Date(payroll.payment_date), 'dd/MM/yyyy')}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {totalHours}
+                            {payroll.overtime_hours > 0 && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                (+{payroll.overtime_hours} OT)
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{payroll.gross_pay.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right text-destructive">
+                            -£{totalDeductions.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            £{payroll.net_pay.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(payroll.payment_status === 'processed' ? 'paid' : payroll.payment_status)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const orgInfo: OrganizationInfo | undefined = organization ? {
+                                    name: organization.name || 'Company',
+                                    address: organization.address || '',
+                                    email: organization.contact_email || organization.billing_email || '',
+                                    phone: organization.contact_phone || undefined,
+                                    logoBase64: null,
+                                    registrationNumber: undefined,
+                                  } : undefined;
+                                  exportPayrollPayslip(payroll, orgInfo);
+                                }}
+                                className="gap-1"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

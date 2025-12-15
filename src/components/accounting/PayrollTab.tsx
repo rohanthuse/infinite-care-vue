@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +21,8 @@ import FilterPayrollDialog from "./FilterPayrollDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import PayrollBookingIntegration from "./PayrollBookingIntegration";
+import { exportPayrollPayslip, OrganizationInfo } from "@/utils/payslipPdfGenerator";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface PayrollTabProps {
   branchId?: string;
@@ -41,6 +42,7 @@ interface PayrollFilter {
 
 const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   const { user } = useAuthSafe();
+  const { organization } = useTenant();
   const { data: payrollRecords = [], isLoading, error } = usePayrollRecords(branchId);
   const createPayrollMutation = useCreatePayrollRecord();
   const deletePayrollMutation = useDeletePayrollRecord();
@@ -279,6 +281,43 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     setActiveFilters(filters);
   };
 
+  // Handle share payroll record
+  const handleShareRecord = (record: PayrollRecord) => {
+    // For now, copy a share link or show share options
+    const employeeName = record.staff ? `${record.staff.first_name} ${record.staff.last_name}` : 'Employee';
+    const period = `${new Date(record.pay_period_start).toLocaleDateString()} - ${new Date(record.pay_period_end).toLocaleDateString()}`;
+    const shareText = `Payroll for ${employeeName} - ${period}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Payroll Record',
+        text: shareText,
+      }).catch(() => {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(shareText);
+        toast.success('Payroll info copied to clipboard');
+      });
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast.success('Payroll info copied to clipboard');
+    }
+  };
+
+  // Handle download payslip PDF
+  const handleDownloadPayslip = (record: PayrollRecord) => {
+    const orgInfo: OrganizationInfo | undefined = organization ? {
+      name: organization.name || 'Company',
+      address: organization.address || '',
+      email: organization.contact_email || organization.billing_email || '',
+      phone: organization.contact_phone || undefined,
+      logoBase64: null,
+      registrationNumber: undefined,
+    } : undefined;
+    
+    exportPayrollPayslip(record, orgInfo);
+    toast.success('Payslip PDF downloaded');
+  };
+
   // Get status counts for summary
   const getStatusCounts = () => {
     const counts = {
@@ -461,6 +500,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           onViewRecord={handleViewRecord}
           onEditRecord={handleEditRecord}
           onDeleteRecord={handleDeleteClick}
+          onShareRecord={handleShareRecord}
+          onDownloadPayslip={handleDownloadPayslip}
         />
       ) : (
         <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
