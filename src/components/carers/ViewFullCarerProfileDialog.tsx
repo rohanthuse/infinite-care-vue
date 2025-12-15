@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { 
   User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
-  AlertTriangle, Star, GraduationCap, FileText, ClipboardList,
+  AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
   Award, Heart, DollarSign, Settings, MessageCircle, ArrowRightLeft, Sliders
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
 import { CarerPersonalDetailsTab } from "@/components/carer-profile/CarerPersonalDetailsTab";
@@ -49,69 +49,6 @@ interface ViewFullCarerProfileDialogProps {
   onClose: () => void;
 }
 
-// Grouped tab structure for better organization
-const tabGroups = [
-  {
-    id: "profile",
-    label: "Profile",
-    icon: User,
-    tabs: [
-      { value: "overview", label: "Overview", icon: User },
-      { value: "personal", label: "Personal Details", icon: User },
-      { value: "essentials", label: "Essentials", icon: CheckCircle },
-      { value: "statement", label: "Statement", icon: FileText },
-      { value: "hobbies", label: "Hobbies", icon: Heart },
-    ]
-  },
-  {
-    id: "employment",
-    label: "Employment",
-    icon: Briefcase,
-    tabs: [
-      { value: "general", label: "General", icon: Sliders },
-      { value: "employment", label: "History", icon: Briefcase },
-      { value: "work-type", label: "Work Type", icon: Briefcase },
-      { value: "skills", label: "Skills", icon: Award },
-      { value: "settings", label: "Settings", icon: Settings },
-    ]
-  },
-  {
-    id: "payroll",
-    label: "Payroll",
-    icon: DollarSign,
-    tabs: [
-      { value: "rate", label: "Rate Schedules", icon: DollarSign },
-      { value: "attendance", label: "Attendance", icon: Calendar },
-    ]
-  },
-  {
-    id: "compliance",
-    label: "Compliance",
-    icon: FileText,
-    tabs: [
-      { value: "documents", label: "Documents", icon: FileText },
-      { value: "training", label: "Training", icon: GraduationCap },
-      { value: "forms", label: "Forms", icon: ClipboardList },
-      { value: "quality", label: "Quality", icon: Star },
-    ]
-  },
-  {
-    id: "activity",
-    label: "Activity",
-    icon: MessageCircle,
-    tabs: [
-      { value: "notes", label: "Notes", icon: MessageCircle },
-      { value: "communication", label: "Messages", icon: Mail },
-      { value: "contacts", label: "Contacts", icon: Phone },
-      { value: "meetings", label: "Meetings", icon: Calendar },
-      { value: "suspend", label: "Status", icon: AlertTriangle },
-    ]
-  },
-];
-
-// Flat tabs list for content rendering
-const allTabs = tabGroups.flatMap(group => group.tabs);
-
 export function ViewFullCarerProfileDialog({
   carerId,
   branchId,
@@ -121,28 +58,34 @@ export function ViewFullCarerProfileDialog({
 }: ViewFullCarerProfileDialogProps) {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
-  const [activeGroup, setActiveGroup] = useState("profile");
   const [activeTab, setActiveTab] = useState("overview");
   const [photoKey, setPhotoKey] = useState(0);
 
+  const tabs = [
+    { value: "overview", label: "Overview", icon: User },
+    { value: "personal", label: "Personal", icon: User },
+    { value: "general", label: "General", icon: Sliders },
+    { value: "communication", label: "Communication", icon: Mail },
+    { value: "suspend", label: "Suspend", icon: AlertTriangle },
+    { value: "notes", label: "Notes", icon: MessageCircle },
+    { value: "quality", label: "Quality", icon: Star },
+    { value: "documents", label: "Documents", icon: FileText },
+    { value: "attendance", label: "Attendance", icon: Calendar },
+    { value: "essentials", label: "Essentials", icon: CheckCircle },
+    { value: "employment", label: "Employment", icon: Briefcase },
+    { value: "training", label: "Training", icon: GraduationCap },
+    { value: "statement", label: "Statement", icon: FileText },
+    { value: "contacts", label: "Contacts", icon: Phone },
+    { value: "forms", label: "Forms", icon: ClipboardList },
+    { value: "skills", label: "Skills", icon: Award },
+    { value: "work-type", label: "Work Type", icon: Briefcase },
+    { value: "hobbies", label: "Hobbies", icon: Heart },
+    { value: "meetings", label: "Meetings", icon: Calendar },
+    { value: "rate", label: "Rate", icon: DollarSign },
+    { value: "settings", label: "Settings", icon: Settings },
+  ];
+  
   const { data: carer, isLoading, error } = useCarerProfileById(carerId);
-
-  // Get current group's sub-tabs
-  const currentGroupTabs = useMemo(() => {
-    return tabGroups.find(g => g.id === activeGroup)?.tabs || [];
-  }, [activeGroup]);
-
-  // Handle group change - auto-select first tab
-  const handleGroupChange = useCallback((group: string) => {
-    setActiveGroup(group);
-    const firstTab = tabGroups.find(g => g.id === group)?.tabs[0];
-    if (firstTab) setActiveTab(firstTab.value);
-  }, []);
-
-  // Handle tab change
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-  }, []);
 
   const forceUIUnlock = useCallback(() => {
     const overlays = document.querySelectorAll(
@@ -259,77 +202,86 @@ export function ViewFullCarerProfileDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Primary Tab Bar - Group Level (Always visible at top) */}
-          <div className="border-b border-border px-6 py-2 bg-muted/30">
-            <Tabs value={activeGroup} onValueChange={handleGroupChange}>
-              <TabsList className="h-9 bg-transparent p-0 gap-1">
-                {tabGroups.map((group) => (
-                  <TabsTrigger
-                    key={group.id}
-                    value={group.id}
-                    className="gap-1.5 px-3 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <group.icon className="h-4 w-4" />
-                    {group.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Staff Profile Summary - Two Column, Always Visible */}
-          <CarerProfileSummaryCard 
-            carerId={carerId}
-            carer={carer}
-            onPhotoUpdate={() => setPhotoKey(prev => prev + 1)}
-          />
-
-          {/* Secondary Tab Bar - Sub-tabs for current group */}
-          <div className="border-b border-border px-6 py-2 bg-background">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList className="h-8 bg-muted/50 p-0.5">
-                {currentGroupTabs.map((tab) => (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    className="gap-1.5 px-3 py-1 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    <tab.icon className="h-3.5 w-3.5" />
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Scrollable Content Area */}
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="min-h-full p-6">
-              <div className="animate-in fade-in-50 duration-300">
-                {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
-                {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
-                {activeTab === "general" && <CarerGeneralTab carerId={carerId} branchId={branchId} />}
-                {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
-                {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
-                {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
-                {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
-                {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
-                {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
-                {activeTab === "employment" && <CarerEmploymentHistoryTab carerId={carerId} />}
-                {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
-                {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
-                {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
-                {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
-                {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
-                {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
-                {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
-                {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} branchId={branchId} />}
-                {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
-                {activeTab === "rate" && <CarerRateTab carerId={carerId} branchId={branchId} />}
-                {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
-              </div>
+          <div className="flex h-[calc(95vh-80px)]">
+            {/* Left Sidebar - Navigation */}
+            <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+              {/* Profile Summary Section */}
+              <CarerProfileSummaryCard 
+                carerId={carerId}
+                carer={carer}
+                onPhotoUpdate={() => {
+                  setPhotoKey(prev => prev + 1);
+                }}
+              />
+              
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="p-6 space-y-1">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.value;
+                    return (
+                      <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground hover:bg-muted hover:text-primary"
+                        )}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate text-left">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
-          </ScrollArea>
+
+            {/* Right Panel - Content */}
+            <div className="flex-1 flex flex-col">
+              {/* Tab Title Header */}
+              <div className="border-b border-border px-6 py-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  {React.createElement(tabs.find(t => t.value === activeTab)?.icon || User, { 
+                    className: "h-4 w-4" 
+                  })}
+                  {tabs.find(t => t.value === activeTab)?.label || "Overview"}
+                </h3>
+              </div>
+
+              {/* Scrollable Content Area */}
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="min-h-full p-6">
+                  <div className="animate-in fade-in-50 duration-300">
+                    {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
+                    {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
+                    {activeTab === "general" && <CarerGeneralTab carerId={carerId} branchId={branchId} />}
+                    {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
+                    {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
+                    {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
+                    {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
+                    {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
+                    {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
+                    {activeTab === "employment" && <CarerEmploymentHistoryTab carerId={carerId} />}
+                    {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
+                    {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
+                    {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
+                    {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
+                    {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
+                    {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
+                    {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
+                    {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} branchId={branchId} />}
+                    {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
+                    {activeTab === "rate" && <CarerRateTab carerId={carerId} branchId={branchId} />}
+                    {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
+                  </div>
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
