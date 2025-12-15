@@ -2138,85 +2138,87 @@ export const exportClientProfileToPDF = async (
       return age;
     };
     
-    // Section 1: Basic Client Information
-    await addSectionHeader('Basic Client Information');
-    
-    const basicClientData = [
-      ['Client ID', clientData.id],
-      ['Full Name', `${clientData.title || ''} ${clientData.first_name || ''} ${clientData.middle_name || ''} ${clientData.last_name || ''}`.trim()],
-      ['Preferred Name', clientData.preferred_name || 'Not provided'],
-      ['Pronouns', clientData.pronouns || 'Not provided'],
-      ['Date of Birth', clientData.date_of_birth ? format(new Date(clientData.date_of_birth), 'PPP') : 'Not provided'],
-      ['Age', clientData.date_of_birth ? `${calculateAge(clientData.date_of_birth)} years` : 'N/A'],
-      ['Gender', clientData.gender || 'Not provided'],
-      ['Other Identifier', clientData.other_identifier || 'Not provided'],
-      ['Status', clientData.status || 'Not provided'],
-      ['Registered On', clientData.registered_on ? format(new Date(clientData.registered_on), 'PPP') : 'Not provided'],
-      ['Referral Route', clientData.referral_route || 'Not provided']
-    ];
+    // Section 1: Basic Client Information (Personal Info)
+    if (sections.personalInfo) {
+      await addSectionHeader('Basic Client Information');
+      
+      const basicClientData = [
+        ['Client ID', clientData.id],
+        ['Full Name', `${clientData.title || ''} ${clientData.first_name || ''} ${clientData.middle_name || ''} ${clientData.last_name || ''}`.trim()],
+        ['Preferred Name', clientData.preferred_name || 'Not provided'],
+        ['Pronouns', clientData.pronouns || 'Not provided'],
+        ['Date of Birth', clientData.date_of_birth ? format(new Date(clientData.date_of_birth), 'PPP') : 'Not provided'],
+        ['Age', clientData.date_of_birth ? `${calculateAge(clientData.date_of_birth)} years` : 'N/A'],
+        ['Gender', clientData.gender || 'Not provided'],
+        ['Other Identifier', clientData.other_identifier || 'Not provided'],
+        ['Status', clientData.status || 'Not provided'],
+        ['Registered On', clientData.registered_on ? format(new Date(clientData.registered_on), 'PPP') : 'Not provided'],
+        ['Referral Route', clientData.referral_route || 'Not provided']
+      ];
 
-    autoTable(pdf, {
-      body: basicClientData,
-      startY: currentY,
-      theme: 'striped',
-      styles: { 
-        fontSize: 9,
-        cellPadding: 3
-      },
-      columnStyles: { 
-        0: { 
-          fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
-          cellWidth: 60,
-          textColor: [40, 40, 40]
+      autoTable(pdf, {
+        body: basicClientData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
         },
-        1: {
-          cellWidth: 110
-        }
-      },
-      margin: { left: 20, right: 20 }
-    });
-
-    currentY = (pdf as any).lastAutoTable.finalY + 10;
-    
-    // Section 2: Contact Information
-    await addSectionHeader('Contact Information');
-    
-    const contactData = [
-      ['Email', clientData.email || 'Not provided'],
-      ['Phone', clientData.phone || 'Not provided'],
-      ['Telephone', clientData.telephone_number || 'Not provided'],
-      ['Country Code', clientData.country_code || 'Not provided'],
-      ['Full Address', clientData.address || 'Not provided'],
-      ['Region', clientData.region || 'Not provided']
-    ];
-
-    autoTable(pdf, {
-      body: contactData,
-      startY: currentY,
-      theme: 'striped',
-      styles: { 
-        fontSize: 9,
-        cellPadding: 3
-      },
-      columnStyles: { 
-        0: { 
-          fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
-          cellWidth: 60,
-          textColor: [40, 40, 40]
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
         },
-        1: {
-          cellWidth: 110
-        }
-      },
-      margin: { left: 20, right: 20 }
-    });
+        margin: { left: 20, right: 20 }
+      });
 
-    currentY = (pdf as any).lastAutoTable.finalY + 10;
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 2: Contact Information (part of Personal Info)
+      await addSectionHeader('Contact Information');
+      
+      const contactData = [
+        ['Email', clientData.email || 'Not provided'],
+        ['Phone', clientData.phone || 'Not provided'],
+        ['Telephone', clientData.telephone_number || 'Not provided'],
+        ['Country Code', clientData.country_code || 'Not provided'],
+        ['Full Address', clientData.address || 'Not provided'],
+        ['Region', clientData.region || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: contactData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: 20, right: 20 }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+    }
     
-    // Section 3: Emergency Contact (if available)
-    if (personalInfo) {
+    // Section 3: Emergency Contact
+    if (sections.emergencyContacts && personalInfo) {
       await addSectionHeader('Emergency Contact Information');
       
       const emergencyData = [
@@ -2251,7 +2253,10 @@ export const exportClientProfileToPDF = async (
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
-      
+    }
+    
+    // Section 4-13: General Information (Personal Background, Home Info, Accessibility, GP, Care Preferences, etc.)
+    if (sections.generalInfo && personalInfo) {
       // Section 4: Personal Background
       await addSectionHeader('Personal Background & Identity');
       
@@ -2631,8 +2636,8 @@ export const exportClientProfileToPDF = async (
       }
     }
     
-    // Section 14: Medical Information (if available)
-    if (medicalInfo) {
+    // Section 14: Medical Information (if selected and available)
+    if (sections.medicalInfo && medicalInfo) {
       await addSectionHeader('Medical Information');
       
       const medicalData = [];
@@ -2674,8 +2679,8 @@ export const exportClientProfileToPDF = async (
       }
     }
     
-    // Section 15: Additional Notes
-    if (clientData.additional_information) {
+    // Section 15: Notes (if selected)
+    if (sections.notes && clientData.additional_information) {
       await addSectionHeader('Additional Notes');
       
       pdf.setDrawColor(220, 220, 220);
@@ -2690,6 +2695,132 @@ export const exportClientProfileToPDF = async (
       
       pdf.text(splitNotes, leftMargin + 5, currentY + 7);
       currentY += boxHeight + 10;
+    }
+    
+    // Section 16: Care Plans (if selected)
+    if (sections.carePlans) {
+      const { data: carePlans } = await supabase
+        .from('client_care_plans')
+        .select('id, title, status, start_date, end_date, provider_name')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (carePlans && carePlans.length > 0) {
+        await addSectionHeader('Care Plans');
+        
+        const carePlanData = carePlans.map((plan: any) => [
+          plan.title || 'Untitled Plan',
+          plan.status || 'N/A',
+          plan.start_date ? format(new Date(plan.start_date), 'PP') : 'N/A',
+          plan.end_date ? format(new Date(plan.end_date), 'PP') : 'Ongoing',
+          plan.provider_name || 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Title', 'Status', 'Start Date', 'End Date', 'Provider']],
+          body: carePlanData,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          headStyles: {
+            fillColor: [240, 243, 246],
+            textColor: [40, 40, 40],
+            fontStyle: 'bold'
+          },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+    
+    // Section 17: Service Rates (if selected)
+    if (sections.rates) {
+      const { data: ratesData } = await supabase
+        .from('client_accounting_settings')
+        .select('rate_type, pay_method, invoice_method, service_payer')
+        .eq('client_id', clientId)
+        .maybeSingle();
+      
+      if (ratesData) {
+        await addSectionHeader('Service Rates & Billing');
+        
+        const rateDetails = [
+          ['Rate Type', ratesData.rate_type || 'Not provided'],
+          ['Pay Method', ratesData.pay_method || 'Not provided'],
+          ['Invoice Method', ratesData.invoice_method || 'Not provided'],
+          ['Service Payer', ratesData.service_payer || 'Not provided']
+        ];
+
+        autoTable(pdf, {
+          body: rateDetails,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 9,
+            cellPadding: 3
+          },
+          columnStyles: { 
+            0: { 
+              fontStyle: 'bold', 
+              fillColor: [240, 243, 246],
+              cellWidth: 60,
+              textColor: [40, 40, 40]
+            },
+            1: {
+              cellWidth: 110
+            }
+          },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+    
+    // Section 18: Invoices Summary (if selected - sensitive)
+    if (sections.invoices) {
+      const { data: invoicesData } = await supabase
+        .from('client_billing')
+        .select('invoice_number, invoice_date, amount, status, description')
+        .eq('client_id', clientId)
+        .order('invoice_date', { ascending: false })
+        .limit(10);
+      
+      if (invoicesData && invoicesData.length > 0) {
+        await addSectionHeader('Recent Invoices');
+        
+        const invoiceRows = invoicesData.map((inv: any) => [
+          inv.invoice_number || 'N/A',
+          inv.invoice_date ? format(new Date(inv.invoice_date), 'PP') : 'N/A',
+          inv.amount ? `£${inv.amount.toFixed(2)}` : 'N/A',
+          inv.status || 'N/A',
+          (inv.description || 'N/A').substring(0, 30)
+        ]);
+
+        autoTable(pdf, {
+          head: [['Invoice #', 'Date', 'Amount', 'Status', 'Description']],
+          body: invoiceRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          headStyles: {
+            fillColor: [240, 243, 246],
+            textColor: [40, 40, 40],
+            fontStyle: 'bold'
+          },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
     }
     
     // Add footers to all pages
