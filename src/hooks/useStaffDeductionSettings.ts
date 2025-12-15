@@ -14,11 +14,17 @@ export interface StaffDeductionSettings {
   branch_id?: string;
   organization_id?: string;
   
-  // Fixed Amount Deductions (new simplified fields)
+  // Fixed Amount Deductions
   tax_amount: number;
   ni_amount: number;
   pension_amount: number;
   other_deductions_amount: number;
+  
+  // Individual Active Flags
+  tax_active: boolean;
+  ni_active: boolean;
+  pension_active: boolean;
+  other_deductions_active: boolean;
   
   // Legacy Tax Settings (kept for backward compatibility)
   tax_code: string;
@@ -182,6 +188,42 @@ export const useUpdateStaffDeductionSettings = () => {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to update deduction settings');
+    }
+  });
+};
+
+// Toggle individual deduction active status
+export const useToggleDeductionActive = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      field, 
+      value,
+      staffId 
+    }: { 
+      id: string; 
+      field: 'tax_active' | 'ni_active' | 'pension_active' | 'other_deductions_active';
+      value: boolean;
+      staffId: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('staff_deduction_settings')
+        .update({ [field]: value })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, staffId };
+    },
+    onSuccess: ({ staffId }) => {
+      queryClient.invalidateQueries({ queryKey: ['staff-deduction-settings', staffId] });
+      toast.success('Deduction status updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update deduction status');
     }
   });
 };

@@ -720,17 +720,22 @@ export const usePayrollBookingIntegration = () => {
           .maybeSingle();
 
         // Calculate deductions using staff-specific fixed amounts or defaults
+        // Only apply deductions that are active
         let taxDeduction = 0;
         let niDeduction = 0;
         let pensionDeduction = 0;
         let otherDeductionsTotal = 0;
 
         if (deductionSettings) {
-          // Use fixed amount fields (new simplified approach)
-          taxDeduction = deductionSettings.tax_amount || 0;
-          niDeduction = deductionSettings.ni_amount || 0;
-          pensionDeduction = deductionSettings.pension_amount || 0;
-          otherDeductionsTotal = deductionSettings.other_deductions_amount || 0;
+          // Use fixed amount fields - only if the deduction is active
+          taxDeduction = deductionSettings.tax_active !== false 
+            ? (deductionSettings.tax_amount || 0) : 0;
+          niDeduction = deductionSettings.ni_active !== false 
+            ? (deductionSettings.ni_amount || 0) : 0;
+          pensionDeduction = deductionSettings.pension_active !== false 
+            ? (deductionSettings.pension_amount || 0) : 0;
+          otherDeductionsTotal = deductionSettings.other_deductions_active !== false 
+            ? (deductionSettings.other_deductions_amount || 0) : 0;
         }
         
         const netPay = grossPay - taxDeduction - niDeduction - pensionDeduction - otherDeductionsTotal;
