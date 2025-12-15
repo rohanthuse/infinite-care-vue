@@ -8335,19 +8335,23 @@ export type Database = {
           has_student_loan: boolean | null
           id: string
           is_active: boolean | null
+          ni_active: boolean | null
           ni_amount: number | null
           ni_category: string | null
           ni_rate: number | null
           notes: string | null
           organization_id: string | null
           other_deductions: Json | null
+          other_deductions_active: boolean | null
           other_deductions_amount: number | null
+          pension_active: boolean | null
           pension_amount: number | null
           pension_opted_in: boolean | null
           pension_percentage: number | null
           pension_provider: string | null
           staff_id: string
           student_loan_plan: string | null
+          tax_active: boolean | null
           tax_amount: number | null
           tax_code: string | null
           tax_rate: number | null
@@ -8365,19 +8369,23 @@ export type Database = {
           has_student_loan?: boolean | null
           id?: string
           is_active?: boolean | null
+          ni_active?: boolean | null
           ni_amount?: number | null
           ni_category?: string | null
           ni_rate?: number | null
           notes?: string | null
           organization_id?: string | null
           other_deductions?: Json | null
+          other_deductions_active?: boolean | null
           other_deductions_amount?: number | null
+          pension_active?: boolean | null
           pension_amount?: number | null
           pension_opted_in?: boolean | null
           pension_percentage?: number | null
           pension_provider?: string | null
           staff_id: string
           student_loan_plan?: string | null
+          tax_active?: boolean | null
           tax_amount?: number | null
           tax_code?: string | null
           tax_rate?: number | null
@@ -8395,19 +8403,23 @@ export type Database = {
           has_student_loan?: boolean | null
           id?: string
           is_active?: boolean | null
+          ni_active?: boolean | null
           ni_amount?: number | null
           ni_category?: string | null
           ni_rate?: number | null
           notes?: string | null
           organization_id?: string | null
           other_deductions?: Json | null
+          other_deductions_active?: boolean | null
           other_deductions_amount?: number | null
+          pension_active?: boolean | null
           pension_amount?: number | null
           pension_opted_in?: boolean | null
           pension_percentage?: number | null
           pension_provider?: string | null
           staff_id?: string
           student_loan_plan?: string | null
+          tax_active?: boolean | null
           tax_amount?: number | null
           tax_code?: string | null
           tax_rate?: number | null

@@ -112,6 +112,11 @@ export const EditStaffDeductionSettingsDialog: React.FC<EditStaffDeductionSettin
         effective_until: data.effective_until || undefined,
         is_active: true,
         notes: data.notes || undefined,
+        // Individual active flags - preserve existing values or default to true
+        tax_active: existingSettings?.tax_active ?? true,
+        ni_active: existingSettings?.ni_active ?? true,
+        pension_active: existingSettings?.pension_active ?? true,
+        other_deductions_active: existingSettings?.other_deductions_active ?? true,
         // Keep existing fields with defaults for backward compatibility
         tax_code: "1257L",
         tax_rate: 20,
