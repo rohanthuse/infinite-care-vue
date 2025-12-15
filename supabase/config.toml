@@ -129,3 +129,6 @@ verify_jwt = false
 
 [functions.create-expense-notifications]
 verify_jwt = false
+
+[functions.create-leave-request-notifications]
+verify_jwt = false

@@ -113,6 +113,30 @@ export const useAnnualLeave = (branchId?: string) => {
   });
 };
 
+// Helper function to send leave request notifications
+const sendLeaveNotification = async (payload: {
+  leave_request_id: string;
+  action: 'submitted' | 'approved' | 'rejected';
+  staff_id: string;
+  branch_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  reviewer_id?: string;
+  review_notes?: string;
+}) => {
+  try {
+    const { error } = await supabase.functions.invoke('create-leave-request-notifications', {
+      body: payload
+    });
+    if (error) {
+      console.error('Error sending leave notification:', error);
+    }
+  } catch (err) {
+    console.error('Failed to send leave notification:', err);
+  }
+};
+
 // Hook to create leave request
 export const useCreateLeaveRequest = () => {
   const queryClient = useQueryClient();
@@ -142,9 +166,20 @@ export const useCreateLeaveRequest = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Leave request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      
+      // Send notification to admins
+      sendLeaveNotification({
+        leave_request_id: data.id,
+        action: 'submitted',
+        staff_id: data.staff_id,
+        branch_id: data.branch_id,
+        leave_type: data.leave_type,
+        start_date: data.start_date,
+        end_date: data.end_date
+      });
     },
     onError: (error: any) => {
       console.error('Error creating leave request:', error);
@@ -182,9 +217,21 @@ export const useUpdateLeaveRequest = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       toast.success(`Leave request ${variables.status}`);
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      
+      // Send notification to staff member
+      sendLeaveNotification({
+        leave_request_id: data.id,
+        action: variables.status,
+        staff_id: data.staff_id,
+        branch_id: data.branch_id,
+        leave_type: data.leave_type,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        review_notes: variables.review_notes
+      });
     },
     onError: (error) => {
       console.error('Error updating leave request:', error);
