@@ -87,13 +87,13 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     const grayRgb: [number, number, number] = [107, 114, 128]; // #6b7280
     const darkGrayRgb: [number, number, number] = [31, 41, 55]; // #1f2937
 
-    // ===== HEADER SECTION (Two-column: Logo left, Company details right) =====
-    const logoWidth = 35;
-    const logoHeight = 35;
-    let headerStartY = yPosition;
-    let textStartX = margin;
+    // ===== HEADER SECTION (Logo left, Company details right-aligned) =====
+    const logoWidth = 40;
+    const logoHeight = 40;
+    const headerStartY = yPosition;
+    const rightAlignX = pageWidth - margin;
 
-    // Add logo if available
+    // Add logo on the LEFT
     if (organizationInfo.logoBase64) {
       try {
         const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
@@ -101,56 +101,61 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
           if (base64.includes('data:image/gif')) return 'GIF';
           return 'PNG';
         };
-        const format = getImageFormat(organizationInfo.logoBase64);
-        doc.addImage(organizationInfo.logoBase64, format, margin, yPosition - 5, logoWidth, logoHeight);
-        textStartX = margin + logoWidth + 10; // Move text to the right of logo
+        const imgFormat = getImageFormat(organizationInfo.logoBase64);
+        doc.addImage(organizationInfo.logoBase64, imgFormat, margin, yPosition - 5, logoWidth, logoHeight);
       } catch (error) {
         console.error('Error adding logo to PDF:', error);
       }
     }
 
-    // Company name (bold, larger)
+    // Company details on the RIGHT (right-aligned)
+    let rightYPos = headerStartY;
+
+    // Company name (bold, larger) - right aligned
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
-    doc.text(organizationInfo.name, textStartX, yPosition + 2);
-    yPosition += 7;
+    doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+    doc.text(organizationInfo.name, rightAlignX, rightYPos, { align: 'right' });
+    rightYPos += 6;
 
-    // Company address
+    // Company address - right aligned
     doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
     if (organizationInfo.address) {
-      const addressLines = doc.splitTextToSize(organizationInfo.address, pageWidth - textStartX - margin - 10);
+      const addressLines = doc.splitTextToSize(organizationInfo.address, 80);
       addressLines.forEach((line: string) => {
-        doc.text(line, textStartX, yPosition);
-        yPosition += 4;
+        doc.text(line, rightAlignX, rightYPos, { align: 'right' });
+        rightYPos += 4;
       });
     }
 
-    // Contact line (Email | Phone)
-    const contactParts = [];
-    if (organizationInfo.email) contactParts.push(`Email: ${organizationInfo.email}`);
-    if (organizationInfo.phone) contactParts.push(`Tel: ${organizationInfo.phone}`);
-    if (contactParts.length > 0) {
-      doc.text(contactParts.join(' | '), textStartX, yPosition);
-      yPosition += 4;
+    // Email - right aligned
+    if (organizationInfo.email) {
+      doc.text(`Email: ${organizationInfo.email}`, rightAlignX, rightYPos, { align: 'right' });
+      rightYPos += 4;
     }
 
-    // Website (if available)
+    // Phone - right aligned
+    if (organizationInfo.phone) {
+      doc.text(`Tel: ${organizationInfo.phone}`, rightAlignX, rightYPos, { align: 'right' });
+      rightYPos += 4;
+    }
+
+    // Website (if available) - right aligned
     if (organizationInfo.website) {
-      doc.text(`Web: ${organizationInfo.website}`, textStartX, yPosition);
-      yPosition += 4;
+      doc.text(`Web: ${organizationInfo.website}`, rightAlignX, rightYPos, { align: 'right' });
+      rightYPos += 4;
     }
 
-    // Registration number (if available)
+    // Registration number (if available) - right aligned
     if (organizationInfo.registrationNumber) {
-      doc.text(`Reg No: ${organizationInfo.registrationNumber}`, textStartX, yPosition);
-      yPosition += 4;
+      doc.text(`Reg No: ${organizationInfo.registrationNumber}`, rightAlignX, rightYPos, { align: 'right' });
+      rightYPos += 4;
     }
 
-    // Ensure we're past the logo height
-    yPosition = Math.max(yPosition, headerStartY + logoHeight + 5);
+    // Ensure we're past both the logo height and company details
+    yPosition = Math.max(rightYPos + 5, headerStartY + logoHeight + 5);
 
     // Header border
     doc.setDrawColor(200, 200, 200);
@@ -220,35 +225,57 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
     yPosition = colYStart + 20;
 
-    // ===== LINE ITEMS TABLE (With separate VAT column) =====
-    const tableData = invoice.line_items?.map(item => {
-      const basePrice = item.unit_price || 0;
+    // ===== LINE ITEMS TABLE (With proper VAT calculation) =====
+    const VAT_RATE = 0.20; // 20% VAT
+    
+    // Process line items with proper VAT calculation
+    // Determine if invoice has VAT at the invoice level
+    const invoiceHasVat = invoice.vat_amount != null && invoice.vat_amount > 0;
+    
+    const processedItems = invoice.line_items?.map(item => {
+      const unitPrice = item.unit_price || 0;
       const quantity = item.quantity || 1;
-      const lineTotal = item.line_total || (basePrice * quantity);
+      const netAmount = unitPrice * quantity;
       
-      // Calculate VAT (assuming 20% if not specified, or calculate from line_total)
-      const vatRate = 0.20; // 20% VAT
-      const priceWithoutVat = lineTotal / (1 + vatRate);
-      const vatAmount = lineTotal - priceWithoutVat;
+      // Apply VAT if the invoice has VAT
+      const vatAmount = invoiceHasVat ? netAmount * VAT_RATE : 0;
+      const lineTotal = netAmount + vatAmount;
 
-      // Format the date with day name and week number
+      // Format the date with day name
       const serviceDate = item.visit_date ? new Date(item.visit_date) : new Date();
-      const dayName = format(serviceDate, 'EEEE');
-      const weekNum = format(serviceDate, 'w');
-      const formattedDate = `${dayName} - ${formatDateSafe(serviceDate)} (Week ${weekNum})`;
+      const dayName = format(serviceDate, 'EEE');
+      const formattedDate = `${dayName} ${formatDateSafe(serviceDate)}`;
 
-      return [
+      return {
         formattedDate,
-        item.description || 'Service',
-        priceWithoutVat.toFixed(2),
-        vatAmount.toFixed(2),
-        lineTotal.toFixed(2)
-      ];
+        description: item.description || 'Service',
+        unitPrice,
+        quantity,
+        netAmount,
+        vatAmount,
+        lineTotal
+      };
     }) || [];
+
+    // Calculate totals
+    const netSubtotal = processedItems.reduce((sum, item) => sum + item.netAmount, 0);
+    const vatTotal = processedItems.reduce((sum, item) => sum + item.vatAmount, 0);
+    const servicesGrossTotal = netSubtotal + vatTotal;
+
+    // Prepare table data with proper columns
+    const tableData = processedItems.map(item => [
+      item.formattedDate,
+      item.description,
+      item.unitPrice.toFixed(2),
+      item.quantity.toString(),
+      item.netAmount.toFixed(2),
+      invoiceHasVat ? item.vatAmount.toFixed(2) : '-',
+      item.lineTotal.toFixed(2)
+    ]);
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Date', 'Service', 'Price/Rate (£)', 'VAT (£)', 'Total (£)']],
+      head: [['Date', 'Description', 'Rate (£)', 'Qty', 'Net (£)', 'VAT (£)', 'Total (£)']],
       body: tableData,
       theme: 'plain',
       headStyles: {
@@ -265,15 +292,16 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
         cellPadding: 3
       },
       columnStyles: {
-        0: { cellWidth: 55 }, // Date
-        1: { cellWidth: 60 }, // Service
-        2: { halign: 'right', cellWidth: 25 }, // Price
-        3: { halign: 'right', cellWidth: 20 }, // VAT
-        4: { halign: 'right', cellWidth: 25, fontStyle: 'bold' } // Total
+        0: { cellWidth: 30 }, // Date
+        1: { cellWidth: 50 }, // Description
+        2: { halign: 'right', cellWidth: 22 }, // Rate
+        3: { halign: 'center', cellWidth: 15 }, // Qty
+        4: { halign: 'right', cellWidth: 22 }, // Net
+        5: { halign: 'right', cellWidth: 22 }, // VAT
+        6: { halign: 'right', cellWidth: 24, fontStyle: 'bold' } // Total
       },
       margin: { left: margin, right: margin },
       didDrawCell: (data) => {
-        // Add subtle borders
         if (data.section === 'body') {
           doc.setDrawColor(240, 240, 240);
           doc.setLineWidth(0.1);
@@ -281,10 +309,40 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
       }
     });
 
-    yPosition = (doc as any).lastAutoTable?.finalY + 10 || yPosition + 50;
+    yPosition = (doc as any).lastAutoTable?.finalY + 8 || yPosition + 50;
 
-    // Calculate services subtotal
-    const servicesTotal = invoice.line_items?.reduce((sum, item) => sum + (item.line_total || 0), 0) || invoice.amount || 0;
+    // ===== SERVICES SUMMARY (Subtotal, VAT, Total) =====
+    const summaryBoxWidth = 85;
+    const summaryBoxX = pageWidth - margin - summaryBoxWidth;
+    
+    // Subtotal (Net)
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+    doc.text('Subtotal (Net):', summaryBoxX, yPosition);
+    doc.text(`£${(invoice.net_amount || netSubtotal).toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+    yPosition += 5;
+
+    // VAT (20%)
+    doc.text('VAT (20%):', summaryBoxX, yPosition);
+    doc.text(`£${(invoice.vat_amount || vatTotal).toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+    yPosition += 5;
+
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(summaryBoxX, yPosition, pageWidth - margin, yPosition);
+    yPosition += 5;
+
+    // Services Total
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+    doc.text('Services Total:', summaryBoxX, yPosition);
+    doc.text(`£${(invoice.total_amount || servicesGrossTotal).toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+    yPosition += 12;
+
+    // Track services total for grand total calculation
+    const servicesTotal = invoice.total_amount || servicesGrossTotal;
 
     // ===== ADDITIONAL EXPENSES SECTION =====
     let expensesTotal = 0;
