@@ -1,8 +1,9 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling, Car, Ban, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { exportPayrollPayslip } from "@/utils/payslipPdfGenerator";
@@ -64,6 +65,53 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+// Parse notes to extract breakdown details
+const parsePayrollNotes = (notes?: string) => {
+  if (!notes) return null;
+  
+  const breakdown = {
+    completedBookings: 0,
+    cancelledPaidBookings: 0,
+    cancelledPayment: 0,
+    travelPayment: 0,
+    travelType: '',
+    extraTimePayment: 0,
+    extraTimeCount: 0,
+    rateSchedulesApplied: false
+  };
+
+  // Parse bookings: "Bookings: X completed, Y cancelled (paid £Z)"
+  const bookingsMatch = notes.match(/Bookings:\s*(\d+)\s*completed/);
+  if (bookingsMatch) {
+    breakdown.completedBookings = parseInt(bookingsMatch[1]);
+  }
+
+  const cancelledMatch = notes.match(/(\d+)\s*cancelled\s*\(paid\s*£([\d.]+)\)/);
+  if (cancelledMatch) {
+    breakdown.cancelledPaidBookings = parseInt(cancelledMatch[1]);
+    breakdown.cancelledPayment = parseFloat(cancelledMatch[2]);
+  }
+
+  // Parse travel: "Travel: £X (type)"
+  const travelMatch = notes.match(/Travel:\s*£([\d.]+)\s*\(([^)]+)\)/);
+  if (travelMatch) {
+    breakdown.travelPayment = parseFloat(travelMatch[1]);
+    breakdown.travelType = travelMatch[2];
+  }
+
+  // Parse extra time: "Extra Time: £X (Y approved)"
+  const extraTimeMatch = notes.match(/Extra Time:\s*£([\d.]+)\s*\((\d+)\s*approved\)/);
+  if (extraTimeMatch) {
+    breakdown.extraTimePayment = parseFloat(extraTimeMatch[1]);
+    breakdown.extraTimeCount = parseInt(extraTimeMatch[2]);
+  }
+
+  // Check for rate schedules
+  breakdown.rateSchedulesApplied = notes.includes('Rate schedules applied');
+
+  return breakdown;
+};
+
 interface ViewPayrollDialogProps {
   open: boolean;
   onClose: () => void;
@@ -78,6 +126,7 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
   payrollRecord,
 }) => {
   const { toast } = useToast();
+  const breakdown = parsePayrollNotes(payrollRecord.notes);
 
   const handleExportPayslip = () => {
     try {
@@ -139,7 +188,7 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Payroll Record Details</span>
@@ -204,6 +253,85 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
               </div>
             </div>
 
+            {/* Detailed Breakdown from Notes */}
+            {breakdown && (breakdown.cancelledPaidBookings > 0 || breakdown.travelPayment > 0 || breakdown.extraTimePayment > 0) && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                  <PoundSterling className="h-4 w-4 mr-1" />
+                  Payment Breakdown
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                  {/* Rate Schedule Indicator */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {breakdown.rateSchedulesApplied ? (
+                      <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Staff rate schedules applied
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Default rates used
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Completed Bookings */}
+                  {breakdown.completedBookings > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Completed Bookings
+                      </span>
+                      <span className="font-medium">{breakdown.completedBookings} bookings</span>
+                    </div>
+                  )}
+
+                  {/* Cancelled Bookings (Paid) */}
+                  {breakdown.cancelledPaidBookings > 0 && (
+                    <div className="flex justify-between items-center bg-amber-50 p-2 rounded">
+                      <span className="text-sm flex items-center gap-2 text-amber-800">
+                        <Ban className="h-4 w-4" />
+                        Cancelled Bookings (Staff Payable)
+                      </span>
+                      <div className="text-right">
+                        <span className="font-medium text-amber-800">{breakdown.cancelledPaidBookings} bookings</span>
+                        <span className="text-amber-700 ml-2">({formatCurrency(breakdown.cancelledPayment)})</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Travel Reimbursement */}
+                  {breakdown.travelPayment > 0 && (
+                    <div className="flex justify-between items-center bg-green-50 p-2 rounded">
+                      <span className="text-sm flex items-center gap-2 text-green-800">
+                        <Car className="h-4 w-4" />
+                        Travel Reimbursement
+                        <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+                          {breakdown.travelType}
+                        </Badge>
+                      </span>
+                      <span className="font-medium text-green-800">{formatCurrency(breakdown.travelPayment)}</span>
+                    </div>
+                  )}
+
+                  {/* Extra Time Payment */}
+                  {breakdown.extraTimePayment > 0 && (
+                    <div className="flex justify-between items-center bg-blue-50 p-2 rounded">
+                      <span className="text-sm flex items-center gap-2 text-blue-800">
+                        <Clock className="h-4 w-4" />
+                        Approved Extra Time
+                      </span>
+                      <div className="text-right">
+                        <span className="font-medium text-blue-800">{breakdown.extraTimeCount} records</span>
+                        <span className="text-blue-700 ml-2">({formatCurrency(breakdown.extraTimePayment)})</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Hours and earnings */}
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
@@ -233,12 +361,13 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
                     <div className="font-medium">{formatCurrency(payrollRecord.overtime_pay)}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Bonus</div>
+                    <div className="text-sm text-gray-500 mb-1">Bonus / Allowances</div>
                     <div className="font-medium">{formatCurrency(payrollRecord.bonus)}</div>
                   </div>
                   <div className="md:col-span-3">
+                    <Separator className="my-2" />
                     <div className="text-sm text-gray-500 mb-1">Gross Pay</div>
-                    <div className="font-medium font-bold">{formatCurrency(payrollRecord.gross_pay)}</div>
+                    <div className="font-bold text-lg text-green-700">{formatCurrency(payrollRecord.gross_pay)}</div>
                   </div>
                 </div>
               </div>
