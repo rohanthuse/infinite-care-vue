@@ -30,6 +30,9 @@ export interface StaffRateSchedule {
   branch_id?: string;
   organization_id?: string;
   is_vatable: boolean;
+  overtime_multiplier?: number;
+  overtime_threshold_hours?: number;
+  extra_time_rate?: number;
 }
 
 // Fetch staff rate schedules

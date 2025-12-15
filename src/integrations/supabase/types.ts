@@ -8990,10 +8990,13 @@ export type Database = {
           created_by: string | null
           days_covered: string[]
           end_date: string | null
+          extra_time_rate: number | null
           id: string
           is_active: boolean | null
           is_vatable: boolean
           organization_id: string | null
+          overtime_multiplier: number | null
+          overtime_threshold_hours: number | null
           pay_based_on: string | null
           rate_15_minutes: number | null
           rate_30_minutes: number | null
@@ -9018,10 +9021,13 @@ export type Database = {
           created_by?: string | null
           days_covered?: string[]
           end_date?: string | null
+          extra_time_rate?: number | null
           id?: string
           is_active?: boolean | null
           is_vatable?: boolean
           organization_id?: string | null
+          overtime_multiplier?: number | null
+          overtime_threshold_hours?: number | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null
           rate_30_minutes?: number | null
@@ -9046,10 +9052,13 @@ export type Database = {
           created_by?: string | null
           days_covered?: string[]
           end_date?: string | null
+          extra_time_rate?: number | null
           id?: string
           is_active?: boolean | null
           is_vatable?: boolean
           organization_id?: string | null
+          overtime_multiplier?: number | null
+          overtime_threshold_hours?: number | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null
           rate_30_minutes?: number | null

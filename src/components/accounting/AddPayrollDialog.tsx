@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Zap } from "lucide-react";
+import { Clock, Zap, AlertTriangle, Info, ExternalLink } from "lucide-react";
 import { PayrollRecord, useStaffList } from "@/hooks/useAccountingData";
 import { usePayrollBookingIntegration } from "@/hooks/usePayrollBookingIntegration";
+import { useStaffRateSchedules } from "@/hooks/useStaffAccounting";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
+import { rateCategoryLabels } from "@/types/clientAccounting";
 
 const payrollSchema = z.object({
   staff_id: z.string().min(1, "Staff member is required"),
@@ -148,6 +150,13 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
   // Payroll booking integration
   const { usePayrollCalculationData } = usePayrollBookingIntegration();
   
+  // Fetch rate schedules for the selected staff
+  const { data: rateSchedules = [], isLoading: isLoadingRates } = useStaffRateSchedules(watchedValues.staff_id);
+  
+  // Get the active rate schedule (most recent by start date)
+  const activeRateSchedule = rateSchedules.find(schedule => schedule.is_active);
+  const hasActiveRateSchedule = !!activeRateSchedule;
+  
   // Get calculation data for auto-population
   const { data: calculationData } = usePayrollCalculationData(
     branchId,
@@ -216,6 +225,18 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
       }
     }
   }, [open, initialData, isEditing, reset]);
+
+  // Auto-populate rates from rate schedule when staff is selected
+  useEffect(() => {
+    if (activeRateSchedule && !isEditing) {
+      const overtimeMultiplier = activeRateSchedule.overtime_multiplier || 1.5;
+      const baseRate = activeRateSchedule.base_rate || 0;
+      const overtimeRate = baseRate * overtimeMultiplier;
+      
+      setValue('hourly_rate', baseRate);
+      setValue('overtime_rate', overtimeRate);
+    }
+  }, [activeRateSchedule, isEditing, setValue]);
 
   const calculateTotals = () => {
     const basicSalary = Number(watchedValues.basic_salary) || 0;
@@ -291,6 +312,13 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
     onClose();
   };
 
+  const formatRateValidity = () => {
+    if (!activeRateSchedule) return '';
+    const start = activeRateSchedule.start_date;
+    const end = activeRateSchedule.end_date;
+    return end ? `${start} - ${end}` : `${start} - Ongoing`;
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -306,11 +334,11 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
               <Label htmlFor="staff_id">Staff Member *</Label>
               {isLoadingStaff ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-sm text-gray-500">Loading staff...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span className="text-sm text-muted-foreground">Loading staff...</span>
                 </div>
               ) : staffList.length === 0 ? (
-                <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded border">
+                <div className="text-sm text-muted-foreground p-2 bg-muted/50 rounded border">
                   No active staff members found for this branch
                 </div>
               ) : (
@@ -318,7 +346,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   value={watchedValues.staff_id} 
                   onValueChange={(value) => setValue("staff_id", value)}
                 >
-                  <SelectTrigger className={errors.staff_id ? "border-red-500" : ""}>
+                  <SelectTrigger className={errors.staff_id ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select a staff member" />
                   </SelectTrigger>
                   <SelectContent>
@@ -331,10 +359,76 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                 </Select>
               )}
               {errors.staff_id && (
-                <p className="text-sm text-red-600">{errors.staff_id.message}</p>
+                <p className="text-sm text-destructive">{errors.staff_id.message}</p>
               )}
             </div>
           </div>
+
+          {/* Rate Schedule Info Banner - Show after staff selection */}
+          {watchedValues.staff_id && !isLoadingRates && (
+            <>
+              {hasActiveRateSchedule ? (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Info className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-primary">
+                        Rate fetched from Staff Rate Schedule
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">Base Rate:</span> £{activeRateSchedule.base_rate.toFixed(2)}/hr
+                        </div>
+                        <div>
+                          <span className="font-medium">Overtime:</span> £{((activeRateSchedule.base_rate || 0) * (activeRateSchedule.overtime_multiplier || 1.5)).toFixed(2)}/hr ({activeRateSchedule.overtime_multiplier || 1.5}x)
+                        </div>
+                        <div>
+                          <span className="font-medium">Category:</span> {rateCategoryLabels[activeRateSchedule.rate_category as keyof typeof rateCategoryLabels] || activeRateSchedule.rate_category}
+                        </div>
+                        <div>
+                          <span className="font-medium">Valid:</span> {formatRateValidity()}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <span className="font-medium">Overtime after:</span> {activeRateSchedule.overtime_threshold_hours || 40} hours
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-amber-100 dark:bg-amber-800 p-2 rounded-full">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        No active rate schedule found
+                      </div>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Please configure a rate schedule in Staff Management → Rate Tab before creating payroll records.
+                        Default rates will be used if you proceed.
+                      </p>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2 text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-200 dark:border-amber-700 dark:hover:bg-amber-800"
+                        onClick={() => {
+                          toast.info('Navigate to Staff Management → Rate Tab to add a rate schedule');
+                        }}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Go to Rate Schedule
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Pay Period Information */}
           <div className="space-y-4 border-t pt-4">
@@ -346,10 +440,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   id="pay_period_start"
                   type="date"
                   {...register("pay_period_start")}
-                  className={errors.pay_period_start ? "border-red-500" : ""}
+                  className={errors.pay_period_start ? "border-destructive" : ""}
                 />
                 {errors.pay_period_start && (
-                  <p className="text-sm text-red-600">{errors.pay_period_start.message}</p>
+                  <p className="text-sm text-destructive">{errors.pay_period_start.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -358,10 +452,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   id="pay_period_end"
                   type="date"
                   {...register("pay_period_end")}
-                  className={errors.pay_period_end ? "border-red-500" : ""}
+                  className={errors.pay_period_end ? "border-destructive" : ""}
                 />
                 {errors.pay_period_end && (
-                  <p className="text-sm text-red-600">{errors.pay_period_end.message}</p>
+                  <p className="text-sm text-destructive">{errors.pay_period_end.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -370,10 +464,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   id="payment_date"
                   type="date"
                   {...register("payment_date")}
-                  className={errors.payment_date ? "border-red-500" : ""}
+                  className={errors.payment_date ? "border-destructive" : ""}
                 />
                 {errors.payment_date && (
-                  <p className="text-sm text-red-600">{errors.payment_date.message}</p>
+                  <p className="text-sm text-destructive">{errors.payment_date.message}</p>
                 )}
               </div>
             </div>
@@ -381,18 +475,21 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
 
           {/* Auto-populate from bookings */}
           {calculationData && calculationData.bookings.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <Clock className="h-4 w-4 text-blue-600" />
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Clock className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-blue-900">
+                    <div className="text-sm font-medium">
                       Booking Data Available
                     </div>
-                    <div className="text-xs text-blue-700">
+                    <div className="text-xs text-muted-foreground">
                       {calculationData.bookings.length} bookings, {calculationData.totalActualHours.toFixed(1)} total hours
+                      {calculationData.rateSchedulesApplied && (
+                        <span className="ml-2 text-primary">(Rate schedules applied)</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -401,7 +498,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={autoPopulateFromBookings}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  className="border-primary/30 text-primary hover:bg-primary/10"
                 >
                   <Zap className="h-4 w-4 mr-1" />
                   Auto-populate
@@ -421,10 +518,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.5"
                   min="0"
                   {...register("regular_hours", { valueAsNumber: true })}
-                  className={errors.regular_hours ? "border-red-500" : ""}
+                  className={errors.regular_hours ? "border-destructive" : ""}
                 />
                 {errors.regular_hours && (
-                  <p className="text-sm text-red-600">{errors.regular_hours.message}</p>
+                  <p className="text-sm text-destructive">{errors.regular_hours.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -435,24 +532,30 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.5"
                   min="0"
                   {...register("overtime_hours", { valueAsNumber: true })}
-                  className={errors.overtime_hours ? "border-red-500" : ""}
+                  className={errors.overtime_hours ? "border-destructive" : ""}
                 />
                 {errors.overtime_hours && (
-                  <p className="text-sm text-red-600">{errors.overtime_hours.message}</p>
+                  <p className="text-sm text-destructive">{errors.overtime_hours.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hourly_rate">Hourly Rate (£) *</Label>
+                <Label htmlFor="hourly_rate">
+                  Hourly Rate (£) *
+                  {hasActiveRateSchedule && (
+                    <span className="ml-1 text-xs text-muted-foreground font-normal">(from schedule)</span>
+                  )}
+                </Label>
                 <Input
                   id="hourly_rate"
                   type="number"
                   step="0.01"
                   min="0"
                   {...register("hourly_rate", { valueAsNumber: true })}
-                  className={errors.hourly_rate ? "border-red-500" : ""}
+                  className={`${errors.hourly_rate ? "border-destructive" : ""} ${hasActiveRateSchedule ? "bg-muted/50" : ""}`}
+                  readOnly={hasActiveRateSchedule && !isEditing}
                 />
                 {errors.hourly_rate && (
-                  <p className="text-sm text-red-600">{errors.hourly_rate.message}</p>
+                  <p className="text-sm text-destructive">{errors.hourly_rate.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -463,10 +566,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("basic_salary", { valueAsNumber: true })}
-                  className={errors.basic_salary ? "border-red-500" : ""}
+                  className={errors.basic_salary ? "border-destructive" : ""}
                 />
                 {errors.basic_salary && (
-                  <p className="text-sm text-red-600">{errors.basic_salary.message}</p>
+                  <p className="text-sm text-destructive">{errors.basic_salary.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -477,10 +580,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("overtime_pay", { valueAsNumber: true })}
-                  className={errors.overtime_pay ? "border-red-500" : ""}
+                  className={errors.overtime_pay ? "border-destructive" : ""}
                 />
                 {errors.overtime_pay && (
-                  <p className="text-sm text-red-600">{errors.overtime_pay.message}</p>
+                  <p className="text-sm text-destructive">{errors.overtime_pay.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -491,10 +594,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("bonus", { valueAsNumber: true })}
-                  className={errors.bonus ? "border-red-500" : ""}
+                  className={errors.bonus ? "border-destructive" : ""}
                 />
                 {errors.bonus && (
-                  <p className="text-sm text-red-600">{errors.bonus.message}</p>
+                  <p className="text-sm text-destructive">{errors.bonus.message}</p>
                 )}
               </div>
             </div>
@@ -511,10 +614,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("tax_deduction", { valueAsNumber: true })}
-                  className={errors.tax_deduction ? "border-red-500" : ""}
+                  className={errors.tax_deduction ? "border-destructive" : ""}
                 />
                 {errors.tax_deduction && (
-                  <p className="text-sm text-red-600">{errors.tax_deduction.message}</p>
+                  <p className="text-sm text-destructive">{errors.tax_deduction.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -525,10 +628,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("ni_deduction", { valueAsNumber: true })}
-                  className={errors.ni_deduction ? "border-red-500" : ""}
+                  className={errors.ni_deduction ? "border-destructive" : ""}
                 />
                 {errors.ni_deduction && (
-                  <p className="text-sm text-red-600">{errors.ni_deduction.message}</p>
+                  <p className="text-sm text-destructive">{errors.ni_deduction.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -539,10 +642,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("pension_deduction", { valueAsNumber: true })}
-                  className={errors.pension_deduction ? "border-red-500" : ""}
+                  className={errors.pension_deduction ? "border-destructive" : ""}
                 />
                 {errors.pension_deduction && (
-                  <p className="text-sm text-red-600">{errors.pension_deduction.message}</p>
+                  <p className="text-sm text-destructive">{errors.pension_deduction.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -553,10 +656,10 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   step="0.01"
                   min="0"
                   {...register("other_deductions", { valueAsNumber: true })}
-                  className={errors.other_deductions ? "border-red-500" : ""}
+                  className={errors.other_deductions ? "border-destructive" : ""}
                 />
                 {errors.other_deductions && (
-                  <p className="text-sm text-red-600">{errors.other_deductions.message}</p>
+                  <p className="text-sm text-destructive">{errors.other_deductions.message}</p>
                 )}
               </div>
             </div>
@@ -581,7 +684,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   </SelectContent>
                 </Select>
                 {errors.payment_method && (
-                  <p className="text-sm text-red-600">{errors.payment_method.message}</p>
+                  <p className="text-sm text-destructive">{errors.payment_method.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -600,7 +703,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   </SelectContent>
                 </Select>
                 {errors.payment_status && (
-                  <p className="text-sm text-red-600">{errors.payment_status.message}</p>
+                  <p className="text-sm text-destructive">{errors.payment_status.message}</p>
                 )}
               </div>
             </div>
@@ -629,15 +732,15 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
           </div>
 
           {(calculatedTotals.grossPay > 0 || calculatedTotals.netPay > 0) && (
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+            <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-md">
               <div className="text-center">
-                <span className="text-sm text-gray-500">Gross Pay:</span>
+                <span className="text-sm text-muted-foreground">Gross Pay:</span>
                 <div className="text-lg font-bold">
                   £{calculatedTotals.grossPay.toFixed(2)}
                 </div>
               </div>
               <div className="text-center">
-                <span className="text-sm text-gray-500">Net Pay:</span>
+                <span className="text-sm text-muted-foreground">Net Pay:</span>
                 <div className="text-lg font-bold">
                   £{calculatedTotals.netPay.toFixed(2)}
                 </div>

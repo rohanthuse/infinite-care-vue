@@ -577,11 +577,14 @@ export const usePayrollBookingIntegration = () => {
     const totalActualHours = totalActualMinutes / 60;
     const extraTimeHours = totalExtraMinutes / 60;
 
-    // Calculate regular vs overtime hours (assuming 40 hours = regular, above = overtime)
-    const regularHours = Math.min(totalActualHours, 40);
-    const overtimeHours = Math.max(0, totalActualHours - 40);
+    // Calculate regular vs overtime hours using rate schedule threshold
+    const overtimeThreshold = activeRateSchedules[0]?.overtime_threshold_hours || 40;
+    const regularHours = Math.min(totalActualHours, overtimeThreshold);
+    const overtimeHours = Math.max(0, totalActualHours - overtimeThreshold);
 
-    const overtimeRate = baseHourlyRate * 1.5; // Time and a half for overtime
+    // Use overtime multiplier from rate schedule
+    const overtimeMultiplier = activeRateSchedules[0]?.overtime_multiplier || 1.5;
+    const overtimeRate = baseHourlyRate * overtimeMultiplier;
 
     // Calculate cancellation payment from cancelled bookings with payment
     const cancelledBookingPayment = bookingsWithRates

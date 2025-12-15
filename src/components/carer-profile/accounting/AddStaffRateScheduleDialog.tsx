@@ -32,6 +32,9 @@ const formSchema = z.object({
   base_rate: z.number().min(0.01, 'Rate is required and must be greater than 0'),
   bank_holiday_multiplier: z.number().min(1).max(3).optional(),
   is_vatable: z.boolean(),
+  overtime_multiplier: z.number().min(1).max(3).default(1.5),
+  overtime_threshold_hours: z.number().min(0).max(168).default(40),
+  extra_time_rate: z.number().min(0).optional(),
 }).refine(data => {
   if (data.time_from && data.time_until) {
     const start = new Date(`2000-01-01T${data.time_from}`);
@@ -83,6 +86,8 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
   // Fetch staff general settings to auto-populate
   const { data: staffSettings } = useStaffGeneralSettings(staffId);
 
+  const [enableOvertimeSettings, setEnableOvertimeSettings] = useState(false);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -97,6 +102,9 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       base_rate: 0,
       bank_holiday_multiplier: 1,
       is_vatable: false,
+      overtime_multiplier: 1.5,
+      overtime_threshold_hours: 40,
+      extra_time_rate: undefined,
     },
   });
 
@@ -149,6 +157,9 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       consecutive_hours_rate: null,
       bank_holiday_multiplier: enableBankHolidayMultiplier ? (data.bank_holiday_multiplier || 1) : 1,
       is_vatable: data.is_vatable,
+      overtime_multiplier: enableOvertimeSettings ? (data.overtime_multiplier || 1.5) : 1.5,
+      overtime_threshold_hours: enableOvertimeSettings ? (data.overtime_threshold_hours || 40) : 40,
+      extra_time_rate: enableOvertimeSettings ? (data.extra_time_rate || null) : null,
     };
 
     createSchedule.mutate(scheduleData, {
@@ -172,8 +183,12 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       base_rate: 0,
       bank_holiday_multiplier: 1,
       is_vatable: false,
+      overtime_multiplier: 1.5,
+      overtime_threshold_hours: 40,
+      extra_time_rate: undefined,
     });
     setEnableBankHolidayMultiplier(false);
+    setEnableOvertimeSettings(false);
   };
 
   const toggleDay = (day: string, checked: boolean) => {
@@ -430,6 +445,88 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
                       <FormMessage />
                     </FormItem>
                   )} />
+                )}
+              </div>
+
+              {/* Overtime Settings */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Enable Overtime Settings</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Configure overtime multiplier and threshold hours for payroll calculations
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={enableOvertimeSettings}
+                    onCheckedChange={(checked) => {
+                      setEnableOvertimeSettings(checked);
+                      if (!checked) {
+                        form.setValue('overtime_multiplier', 1.5);
+                        form.setValue('overtime_threshold_hours', 40);
+                        form.setValue('extra_time_rate', undefined);
+                      }
+                    }}
+                  />
+                </div>
+                
+                {enableOvertimeSettings && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                    <FormField control={form.control} name="overtime_multiplier" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overtime Multiplier</FormLabel>
+                        <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select multiplier" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1.25">1.25x (25% Extra)</SelectItem>
+                            <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
+                            <SelectItem value="2">2x (Double Time)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="overtime_threshold_hours" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overtime After (Hours)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="168"
+                            placeholder="40"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value) || 40)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="extra_time_rate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Extra Time Rate (£)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Same as base rate"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Leave blank to use base rate</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
                 )}
               </div>
             </div>
