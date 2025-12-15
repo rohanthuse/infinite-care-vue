@@ -51,6 +51,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [payPeriodStart, setPayPeriodStart] = useState<string>('');
   const [payPeriodEnd, setPayPeriodEnd] = useState<string>('');
+  const [shouldCalculate, setShouldCalculate] = useState(false);
 
   // Hooks
   const { data: staffList = [], isLoading: isLoadingStaff } = useStaffList(branchId);
@@ -63,16 +64,22 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
 
   const autoGeneratePayrollMutation = useAutoGeneratePayroll();
 
+  // Determine if all required inputs are selected
+  const hasAllInputs = !!(selectedStaffId && payPeriodStart && payPeriodEnd);
+  
+  // Only enable queries when user explicitly clicks "Calculate Payroll"
+  const calculationEnabled = hasAllInputs && shouldCalculate;
+
   // Fetch existing payroll record first
   const {
     data: existingPayroll,
     isLoading: isLoadingExisting,
     error: existingPayrollError
   } = useExistingPayrollRecord(
-    branchId,
-    selectedStaffId,
-    payPeriodStart,
-    payPeriodEnd
+    calculationEnabled ? branchId : '',
+    calculationEnabled ? selectedStaffId : '',
+    calculationEnabled ? payPeriodStart : '',
+    calculationEnabled ? payPeriodEnd : ''
   );
 
   // Get calculation data when all parameters are available
@@ -81,10 +88,10 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
     isLoading: isLoadingCalculation,
     error: calculationError
   } = usePayrollCalculationData(
-    branchId,
-    selectedStaffId,
-    payPeriodStart,
-    payPeriodEnd
+    calculationEnabled ? branchId : '',
+    calculationEnabled ? selectedStaffId : '',
+    calculationEnabled ? payPeriodStart : '',
+    calculationEnabled ? payPeriodEnd : ''
   );
 
   // Get booking time data for preview
@@ -92,10 +99,10 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
     data: bookingTimeData = [], 
     isLoading: isLoadingBookings 
   } = useBookingTimeData(
-    branchId,
-    payPeriodStart,
-    payPeriodEnd,
-    selectedStaffId
+    calculationEnabled ? branchId : '',
+    calculationEnabled ? payPeriodStart : '',
+    calculationEnabled ? payPeriodEnd : '',
+    calculationEnabled ? selectedStaffId : ''
   );
 
   // Set default pay period to last week
@@ -107,7 +114,36 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
     setPayPeriodStart(format(lastWeekStart, 'yyyy-MM-dd'));
     setPayPeriodEnd(format(lastWeekEnd, 'yyyy-MM-dd'));
     setSelectedStaffId('');
+    setShouldCalculate(false);
     setIsDialogOpen(true);
+  };
+
+  // Reset calculation when inputs change
+  const handleStaffChange = (staffId: string) => {
+    setSelectedStaffId(staffId);
+    setShouldCalculate(false);
+  };
+
+  const handleStartDateChange = (date: string) => {
+    setPayPeriodStart(date);
+    setShouldCalculate(false);
+  };
+
+  const handleEndDateChange = (date: string) => {
+    setPayPeriodEnd(date);
+    setShouldCalculate(false);
+  };
+
+  const handleCalculatePayroll = () => {
+    if (hasAllInputs) {
+      setShouldCalculate(true);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setShouldCalculate(false);
+    setSelectedStaffId('');
   };
 
   const handleAutoGenerate = async () => {
@@ -249,7 +285,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Generate Payroll from Bookings & Time Tracking</DialogTitle>
@@ -260,7 +296,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Staff Member</Label>
-                <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
+                <Select value={selectedStaffId} onValueChange={handleStaffChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
@@ -279,7 +315,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                 <Input
                   type="date"
                   value={payPeriodStart}
-                  onChange={(e) => setPayPeriodStart(e.target.value)}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
                 />
               </div>
 
@@ -288,10 +324,32 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                 <Input
                   type="date"
                   value={payPeriodEnd}
-                  onChange={(e) => setPayPeriodEnd(e.target.value)}
+                  onChange={(e) => handleEndDateChange(e.target.value)}
                 />
               </div>
             </div>
+
+            {/* Helper message when inputs incomplete */}
+            {!hasAllInputs && (
+              <div className="text-center p-4 bg-muted rounded-lg border">
+                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Please select a staff member and pay period to generate payroll.
+                </p>
+              </div>
+            )}
+
+            {/* Calculate Payroll Button - shown when inputs are complete but not yet calculated */}
+            {hasAllInputs && !shouldCalculate && (
+              <Button 
+                onClick={handleCalculatePayroll}
+                className="w-full"
+                variant="outline"
+              >
+                <Calculator className="h-4 w-4 mr-2" />
+                Calculate Payroll for Selected Period
+              </Button>
+            )}
 
             {/* Calculation Preview */}
             {displayData && (
@@ -653,7 +711,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
               </div>
             )}
 
-            {(isLoadingCalculation || isLoadingExisting) && (
+            {shouldCalculate && (isLoadingCalculation || isLoadingExisting) && (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
                 <span>
@@ -662,7 +720,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
               </div>
             )}
 
-            {!displayData && !isLoadingCalculation && !isLoadingExisting && selectedStaffId && payPeriodStart && payPeriodEnd && (
+            {shouldCalculate && !displayData && !isLoadingCalculation && !isLoadingExisting && selectedStaffId && payPeriodStart && payPeriodEnd && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -697,7 +755,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
               <Button 
