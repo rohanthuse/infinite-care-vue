@@ -175,8 +175,10 @@ export const usePayrollBookingIntegration = () => {
 
   // Get booking and attendance data for payroll calculation
   const getBookingTimeData = async (branchId: string, startDate: string, endDate: string, staffId?: string): Promise<BookingTimeData[]> => {
-    console.log('Fetching booking time data:', { branchId, startDate, endDate, staffId });
+    console.log('[PayrollBookingIntegration] Fetching booking time data:', { branchId, startDate, endDate, staffId });
 
+    // Fetch all potentially relevant bookings first, then filter in JS
+    // This avoids the complex .or() syntax that can cause PostgREST parsing issues
     let query = supabase
       .from('bookings')
       .select(`
@@ -208,31 +210,59 @@ export const usePayrollBookingIntegration = () => {
       .eq('branch_id', branchId)
       .gte('start_time', startDate)
       .lte('end_time', endDate)
-      // Include completed bookings OR cancelled bookings where staff payment is honored
-      .or('status.in.(in_progress,done,completed),and(status.eq.cancelled,suspension_honor_staff_payment.eq.true)');
+      // Fetch bookings with these statuses - filter cancelled ones in JS
+      .in('status', ['in_progress', 'done', 'completed', 'cancelled']);
 
     if (staffId) {
       query = query.eq('staff_id', staffId);
     }
 
-    const { data: bookings, error } = await query.order('start_time', { ascending: true });
+    const { data: allBookings, error } = await query.order('start_time', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[PayrollBookingIntegration] Error fetching bookings:', error);
+      throw error;
+    }
 
-    // Get attendance records for actual times
-    const bookingIds = (bookings || []).map(b => b.id);
+    // Filter bookings: include completed/in_progress/done, OR cancelled with staff payment honored
+    const bookings = (allBookings || []).filter(booking => {
+      if (['in_progress', 'done', 'completed'].includes(booking.status)) {
+        return true;
+      }
+      if (booking.status === 'cancelled' && booking.suspension_honor_staff_payment === true) {
+        return true;
+      }
+      return false;
+    });
+
+    console.log('[PayrollBookingIntegration] Filtered bookings:', {
+      total: allBookings?.length || 0,
+      eligible: bookings.length,
+      byStatus: {
+        completed: bookings.filter(b => b.status === 'completed').length,
+        done: bookings.filter(b => b.status === 'done').length,
+        in_progress: bookings.filter(b => b.status === 'in_progress').length,
+        cancelled_paid: bookings.filter(b => b.status === 'cancelled').length
+      }
+    });
+
+    // Get attendance records for actual times - fetch by person_id instead of notes matching
     let attendanceData: any[] = [];
     
-    if (bookingIds.length > 0) {
+    if (staffId) {
       const { data: attendance, error: attendanceError } = await supabase
         .from('attendance_records')
         .select('*')
-        .in('notes', bookingIds.map(id => `%${id}%`))
+        .eq('person_id', staffId)
+        .eq('person_type', 'staff')
         .gte('attendance_date', startDate.split('T')[0])
         .lte('attendance_date', endDate.split('T')[0]);
 
-      if (!attendanceError) {
+      if (attendanceError) {
+        console.warn('[PayrollBookingIntegration] Error fetching attendance records:', attendanceError);
+      } else {
         attendanceData = attendance || [];
+        console.log('[PayrollBookingIntegration] Found attendance records:', attendanceData.length);
       }
     }
 
@@ -291,10 +321,12 @@ export const usePayrollBookingIntegration = () => {
     payPeriodStart: string, 
     payPeriodEnd: string
   ): Promise<PayrollCalculationData> => {
-    console.log('Calculating payroll from bookings:', { branchId, staffId, payPeriodStart, payPeriodEnd });
+    console.log('[PayrollBookingIntegration] Calculating payroll from bookings:', { branchId, staffId, payPeriodStart, payPeriodEnd });
 
-    // Get booking time data
-    const bookingData = await getBookingTimeData(branchId, payPeriodStart, payPeriodEnd, staffId);
+    try {
+      // Get booking time data
+      const bookingData = await getBookingTimeData(branchId, payPeriodStart, payPeriodEnd, staffId);
+      console.log('[PayrollBookingIntegration] Booking data retrieved:', bookingData.length, 'bookings');
 
     // Get staff information including travel payment type
     const { data: staff, error: staffError } = await supabase
@@ -450,6 +482,10 @@ export const usePayrollBookingIntegration = () => {
       approvedExtraTimePayment,
       rateSchedulesApplied
     };
+    } catch (error) {
+      console.error('[PayrollBookingIntegration] Error calculating payroll:', error);
+      throw error;
+    }
   };
 
   // Hook to get payroll calculation data
