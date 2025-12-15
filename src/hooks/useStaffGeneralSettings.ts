@@ -10,9 +10,7 @@ export interface StaffGeneralSettings {
   phone: string;
   status: string;
   contract_type: string | null;
-  salary_amount: number | null;
   salary_frequency: string | null;
-  travel_payment_type: string | null;
   bank_name: string | null;
 }
 
@@ -32,9 +30,7 @@ export const useStaffGeneralSettings = (staffId: string) => {
           phone,
           status,
           contract_type,
-          salary_amount,
           salary_frequency,
-          travel_payment_type,
           bank_name
         `)
         .eq('id', staffId)
@@ -53,9 +49,7 @@ export const useStaffGeneralSettings = (staffId: string) => {
 
 export interface UpdateStaffGeneralSettingsData {
   contract_type?: string | null;
-  salary_amount?: number | null;
   salary_frequency?: string | null;
-  travel_payment_type?: string | null;
   bank_name?: string | null;
 }
 
