@@ -25,6 +25,24 @@ export interface ApprovedLeaveRequest {
   status: string;
 }
 
+export interface RecurringLeaveConflict {
+  date: string;
+  formattedDate: string;
+  dayOfWeek: string;
+  leaveInfo: StaffLeaveInfo;
+}
+
+export interface RecurringLeaveValidationResult {
+  hasConflicts: boolean;
+  conflictingDates: RecurringLeaveConflict[];
+  nonConflictingDates: string[];
+  totalDates: number;
+  conflictCount: number;
+  carerId: string;
+  carerName: string;
+  leaveInfo?: StaffLeaveInfo;
+}
+
 /**
  * Hook to fetch approved leave requests for a branch
  */
@@ -48,7 +66,7 @@ export function useApprovedLeaveRequests(branchId?: string) {
       return (data || []) as ApprovedLeaveRequest[];
     },
     enabled: !!branchId,
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
   });
 }
 
@@ -64,7 +82,6 @@ export function isDateWithinLeave(
     const leaveStart = parseISO(leaveStartDate);
     const leaveEnd = parseISO(leaveEndDate);
     
-    // Check if target date is within leave period (inclusive)
     return isWithinInterval(targetDate, { start: leaveStart, end: leaveEnd }) ||
            isSameDay(targetDate, leaveStart) ||
            isSameDay(targetDate, leaveEnd);
@@ -103,7 +120,6 @@ export function getStaffLeaveForDate(
 
 /**
  * Hook to check staff leave availability for a specific date
- * Returns a map of staffId -> leave status
  */
 export function useStaffLeaveAvailability(
   branchId?: string,
@@ -122,7 +138,6 @@ export function useStaffLeaveAvailability(
       ? parseISO(targetDate) 
       : targetDate;
     
-    // Build leave status for each staff with approved leave
     for (const leave of approvedLeaves) {
       if (isDateWithinLeave(dateToCheck, leave.start_date, leave.end_date)) {
         const startDate = parseISO(leave.start_date);
@@ -144,23 +159,14 @@ export function useStaffLeaveAvailability(
     return map;
   }, [approvedLeaves, targetDate]);
   
-  /**
-   * Check if a specific staff member is on leave for the target date
-   */
   const isStaffOnLeave = (staffId: string): boolean => {
     return leaveStatusMap.get(staffId)?.isOnLeave ?? false;
   };
   
-  /**
-   * Get leave info for a specific staff member
-   */
   const getLeaveInfo = (staffId: string): StaffLeaveInfo | undefined => {
     return leaveStatusMap.get(staffId)?.leaveInfo;
   };
   
-  /**
-   * Get all staff IDs who are on leave
-   */
   const staffOnLeaveIds = useMemo(() => {
     return Array.from(leaveStatusMap.keys());
   }, [leaveStatusMap]);
@@ -177,7 +183,6 @@ export function useStaffLeaveAvailability(
 
 /**
  * Validate if any selected carers are on leave for a booking date
- * Returns validation result with details
  */
 export function validateCarersLeaveConflict(
   selectedCarerIds: string[],
@@ -224,5 +229,52 @@ export function validateCarersLeaveConflict(
     hasConflict: true,
     conflictingCarers,
     errorMessage,
+  };
+}
+
+/**
+ * Validate recurring booking dates against staff leave
+ * Returns detailed conflict information for each date
+ */
+export function validateRecurringBookingLeaveConflicts(
+  carerId: string,
+  carerName: string,
+  bookingDates: string[],
+  approvedLeaves: ApprovedLeaveRequest[]
+): RecurringLeaveValidationResult {
+  const conflictingDates: RecurringLeaveConflict[] = [];
+  const nonConflictingDates: string[] = [];
+  let leaveInfo: StaffLeaveInfo | undefined;
+  
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  
+  for (const dateStr of bookingDates) {
+    const date = parseISO(dateStr);
+    const staffLeave = getStaffLeaveForDate(approvedLeaves, carerId, date);
+    
+    if (staffLeave) {
+      conflictingDates.push({
+        date: dateStr,
+        formattedDate: format(date, 'd MMM yyyy'),
+        dayOfWeek: dayNames[date.getDay()],
+        leaveInfo: staffLeave,
+      });
+      if (!leaveInfo) {
+        leaveInfo = staffLeave;
+      }
+    } else {
+      nonConflictingDates.push(dateStr);
+    }
+  }
+  
+  return {
+    hasConflicts: conflictingDates.length > 0,
+    conflictingDates,
+    nonConflictingDates,
+    totalDates: bookingDates.length,
+    conflictCount: conflictingDates.length,
+    carerId,
+    carerName,
+    leaveInfo,
   };
 }

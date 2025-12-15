@@ -29,10 +29,12 @@ export interface RecurringBookingResult {
 
 /**
  * Generate recurring bookings from form data
+ * @param excludeDates - Optional array of date strings (YYYY-MM-DD) to skip during generation
  */
 export function generateRecurringBookings(
   bookingData: BookingFormData,
-  branchId: string
+  branchId: string,
+  excludeDates?: string[]
 ): RecurringBookingResult {
   console.log('[generateRecurringBookings] Starting generation with data:', bookingData);
   
@@ -144,6 +146,12 @@ export function generateRecurringBookings(
         console.log(`[generateRecurringBookings] Found ${matchingDates.length} matching dates:`, matchingDates);
 
         for (const date of matchingDates) {
+          // Skip excluded dates (e.g., staff on leave)
+          if (excludeDates && excludeDates.includes(date)) {
+            console.log(`[generateRecurringBookings] ⚠️ SKIPPING excluded date: ${date}`);
+            continue;
+          }
+          
           const startDateTime = createBookingDateTime(date, startTime);
           const endDateTime = createBookingEndDateTime(date, startTime, endTime);
 

@@ -577,7 +577,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     console.log("[useBookingHandlers] Transformed booking data for processing:", JSON.stringify(transformedBookingData, null, 2));
 
     // Use the enhanced recurring booking logic with transformed data
-    const result = generateRecurringBookings(transformedBookingData, branchId);
+    // Pass excludeDates if provided (from leave conflict resolution)
+    const excludeDates = transformedBookingData.excludeDates || undefined;
+    console.log("[useBookingHandlers] Exclude dates for leave conflicts:", excludeDates);
+    
+    const result = generateRecurringBookings(transformedBookingData, branchId, excludeDates);
     
     if (!result.success) {
       console.error("[useBookingHandlers] Booking generation failed:", result.errors);
