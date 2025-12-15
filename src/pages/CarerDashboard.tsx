@@ -9,12 +9,27 @@ import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { CarerAttendanceCheckInModal } from "@/components/carer/CarerAttendanceCheckInModal";
+import { useTriggerAlertProcessing } from "@/hooks/useLateBookingAlerts";
 
 const CarerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading, carerProfile } = useUnifiedCarerAuth();
   const { data: carerContext } = useCarerContext();
   const { tenantSlug } = useCarerNavigation();
+  const { mutate: triggerAlertProcessing } = useTriggerAlertProcessing();
+
+  // Process late/missed booking alerts on mount and every 2 minutes
+  useEffect(() => {
+    if (isAuthenticated) {
+      triggerAlertProcessing();
+      
+      const interval = setInterval(() => {
+        triggerAlertProcessing();
+      }, 2 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, triggerAlertProcessing]);
 
   // Check authentication status - only redirect if truly unauthenticated
   // Use a ref to prevent redirect during active logout process
