@@ -670,13 +670,27 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                 </div>
                 <p className="text-sm text-amber-700">
                   No existing payroll record found for <strong>{selectedStaff?.first_name} {selectedStaff?.last_name}</strong> 
-                  {' '}for the selected date range.
-                  {calculationError && ' Unable to calculate from bookings and attendance records.'}
+                  {' '}for the selected date range ({format(new Date(payPeriodStart), 'dd MMM yyyy')} - {format(new Date(payPeriodEnd), 'dd MMM yyyy')}).
                 </p>
+                {calculationError && (
+                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                    <p className="text-sm text-red-700 font-medium">Calculation Error:</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {(calculationError as Error)?.message || 'Unable to calculate from bookings and attendance records.'}
+                    </p>
+                  </div>
+                )}
                 {!calculationError && (
-                  <p className="text-xs text-amber-600 mt-2">
-                    Try adjusting the date range or create a new payroll record manually.
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-xs text-amber-600">
+                      No eligible bookings found. Bookings must be:
+                    </p>
+                    <ul className="text-xs text-amber-600 mt-1 list-disc list-inside">
+                      <li>Status: Completed, Done, or In Progress</li>
+                      <li>Or Cancelled with "Pay Staff" enabled</li>
+                      <li>Within the selected date range</li>
+                    </ul>
+                  </div>
                 )}
               </div>
             )}
