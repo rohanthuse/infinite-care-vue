@@ -10,9 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { generateCarerProfilePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/hooks/use-toast";
-import { ShareSectionSelector } from "@/components/sharing/ShareSectionSelector";
+import { GroupedShareSectionSelector } from "@/components/sharing/GroupedShareSectionSelector";
 import {
   STAFF_SHAREABLE_SECTIONS,
+  STAFF_SECTION_GROUPS,
   StaffShareSections,
   getDefaultStaffSections,
 } from "@/types/sharing";
@@ -121,8 +122,9 @@ export function CarerProfileSharingDialog({
 
         {step === 'select' && (
           <div className="space-y-4">
-            <ShareSectionSelector
+            <GroupedShareSectionSelector
               sections={STAFF_SHAREABLE_SECTIONS}
+              sectionGroups={STAFF_SECTION_GROUPS}
               selectedSections={selectedSections as unknown as Record<string, boolean>}
               onSectionChange={handleSectionChange}
               onSelectAll={handleSelectAll}
@@ -153,27 +155,30 @@ export function CarerProfileSharingDialog({
               <div className="border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <h5 className="font-medium">Selected sections to export:</h5>
+                  <h5 className="font-medium">Selected sections to export ({selectedCount}):</h5>
+                  <Button variant="ghost" size="sm" onClick={handleBack} className="ml-auto h-7 text-xs">
+                    <ArrowLeft className="h-3 w-3 mr-1" />
+                    Change
+                  </Button>
                 </div>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <div className="flex flex-wrap gap-1">
                   {STAFF_SHAREABLE_SECTIONS.filter(
                     (s) => selectedSections[s.id as keyof StaffShareSections]
                   ).map((section) => (
-                    <li key={section.id}>• {section.label}</li>
+                    <span
+                      key={section.id}
+                      className="inline-flex items-center px-2 py-0.5 text-xs bg-primary/10 text-primary rounded"
+                    >
+                      {section.label}
+                    </span>
                   ))}
-                </ul>
+                </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={handleBack} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button onClick={handleExportAndShare} className="flex-1">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Export Profile as PDF
-                </Button>
-              </div>
+              <Button onClick={handleExportAndShare} className="w-full">
+                <Mail className="h-4 w-4 mr-2" />
+                Export Profile as PDF
+              </Button>
             </div>
           </div>
         )}

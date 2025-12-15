@@ -22,9 +22,10 @@ import { Switch } from "@/components/ui/switch";
 import { useThirdPartyAccess, CreateThirdPartyAccessData } from "@/hooks/useThirdPartyAccess";
 import { toast } from "@/hooks/use-toast";
 import { generateShareableUrl } from "@/utils/domain";
-import { ShareSectionSelector } from "@/components/sharing/ShareSectionSelector";
+import { GroupedShareSectionSelector } from "@/components/sharing/GroupedShareSectionSelector";
 import {
   CLIENT_SHAREABLE_SECTIONS,
+  CLIENT_SECTION_GROUPS,
   ClientShareSections,
   getDefaultClientSections,
 } from "@/types/sharing";
@@ -204,8 +205,9 @@ export function ClientProfileSharingDialog({
 
         {step === 'select' && (
           <div className="space-y-4">
-            <ShareSectionSelector
+            <GroupedShareSectionSelector
               sections={CLIENT_SHAREABLE_SECTIONS}
+              sectionGroups={CLIENT_SECTION_GROUPS}
               selectedSections={selectedSections as unknown as Record<string, boolean>}
               onSectionChange={handleSectionChange}
               onSelectAll={handleSelectAll}
