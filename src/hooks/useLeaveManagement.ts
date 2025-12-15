@@ -378,6 +378,99 @@ export const useAnnualLeaveById = (leaveId: string) => {
   });
 };
 
+// Hook to edit approved leave request
+export const useEditLeaveRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      start_date,
+      end_date,
+      leave_type,
+      reason
+    }: { 
+      id: string; 
+      start_date: string;
+      end_date: string;
+      leave_type: string;
+      reason?: string;
+    }) => {
+      // Calculate new total days
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+      const totalDays = differenceInBusinessDays(addDays(endDate, 1), startDate);
+
+      if (totalDays <= 0) {
+        throw new Error('Leave request must be for at least 1 business day');
+      }
+
+      const { data, error } = await supabase
+        .from('staff_leave_requests')
+        .update({
+          start_date,
+          end_date,
+          leave_type,
+          reason,
+          total_days: totalDays,
+          review_notes: `[Edited on ${new Date().toISOString()}]`
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Leave request updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-booking-conflicts'] });
+    },
+    onError: (error: any) => {
+      console.error('Error updating leave request:', error);
+      toast.error(error?.message || 'Failed to update leave request');
+    }
+  });
+};
+
+// Hook to cancel approved leave request
+export const useCancelLeaveRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      cancellation_reason 
+    }: { 
+      id: string; 
+      cancellation_reason?: string; 
+    }) => {
+      const { data, error } = await supabase
+        .from('staff_leave_requests')
+        .update({
+          status: 'cancelled',
+          review_notes: `[Cancelled on ${new Date().toISOString()}]${cancellation_reason ? ` Reason: ${cancellation_reason}` : ''}`
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Leave request cancelled - carer is now available for bookings');
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-booking-conflicts'] });
+    },
+    onError: (error) => {
+      console.error('Error cancelling leave request:', error);
+      toast.error('Failed to cancel leave request');
+    }
+  });
+};
+
 // Hook to get leave status for specific dates
 export const useLeaveStatus = (branchId: string, startDate?: string, endDate?: string) => {
   return useQuery({
