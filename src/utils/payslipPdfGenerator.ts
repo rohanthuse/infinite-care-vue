@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { format } from 'date-fns';
 
 interface PayrollRecord {
   id: string;
@@ -31,146 +32,405 @@ interface PayrollRecord {
   };
 }
 
-export const exportPayrollPayslip = (record: PayrollRecord): void => {
-  const doc = new jsPDF();
-  
-  // Helper function to format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount);
-  };
+export interface OrganizationInfo {
+  name: string;
+  address: string;
+  email: string;
+  phone?: string;
+  logoBase64?: string | null;
+  registrationNumber?: string;
+}
 
-  // Helper function to format dates
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-GB');
-  };
+// Safe date formatting function
+const formatDateSafe = (date: string | Date, formatString: string = 'dd/MM/yyyy'): string => {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+    return format(dateObj, formatString);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'Invalid Date';
+  }
+};
+
+// Helper function to format currency
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP'
+  }).format(amount);
+};
+
+// Payment method labels
+const paymentMethodLabels: Record<string, string> = {
+  bank_transfer: "Bank Transfer",
+  cash: "Cash",
+  cheque: "Cheque",
+  other: "Other"
+};
+
+export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: OrganizationInfo): void => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20;
+  let yPosition = margin;
+
+  // Colors (Blue theme matching Invoice PDF)
+  const blueRgb: [number, number, number] = [59, 130, 246]; // #3b82f6
+  const darkBlueRgb: [number, number, number] = [29, 78, 216]; // #1d4ed8
+  const lightBlueRgb: [number, number, number] = [219, 234, 254]; // #dbeafe
+  const grayRgb: [number, number, number] = [107, 114, 128]; // #6b7280
+  const darkGrayRgb: [number, number, number] = [31, 41, 55]; // #1f2937
+  const lightRedRgb: [number, number, number] = [254, 226, 226]; // #fee2e2
+  const darkRedRgb: [number, number, number] = [220, 38, 38]; // #dc2626
+  const greenRgb: [number, number, number] = [34, 197, 94]; // #22c55e
 
   // Employee details
   const employeeName = record.staff 
     ? `${record.staff.first_name} ${record.staff.last_name}`
     : 'Unknown Employee';
-  
   const employeeEmail = record.staff?.email || 'N/A';
 
-  // Calculate total deductions
+  // Calculate totals
+  const totalEarnings = record.gross_pay;
   const totalDeductions = 
     record.tax_deduction + 
     record.ni_deduction + 
     record.pension_deduction + 
     record.other_deductions;
 
-  // Header
-  doc.setFontSize(20);
-  doc.text('PAYSLIP', 105, 20, { align: 'center' });
-  
-  // Company info (if available)
-  doc.setFontSize(12);
-  doc.text('Pay Period: ' + formatDate(record.pay_period_start) + ' - ' + formatDate(record.pay_period_end), 20, 35);
-  
-  // Employee information section
+  // ===== HEADER SECTION (Logo left, Company details right-aligned) =====
+  const logoWidth = 40;
+  const logoHeight = 40;
+  const headerStartY = yPosition;
+  const rightAlignX = pageWidth - margin;
+
+  // Add logo on the LEFT
+  if (organizationInfo?.logoBase64) {
+    try {
+      const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+        if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+        if (base64.includes('data:image/gif')) return 'GIF';
+        return 'PNG';
+      };
+      const imgFormat = getImageFormat(organizationInfo.logoBase64);
+      doc.addImage(organizationInfo.logoBase64, imgFormat, margin, yPosition - 5, logoWidth, logoHeight);
+    } catch (error) {
+      console.error('Error adding logo to PDF:', error);
+    }
+  }
+
+  // Company details on the RIGHT (right-aligned)
+  let rightYPos = headerStartY;
+
+  // Company name (bold, larger) - right aligned
   doc.setFontSize(14);
-  doc.text('Employee Information', 20, 50);
-  doc.setFontSize(10);
-  doc.text('Name: ' + employeeName, 20, 60);
-  doc.text('Email: ' + employeeEmail, 20, 68);
-  doc.text('Staff ID: ' + record.staff_id, 20, 76);
-  
-  // Payment information
-  doc.text('Payment Date: ' + (record.payment_date ? formatDate(record.payment_date) : 'Not set'), 120, 60);
-  doc.text('Payment Method: ' + record.payment_method, 120, 68);
-  if (record.payment_reference) {
-    doc.text('Payment Reference: ' + record.payment_reference, 120, 76);
-  }
-
-  // Earnings table
-  const earningsData = [
-    ['Regular Hours', record.regular_hours.toString(), formatCurrency(record.hourly_rate), formatCurrency(record.basic_salary)],
-    ['Overtime Hours', record.overtime_hours.toString(), formatCurrency(record.overtime_rate || record.hourly_rate), formatCurrency(record.overtime_pay)],
-    ['Bonus', '-', '-', formatCurrency(record.bonus)],
-    ['GROSS PAY', '', '', formatCurrency(record.gross_pay)]
-  ];
-
-  autoTable(doc, {
-    head: [['Description', 'Hours', 'Rate', 'Amount']],
-    body: earningsData,
-    startY: 90,
-    theme: 'grid',
-    headStyles: { fillColor: [41, 128, 185] },
-    styles: { fontSize: 9 },
-    columnStyles: {
-      1: { halign: 'center' },
-      2: { halign: 'right' },
-      3: { halign: 'right' }
-    },
-    didParseCell: function (data: any) {
-      if (data.row.index === earningsData.length - 1) {
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fillColor = [240, 248, 255];
-      }
-    }
-  });
-
-  // Deductions table
-  const deductionsData = [
-    ['Income Tax', formatCurrency(record.tax_deduction)],
-    ['National Insurance', formatCurrency(record.ni_deduction)],
-    ['Pension Contribution', formatCurrency(record.pension_deduction)],
-    ['Other Deductions', formatCurrency(record.other_deductions)],
-    ['TOTAL DEDUCTIONS', formatCurrency(totalDeductions)]
-  ];
-
-  autoTable(doc, {
-    head: [['Deduction', 'Amount']],
-    body: deductionsData,
-    startY: (doc as any).lastAutoTable?.finalY + 15,
-    theme: 'grid',
-    headStyles: { fillColor: [231, 76, 60] },
-    styles: { fontSize: 9 },
-    columnStyles: {
-      1: { halign: 'right' }
-    },
-    didParseCell: function (data: any) {
-      if (data.row.index === deductionsData.length - 1) {
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fillColor = [255, 240, 240];
-      }
-    }
-  });
-
-  // Summary section
-  const summaryY = (doc as any).lastAutoTable?.finalY + 20;
-  doc.setFontSize(12);
-  doc.text('PAYMENT SUMMARY', 20, summaryY);
-  
-  doc.setFontSize(10);
-  doc.text('Gross Pay:', 20, summaryY + 15);
-  doc.text(formatCurrency(record.gross_pay), 100, summaryY + 15);
-  
-  doc.text('Total Deductions:', 20, summaryY + 25);
-  doc.text('-' + formatCurrency(totalDeductions), 100, summaryY + 25);
-  
-  // Net pay with emphasis
-  doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
-  doc.text('NET PAY:', 20, summaryY + 40);
-  doc.text(formatCurrency(record.net_pay), 100, summaryY + 40);
-  doc.setFont(undefined, 'normal');
+  doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+  doc.text(organizationInfo?.name || 'Company Name', rightAlignX, rightYPos, { align: 'right' });
+  rightYPos += 6;
 
-  // Notes section if available
-  if (record.notes) {
-    doc.setFontSize(10);
-    doc.text('Notes:', 20, summaryY + 55);
-    const splitNotes = doc.splitTextToSize(record.notes, 170);
-    doc.text(splitNotes, 20, summaryY + 65);
+  // Company address - right aligned
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+  if (organizationInfo?.address) {
+    const addressLines = doc.splitTextToSize(organizationInfo.address, 80);
+    addressLines.forEach((line: string) => {
+      doc.text(line, rightAlignX, rightYPos, { align: 'right' });
+      rightYPos += 4;
+    });
   }
 
-  // Footer
-  const pageHeight = doc.internal.pageSize.height;
+  // Email - right aligned
+  if (organizationInfo?.email) {
+    doc.text(`Email: ${organizationInfo.email}`, rightAlignX, rightYPos, { align: 'right' });
+    rightYPos += 4;
+  }
+
+  // Phone - right aligned
+  if (organizationInfo?.phone) {
+    doc.text(`Tel: ${organizationInfo.phone}`, rightAlignX, rightYPos, { align: 'right' });
+    rightYPos += 4;
+  }
+
+  // Registration number (if available) - right aligned
+  if (organizationInfo?.registrationNumber) {
+    doc.text(`Reg No: ${organizationInfo.registrationNumber}`, rightAlignX, rightYPos, { align: 'right' });
+    rightYPos += 4;
+  }
+
+  // Ensure we're past both the logo height and company details
+  yPosition = Math.max(rightYPos + 5, headerStartY + logoHeight + 5);
+
+  // Header border
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 10;
+
+  // ===== PAYSLIP TITLE (Centered, Blue) =====
+  doc.setFontSize(18);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(blueRgb[0], blueRgb[1], blueRgb[2]);
+  const titleText = 'PAYSLIP';
+  const titleWidth = doc.getTextWidth(titleText);
+  doc.text(titleText, (pageWidth - titleWidth) / 2, yPosition);
+  yPosition += 12;
+
+  // ===== PAY PERIOD BANNER (Blue gradient background) =====
+  const bannerHeight = 10;
+  doc.setFillColor(blueRgb[0], blueRgb[1], blueRgb[2]);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, bannerHeight, 2, 2, 'F');
+  
+  const periodMonth = format(new Date(record.pay_period_start), 'MMMM yyyy');
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(255, 255, 255);
+  const bannerText = `${periodMonth} Pay Statement`;
+  const bannerTextWidth = doc.getTextWidth(bannerText);
+  doc.text(bannerText, (pageWidth - bannerTextWidth) / 2, yPosition + 6.5);
+  yPosition += bannerHeight + 12;
+
+  // ===== TWO-COLUMN LAYOUT: Employee Info & Payroll Info =====
+  const leftColX = margin;
+  const rightColX = pageWidth - margin;
+  const colYStart = yPosition;
+
+  // LEFT COLUMN - Employee Details
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont(undefined, 'bold');
+  doc.text('Employee Name: ', leftColX, colYStart);
+  doc.setFont(undefined, 'normal');
+  doc.text(employeeName, leftColX + 32, colYStart);
+
+  doc.setFont(undefined, 'bold');
+  doc.text('Staff ID: ', leftColX, colYStart + 5);
+  doc.setFont(undefined, 'normal');
+  doc.text(record.staff_id.substring(0, 8) + '...', leftColX + 32, colYStart + 5);
+
+  doc.setFont(undefined, 'bold');
+  doc.text('Email: ', leftColX, colYStart + 10);
+  doc.setFont(undefined, 'normal');
+  doc.text(employeeEmail, leftColX + 32, colYStart + 10);
+
+  // RIGHT COLUMN - Payroll Details (Right-aligned)
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+  doc.text(`Pay Period: ${formatDateSafe(record.pay_period_start)} - ${formatDateSafe(record.pay_period_end)}`, rightColX, colYStart, { align: 'right' });
+
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+  doc.text(`Payment Date: ${record.payment_date ? formatDateSafe(record.payment_date) : 'Not set'}`, rightColX, colYStart + 5, { align: 'right' });
+  doc.text(`Payment Method: ${paymentMethodLabels[record.payment_method] || record.payment_method}`, rightColX, colYStart + 10, { align: 'right' });
+  if (record.payment_reference) {
+    doc.text(`Ref: ${record.payment_reference}`, rightColX, colYStart + 15, { align: 'right' });
+  }
+
+  yPosition = colYStart + 25;
+
+  // ===== EARNINGS TABLE (Invoice-style) =====
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+  doc.text('EARNINGS', margin, yPosition);
+  yPosition += 6;
+
+  const earningsData = [
+    ['Regular Pay', record.regular_hours.toString(), formatCurrency(record.hourly_rate).replace('£', ''), formatCurrency(record.basic_salary).replace('£', '')],
+    ['Overtime Pay', record.overtime_hours.toString(), formatCurrency(record.overtime_rate || record.hourly_rate * 1.5).replace('£', ''), formatCurrency(record.overtime_pay).replace('£', '')],
+    ['Bonus / Allowances', '-', '-', formatCurrency(record.bonus).replace('£', '')]
+  ];
+
+  autoTable(doc, {
+    startY: yPosition,
+    head: [['Description', 'Hours', 'Rate (£)', 'Amount (£)']],
+    body: earningsData,
+    theme: 'plain',
+    headStyles: {
+      fillColor: lightBlueRgb,
+      textColor: darkBlueRgb,
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'left',
+      cellPadding: 3
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: [55, 65, 81],
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 70 }, // Description
+      1: { halign: 'center', cellWidth: 30 }, // Hours
+      2: { halign: 'right', cellWidth: 35 }, // Rate
+      3: { halign: 'right', cellWidth: 35, fontStyle: 'bold' } // Amount
+    },
+    margin: { left: margin, right: margin },
+    didDrawCell: (data) => {
+      if (data.section === 'body') {
+        doc.setDrawColor(240, 240, 240);
+        doc.setLineWidth(0.1);
+      }
+    }
+  });
+
+  yPosition = (doc as any).lastAutoTable?.finalY + 3 || yPosition + 40;
+
+  // Earnings Total Row
+  doc.setFillColor(lightBlueRgb[0], lightBlueRgb[1], lightBlueRgb[2]);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 8, 1, 1, 'F');
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+  doc.text('TOTAL EARNINGS', margin + 5, yPosition + 5.5);
+  doc.text(formatCurrency(totalEarnings), pageWidth - margin - 5, yPosition + 5.5, { align: 'right' });
+  yPosition += 15;
+
+  // ===== DEDUCTIONS TABLE (Invoice-style with red theme) =====
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+  doc.text('DEDUCTIONS', margin, yPosition);
+  yPosition += 6;
+
+  const deductionsData = [
+    ['Income Tax (PAYE)', formatCurrency(record.tax_deduction).replace('£', '')],
+    ['National Insurance', formatCurrency(record.ni_deduction).replace('£', '')],
+    ['Pension Contribution', formatCurrency(record.pension_deduction).replace('£', '')],
+    ['Other Deductions', formatCurrency(record.other_deductions).replace('£', '')]
+  ];
+
+  autoTable(doc, {
+    startY: yPosition,
+    head: [['Deduction', 'Amount (£)']],
+    body: deductionsData,
+    theme: 'plain',
+    headStyles: {
+      fillColor: lightRedRgb,
+      textColor: darkRedRgb,
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'left',
+      cellPadding: 3
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: [55, 65, 81],
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 100 }, // Description
+      1: { halign: 'right', cellWidth: 70, fontStyle: 'bold' } // Amount
+    },
+    margin: { left: margin, right: margin },
+    didDrawCell: (data) => {
+      if (data.section === 'body') {
+        doc.setDrawColor(240, 240, 240);
+        doc.setLineWidth(0.1);
+      }
+    }
+  });
+
+  yPosition = (doc as any).lastAutoTable?.finalY + 3 || yPosition + 35;
+
+  // Deductions Total Row
+  doc.setFillColor(lightRedRgb[0], lightRedRgb[1], lightRedRgb[2]);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 8, 1, 1, 'F');
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkRedRgb[0], darkRedRgb[1], darkRedRgb[2]);
+  doc.text('TOTAL DEDUCTIONS', margin + 5, yPosition + 5.5);
+  doc.text(`-${formatCurrency(totalDeductions)}`, pageWidth - margin - 5, yPosition + 5.5, { align: 'right' });
+  yPosition += 18;
+
+  // ===== PAYMENT SUMMARY (Right-aligned box) =====
+  const summaryBoxWidth = 85;
+  const summaryBoxX = pageWidth - margin - summaryBoxWidth;
+  
+  // Gross Pay
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+  doc.text('Total Earnings:', summaryBoxX, yPosition);
+  doc.text(formatCurrency(totalEarnings), pageWidth - margin, yPosition, { align: 'right' });
+  yPosition += 5;
+
+  // Total Deductions
+  doc.text('Total Deductions:', summaryBoxX, yPosition);
+  doc.setTextColor(darkRedRgb[0], darkRedRgb[1], darkRedRgb[2]);
+  doc.text(`-${formatCurrency(totalDeductions)}`, pageWidth - margin, yPosition, { align: 'right' });
+  yPosition += 5;
+
+  // Divider line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(summaryBoxX, yPosition, pageWidth - margin, yPosition);
+  yPosition += 7;
+
+  // NET PAY Box (Highlighted)
+  const netPayBoxHeight = 12;
+  doc.setFillColor(lightBlueRgb[0], lightBlueRgb[1], lightBlueRgb[2]);
+  doc.roundedRect(summaryBoxX, yPosition - 2, summaryBoxWidth, netPayBoxHeight, 2, 2, 'F');
+  
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+  doc.text('NET PAY:', summaryBoxX + 5, yPosition + 6);
+  doc.text(formatCurrency(record.net_pay), pageWidth - margin - 5, yPosition + 6, { align: 'right' });
+  
+  yPosition += netPayBoxHeight + 15;
+
+  // ===== NOTES SECTION (if available) =====
+  if (record.notes) {
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+    doc.text('Notes', margin, yPosition);
+    yPosition += 6;
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+    const splitNotes = doc.splitTextToSize(record.notes, pageWidth - 2 * margin);
+    doc.text(splitNotes, margin, yPosition);
+    yPosition += splitNotes.length * 4 + 10;
+  }
+
+  // ===== FOOTER =====
+  const footerY = pageHeight - 25;
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+
+  // System generated notice
   doc.setFontSize(8);
-  doc.text('Generated on: ' + new Date().toLocaleString('en-GB'), 20, pageHeight - 20);
-  doc.text('Page 1 of 1', 170, pageHeight - 20);
+  doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+  const systemNotice = 'This is a system-generated payslip. For queries, please contact HR.';
+  const systemNoticeWidth = doc.getTextWidth(systemNotice);
+  doc.text(systemNotice, (pageWidth - systemNoticeWidth) / 2, footerY);
+
+  // Generation date and page number
+  doc.setFontSize(7);
+  doc.setTextColor(160, 160, 160);
+  doc.text(`Generated: ${new Date().toLocaleString('en-GB')}`, margin, footerY + 6);
+  doc.text('Page 1 of 1', pageWidth - margin, footerY + 6, { align: 'right' });
+
+  // Copyright
+  doc.setFontSize(7);
+  const copyrightText = `© ${new Date().getFullYear()} ${organizationInfo?.name || 'Company'}. All rights reserved.`;
+  const copyrightWidth = doc.getTextWidth(copyrightText);
+  doc.text(copyrightText, (pageWidth - copyrightWidth) / 2, footerY + 10);
 
   // Generate filename
   const periodStart = new Date(record.pay_period_start).toISOString().slice(0, 7); // YYYY-MM format

@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling, Car, Ban, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { exportPayrollPayslip } from "@/utils/payslipPdfGenerator";
-
+import { exportPayrollPayslip, OrganizationInfo } from "@/utils/payslipPdfGenerator";
+import { useTenant } from "@/contexts/TenantContext";
 // Define payroll-related types locally since we're using database types
 interface PayrollRecord {
   id: string;
@@ -126,11 +126,22 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
   payrollRecord,
 }) => {
   const { toast } = useToast();
+  const { organization } = useTenant();
   const breakdown = parsePayrollNotes(payrollRecord.notes);
 
   const handleExportPayslip = () => {
     try {
-      exportPayrollPayslip(payrollRecord);
+      // Build organization info for PDF
+      const orgInfo: OrganizationInfo | undefined = organization ? {
+        name: organization.name || 'Company',
+        address: organization.address || '',
+        email: organization.contact_email || organization.billing_email || '',
+        phone: organization.contact_phone || undefined,
+        logoBase64: null, // logo_url would need to be fetched as base64
+        registrationNumber: undefined, // registration_number not in Organization context type
+      } : undefined;
+
+      exportPayrollPayslip(payrollRecord, orgInfo);
       toast({
         title: "Success",
         description: "Payslip exported successfully",
