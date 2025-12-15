@@ -8,11 +8,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Plus, Trash2, CalendarDays, Building2, Globe } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, CalendarDays, Building2, Globe, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
+import { TimePickerField } from "@/components/care/forms/TimePickerField";
 
 interface AnnualLeaveManagerProps {
   branchId: string;
@@ -23,6 +25,9 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
   const [leaveName, setLeaveName] = useState("");
   const [isCompanyWide, setIsCompanyWide] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
+  const [isFullDay, setIsFullDay] = useState(true);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
 
   const { data: annualLeave = [], isLoading } = useAnnualLeave(branchId);
   const createAnnualLeave = useCreateAnnualLeave();
@@ -41,12 +46,26 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
       return;
     }
 
+    // Validate time fields when not full day
+    if (!isFullDay) {
+      if (!startTime || !endTime) {
+        toast.error("Please select both start and end times");
+        return;
+      }
+      if (startTime >= endTime) {
+        toast.error("End time must be later than start time");
+        return;
+      }
+    }
+
     const leaveData = {
       branch_id: isCompanyWide ? undefined : branchId,
       leave_date: format(selectedDate, 'yyyy-MM-dd'),
       leave_name: leaveName.trim(),
       is_company_wide: isCompanyWide,
-      is_recurring: isRecurring
+      is_recurring: isRecurring,
+      start_time: isFullDay ? null : startTime,
+      end_time: isFullDay ? null : endTime
     };
 
     createAnnualLeave.mutate(leaveData, {
@@ -55,6 +74,9 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
         setLeaveName("");
         setIsCompanyWide(false);
         setIsRecurring(false);
+        setIsFullDay(true);
+        setStartTime("09:00");
+        setEndTime("17:00");
       }
     });
   };
@@ -148,6 +170,45 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
               </div>
             </div>
 
+            {/* Full Day Toggle and Time Pickers */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="fullDay" className="font-medium cursor-pointer">
+                      Full Day Leave
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Toggle off to specify custom start and end times
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="fullDay"
+                  checked={isFullDay}
+                  onCheckedChange={setIsFullDay}
+                />
+              </div>
+
+              {!isFullDay && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-dashed">
+                  <TimePickerField
+                    label="Start Time"
+                    value={startTime}
+                    onChange={setStartTime}
+                    required
+                  />
+                  <TimePickerField
+                    label="End Time"
+                    value={endTime}
+                    onChange={setEndTime}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -181,6 +242,9 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   setLeaveName("");
                   setIsCompanyWide(false);
                   setIsRecurring(false);
+                  setIsFullDay(true);
+                  setStartTime("09:00");
+                  setEndTime("17:00");
                 }}
               >
                 Clear Form
@@ -219,6 +283,7 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   <TableRow>
                     <TableHead>Holiday Name</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
                     <TableHead>Scope</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Created</TableHead>
@@ -231,9 +296,21 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                       <TableCell className="font-medium">{holiday.leave_name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <CalendarIcon className="h-4 w-4 text-gray-400" />
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           {format(new Date(holiday.leave_date), 'EEEE, MMM dd, yyyy')}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {holiday.start_time && holiday.end_time ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {holiday.start_time.slice(0, 5)} - {holiday.end_time.slice(0, 5)}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            All Day
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>{renderScope(holiday.is_company_wide)}</TableCell>
                       <TableCell>
