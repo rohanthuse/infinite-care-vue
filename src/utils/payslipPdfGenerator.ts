@@ -41,6 +41,19 @@ export interface OrganizationInfo {
   registrationNumber?: string;
 }
 
+export interface PayslipBookingDetail {
+  bookingId: string;
+  date: string;
+  shiftTime: string;
+  clientName: string;
+  serviceName: string;
+  duration: string;
+  hoursWorked: number;
+  rate: number;
+  amount: number;
+  status: string;
+}
+
 // Safe date formatting function
 const formatDateSafe = (date: string | Date, formatString: string = 'dd/MM/yyyy'): string => {
   try {
@@ -71,7 +84,11 @@ const paymentMethodLabels: Record<string, string> = {
   other: "Other"
 };
 
-export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: OrganizationInfo): void => {
+export const exportPayrollPayslip = (
+  record: PayrollRecord, 
+  organizationInfo?: OrganizationInfo,
+  bookingDetails?: PayslipBookingDetail[]
+): void => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
@@ -228,6 +245,70 @@ export const exportPayrollPayslip = (record: PayrollRecord, organizationInfo?: O
   }
 
   yPosition = colYStart + 20; // Reduced from 25
+
+  // ===== BOOKING DETAILS TABLE (if available) =====
+  if (bookingDetails && bookingDetails.length > 0) {
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+    doc.text('BOOKING DETAILS', margin, yPosition);
+    yPosition += 6;
+
+    const bookingTableData = bookingDetails.map(booking => [
+      booking.date,
+      booking.shiftTime,
+      booking.clientName.length > 15 ? booking.clientName.substring(0, 15) + '...' : booking.clientName,
+      booking.serviceName.length > 12 ? booking.serviceName.substring(0, 12) + '...' : booking.serviceName,
+      booking.duration,
+      formatCurrency(booking.rate).replace('£', ''),
+      formatCurrency(booking.amount).replace('£', ''),
+      booking.status === 'cancelled' ? 'Paid' : ''
+    ]);
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Date', 'Time', 'Client', 'Service', 'Hrs', 'Rate (£)', 'Amt (£)', '']],
+      body: bookingTableData,
+      theme: 'plain',
+      headStyles: {
+        fillColor: lightBlueRgb,
+        textColor: darkBlueRgb,
+        fontSize: 7,
+        fontStyle: 'bold',
+        halign: 'left',
+        cellPadding: 2
+      },
+      bodyStyles: {
+        fontSize: 7,
+        textColor: [55, 65, 81],
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { cellWidth: 20 }, // Date
+        1: { cellWidth: 28 }, // Time
+        2: { cellWidth: 28 }, // Client
+        3: { cellWidth: 25 }, // Service
+        4: { cellWidth: 15, halign: 'center' }, // Hrs
+        5: { cellWidth: 18, halign: 'right' }, // Rate
+        6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }, // Amount
+        7: { cellWidth: 16, halign: 'center', textColor: grayRgb, fontStyle: 'italic' } // Status
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    yPosition = (doc as any).lastAutoTable?.finalY + 3 || yPosition + 40;
+
+    // Booking Total Row
+    const bookingTotal = bookingDetails.reduce((sum, b) => sum + b.amount, 0);
+    doc.setFillColor(lightBlueRgb[0], lightBlueRgb[1], lightBlueRgb[2]);
+    doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 8, 1, 1, 'F');
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+    doc.text('TOTAL BOOKINGS', margin + 5, yPosition + 5.5);
+    doc.text(formatCurrency(bookingTotal), pageWidth - margin - 5, yPosition + 5.5, { align: 'right' });
+    yPosition += 15;
+  }
 
   // ===== EARNINGS TABLE (Invoice-style) =====
   doc.setFontSize(11);
