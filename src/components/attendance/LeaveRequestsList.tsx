@@ -5,13 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, Search, Filter, Eye, Clock } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CheckCircle2, XCircle, Search, Filter, Eye, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLeaveRequests, useUpdateLeaveRequest, type LeaveRequest } from "@/hooks/useLeaveManagement";
+import { useLeaveBookingConflicts, type AffectedBooking } from "@/hooks/useLeaveBookingConflicts";
+import { AffectedBookingsSection } from "@/components/leave/AffectedBookingsSection";
+import { ReassignBookingDialog } from "@/components/leave/ReassignBookingDialog";
+import { CancelBookingDialog } from "@/components/leave/CancelBookingDialog";
 
 interface LeaveRequestsListProps {
   branchId: string;
@@ -25,9 +30,27 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
   const [reviewNotes, setReviewNotes] = useState("");
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'approved' | 'rejected' | null>(null);
+  
+  // Conflict resolution state
+  const [resolvedBookingIds, setResolvedBookingIds] = useState<Set<string>>(new Set());
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<AffectedBooking | null>(null);
 
   const { data: leaveRequests = [], isLoading } = useLeaveRequests(branchId);
   const updateLeaveRequest = useUpdateLeaveRequest();
+  
+  // Fetch booking conflicts for the selected leave request (only when approving)
+  const { 
+    affectedBookings, 
+    totalConflicts, 
+    isLoading: conflictsLoading 
+  } = useLeaveBookingConflicts(
+    selectedRequest?.staff_id,
+    selectedRequest?.start_date,
+    selectedRequest?.end_date,
+    isReviewDialogOpen && pendingAction === 'approved'
+  );
 
   // Filter requests
   const filteredRequests = leaveRequests.filter(request => {
@@ -43,25 +66,61 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
     setSelectedRequest(request);
     setPendingAction(action);
     setReviewNotes("");
+    setResolvedBookingIds(new Set()); // Reset resolved bookings
     setIsReviewDialogOpen(true);
   };
 
   const handleSubmitReview = () => {
     if (!selectedRequest || !pendingAction) return;
+    
+    // For approval, check if there are unresolved conflicts
+    if (pendingAction === 'approved') {
+      const unresolvedCount = affectedBookings.filter(b => !resolvedBookingIds.has(b.id)).length;
+      if (unresolvedCount > 0) {
+        toast.error(`Please resolve ${unresolvedCount} booking conflict${unresolvedCount !== 1 ? 's' : ''} before approving`);
+        return;
+      }
+    }
+    
+    // Build review notes with conflict resolution info
+    let finalNotes = reviewNotes.trim();
+    if (pendingAction === 'approved' && resolvedBookingIds.size > 0) {
+      const resolutionNote = `[${resolvedBookingIds.size} booking(s) were reassigned/cancelled due to this leave]`;
+      finalNotes = finalNotes ? `${finalNotes}\n\n${resolutionNote}` : resolutionNote;
+    }
 
     updateLeaveRequest.mutate({
       id: selectedRequest.id,
       status: pendingAction,
-      review_notes: reviewNotes.trim() || undefined
+      review_notes: finalNotes || undefined
     }, {
       onSuccess: () => {
         setIsReviewDialogOpen(false);
         setSelectedRequest(null);
         setPendingAction(null);
         setReviewNotes("");
+        setResolvedBookingIds(new Set());
       }
     });
   };
+
+  const handleReassignBooking = (booking: AffectedBooking) => {
+    setSelectedBooking(booking);
+    setReassignDialogOpen(true);
+  };
+
+  const handleCancelBooking = (booking: AffectedBooking) => {
+    setSelectedBooking(booking);
+    setCancelDialogOpen(true);
+  };
+
+  const handleBookingResolved = (bookingId: string) => {
+    setResolvedBookingIds(prev => new Set([...prev, bookingId]));
+  };
+  
+  // Calculate if approval should be blocked
+  const unresolvedConflictsCount = affectedBookings.filter(b => !resolvedBookingIds.has(b.id)).length;
+  const canApprove = pendingAction !== 'approved' || unresolvedConflictsCount === 0;
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -293,60 +352,108 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
         </CardContent>
       </Card>
 
-      {/* Review Dialog */}
+      {/* Enhanced Review Dialog with Conflict Detection */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent>
+        <DialogContent className={pendingAction === 'approved' ? "sm:max-w-[700px]" : ""}>
           <DialogHeader>
-            <DialogTitle>
-              {pendingAction === 'approved' ? 'Approve' : 'Reject'} Leave Request
+            <DialogTitle className="flex items-center gap-2">
+              {pendingAction === 'approved' ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Approve Leave Request
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  Reject Leave Request
+                </>
+              )}
             </DialogTitle>
+            <DialogDescription>
+              {pendingAction === 'approved' 
+                ? 'Review booking conflicts and approve the leave request'
+                : 'Provide a reason for rejecting this leave request'
+              }
+            </DialogDescription>
           </DialogHeader>
           
           {selectedRequest && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <strong>Staff:</strong> {selectedRequest.staff_name}
+            <ScrollArea className={pendingAction === 'approved' && totalConflicts > 0 ? "max-h-[60vh]" : ""}>
+              <div className="space-y-4 pr-4">
+                {/* Leave Request Details */}
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium text-sm text-muted-foreground mb-3">Leave Request Details</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Staff:</span>
+                      <span className="ml-2 font-medium">{selectedRequest.staff_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Leave Type:</span>
+                      <span className="ml-2 font-medium capitalize">{selectedRequest.leave_type}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="ml-2 font-medium">{selectedRequest.total_days} days</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Dates:</span>
+                      <span className="ml-2 font-medium">
+                        {format(new Date(selectedRequest.start_date), 'MMM dd')} - {format(new Date(selectedRequest.end_date), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {selectedRequest.reason && (
+                    <div className="mt-3 pt-3 border-t">
+                      <span className="text-muted-foreground text-sm">Reason:</span>
+                      <p className="text-sm mt-1">{selectedRequest.reason}</p>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Affected Bookings Section - Only show for approval */}
+                {pendingAction === 'approved' && (
+                  <AffectedBookingsSection
+                    affectedBookings={affectedBookings}
+                    resolvedBookingIds={resolvedBookingIds}
+                    isLoading={conflictsLoading}
+                    onReassign={handleReassignBooking}
+                    onCancel={handleCancelBooking}
+                  />
+                )}
+                
+                {/* Review Notes */}
                 <div>
-                  <strong>Leave Type:</strong> {selectedRequest.leave_type}
-                </div>
-                <div>
-                  <strong>Duration:</strong> {selectedRequest.total_days} days
-                </div>
-                <div>
-                  <strong>Dates:</strong> {format(new Date(selectedRequest.start_date), 'MMM dd')} - {format(new Date(selectedRequest.end_date), 'MMM dd')}
+                  <Label htmlFor="review-notes">Review Notes (Optional)</Label>
+                  <Textarea
+                    id="review-notes"
+                    placeholder={`Add notes about this ${pendingAction === 'approved' ? 'approval' : 'rejection'}...`}
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    className="mt-1"
+                    rows={3}
+                  />
                 </div>
               </div>
-              
-              {selectedRequest.reason && (
-                <div>
-                  <strong>Reason:</strong>
-                  <p className="text-sm text-gray-600 mt-1">{selectedRequest.reason}</p>
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="review-notes">Review Notes (Optional)</Label>
-                <Textarea
-                  id="review-notes"
-                  placeholder={`Add notes about this ${pendingAction === 'approved' ? 'approval' : 'rejection'}...`}
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  className="mt-1"
-                  rows={3}
-                />
-              </div>
-            </div>
+            </ScrollArea>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {/* Approval Guardrail Warning */}
+            {pendingAction === 'approved' && !canApprove && (
+              <div className="flex items-center gap-2 text-sm text-red-600 mr-auto">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Resolve all conflicts to approve</span>
+              </div>
+            )}
+            
             <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>
               Cancel
             </Button>
             <Button
               onClick={handleSubmitReview}
-              disabled={updateLeaveRequest.isPending}
+              disabled={updateLeaveRequest.isPending || (pendingAction === 'approved' && !canApprove)}
               className={pendingAction === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
               variant={pendingAction === 'rejected' ? 'destructive' : 'default'}
             >
@@ -356,6 +463,25 @@ export function LeaveRequestsList({ branchId }: LeaveRequestsListProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reassign Booking Dialog */}
+      <ReassignBookingDialog
+        open={reassignDialogOpen}
+        onOpenChange={setReassignDialogOpen}
+        booking={selectedBooking}
+        branchId={branchId}
+        excludeStaffId={selectedRequest?.staff_id || ''}
+        onSuccess={handleBookingResolved}
+      />
+
+      {/* Cancel Booking Dialog */}
+      <CancelBookingDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        booking={selectedBooking}
+        carerName={selectedRequest?.staff_name || ''}
+        onSuccess={handleBookingResolved}
+      />
     </div>
   );
 }
