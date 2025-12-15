@@ -1,4 +1,3 @@
-
 import React from "react";
 import { PayrollRecord } from "@/hooks/useAccountingData";
 import { 
@@ -17,15 +16,20 @@ import {
   FileCheck, 
   AlertCircle, 
   XCircle, 
-  Clock 
+  Clock,
+  Share2,
+  Download
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PayrollTableProps {
   payrollRecords: PayrollRecord[];
   onViewRecord: (record: PayrollRecord) => void;
   onEditRecord: (record: PayrollRecord) => void;
   onDeleteRecord: (recordId: string) => void;
+  onShareRecord?: (record: PayrollRecord) => void;
+  onDownloadPayslip?: (record: PayrollRecord) => void;
 }
 
 const PayrollTable: React.FC<PayrollTableProps> = ({
@@ -33,6 +37,8 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
   onViewRecord,
   onEditRecord,
   onDeleteRecord,
+  onShareRecord,
+  onDownloadPayslip,
 }) => {
   // Function to render status badge
   const renderStatusBadge = (status: string) => {
@@ -131,32 +137,75 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
                 </TableCell>
                 <TableCell>{renderStatusBadge(record.payment_status)}</TableCell>
                 <TableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onViewRecord(record)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEditRecord(record)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => onDeleteRecord(record.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <TooltipProvider>
+                    <div className="flex justify-end gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onViewRecord(record)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onEditRecord(record)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onShareRecord?.(record)}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Share</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onDownloadPayslip?.(record)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Download PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => onDeleteRecord(record.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </TableCell>
               </TableRow>
             );
