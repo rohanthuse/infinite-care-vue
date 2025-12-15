@@ -18,6 +18,8 @@ import { rateCategoryLabels, payBasedOnLabels, dayLabels } from "@/types/clientA
 import { useStaffGeneralSettings } from "@/hooks/useStaffGeneralSettings";
 import { Info } from "lucide-react";
 
+const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'bank_holiday'];
+
 const formSchema = z.object({
   start_date: createDateValidation('Start date'),
   end_date: z.string().transform(val => val === '' ? undefined : val).optional(),
@@ -30,7 +32,6 @@ const formSchema = z.object({
   base_rate: z.number().min(0.01, 'Rate is required and must be greater than 0'),
   bank_holiday_multiplier: z.number().min(1).max(3).optional(),
   is_vatable: z.boolean(),
-  vat_rate: z.number().min(0, 'VAT rate must be at least 0').max(100, 'VAT rate cannot exceed 100%').optional().default(20)
 }).refine(data => {
   if (data.time_from && data.time_until) {
     const start = new Date(`2000-01-01T${data.time_from}`);
@@ -41,14 +42,6 @@ const formSchema = z.object({
 }, {
   message: "Time until must be after time from",
   path: ["time_until"]
-}).refine(data => {
-  if (data.is_vatable && (data.vat_rate === undefined || data.vat_rate === null)) {
-    return false;
-  }
-  return true;
-}, {
-  message: "VAT rate is required when VATable is selected",
-  path: ["vat_rate"]
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -104,12 +97,21 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       base_rate: 0,
       bank_holiday_multiplier: 1,
       is_vatable: false,
-      vat_rate: 20
     },
   });
 
+  const selectedDays = form.watch('days_covered');
+  const allDaysSelected = ALL_DAYS.every(day => selectedDays?.includes(day));
+
+  const toggleAllDays = (checked: boolean) => {
+    if (checked) {
+      form.setValue('days_covered', ALL_DAYS);
+    } else {
+      form.setValue('days_covered', []);
+    }
+  };
+
   const selectedPayBasedOn = form.watch("pay_based_on");
-  const isVatable = form.watch("is_vatable");
 
   // Auto-set charge_type based on pay_based_on
   useEffect(() => {
@@ -147,7 +149,6 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       consecutive_hours_rate: null,
       bank_holiday_multiplier: enableBankHolidayMultiplier ? (data.bank_holiday_multiplier || 1) : 1,
       is_vatable: data.is_vatable,
-      vat_rate: data.is_vatable ? (data.vat_rate || 20) : null,
     };
 
     createSchedule.mutate(scheduleData, {
@@ -171,7 +172,6 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
       base_rate: 0,
       bank_holiday_multiplier: 1,
       is_vatable: false,
-      vat_rate: 20
     });
     setEnableBankHolidayMultiplier(false);
   };
@@ -260,6 +260,19 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
               <FormField control={form.control} name="days_covered" render={() => (
                 <FormItem>
                   <FormLabel>Days Covered *</FormLabel>
+                  
+                  {/* Select All Days Checkbox */}
+                  <div className="flex items-center space-x-2 mb-3 pb-2 border-b">
+                    <Checkbox
+                      id="select-all-days"
+                      checked={allDaysSelected}
+                      onCheckedChange={(checked) => toggleAllDays(checked as boolean)}
+                    />
+                    <Label htmlFor="select-all-days" className="text-sm font-medium cursor-pointer">
+                      Select All Days
+                    </Label>
+                  </div>
+                  
                   <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                     {Object.entries(dayLabels).map(([key, label]) => (
                       <FormField
@@ -451,31 +464,6 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
                 </FormItem>
               )} />
               
-              {/* VAT Rate Input - Shown only when is_vatable = true */}
-              {isVatable && (
-                <FormField control={form.control} name="vat_rate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>VAT Rate (%) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="20"
-                        className="max-w-xs"
-                        {...field}
-                        value={field.value ?? 20}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Enter the VAT percentage (e.g., 20 for 20%)
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
             </div>
 
             {/* Action Buttons */}
