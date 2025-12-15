@@ -700,7 +700,7 @@ export function ViewBookingDialog({
                           className="w-full bg-orange-600 hover:bg-orange-700"
                         >
                           <Calendar className="h-4 w-4 mr-1" />
-                          Edit Appointment
+                          Edit
                         </Button>
                         <Button
                           onClick={() => {
@@ -1074,7 +1074,7 @@ export function ViewBookingDialog({
               </Button>
               {onEdit && (
                 <Button type="button" onClick={onEdit}>
-                  Edit Appointment
+                  Edit
                 </Button>
               )}
             </div>
