@@ -16,6 +16,8 @@ import { useUpdateStaffRateSchedule, StaffRateSchedule } from "@/hooks/useStaffA
 import { createDateValidation, createTimeValidation } from "@/utils/validationUtils";
 import { rateCategoryLabels, payBasedOnLabels, dayLabels } from "@/types/clientAccounting";
 
+const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'bank_holiday'];
+
 const formSchema = z.object({
   start_date: createDateValidation('Start date'),
   end_date: z.string().transform(val => val === '' ? undefined : val).optional(),
@@ -28,7 +30,6 @@ const formSchema = z.object({
   base_rate: z.number().min(0.01, 'Rate is required and must be greater than 0'),
   bank_holiday_multiplier: z.number().min(1).max(3).optional(),
   is_vatable: z.boolean(),
-  vat_rate: z.number().min(0, 'VAT rate must be at least 0').max(100, 'VAT rate cannot exceed 100%').optional().default(20)
 }).refine(data => {
   if (data.time_from && data.time_until) {
     const start = new Date(`2000-01-01T${data.time_from}`);
@@ -39,14 +40,6 @@ const formSchema = z.object({
 }, {
   message: "Time until must be after time from",
   path: ["time_until"]
-}).refine(data => {
-  if (data.is_vatable && (data.vat_rate === undefined || data.vat_rate === null)) {
-    return false;
-  }
-  return true;
-}, {
-  message: "VAT rate is required when VATable is selected",
-  path: ["vat_rate"]
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -86,12 +79,21 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
       base_rate: schedule.base_rate,
       bank_holiday_multiplier: schedule.bank_holiday_multiplier,
       is_vatable: schedule.is_vatable,
-      vat_rate: 20
     },
   });
 
+  const selectedDays = form.watch('days_covered');
+  const allDaysSelected = ALL_DAYS.every(day => selectedDays?.includes(day));
+
+  const toggleAllDays = (checked: boolean) => {
+    if (checked) {
+      form.setValue('days_covered', ALL_DAYS);
+    } else {
+      form.setValue('days_covered', []);
+    }
+  };
+
   const selectedPayBasedOn = form.watch("pay_based_on");
-  const isVatable = form.watch("is_vatable");
 
   // Reset form when schedule changes
   useEffect(() => {
@@ -108,7 +110,6 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
         base_rate: schedule.base_rate,
         bank_holiday_multiplier: schedule.bank_holiday_multiplier,
         is_vatable: schedule.is_vatable,
-        vat_rate: 20
       });
       setEnableBankHolidayMultiplier(schedule.bank_holiday_multiplier > 1);
     }
@@ -220,6 +221,19 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
               <FormField control={form.control} name="days_covered" render={() => (
                 <FormItem>
                   <FormLabel>Days Covered *</FormLabel>
+                  
+                  {/* Select All Days Checkbox */}
+                  <div className="flex items-center space-x-2 mb-3 pb-2 border-b">
+                    <Checkbox
+                      id="edit-select-all-days"
+                      checked={allDaysSelected}
+                      onCheckedChange={(checked) => toggleAllDays(checked as boolean)}
+                    />
+                    <Label htmlFor="edit-select-all-days" className="text-sm font-medium cursor-pointer">
+                      Select All Days
+                    </Label>
+                  </div>
+                  
                   <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                     {Object.entries(dayLabels).map(([key, label]) => (
                       <FormField
@@ -411,31 +425,6 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
                 </FormItem>
               )} />
               
-              {/* VAT Rate Input - Shown only when is_vatable = true */}
-              {isVatable && (
-                <FormField control={form.control} name="vat_rate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>VAT Rate (%) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="20"
-                        className="max-w-xs"
-                        {...field}
-                        value={field.value ?? 20}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Enter the VAT percentage (e.g., 20 for 20%)
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
             </div>
 
             {/* Action Buttons */}
