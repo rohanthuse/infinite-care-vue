@@ -887,6 +887,55 @@ export function ViewBookingDialog({
             </div>
           )}
 
+          {/* Cancellation Information with Staff Payment Details */}
+          {booking?.status === 'cancelled' && (
+            <div className="space-y-2">
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-medium mb-2">
+                  <XCircle className="h-4 w-4" />
+                  Booking Cancelled
+                  {booking.suspension_honor_staff_payment && (
+                    <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 ml-2">
+                      Staff Payment Applied
+                    </Badge>
+                  )}
+                </div>
+                <div className="space-y-1 text-sm">
+                  {booking.cancellation_reason && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Reason:</span>
+                      <span className="font-medium">{booking.cancellation_reason}</span>
+                    </div>
+                  )}
+                  {booking.cancelled_at && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Cancelled At:</span>
+                      <span className="font-medium">{format(parseISO(booking.cancelled_at), 'dd MMM yyyy, HH:mm')}</span>
+                    </div>
+                  )}
+                  {booking.suspension_honor_staff_payment && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between text-green-700 dark:text-green-400">
+                        <span>Staff Payment Type:</span>
+                        <span className="font-medium capitalize">{booking.staff_payment_type || 'Full'}</span>
+                      </div>
+                      {booking.staff_payment_amount && (
+                        <div className="flex justify-between text-green-700 dark:text-green-400">
+                          <span>Payment Amount:</span>
+                          <span className="font-medium">£{booking.staff_payment_amount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                        Despite cancellation, staff payment will be processed as per the selected option.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <Separator />
 
           {/* Service Information */}

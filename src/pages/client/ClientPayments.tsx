@@ -3,12 +3,13 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2, Clock, Car, Receipt } from "lucide-react";
+import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2, Clock, Car, Receipt, XCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useClientPortalInvoices, getInvoiceDisplayStatus } from "@/hooks/useClientPortalInvoices";
 import { useClientInvoiceExpenses } from "@/hooks/useClientInvoiceExpenses";
 import { useClientInvoiceExtraTime, formatDuration } from "@/hooks/useClientInvoiceExtraTime";
+import { useClientInvoiceCancelledBookings } from "@/hooks/useClientInvoiceCancelledBookings";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { format } from "date-fns";
 import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
@@ -90,6 +91,46 @@ const InvoiceExtraTimeSection: React.FC<{ invoiceId: string }> = ({ invoiceId })
               </span>
             </div>
             <span className="font-medium">{formatCurrency(item.total_cost)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Component to display cancelled bookings with charges for an invoice
+const InvoiceCancelledBookingsSection: React.FC<{ invoiceId: string }> = ({ invoiceId }) => {
+  const { data: cancelledBookings, isLoading } = useClientInvoiceCancelledBookings(invoiceId);
+
+  if (isLoading) return null;
+  if (!cancelledBookings || cancelledBookings.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <h5 className="text-sm font-medium text-amber-700 mb-2 flex items-center gap-2">
+        <XCircle className="h-4 w-4" />
+        Cancelled Appointments (Charges Apply):
+      </h5>
+      <div className="bg-amber-50 border border-amber-200 rounded p-3 space-y-2">
+        <p className="text-xs text-amber-700">
+          The following appointments were cancelled. Charges apply as per your service agreement and cancellation policy.
+        </p>
+        {cancelledBookings.map((booking) => (
+          <div key={booking.id} className="flex justify-between text-sm border-t border-amber-200 pt-2">
+            <div>
+              <span className="font-medium">
+                {format(new Date(booking.start_time), 'MMM d, yyyy')} at {format(new Date(booking.start_time), 'HH:mm')}
+              </span>
+              {booking.service_title && (
+                <span className="text-gray-600 ml-2">({booking.service_title})</span>
+              )}
+              {booking.cancellation_reason && (
+                <span className="text-amber-600 ml-2 text-xs">- {booking.cancellation_reason}</span>
+              )}
+            </div>
+            {booking.staff_payment_amount && (
+              <span className="font-medium text-amber-800">{formatCurrency(booking.staff_payment_amount)}</span>
+            )}
           </div>
         ))}
       </div>
@@ -373,6 +414,9 @@ const ClientPayments = () => {
 
                       {/* Extra Time Section */}
                       <InvoiceExtraTimeSection invoiceId={invoice.id} />
+
+                      {/* Cancelled Bookings Section - Client-friendly display */}
+                      <InvoiceCancelledBookingsSection invoiceId={invoice.id} />
 
                       {/* Tax & Total Summary */}
                       {(invoice.tax_amount || invoice.vat_amount || invoice.net_amount) && (
