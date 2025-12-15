@@ -19,6 +19,17 @@ const formatDateSafe = (date: string | Date, formatString: string = 'dd/MM/yyyy'
   }
 };
 
+// Format duration from decimal hours to readable format (e.g., 0.5 -> "30m", 1.25 -> "1h 15m")
+const formatDurationFromHours = (hours: number): string => {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  if (m > 0) return `${m}m`;
+  return '0m';
+};
+
 export interface InvoiceExpenseEntryForPdf {
   id: string;
   expense_type_name: string;
@@ -39,6 +50,14 @@ export interface InvoiceExtraTimeEntryForPdf {
   booking_id?: string | null;
 }
 
+export interface InvoiceCancelledBookingForPdf {
+  id: string;
+  start_time: string;
+  cancellation_reason: string | null;
+  staff_name?: string | null;
+  staff_payment_amount: number | null;
+}
+
 export interface InvoicePdfData {
   invoice: EnhancedClientBilling;
   clientName: string;
@@ -56,13 +75,14 @@ export interface InvoicePdfData {
   };
   expenseEntries?: InvoiceExpenseEntryForPdf[];
   extraTimeEntries?: InvoiceExtraTimeEntryForPdf[];
+  cancelledBookings?: InvoiceCancelledBookingForPdf[];
 }
 
 export const generateInvoicePDF = (data: InvoicePdfData) => {
   try {
     console.log('Starting PDF generation with data:', data);
     
-    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo, expenseEntries = [], extraTimeEntries = [] } = data;
+    const { invoice, clientName, clientAddress, clientEmail, clientPhone, organizationInfo, expenseEntries = [], extraTimeEntries = [], cancelledBookings = [] } = data;
     
     // Validate required data
     if (!invoice) {
@@ -262,12 +282,12 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     const vatTotal = processedItems.reduce((sum, item) => sum + item.vatAmount, 0);
     const servicesGrossTotal = netSubtotal + vatTotal;
 
-    // Prepare table data with proper columns
+    // Prepare table data with proper columns - format duration properly
     const tableData = processedItems.map(item => [
       item.formattedDate,
       item.description,
       item.unitPrice.toFixed(2),
-      item.quantity.toString(),
+      formatDurationFromHours(item.quantity), // Format duration instead of raw decimal
       item.netAmount.toFixed(2),
       invoiceHasVat ? item.vatAmount.toFixed(2) : '-',
       item.lineTotal.toFixed(2)
@@ -275,7 +295,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Date', 'Description', 'Rate (£)', 'Qty', 'Net (£)', 'VAT (£)', 'Total (£)']],
+      head: [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'VAT (£)', 'Total (£)']],
       body: tableData,
       theme: 'plain',
       headStyles: {
@@ -480,20 +500,137 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
       yPosition += 10;
     }
 
-    // ===== GRAND TOTAL SECTION (Blue background box) =====
-    const grandTotal = servicesTotal + expensesTotal + extraTimeTotal;
-    const totalBoxWidth = 70;
-    const totalBoxHeight = 12;
+    // ===== CANCELLED BOOKINGS SECTION =====
+    let cancelledBookingFees = 0;
+    if (cancelledBookings && cancelledBookings.length > 0) {
+      // Add section header
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(153, 27, 27); // Red-800
+      doc.text('Cancelled Booking Fees', margin, yPosition);
+      yPosition += 8;
+
+      // Prepare cancelled bookings table data
+      const cancelledTableData = cancelledBookings.map(booking => {
+        const feeAmount = booking.staff_payment_amount || 0;
+        cancelledBookingFees += feeAmount;
+        return [
+          booking.start_time ? formatDateSafe(booking.start_time) : '-',
+          booking.staff_name || '-',
+          booking.cancellation_reason || 'No reason provided',
+          feeAmount.toFixed(2)
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Staff', 'Reason', 'Fee (£)']],
+        body: cancelledTableData,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [254, 226, 226], // Red-100
+          textColor: [153, 27, 27], // Red-800
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'left',
+          cellPadding: 3
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [55, 65, 81],
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 30 }, // Date
+          1: { cellWidth: 40 }, // Staff
+          2: { cellWidth: 80 }, // Reason
+          3: { halign: 'right', cellWidth: 25, fontStyle: 'bold' } // Fee
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      yPosition = (doc as any).lastAutoTable?.finalY + 5 || yPosition + 30;
+
+      // Cancelled bookings subtotal
+      const cancelledTotalBoxWidth = 70;
+      const cancelledTotalBoxX = pageWidth - margin - cancelledTotalBoxWidth;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+      doc.text('Cancellation Fees Subtotal:', cancelledTotalBoxX, yPosition);
+      doc.setFont(undefined, 'bold');
+      doc.text(`£${cancelledBookingFees.toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+      
+      yPosition += 10;
+    }
+
+    // ===== COMPREHENSIVE INVOICE SUMMARY SECTION =====
+    yPosition += 5;
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(darkGrayRgb[0], darkGrayRgb[1], darkGrayRgb[2]);
+    doc.text('Invoice Total Summary', margin, yPosition);
+    yPosition += 10;
+
+    const summaryX = pageWidth - margin - 100;
+    const valueX = pageWidth - margin;
+    
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+
+    // Service Charges
+    doc.text('Service Charges:', summaryX, yPosition);
+    doc.text(`£${servicesTotal.toFixed(2)}`, valueX, yPosition, { align: 'right' });
+    yPosition += 6;
+
+    // Additional Expenses (if any)
+    if (expensesTotal > 0) {
+      doc.text('Additional Expenses:', summaryX, yPosition);
+      doc.text(`£${expensesTotal.toFixed(2)}`, valueX, yPosition, { align: 'right' });
+      yPosition += 6;
+    }
+
+    // Extra Time Charges (if any)
+    if (extraTimeTotal > 0) {
+      doc.text('Extra Time Charges:', summaryX, yPosition);
+      doc.text(`£${extraTimeTotal.toFixed(2)}`, valueX, yPosition, { align: 'right' });
+      yPosition += 6;
+    }
+
+    // Cancelled Booking Fees (if any)
+    if (cancelledBookingFees > 0) {
+      doc.text('Cancelled Booking Fees:', summaryX, yPosition);
+      doc.text(`£${cancelledBookingFees.toFixed(2)}`, valueX, yPosition, { align: 'right' });
+      yPosition += 6;
+    }
+
+    // Divider line before grand total
+    yPosition += 2;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(summaryX, yPosition, valueX, yPosition);
+    yPosition += 6;
+
+    // Grand Total box
+    const grandTotal = servicesTotal + expensesTotal + extraTimeTotal + cancelledBookingFees;
+    const totalBoxWidth = 100;
+    const totalBoxHeight = 14;
     const totalBoxX = pageWidth - margin - totalBoxWidth;
     
     doc.setFillColor(lightBlueRgb[0], lightBlueRgb[1], lightBlueRgb[2]);
     doc.roundedRect(totalBoxX, yPosition, totalBoxWidth, totalBoxHeight, 2, 2, 'F');
     
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
-    doc.text('Grand Total:', totalBoxX + 5, yPosition + 8);
-    doc.text(formatCurrency(invoice.total_amount || grandTotal), totalBoxX + totalBoxWidth - 5, yPosition + 8, { align: 'right' });
+    doc.text('GRAND TOTAL:', totalBoxX + 5, yPosition + 9);
+    doc.text(formatCurrency(invoice.total_amount || grandTotal), totalBoxX + totalBoxWidth - 5, yPosition + 9, { align: 'right' });
 
     yPosition += totalBoxHeight + 15;
 
