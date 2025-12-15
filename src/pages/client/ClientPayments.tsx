@@ -149,7 +149,7 @@ const InvoiceStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case "paid":
       return (
-        <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100">
+        <Badge variant="custom" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
           <CheckCircle className="h-3 w-3 mr-1" />
           Paid
         </Badge>
@@ -157,14 +157,14 @@ const InvoiceStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     case "pending":
     case "sent":
       return (
-        <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 hover:bg-yellow-100">
+        <Badge variant="custom" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
           <AlertCircle className="h-3 w-3 mr-1" />
           Pending
         </Badge>
       );
     case "overdue":
       return (
-        <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100">
+        <Badge variant="custom" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
           <AlertCircle className="h-3 w-3 mr-1" />
           Overdue
         </Badge>
