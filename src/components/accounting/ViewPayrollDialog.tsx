@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling, Car, Ban, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO, differenceInMinutes } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { exportPayrollPayslip, OrganizationInfo } from "@/utils/payslipPdfGenerator";
+import { exportPayrollPayslip, OrganizationInfo, PayslipBookingDetail } from "@/utils/payslipPdfGenerator";
 import { useTenant } from "@/contexts/TenantContext";
+import { supabase } from "@/integrations/supabase/client";
 // Define payroll-related types locally since we're using database types
 interface PayrollRecord {
   id: string;
@@ -164,7 +165,61 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
         registrationNumber: undefined,
       } : undefined;
 
-      exportPayrollPayslip(payrollRecord, orgInfo);
+      // Fetch booking details for the pay period
+      let bookingDetails: PayslipBookingDetail[] = [];
+      try {
+        const { data: bookings, error } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            start_time,
+            end_time,
+            status,
+            suspension_honor_staff_payment,
+            clients (first_name, last_name),
+            services (title)
+          `)
+          .eq('branch_id', payrollRecord.branch_id)
+          .eq('staff_id', payrollRecord.staff_id)
+          .gte('start_time', payrollRecord.pay_period_start)
+          .lte('end_time', payrollRecord.pay_period_end)
+          .in('status', ['in_progress', 'done', 'completed', 'cancelled'])
+          .order('start_time', { ascending: true });
+
+        if (!error && bookings) {
+          // Filter: include completed OR cancelled with staff payment honored
+          const eligibleBookings = bookings.filter(b => 
+            ['in_progress', 'done', 'completed'].includes(b.status) ||
+            (b.status === 'cancelled' && b.suspension_honor_staff_payment === true)
+          );
+
+          bookingDetails = eligibleBookings.map(booking => {
+            const startTime = parseISO(booking.start_time);
+            const endTime = parseISO(booking.end_time);
+            const durationMins = differenceInMinutes(endTime, startTime);
+            const hours = durationMins / 60;
+            const rate = payrollRecord.hourly_rate || 12;
+            const amount = hours * rate;
+
+            return {
+              bookingId: booking.id,
+              date: format(startTime, 'dd/MM'),
+              shiftTime: `${format(startTime, 'HH:mm')}-${format(endTime, 'HH:mm')}`,
+              clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown',
+              serviceName: booking.services?.title || 'N/A',
+              duration: `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`,
+              hoursWorked: hours,
+              rate: rate,
+              amount: amount,
+              status: booking.status
+            };
+          });
+        }
+      } catch (bookingError) {
+        console.warn('Could not fetch booking details:', bookingError);
+      }
+
+      exportPayrollPayslip(payrollRecord, orgInfo, bookingDetails);
       toast({
         title: "Success",
         description: "Payslip exported successfully",
