@@ -3,7 +3,14 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff } from "lucide-react";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
-import { useStaffLeaveAvailability, validateCarersLeaveConflict } from "@/hooks/useStaffLeaveAvailability";
+import { 
+  useStaffLeaveAvailability, 
+  validateCarersLeaveConflict,
+  validateRecurringBookingLeaveConflicts,
+  RecurringLeaveValidationResult 
+} from "@/hooks/useStaffLeaveAvailability";
+import { previewRecurringBookings } from "../utils/recurringBookingLogic";
+import { LeaveConflictDialog, LeaveConflictResolution } from "./LeaveConflictDialog";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -174,6 +181,11 @@ export function NewBookingDialog({
   const [scheduleCount, setScheduleCount] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
+  
+  // Leave conflict dialog state for recurring bookings
+  const [leaveConflictDialogOpen, setLeaveConflictDialogOpen] = useState(false);
+  const [leaveConflictData, setLeaveConflictData] = useState<RecurringLeaveValidationResult | null>(null);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
   
   // Get backdating policy for date restrictions
   const backdatingPolicy = getBackdatingPolicy();
@@ -352,8 +364,61 @@ export function NewBookingDialog({
   }, [bookingMode, form.watch("fromDate"), form]);
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    // Check for leave conflicts before submitting
-    if (!data.assignLater && data.carerIds && data.carerIds.length > 0) {
+    // Skip validation if assigning later
+    if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
+      createBookingsFromData(data);
+      return;
+    }
+
+    // For RECURRING bookings, check ALL occurrence dates against leave
+    if (data.bookingMode === "recurring" && data.carerIds.length > 0) {
+      // Build booking form data for preview
+      const bookingFormData = {
+        clientId: data.clientId,
+        carerId: data.carerIds[0], // Check first carer
+        fromDate: data.fromDate,
+        untilDate: data.untilDate,
+        recurrenceFrequency: data.recurrenceFrequency,
+        schedules: data.schedules.map(s => ({
+          ...s,
+          days: {
+            mon: s.mon || false,
+            tue: s.tue || false,
+            wed: s.wed || false,
+            thu: s.thu || false,
+            fri: s.fri || false,
+            sat: s.sat || false,
+            sun: s.sun || false,
+          }
+        })),
+        notes: data.notes,
+      };
+
+      // Get all dates that would be created
+      const preview = previewRecurringBookings(bookingFormData as any, branchId || '');
+      
+      if (preview.dates.length > 0) {
+        // Check each carer against all dates
+        for (const carerId of data.carerIds) {
+          const carerName = carerNamesMap.get(carerId) || 'Unknown Carer';
+          const validation = validateRecurringBookingLeaveConflicts(
+            carerId,
+            carerName,
+            preview.dates,
+            approvedLeaves
+          );
+          
+          if (validation.hasConflicts) {
+            // Show conflict dialog for user to decide
+            setLeaveConflictData(validation);
+            setPendingFormData(data);
+            setLeaveConflictDialogOpen(true);
+            return; // Stop here, wait for user decision
+          }
+        }
+      }
+    } else {
+      // For SINGLE bookings, just check the fromDate
       const leaveValidation = validateCarersLeaveConflict(
         data.carerIds,
         approvedLeaves,
@@ -369,37 +434,63 @@ export function NewBookingDialog({
       }
     }
     
-    // Prepare booking data based on mode
+    // No conflicts, proceed with booking creation
+    createBookingsFromData(data);
+  }
+
+  // Handle leave conflict resolution
+  function handleLeaveConflictResolution(resolution: LeaveConflictResolution) {
+    if (!pendingFormData || !leaveConflictData) return;
+
+    if (resolution === 'cancel') {
+      // User cancelled, clear pending data
+      setPendingFormData(null);
+      setLeaveConflictData(null);
+      return;
+    }
+
+    if (resolution === 'skip') {
+      // Create bookings but skip conflicted dates
+      const modifiedData = {
+        ...pendingFormData,
+        excludeDates: leaveConflictData.conflictingDates.map(c => c.date),
+      };
+      createBookingsFromData(modifiedData);
+      toast.success(`Creating ${leaveConflictData.nonConflictingDates.length} bookings`, {
+        description: `Skipped ${leaveConflictData.conflictCount} dates due to leave conflict.`,
+      });
+    }
+
+    // Clear pending data
+    setPendingFormData(null);
+    setLeaveConflictData(null);
+  }
+
+  // Helper function to create bookings from form data
+  function createBookingsFromData(data: z.infer<typeof formSchema> & { excludeDates?: string[] }) {
     const bookingData = {
       ...data,
-      // For single bookings, ensure untilDate equals fromDate
       untilDate: data.bookingMode === "single" ? data.fromDate : data.untilDate,
-      // For single bookings, ensure recurrence is 1
       recurrenceFrequency: data.bookingMode === "single" ? "1" : data.recurrenceFrequency,
     };
 
     if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
-      // Create unassigned booking
       const unassignedBooking = {
         ...bookingData,
-        carerId: null, // No carer assigned
+        carerId: null,
       };
       onCreateBooking(unassignedBooking, carers);
       handleClose();
-      // Toast is handled by the parent component (AppointmentsTab) after booking creation completes
     } else {
-      // Create bookings for each selected carer
       const bookingsToCreate = data.carerIds.map(carerId => ({
         ...bookingData,
-        carerId, // Convert back to single carerId for each booking
+        carerId,
       }));
       
-      // Create bookings sequentially for each carer
       bookingsToCreate.forEach(bookingDataForCarer => {
         onCreateBooking(bookingDataForCarer, carers);
       });
       handleClose();
-      // Toast is handled by the parent component (AppointmentsTab) after booking creation completes
     }
   }
 
@@ -445,6 +536,7 @@ export function NewBookingDialog({
   }, [open, form]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
@@ -1262,5 +1354,16 @@ export function NewBookingDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Leave Conflict Resolution Dialog for Recurring Bookings */}
+    {leaveConflictData && (
+      <LeaveConflictDialog
+        open={leaveConflictDialogOpen}
+        onOpenChange={setLeaveConflictDialogOpen}
+        conflictData={leaveConflictData}
+        onResolve={handleLeaveConflictResolution}
+      />
+    )}
+    </>
   );
 }
