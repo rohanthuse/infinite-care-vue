@@ -54,6 +54,12 @@ interface PayrollCalculationData {
   rateSchedulesApplied: boolean;
 }
 
+// Safe helper to extract date part from ISO string or date string
+const safeDatePart = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return '';
+  return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+};
+
 // Day name mapping for rate schedule matching
 const dayNameMap: Record<number, string> = {
   0: 'Sunday',
@@ -72,6 +78,12 @@ const getExistingPayrollRecord = async (
   payPeriodStart: string,
   payPeriodEnd: string
 ): Promise<any | null> => {
+  // Guard clause for undefined parameters
+  if (!branchId || !staffId || !payPeriodStart || !payPeriodEnd) {
+    console.warn('Missing required parameters for getExistingPayrollRecord:', { branchId, staffId, payPeriodStart, payPeriodEnd });
+    return null;
+  }
+
   console.log('Fetching existing payroll record:', { branchId, staffId, payPeriodStart, payPeriodEnd });
   
   const { data, error } = await supabase
@@ -87,8 +99,8 @@ const getExistingPayrollRecord = async (
     `)
     .eq('branch_id', branchId)
     .eq('staff_id', staffId)
-    .eq('pay_period_start', payPeriodStart.split('T')[0])
-    .eq('pay_period_end', payPeriodEnd.split('T')[0])
+    .eq('pay_period_start', safeDatePart(payPeriodStart))
+    .eq('pay_period_end', safeDatePart(payPeriodEnd))
     .maybeSingle();
 
   if (error) {
@@ -101,11 +113,17 @@ const getExistingPayrollRecord = async (
 
 // Fetch bank holidays for the period
 const fetchBankHolidays = async (startDate: string, endDate: string): Promise<string[]> => {
+  // Guard clause for undefined parameters
+  if (!startDate || !endDate) {
+    console.warn('Missing required parameters for fetchBankHolidays');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('bank_holidays')
     .select('registered_on')
-    .gte('registered_on', startDate.split('T')[0])
-    .lte('registered_on', endDate.split('T')[0])
+    .gte('registered_on', safeDatePart(startDate))
+    .lte('registered_on', safeDatePart(endDate))
     .eq('status', 'active');
 
   if (error) {
@@ -175,6 +193,12 @@ export const usePayrollBookingIntegration = () => {
 
   // Get booking and attendance data for payroll calculation
   const getBookingTimeData = async (branchId: string, startDate: string, endDate: string, staffId?: string): Promise<BookingTimeData[]> => {
+    // Guard clause for undefined parameters
+    if (!branchId || !startDate || !endDate) {
+      console.warn('[PayrollBookingIntegration] Missing required parameters for getBookingTimeData:', { branchId, startDate, endDate });
+      return [];
+    }
+
     console.log('[PayrollBookingIntegration] Fetching booking time data:', { branchId, startDate, endDate, staffId });
 
     // Fetch all potentially relevant bookings first, then filter in JS
@@ -255,8 +279,8 @@ export const usePayrollBookingIntegration = () => {
         .select('*')
         .eq('person_id', staffId)
         .eq('person_type', 'staff')
-        .gte('attendance_date', startDate.split('T')[0])
-        .lte('attendance_date', endDate.split('T')[0]);
+        .gte('attendance_date', safeDatePart(startDate))
+        .lte('attendance_date', safeDatePart(endDate));
 
       if (attendanceError) {
         console.warn('[PayrollBookingIntegration] Error fetching attendance records:', attendanceError);
@@ -321,6 +345,11 @@ export const usePayrollBookingIntegration = () => {
     payPeriodStart: string, 
     payPeriodEnd: string
   ): Promise<PayrollCalculationData> => {
+    // Guard clause for undefined parameters
+    if (!branchId || !staffId || !payPeriodStart || !payPeriodEnd) {
+      throw new Error(`Missing required parameters for payroll calculation: branchId=${branchId}, staffId=${staffId}, payPeriodStart=${payPeriodStart}, payPeriodEnd=${payPeriodEnd}`);
+    }
+
     console.log('[PayrollBookingIntegration] Calculating payroll from bookings:', { branchId, staffId, payPeriodStart, payPeriodEnd });
 
     try {
@@ -386,8 +415,8 @@ export const usePayrollBookingIntegration = () => {
       .select('*')
       .eq('person_id', staffId)
       .eq('person_type', 'staff')
-      .gte('attendance_date', payPeriodStart.split('T')[0])
-      .lte('attendance_date', payPeriodEnd.split('T')[0]);
+      .gte('attendance_date', safeDatePart(payPeriodStart))
+      .lte('attendance_date', safeDatePart(payPeriodEnd));
 
     if (attendanceError) throw attendanceError;
 
@@ -397,8 +426,8 @@ export const usePayrollBookingIntegration = () => {
       .select('*')
       .eq('staff_id', staffId)
       .eq('status', 'approved') // Only include approved extra time
-      .gte('work_date', payPeriodStart.split('T')[0])
-      .lte('work_date', payPeriodEnd.split('T')[0]);
+      .gte('work_date', safeDatePart(payPeriodStart))
+      .lte('work_date', safeDatePart(payPeriodEnd));
 
     if (extraTimeError) throw extraTimeError;
 
@@ -408,8 +437,8 @@ export const usePayrollBookingIntegration = () => {
       .select('*')
       .eq('staff_id', staffId)
       .eq('status', 'approved') // Only include approved travel
-      .gte('travel_date', payPeriodStart.split('T')[0])
-      .lte('travel_date', payPeriodEnd.split('T')[0]);
+      .gte('travel_date', safeDatePart(payPeriodStart))
+      .lte('travel_date', safeDatePart(payPeriodEnd));
 
     if (travelError) throw travelError;
 
@@ -592,8 +621,8 @@ export const usePayrollBookingIntegration = () => {
         const payrollRecord = {
           branch_id: branchId,
           staff_id: staffId,
-          pay_period_start: payPeriodStart.split('T')[0],
-          pay_period_end: payPeriodEnd.split('T')[0],
+          pay_period_start: safeDatePart(payPeriodStart),
+          pay_period_end: safeDatePart(payPeriodEnd),
           regular_hours: calculationData.regularHours,
           overtime_hours: calculationData.overtimeHours + calculationData.extraTimeHours,
           hourly_rate: calculationData.basHourlyRate,
@@ -609,7 +638,7 @@ export const usePayrollBookingIntegration = () => {
           net_pay: netPay,
           payment_status: 'pending' as const,
           payment_method: 'bank_transfer' as const,
-          payment_date: payPeriodEnd.split('T')[0],
+          payment_date: safeDatePart(payPeriodEnd),
           notes: notesDetails,
           created_by: createdBy
         };
