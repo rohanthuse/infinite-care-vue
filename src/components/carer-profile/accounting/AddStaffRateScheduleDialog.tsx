@@ -15,6 +15,8 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useCreateStaffRateSchedule } from "@/hooks/useStaffAccounting";
 import { createDateValidation, createTimeValidation } from "@/utils/validationUtils";
 import { rateCategoryLabels, payBasedOnLabels, dayLabels } from "@/types/clientAccounting";
+import { useStaffGeneralSettings } from "@/hooks/useStaffGeneralSettings";
+import { Info } from "lucide-react";
 
 const formSchema = z.object({
   start_date: createDateValidation('Start date'),
@@ -58,6 +60,23 @@ interface AddStaffRateScheduleDialogProps {
   branchId: string;
 }
 
+const contractTypeLabels: Record<string, string> = {
+  full_time: 'Full-time',
+  part_time: 'Part-time',
+  zero_hours: 'Zero-hours',
+  agency: 'Agency',
+  contractor: 'Contractor',
+};
+
+const payFrequencyLabels: Record<string, string> = {
+  hourly: 'Hourly',
+  daily: 'Daily',
+  weekly: 'Weekly',
+  bi_weekly: 'Bi-weekly',
+  monthly: 'Monthly',
+  per_visit: 'Per Visit',
+};
+
 export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProps> = ({
   open,
   onOpenChange,
@@ -67,6 +86,9 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
   const { organization } = useTenant();
   const createSchedule = useCreateStaffRateSchedule();
   const [enableBankHolidayMultiplier, setEnableBankHolidayMultiplier] = useState(false);
+  
+  // Fetch staff general settings to auto-populate
+  const { data: staffSettings } = useStaffGeneralSettings(staffId);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -182,6 +204,30 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Staff Settings Info Banner */}
+            {(staffSettings?.contract_type || staffSettings?.salary_frequency) && (
+              <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border">
+                <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Staff Settings (from General tab)</p>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <span>
+                      <strong>Contract Type:</strong>{' '}
+                      {staffSettings?.contract_type 
+                        ? contractTypeLabels[staffSettings.contract_type] || staffSettings.contract_type
+                        : 'Not specified'}
+                    </span>
+                    <span>
+                      <strong>Pay Frequency:</strong>{' '}
+                      {staffSettings?.salary_frequency
+                        ? payFrequencyLabels[staffSettings.salary_frequency] || staffSettings.salary_frequency
+                        : 'Not specified'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Basic Information - Date Range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField control={form.control} name="start_date" render={({ field }) => (

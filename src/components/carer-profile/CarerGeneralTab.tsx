@@ -18,6 +18,15 @@ const accountingSettingsSchema = z.object({
 
 const bankDetailsSchema = z.object({
   bank_name: z.string().nullable(),
+  bank_account_name: z.string().nullable(),
+  bank_account_number: z.string().nullable().refine(
+    (val) => !val || /^\d{8}$/.test(val.replace(/\s/g, '')),
+    { message: 'Account number must be 8 digits' }
+  ),
+  bank_sort_code: z.string().nullable().refine(
+    (val) => !val || /^\d{2}-?\d{2}-?\d{2}$/.test(val.replace(/\s/g, '')),
+    { message: 'Sort code must be 6 digits (XX-XX-XX)' }
+  ),
 });
 
 type AccountingSettingsFormValues = z.infer<typeof accountingSettingsSchema>;
@@ -46,6 +55,9 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => 
     resolver: zodResolver(bankDetailsSchema),
     defaultValues: {
       bank_name: null,
+      bank_account_name: null,
+      bank_account_number: null,
+      bank_sort_code: null,
     },
   });
 
@@ -58,6 +70,9 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => 
 
       bankForm.reset({
         bank_name: settings.bank_name,
+        bank_account_name: settings.bank_account_name,
+        bank_account_number: settings.bank_account_number,
+        bank_sort_code: settings.bank_sort_code,
       });
     }
   }, [settings, accountingForm, bankForm]);
@@ -70,10 +85,25 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => 
   };
 
   const onBankSubmit = async (values: BankDetailsFormValues) => {
+    // Format sort code with dashes if not already formatted
+    const formattedSortCode = values.bank_sort_code
+      ? values.bank_sort_code.replace(/\s/g, '').replace(/(\d{2})(\d{2})(\d{2})/, '$1-$2-$3')
+      : null;
+    
     await updateSettings.mutateAsync({
       staffId: carerId,
-      updates: values,
+      updates: {
+        ...values,
+        bank_sort_code: formattedSortCode,
+      },
     });
+  };
+
+  const formatSortCode = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
   };
 
   return (
@@ -201,6 +231,24 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => 
                   <form onSubmit={bankForm.handleSubmit(onBankSubmit)} className="space-y-6">
                     <FormField
                       control={bankForm.control}
+                      name="bank_account_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account Holder Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. John Smith"
+                              {...field}
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={bankForm.control}
                       name="bank_name"
                       render={({ field }) => (
                         <FormItem>
@@ -217,9 +265,60 @@ export const CarerGeneralTab: React.FC<CarerGeneralTabProps> = ({ carerId }) => 
                       )}
                     />
 
-                    <p className="text-sm text-muted-foreground">
-                      Additional bank details (account number, sort code) can be added via a database migration if needed.
-                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={bankForm.control}
+                        name="bank_account_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Number</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="12345678"
+                                maxLength={8}
+                                {...field}
+                                value={field.value || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                  field.onChange(value);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={bankForm.control}
+                        name="bank_sort_code"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sort Code</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="XX-XX-XX"
+                                maxLength={8}
+                                {...field}
+                                value={field.value || ''}
+                                onChange={(e) => {
+                                  const formatted = formatSortCode(e.target.value);
+                                  field.onChange(formatted);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+                      <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground">
+                        Bank details are stored securely and used during payroll processing.
+                      </p>
+                    </div>
 
                     <div className="flex justify-end pt-4">
                       <Button 

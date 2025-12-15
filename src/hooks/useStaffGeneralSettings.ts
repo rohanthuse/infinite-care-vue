@@ -12,6 +12,9 @@ export interface StaffGeneralSettings {
   contract_type: string | null;
   salary_frequency: string | null;
   bank_name: string | null;
+  bank_account_name: string | null;
+  bank_account_number: string | null;
+  bank_sort_code: string | null;
 }
 
 export const useStaffGeneralSettings = (staffId: string) => {
@@ -31,7 +34,10 @@ export const useStaffGeneralSettings = (staffId: string) => {
           status,
           contract_type,
           salary_frequency,
-          bank_name
+          bank_name,
+          bank_account_name,
+          bank_account_number,
+          bank_sort_code
         `)
         .eq('id', staffId)
         .maybeSingle();
@@ -51,6 +57,9 @@ export interface UpdateStaffGeneralSettingsData {
   contract_type?: string | null;
   salary_frequency?: string | null;
   bank_name?: string | null;
+  bank_account_name?: string | null;
+  bank_account_number?: string | null;
+  bank_sort_code?: string | null;
 }
 
 export const useUpdateStaffGeneralSettings = () => {
