@@ -28,6 +28,7 @@ import CarerAgreements from "@/pages/carer/CarerAgreements";
 import CarerMyTasks from "@/pages/carer/CarerMyTasks";
 import CarerEventsLogs from "@/pages/carer/CarerEventsLogs";
 import { CarerReportsTab } from "@/components/carer/CarerReportsTab";
+import { ServiceReportsErrorBoundary } from "@/components/service-reports/ServiceReportsErrorBoundary";
 import React from "react";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { CarerSidebarProvider } from "@/components/carer/CarerSidebarProvider";
@@ -236,7 +237,7 @@ const CarerRoutes = () => [
     <Route path="events-logs" element={<CarerEventsLogs />} />
     <Route path="news2" element={<CarerNews2 />} />
     <Route path="reports" element={<CarerReports />} />
-    <Route path="service-reports" element={<CarerReportsTab />} />
+    <Route path="service-reports" element={<ServiceReportsErrorBoundary><CarerReportsTab /></ServiceReportsErrorBoundary>} />
     <Route path="payments" element={<CarerPayments />} />
     <Route path="training" element={<CarerTraining />} />
     <Route path="clients" element={<CarerClients />} />
