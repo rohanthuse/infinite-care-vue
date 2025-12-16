@@ -24,6 +24,7 @@ import type { BulkGenerationProgress, BulkGenerationResult } from '@/hooks/useBu
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { useBranchInfo } from '@/hooks/useBranchInfo';
+import { useClientServicePayer, getServicePayerConfig, type ServicePayerConfig } from '@/hooks/useClientServicePayer';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePDF } from '@/utils/invoicePdfGenerator';
@@ -56,13 +57,22 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [isInvoicePeriodOpen, setIsInvoicePeriodOpen] = useState(false);
   const [selectedInvoicePeriod, setSelectedInvoicePeriod] = useState<PeriodDetails | null>(null);
   
-  // Send to Client state
+  // Send to Client state - expanded to hold full validation data
   const [sendToClientDialogOpen, setSendToClientDialogOpen] = useState(false);
   const [selectedInvoiceForSend, setSelectedInvoiceForSend] = useState<{
     id: string;
     invoiceNumber: string;
     isResend: boolean;
+    clientId: string;
+    clientName: string;
+    billToType: 'private' | 'authority' | null;
   } | null>(null);
+
+  // Fetch service payer config for the selected invoice's client
+  const { data: servicePayerData } = useClientServicePayer(selectedInvoiceForSend?.clientId || '');
+  const servicePayerConfig: ServicePayerConfig | null = servicePayerData 
+    ? getServicePayerConfig(servicePayerData.service_payer) 
+    : null;
   
   // Bulk generation states
   const [showBulkPreview, setShowBulkPreview] = useState(false);
@@ -452,10 +462,42 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     }
   };
 
-  // Handler for sending invoice to client portal
-  const handleSendToClient = (invoiceId: string, invoiceNumber: string, isResend: boolean) => {
-    setSelectedInvoiceForSend({ id: invoiceId, invoiceNumber, isResend });
-    setSendToClientDialogOpen(true);
+  // Handler for sending invoice to client portal - fetch full invoice data
+  const handleSendToClient = async (invoiceId: string, invoiceNumber: string, isResend: boolean) => {
+    try {
+      // Fetch invoice with client details
+      const { data: invoice, error } = await supabase
+        .from('client_billing')
+        .select(`
+          id,
+          invoice_number,
+          client_id,
+          bill_to_type,
+          clients!inner(first_name, last_name, preferred_name)
+        `)
+        .eq('id', invoiceId)
+        .single();
+
+      if (error) throw error;
+
+      const client = invoice.clients as { first_name?: string; last_name?: string; preferred_name?: string } | null;
+      const clientName = client 
+        ? `${client.preferred_name || client.first_name || ''} ${client.last_name || ''}`.trim() 
+        : 'Unknown Client';
+
+      setSelectedInvoiceForSend({
+        id: invoice.id,
+        invoiceNumber: invoice.invoice_number || invoiceNumber,
+        isResend,
+        clientId: invoice.client_id,
+        clientName,
+        billToType: invoice.bill_to_type as 'private' | 'authority' | null,
+      });
+      setSendToClientDialogOpen(true);
+    } catch (error) {
+      console.error('Error loading invoice for send:', error);
+      toast.error('Failed to load invoice details');
+    }
   };
 
   // Confirm sending invoice to client
@@ -697,6 +739,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         isLoading={sendInvoiceToClient.isPending}
         invoiceNumber={selectedInvoiceForSend?.invoiceNumber}
         isResend={selectedInvoiceForSend?.isResend}
+        clientName={selectedInvoiceForSend?.clientName}
+        clientId={selectedInvoiceForSend?.clientId}
+        billToType={selectedInvoiceForSend?.billToType}
+        servicePayerConfig={servicePayerConfig}
       />
 
       {/* Client Selection Modal for Invoice Creation */}
