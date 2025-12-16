@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
@@ -6,11 +6,12 @@ import { useCarerBookings } from '@/hooks/useCarerBookings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CreateServiceReportDialog } from '../service-reports/CreateServiceReportDialog';
 import { ViewServiceReportDialog } from '../service-reports/ViewServiceReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, Clock, CheckCircle, AlertTriangle, XCircle, Edit, Eye, Calendar, User, ClipboardList, RefreshCw } from 'lucide-react';
+import { FileText, Plus, Clock, CheckCircle, AlertTriangle, XCircle, Edit, Eye, Calendar, User, ClipboardList, RefreshCw, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 export function CarerReportsTab() {
@@ -40,6 +41,7 @@ export function CarerReportsTab() {
   const [selectedBookingForReport, setSelectedBookingForReport] = useState<any>(null);
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
   const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
+  const [pastSearchQuery, setPastSearchQuery] = useState('');
 
   // Fetch visit record ID when a booking is selected for report
   // ✅ This useEffect is now at the TOP, before any conditional returns
@@ -147,6 +149,35 @@ export function CarerReportsTab() {
       report: report // Include the full report object
     };
   });
+
+  // Filter past appointments based on search query
+  const filteredPastAppointments = useMemo(() => {
+    if (!pastSearchQuery.trim()) {
+      return pastAppointmentsWithReportStatus;
+    }
+    
+    const query = pastSearchQuery.toLowerCase().trim();
+    
+    return pastAppointmentsWithReportStatus.filter(booking => {
+      // Search by Booking ID
+      const bookingIdMatch = booking.id.toLowerCase().includes(query);
+      
+      // Search by Client Name
+      const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
+      const clientMatch = clientName.includes(query);
+      
+      // Search by Service Name
+      const serviceMatch = (booking.service_name || '').toLowerCase().includes(query);
+      
+      // Search by Date (multiple formats for flexibility)
+      const startTime = new Date(booking.start_time);
+      const dateFormatted = format(startTime, 'MMM dd, yyyy').toLowerCase();
+      const dateISO = format(startTime, 'yyyy-MM-dd');
+      const dateMatch = dateFormatted.includes(query) || dateISO.includes(query);
+      
+      return bookingIdMatch || clientMatch || serviceMatch || dateMatch;
+    });
+  }, [pastAppointmentsWithReportStatus, pastSearchQuery]);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -290,13 +321,59 @@ export function CarerReportsTab() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {allBookingsLoading ? <div className="flex items-center justify-center p-8">
+              {/* Search Bar */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by booking ID, client name, service, or date..."
+                    value={pastSearchQuery}
+                    onChange={(e) => setPastSearchQuery(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  {pastSearchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setPastSearchQuery('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {pastSearchQuery && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing {filteredPastAppointments.length} of {pastAppointments.length} appointments
+                  </p>
+                )}
+              </div>
+
+              {allBookingsLoading ? (
+                <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div> : pastAppointments.length === 0 ? <div className="text-center text-muted-foreground py-8">
+                </div>
+              ) : pastAppointments.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                   <p className="text-lg font-medium">No past appointments</p>
                   <p className="text-sm">Your completed appointments will appear here.</p>
-                </div> : <div className="rounded-md border">
+                </div>
+              ) : filteredPastAppointments.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <Search className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-lg font-medium">No results found</p>
+                  <p className="text-sm">No appointments match "{pastSearchQuery}"</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => setPastSearchQuery('')}
+                  >
+                    Clear Search
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -312,11 +389,14 @@ export function CarerReportsTab() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pastAppointmentsWithReportStatus.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()).map(booking => {
-                    const startTime = new Date(booking.start_time);
-                    const endTime = new Date(booking.end_time);
-                    const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
-                    return <TableRow key={booking.id}>
+                      {filteredPastAppointments
+                        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+                        .map(booking => {
+                          const startTime = new Date(booking.start_time);
+                          const endTime = new Date(booking.end_time);
+                          const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                          return (
+                            <TableRow key={booking.id}>
                               <TableCell className="font-mono text-xs">
                                 #{booking.id.slice(0, 8)}
                               </TableCell>
@@ -354,38 +434,50 @@ export function CarerReportsTab() {
                               </TableCell>
                               <TableCell>
                                 {booking.has_report && booking.report ? (() => {
-                          const status = booking.report.status;
-                          switch (status) {
-                            case 'pending':
-                              return <Badge variant="secondary" className="text-xs">
-                                            <Clock className="h-3 w-3 mr-1" />
-                                            Pending Review
-                                          </Badge>;
-                            case 'approved':
-                              return <Badge variant="success" className="text-xs">
-                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                            Approved
-                                          </Badge>;
-                            case 'rejected':
-                              return <Badge variant="destructive" className="text-xs">
-                                            <XCircle className="h-3 w-3 mr-1" />
-                                            Rejected
-                                          </Badge>;
-                            case 'requires_revision':
-                              return <Badge variant="warning" className="text-xs">
-                                            <AlertTriangle className="h-3 w-3 mr-1" />
-                                            Needs Revision
-                                          </Badge>;
-                            default:
-                              return <Badge variant="outline" className="text-xs">
-                                            <ClipboardList className="h-3 w-3 mr-1" />
-                                            Incomplete
-                                          </Badge>;
-                          }
-                        })() : <Badge variant="warning" className="text-xs">
+                                  const status = booking.report.status;
+                                  switch (status) {
+                                    case 'pending':
+                                      return (
+                                        <Badge variant="secondary" className="text-xs">
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          Pending Review
+                                        </Badge>
+                                      );
+                                    case 'approved':
+                                      return (
+                                        <Badge variant="success" className="text-xs">
+                                          <CheckCircle className="h-3 w-3 mr-1" />
+                                          Approved
+                                        </Badge>
+                                      );
+                                    case 'rejected':
+                                      return (
+                                        <Badge variant="destructive" className="text-xs">
+                                          <XCircle className="h-3 w-3 mr-1" />
+                                          Rejected
+                                        </Badge>
+                                      );
+                                    case 'requires_revision':
+                                      return (
+                                        <Badge variant="warning" className="text-xs">
+                                          <AlertTriangle className="h-3 w-3 mr-1" />
+                                          Needs Revision
+                                        </Badge>
+                                      );
+                                    default:
+                                      return (
+                                        <Badge variant="outline" className="text-xs">
+                                          <ClipboardList className="h-3 w-3 mr-1" />
+                                          Incomplete
+                                        </Badge>
+                                      );
+                                  }
+                                })() : (
+                                  <Badge variant="warning" className="text-xs">
                                     <AlertTriangle className="h-3 w-3 mr-1" />
                                     Needs Report
-                                  </Badge>}
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell className="text-right">
                                 {!booking.has_report ? (
@@ -436,11 +528,13 @@ export function CarerReportsTab() {
                                   <span className="text-sm text-muted-foreground">—</span>
                                 )}
                               </TableCell>
-                            </TableRow>;
-                  })}
+                            </TableRow>
+                          );
+                        })}
                     </TableBody>
                   </Table>
-                </div>}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
