@@ -650,6 +650,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         open={isViewInvoiceOpen}
         onOpenChange={setIsViewInvoiceOpen}
         invoice={selectedInvoiceForView}
+        onEditInvoice={handleEditInvoice}
       />
 
       {/* View Payment Dialog */}

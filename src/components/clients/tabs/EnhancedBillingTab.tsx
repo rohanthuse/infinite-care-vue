@@ -446,6 +446,11 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
         invoice={selectedInvoice}
+        onEditInvoice={() => {
+          if (selectedInvoice) {
+            handleEditInvoice(selectedInvoice);
+          }
+        }}
       />
     </div>
   );

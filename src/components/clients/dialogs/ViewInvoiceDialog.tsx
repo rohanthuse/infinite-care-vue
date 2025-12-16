@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, Download, Loader2, FileText, Receipt, Timer } from "lucide-react";
+import { Eye, Download, Loader2, FileText, Receipt, Timer, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ interface ViewInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoice: EnhancedClientBilling | null;
+  onEditInvoice?: (invoiceId: string) => void;
 }
 
 const formatDateSafe = (dateValue: any): string => {
@@ -43,7 +44,7 @@ const formatDateSafe = (dateValue: any): string => {
   }
 };
 
-export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
+export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }: ViewInvoiceDialogProps) {
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
   const [isDownloading, setIsDownloading] = useState(false);
   const [showLedgerView, setShowLedgerView] = useState(false);
@@ -265,6 +266,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
+              {/* Edit Invoice button - only for editable statuses and not locked */}
+              {onEditInvoice && 
+               !invoice.is_locked && 
+               ['draft', 'ready_to_charge', 'pending'].includes(invoice.status) && (
+                <Button
+                  onClick={() => {
+                    onOpenChange(false);
+                    onEditInvoice(invoice.id);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Invoice
+                </Button>
+              )}
               {isLedgerInvoice && (
                 <Button
                   onClick={() => setShowLedgerView(true)}
