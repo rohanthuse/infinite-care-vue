@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { usePayrollRecords, useCreatePayrollRecord, useDeletePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
+import { useUserRoleCheck } from "@/hooks/useUserRoleCheck";
 import PayrollTable from "./PayrollTable";
 import AddPayrollDialog from "./AddPayrollDialog";
 import ViewPayrollDialog from "./ViewPayrollDialog";
@@ -46,6 +47,10 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   const { data: payrollRecords = [], isLoading, error } = usePayrollRecords(branchId);
   const createPayrollMutation = useCreatePayrollRecord();
   const deletePayrollMutation = useDeletePayrollRecord();
+  const { data: roleInfo } = useUserRoleCheck();
+  
+  // Permission checks based on user role
+  const isAdmin = roleInfo?.isSuperAdmin || roleInfo?.isBranchAdmin;
 
   const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -502,6 +507,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           onDeleteRecord={handleDeleteClick}
           onShareRecord={handleShareRecord}
           onDownloadPayslip={handleDownloadPayslip}
+          canEdit={isAdmin}
+          canDelete={isAdmin}
         />
       ) : (
         <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">

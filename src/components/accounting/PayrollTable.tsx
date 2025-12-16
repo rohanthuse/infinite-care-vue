@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { PayrollRecord } from "@/hooks/useAccountingData";
 import { 
   Table, 
@@ -18,10 +18,17 @@ import {
   XCircle, 
   Clock,
   Share2,
-  Download
+  Download,
+  MoreHorizontal
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PayrollTableProps {
   payrollRecords: PayrollRecord[];
@@ -30,6 +37,8 @@ interface PayrollTableProps {
   onDeleteRecord: (recordId: string) => void;
   onShareRecord?: (record: PayrollRecord) => void;
   onDownloadPayslip?: (record: PayrollRecord) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 const PayrollTable: React.FC<PayrollTableProps> = ({
@@ -39,7 +48,19 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
   onDeleteRecord,
   onShareRecord,
   onDownloadPayslip,
+  canEdit = true,
+  canDelete = true,
 }) => {
+  // Track which dropdown is open to prevent multiple dropdowns
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // Helper to close dropdown before triggering action (prevents UI freeze)
+  const handleDropdownAction = (action: () => void) => {
+    setOpenDropdownId(null);
+    // Use setTimeout to ensure dropdown closes before action executes
+    setTimeout(action, 0);
+  };
+
   // Function to render status badge
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -86,7 +107,7 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
             <TableHead className="text-right">Deductions</TableHead>
             <TableHead className="text-right">Net Pay</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right w-[120px]">Actions</TableHead>
+            <TableHead className="text-right w-[60px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -106,7 +127,7 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
                       : "Unknown Employee"
                     }
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     {record.staff?.email || "N/A"}
                   </div>
                 </TableCell>
@@ -114,14 +135,14 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
                   <div className="text-sm">
                     {new Date(record.pay_period_start).toLocaleDateString()} - {new Date(record.pay_period_end).toLocaleDateString()}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     Payment: {record.payment_date ? new Date(record.payment_date).toLocaleDateString() : "Not set"}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div>{record.regular_hours}</div>
                   {record.overtime_hours > 0 && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       +{record.overtime_hours} OT
                     </div>
                   )}
@@ -129,7 +150,7 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
                 <TableCell className="text-right font-medium">
                   {formatCurrency(record.gross_pay)}
                 </TableCell>
-                <TableCell className="text-right text-red-600">
+                <TableCell className="text-right text-destructive">
                   -{formatCurrency(totalDeductions)}
                 </TableCell>
                 <TableCell className="text-right font-bold">
@@ -137,75 +158,78 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
                 </TableCell>
                 <TableCell>{renderStatusBadge(record.payment_status)}</TableCell>
                 <TableCell>
-                  <TooltipProvider>
-                    <div className="flex justify-end gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onViewRecord(record)}
+                  <div className="flex justify-end">
+                    <DropdownMenu
+                      open={openDropdownId === record.id}
+                      onOpenChange={(open) => setOpenDropdownId(open ? record.id : null)}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          aria-label="Open actions menu"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 bg-popover">
+                        {/* View - Always visible */}
+                        <DropdownMenuItem 
+                          onClick={() => handleDropdownAction(() => onViewRecord(record))}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          <span>View Payroll</span>
+                        </DropdownMenuItem>
+
+                        {/* Edit - Permission based */}
+                        {canEdit && (
+                          <DropdownMenuItem 
+                            onClick={() => handleDropdownAction(() => onEditRecord(record))}
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>View</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onEditRecord(record)}
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Edit Payroll</span>
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuSeparator />
+
+                        {/* Share - If handler provided */}
+                        {onShareRecord && (
+                          <DropdownMenuItem 
+                            onClick={() => handleDropdownAction(() => onShareRecord(record))}
                           >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onShareRecord?.(record)}
+                            <Share2 className="mr-2 h-4 w-4" />
+                            <span>Share Payroll</span>
+                          </DropdownMenuItem>
+                        )}
+
+                        {/* Download - If handler provided */}
+                        {onDownloadPayslip && (
+                          <DropdownMenuItem 
+                            onClick={() => handleDropdownAction(() => onDownloadPayslip(record))}
                           >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Share</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onDownloadPayslip?.(record)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Download PDF</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => onDeleteRecord(record.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TooltipProvider>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Download Payslip</span>
+                          </DropdownMenuItem>
+                        )}
+
+                        {/* Delete - Permission based, destructive styling */}
+                        {canDelete && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDropdownAction(() => onDeleteRecord(record.id))}
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Payroll</span>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             );
