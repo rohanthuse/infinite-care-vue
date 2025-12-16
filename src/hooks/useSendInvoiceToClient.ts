@@ -75,29 +75,68 @@ const createClientInvoiceNotification = async (
 /**
  * Hook to send an invoice to the client portal.
  * Updates sent_date and status to make the invoice visible to the client.
- * Also creates a notification for the client.
+ * Also validates service payer configuration and auto-sets bill_to_type.
  */
 export const useSendInvoiceToClient = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ invoiceId, branchId }: SendInvoiceToClientParams) => {
-      // First check if already sent
+      // Fetch invoice with client's service payer setting
       const { data: existingInvoice, error: checkError } = await supabase
         .from('client_billing')
-        .select('id, sent_date, status, invoice_number, client_id')
+        .select(`
+          id, 
+          sent_date, 
+          status, 
+          invoice_number, 
+          client_id, 
+          bill_to_type
+        `)
         .eq('id', invoiceId)
         .single();
 
       if (checkError) throw checkError;
 
+      // Fetch service payer setting for the client
+      const { data: accountingSettings, error: settingsError } = await supabase
+        .from('client_accounting_settings')
+        .select('service_payer')
+        .eq('client_id', existingInvoice.client_id)
+        .maybeSingle();
+
+      if (settingsError) {
+        console.error('Error fetching accounting settings:', settingsError);
+      }
+
+      const servicePayer = accountingSettings?.service_payer;
+
+      // Validate service payer is configured
+      if (!servicePayer) {
+        throw new Error("Cannot send invoice: 'Who pays for the service' is not configured for this client. Please configure this in Client → General → Accounting Settings.");
+      }
+
+      // Auto-set bill_to_type based on service payer if not already set
+      let billToType = existingInvoice.bill_to_type;
+      if (!billToType) {
+        if (servicePayer === 'self_funder') {
+          billToType = 'private';
+        } else if (servicePayer === 'authorities') {
+          billToType = 'authority';
+        } else {
+          // direct_payment, other - default to private
+          billToType = 'private';
+        }
+      }
+
       // Check if already sent (has sent_date)
       if (existingInvoice.sent_date) {
-        // This is a resend - just update sent_date
+        // This is a resend - just update sent_date and ensure bill_to_type is set
         const { data, error } = await supabase
           .from('client_billing')
           .update({
             sent_date: new Date().toISOString(),
+            bill_to_type: billToType,
           })
           .eq('id', invoiceId)
           .select()
@@ -107,12 +146,13 @@ export const useSendInvoiceToClient = () => {
         return { ...data, isResend: true, client_id: existingInvoice.client_id };
       }
 
-      // First time sending - update status and sent_date
+      // First time sending - update status, sent_date, and bill_to_type
       const { data, error } = await supabase
         .from('client_billing')
         .update({
           sent_date: new Date().toISOString(),
           status: 'sent',
+          bill_to_type: billToType,
         })
         .eq('id', invoiceId)
         .select()
