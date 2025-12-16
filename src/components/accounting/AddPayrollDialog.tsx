@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Zap, AlertTriangle, Info, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Zap, AlertTriangle, Info, ExternalLink, User, PoundSterling, CheckCircle2, Ban, Car } from "lucide-react";
 import { PayrollRecord, useStaffList } from "@/hooks/useAccountingData";
 import { usePayrollBookingIntegration } from "@/hooks/usePayrollBookingIntegration";
 import { useStaffRateSchedules } from "@/hooks/useStaffAccounting";
@@ -34,6 +35,7 @@ const payrollSchema = z.object({
   payment_status: z.enum(["pending", "processed", "failed"]),
   payment_method: z.enum(["bank_transfer", "cash", "cheque", "other"]),
   payment_date: createDateValidation("Payment date"),
+  payment_reference: z.string().optional(),
   notes: z.string().optional(),
 }).refine((data) => {
   const startDate = new Date(data.pay_period_start);
@@ -77,10 +79,65 @@ const paymentMethodLabels = {
   other: "Other"
 };
 
-const paymentStatusLabels = {
+const paymentStatusLabels: Record<string, string> = {
   pending: "Pending",
   processed: "Processed",
   failed: "Failed"
+};
+
+// Parse notes to extract breakdown details (same logic as ViewPayrollDialog)
+const parsePayrollNotes = (notes?: string) => {
+  if (!notes) return null;
+  
+  const breakdown = {
+    completedBookings: 0,
+    cancelledPaidBookings: 0,
+    cancelledPayment: 0,
+    travelPayment: 0,
+    travelType: '',
+    extraTimePayment: 0,
+    extraTimeCount: 0,
+    rateSchedulesApplied: false
+  };
+
+  // Parse bookings: "Bookings: X completed, Y cancelled (paid £Z)"
+  const bookingsMatch = notes.match(/Bookings:\s*(\d+)\s*completed/);
+  if (bookingsMatch) {
+    breakdown.completedBookings = parseInt(bookingsMatch[1]);
+  }
+
+  const cancelledMatch = notes.match(/(\d+)\s*cancelled\s*\(paid\s*£([\d.]+)\)/);
+  if (cancelledMatch) {
+    breakdown.cancelledPaidBookings = parseInt(cancelledMatch[1]);
+    breakdown.cancelledPayment = parseFloat(cancelledMatch[2]);
+  }
+
+  // Parse travel: "Travel: £X (type)"
+  const travelMatch = notes.match(/Travel:\s*£([\d.]+)\s*\(([^)]+)\)/);
+  if (travelMatch) {
+    breakdown.travelPayment = parseFloat(travelMatch[1]);
+    breakdown.travelType = travelMatch[2];
+  }
+
+  // Parse extra time: "Extra Time: £X (Y approved)"
+  const extraTimeMatch = notes.match(/Extra Time:\s*£([\d.]+)\s*\((\d+)\s*approved\)/);
+  if (extraTimeMatch) {
+    breakdown.extraTimePayment = parseFloat(extraTimeMatch[1]);
+    breakdown.extraTimeCount = parseInt(extraTimeMatch[2]);
+  }
+
+  // Check for rate schedules
+  breakdown.rateSchedulesApplied = notes.includes('Rate schedules applied');
+
+  return breakdown;
+};
+
+// Format currency helper
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP'
+  }).format(amount);
 };
 
 const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
@@ -121,6 +178,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
       payment_status: initialData.payment_status as any,
       payment_method: initialData.payment_method as any,
       payment_date: initialData.payment_date || new Date().toISOString().split('T')[0],
+      payment_reference: initialData.payment_reference || "",
       notes: initialData.notes || "",
     } : {
       staff_id: "",
@@ -140,6 +198,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
       payment_status: "pending",
       payment_method: "bank_transfer",
       payment_date: new Date().toISOString().split('T')[0],
+      payment_reference: "",
       notes: "",
     },
   });
@@ -165,6 +224,51 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
     watchedValues.pay_period_end
   );
 
+  // Parse booking breakdown from notes when editing
+  const breakdown = useMemo(() => {
+    if (isEditing && initialData?.notes) {
+      return parsePayrollNotes(initialData.notes);
+    }
+    return null;
+  }, [isEditing, initialData?.notes]);
+
+  // Calculate total deductions
+  const totalDeductions = useMemo(() => {
+    return (
+      (Number(watchedValues.tax_deduction) || 0) +
+      (Number(watchedValues.ni_deduction) || 0) +
+      (Number(watchedValues.pension_deduction) || 0) +
+      (Number(watchedValues.other_deductions) || 0)
+    );
+  }, [watchedValues.tax_deduction, watchedValues.ni_deduction, watchedValues.pension_deduction, watchedValues.other_deductions]);
+
+  // Auto-calculate totals when values change
+  useEffect(() => {
+    const basicSalary = Number(watchedValues.basic_salary) || 0;
+    const overtimePay = Number(watchedValues.overtime_pay) || 0;
+    const bonus = Number(watchedValues.bonus) || 0;
+    
+    const grossPay = basicSalary + overtimePay + bonus;
+    
+    const tax = Number(watchedValues.tax_deduction) || 0;
+    const ni = Number(watchedValues.ni_deduction) || 0;
+    const pension = Number(watchedValues.pension_deduction) || 0;
+    const other = Number(watchedValues.other_deductions) || 0;
+    
+    const totalDed = tax + ni + pension + other;
+    const netPay = grossPay - totalDed;
+    
+    setCalculatedTotals({ grossPay, netPay });
+  }, [
+    watchedValues.basic_salary,
+    watchedValues.overtime_pay,
+    watchedValues.bonus,
+    watchedValues.tax_deduction,
+    watchedValues.ni_deduction,
+    watchedValues.pension_deduction,
+    watchedValues.other_deductions
+  ]);
+
   // Reset form when dialog opens with new data
   useEffect(() => {
     if (open) {
@@ -188,15 +292,16 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
           payment_status: initialData.payment_status as any,
           payment_method: initialData.payment_method as any,
           payment_date: initialData.payment_date || new Date().toISOString().split('T')[0],
+          payment_reference: initialData.payment_reference || "",
           notes: initialData.notes || "",
         };
         reset(formData);
 
         // Calculate totals for existing data
         const grossPay = initialData.basic_salary + initialData.overtime_pay + initialData.bonus;
-        const totalDeductions = initialData.tax_deduction + initialData.ni_deduction + 
+        const totalDed = initialData.tax_deduction + initialData.ni_deduction + 
                                initialData.pension_deduction + initialData.other_deductions;
-        const netPay = grossPay - totalDeductions;
+        const netPay = grossPay - totalDed;
         setCalculatedTotals({ grossPay, netPay });
       } else {
         // Reset form with default values when adding new record
@@ -218,6 +323,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
           payment_status: "pending" as const,
           payment_method: "bank_transfer" as const,
           payment_date: new Date().toISOString().split('T')[0],
+          payment_reference: "",
           notes: "",
         };
         reset(defaultFormData);
@@ -237,24 +343,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
       setValue('overtime_rate', overtimeRate);
     }
   }, [activeRateSchedule, isEditing, setValue]);
-
-  const calculateTotals = () => {
-    const basicSalary = Number(watchedValues.basic_salary) || 0;
-    const overtimePay = Number(watchedValues.overtime_pay) || 0;
-    const bonus = Number(watchedValues.bonus) || 0;
-    
-    const grossPay = basicSalary + overtimePay + bonus;
-    
-    const tax = Number(watchedValues.tax_deduction) || 0;
-    const ni = Number(watchedValues.ni_deduction) || 0;
-    const pension = Number(watchedValues.pension_deduction) || 0;
-    const other = Number(watchedValues.other_deductions) || 0;
-    
-    const totalDeductions = tax + ni + pension + other;
-    const netPay = grossPay - totalDeductions;
-    
-    setCalculatedTotals({ grossPay, netPay });
-  };
 
   // Auto-populate from booking data
   const autoPopulateFromBookings = () => {
@@ -319,50 +407,84 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
     return end ? `${start} - ${end}` : `${start} - Ongoing`;
   };
 
+  // Get employee name for editing header
+  const employeeName = isEditing && initialData?.staff 
+    ? `${initialData.staff.first_name} ${initialData.staff.last_name}`
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Payroll Record" : "Add New Payroll Record"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Employee Information */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-sm">Employee Information</h3>
-            <div className="space-y-2">
-              <Label htmlFor="staff_id">Staff Member *</Label>
-              {isLoadingStaff ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span className="text-sm text-muted-foreground">Loading staff...</span>
+          {/* Employee Context Header (Read-Only when Editing) */}
+          {isEditing && initialData?.staff ? (
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm">Employee</span>
+                  </div>
+                  <div className="font-medium text-lg">{employeeName}</div>
+                  <div className="text-sm text-muted-foreground">{initialData.staff.email || 'N/A'}</div>
+                  <div className="text-xs text-muted-foreground">ID: {initialData.staff_id.slice(0, 8)}...</div>
                 </div>
-              ) : staffList.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-2 bg-muted/50 rounded border">
-                  No active staff members found for this branch
+                <div className="flex flex-col items-end gap-2">
+                  <Badge 
+                    variant={watchedValues.payment_status === 'processed' ? 'default' : 
+                             watchedValues.payment_status === 'failed' ? 'destructive' : 'secondary'}
+                  >
+                    {paymentStatusLabels[watchedValues.payment_status] || watchedValues.payment_status}
+                  </Badge>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Net Pay</div>
+                    <div className="font-bold text-lg">{formatCurrency(calculatedTotals.netPay)}</div>
+                  </div>
                 </div>
-              ) : (
-                <Select 
-                  value={watchedValues.staff_id} 
-                  onValueChange={(value) => setValue("staff_id", value)}
-                >
-                  <SelectTrigger className={errors.staff_id ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Select a staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {staffList.map((staff) => (
-                      <SelectItem key={staff.id} value={staff.id}>
-                        {staff.first_name} {staff.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {errors.staff_id && (
-                <p className="text-sm text-destructive">{errors.staff_id.message}</p>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Employee Selection (Only for New Records) */
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm">Employee Information</h3>
+              <div className="space-y-2">
+                <Label htmlFor="staff_id">Staff Member *</Label>
+                {isLoadingStaff ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading staff...</span>
+                  </div>
+                ) : staffList.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-2 bg-muted/50 rounded border">
+                    No active staff members found for this branch
+                  </div>
+                ) : (
+                  <Select 
+                    value={watchedValues.staff_id} 
+                    onValueChange={(value) => setValue("staff_id", value)}
+                  >
+                    <SelectTrigger className={errors.staff_id ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Select a staff member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staffList.map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.first_name} {staff.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {errors.staff_id && (
+                  <p className="text-sm text-destructive">{errors.staff_id.message}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Rate Schedule Info Banner - Show after staff selection */}
           {watchedValues.staff_id && !isLoadingRates && (
@@ -473,8 +595,88 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
+          {/* Booking Breakdown (Read-Only when Editing) */}
+          {isEditing && breakdown && (breakdown.completedBookings > 0 || breakdown.cancelledPaidBookings > 0 || breakdown.travelPayment > 0 || breakdown.extraTimePayment > 0) && (
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-medium text-sm flex items-center gap-2">
+                <PoundSterling className="h-4 w-4" />
+                Booking Breakdown
+                <Badge variant="secondary" className="text-xs">Read-only</Badge>
+              </h3>
+              <div className="bg-muted/30 p-4 rounded-lg border space-y-3">
+                {/* Rate Schedule Indicator */}
+                <div className="flex items-center gap-2 mb-3">
+                  {breakdown.rateSchedulesApplied ? (
+                    <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50 dark:bg-green-900/20">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Staff rate schedules applied
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-900/20">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Default rates used
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Completed Bookings */}
+                {breakdown.completedBookings > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Completed Bookings
+                    </span>
+                    <span className="font-medium">{breakdown.completedBookings} bookings</span>
+                  </div>
+                )}
+
+                {/* Cancelled Bookings (Paid) */}
+                {breakdown.cancelledPaidBookings > 0 && (
+                  <div className="flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                    <span className="text-sm flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                      <Ban className="h-4 w-4" />
+                      Cancelled Bookings (Staff Payable)
+                    </span>
+                    <div className="text-right">
+                      <span className="font-medium text-amber-800 dark:text-amber-200">{breakdown.cancelledPaidBookings} bookings</span>
+                      <span className="text-amber-700 dark:text-amber-300 ml-2">({formatCurrency(breakdown.cancelledPayment)})</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Travel Reimbursement */}
+                {breakdown.travelPayment > 0 && (
+                  <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                    <span className="text-sm flex items-center gap-2 text-green-800 dark:text-green-200">
+                      <Car className="h-4 w-4" />
+                      Travel Reimbursement
+                      <Badge variant="outline" className="text-xs border-green-300 text-green-700 dark:text-green-300">
+                        {breakdown.travelType}
+                      </Badge>
+                    </span>
+                    <span className="font-medium text-green-800 dark:text-green-200">{formatCurrency(breakdown.travelPayment)}</span>
+                  </div>
+                )}
+
+                {/* Extra Time Payment */}
+                {breakdown.extraTimePayment > 0 && (
+                  <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                    <span className="text-sm flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                      <Clock className="h-4 w-4" />
+                      Approved Extra Time
+                    </span>
+                    <div className="text-right">
+                      <span className="font-medium text-blue-800 dark:text-blue-200">{breakdown.extraTimeCount} records</span>
+                      <span className="text-blue-700 dark:text-blue-300 ml-2">({formatCurrency(breakdown.extraTimePayment)})</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Auto-populate from bookings */}
-          {calculationData && calculationData.bookings.length > 0 && (
+          {calculationData && calculationData.bookings.length > 0 && !isEditing && (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -557,6 +759,26 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                 {errors.hourly_rate && (
                   <p className="text-sm text-destructive">{errors.hourly_rate.message}</p>
                 )}
+              </div>
+              {/* Overtime Rate Field */}
+              <div className="space-y-2">
+                <Label htmlFor="overtime_rate">
+                  Overtime Rate (£)
+                  {hasActiveRateSchedule && (
+                    <span className="ml-1 text-xs text-muted-foreground font-normal">
+                      ({activeRateSchedule?.overtime_multiplier || 1.5}x)
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="overtime_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register("overtime_rate", { valueAsNumber: true })}
+                  className={hasActiveRateSchedule ? "bg-muted/50" : ""}
+                  readOnly={hasActiveRateSchedule && !isEditing}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="basic_salary">Basic Salary (£) *</Label>
@@ -663,11 +885,20 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                 )}
               </div>
             </div>
+            {/* Total Deductions Display */}
+            <div className="md:col-span-4 pt-2 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Total Deductions</span>
+                <span className="font-bold text-destructive">
+                  -{formatCurrency(totalDeductions)}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Payment Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="payment_method">Payment Method *</Label>
                 <Select 
@@ -706,6 +937,15 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                   <p className="text-sm text-destructive">{errors.payment_status.message}</p>
                 )}
               </div>
+              {/* Payment Reference Field */}
+              <div className="space-y-2">
+                <Label htmlFor="payment_reference">Payment Reference</Label>
+                <Input
+                  id="payment_reference"
+                  placeholder="e.g. TXN-123456"
+                  {...register("payment_reference")}
+                />
+              </div>
             </div>
           </div>
 
@@ -720,37 +960,25 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="gap-2"
-              onClick={calculateTotals}
-            >
-              Calculate Totals
-            </Button>
-          </div>
-
-          {(calculatedTotals.grossPay > 0 || calculatedTotals.netPay > 0) && (
-            <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-md">
-              <div className="text-center">
-                <span className="text-sm text-muted-foreground">Gross Pay:</span>
-                <div className="text-lg font-bold">
-                  £{calculatedTotals.grossPay.toFixed(2)}
-                </div>
-              </div>
-              <div className="text-center">
-                <span className="text-sm text-muted-foreground">Net Pay:</span>
-                <div className="text-lg font-bold">
-                  £{calculatedTotals.netPay.toFixed(2)}
-                </div>
+          {/* Summary Section - Always visible with auto-calculated values */}
+          <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg border">
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">Gross Pay</span>
+              <div className="text-xl font-bold text-foreground">
+                {formatCurrency(calculatedTotals.grossPay)}
               </div>
             </div>
-          )}
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">Net Pay</span>
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(calculatedTotals.netPay)}
+              </div>
+            </div>
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting || staffList.length === 0}>
+            <Button type="submit" disabled={isSubmitting || (!isEditing && staffList.length === 0)}>
               {isSubmitting ? 'Saving...' : isEditing ? "Save Changes" : "Add Payroll Record"}
             </Button>
           </DialogFooter>
