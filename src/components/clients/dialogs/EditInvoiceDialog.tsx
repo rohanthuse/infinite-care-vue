@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Edit, AlertTriangle, Lock, Save, RefreshCw } from "lucide-react";
+import { Edit, AlertTriangle, Lock, Save, RefreshCw, CreditCard } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { EnhancedClientBilling, useUpdateInvoice } from "@/hooks/useEnhancedClientBilling";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
@@ -31,6 +32,20 @@ import { EditableCancelledBookingsSection } from "./EditableCancelledBookingsSec
 import { InvoiceTotalSummary } from "./InvoiceTotalSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format, parseISO, isValid } from "date-fns";
+import { formatCurrency } from "@/utils/currencyFormatter";
+
+// Helper function for safe date formatting
+const formatDateSafe = (dateValue: any): string => {
+  if (!dateValue) return "N/A";
+  try {
+    const date = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+    if (!isValid(date)) return "N/A";
+    return format(date, 'dd/MM/yyyy');
+  } catch {
+    return "N/A";
+  }
+};
 
 interface EditInvoiceDialogProps {
   open: boolean;
@@ -45,6 +60,8 @@ interface InvoiceFormData {
   tax_percentage: number;
   notes: string;
   status: string;
+  service_provided_date: string;
+  bill_to_type: string;
 }
 
 export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDialogProps) {
@@ -111,6 +128,8 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
       setValue('tax_percentage', invoice.tax_amount || 0);
       setValue('notes', invoice.notes || '');
       setValue('status', invoice.status);
+      setValue('service_provided_date', invoice.service_provided_date || '');
+      setValue('bill_to_type', invoice.bill_to_type || 'private');
 
       // Set line items
       const items: EditableLineItem[] = invoice.line_items?.map(item => ({
@@ -196,6 +215,8 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
           tax_amount: data.tax_percentage,
           notes: data.notes,
           status: data.status,
+          service_provided_date: data.service_provided_date || null,
+          bill_to_type: data.bill_to_type,
           total_amount: newTotal,
           net_amount: newSubtotal,
           vat_amount: vatAmount,
@@ -266,7 +287,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl max-h-[95vh] p-0 gap-0">
+      <DialogContent className="sm:max-w-5xl max-h-[95vh] p-0 gap-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div>
@@ -292,8 +313,8 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 max-h-[calc(95vh-180px)]">
-          <div className="px-6 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 py-4 space-y-6 max-h-[calc(95vh-200px)]">
             {/* Read-only Warning */}
             {isReadOnly && (
               <Alert variant="destructive">
@@ -406,6 +427,59 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
                     disabled={isReadOnly}
                   />
                 </div>
+
+                {/* Service Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="service_provided_date">Service Date</Label>
+                  <Input
+                    id="service_provided_date"
+                    type="date"
+                    {...register('service_provided_date')}
+                    disabled={isReadOnly}
+                  />
+                </div>
+
+                {/* Paid Date - Read-only */}
+                {invoice.paid_date && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Paid Date</Label>
+                    <Input 
+                      value={formatDateSafe(invoice.paid_date)} 
+                      disabled 
+                      className="bg-muted" 
+                    />
+                  </div>
+                )}
+
+                {/* Booked Time - Read-only */}
+                {invoice.booked_time_minutes && invoice.booked_time_minutes > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Booked Time</Label>
+                    <Input 
+                      value={`${Math.floor(invoice.booked_time_minutes / 60)}h ${invoice.booked_time_minutes % 60}m`} 
+                      disabled 
+                      className="bg-muted" 
+                    />
+                  </div>
+                )}
+
+                {/* Bill-to Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="bill_to_type">Bill To</Label>
+                  <Select
+                    value={watch('bill_to_type') || 'private'}
+                    onValueChange={(value) => setValue('bill_to_type', value)}
+                    disabled={isReadOnly || isSent}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select billing type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private">Client (Private)</SelectItem>
+                      <SelectItem value="authority">Authority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -465,9 +539,45 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
               vatPercentage={watch('tax_percentage') || 0}
             />
 
-            <Separator />
+            {/* Payment History Section - Read Only */}
+            {invoice.payment_records && invoice.payment_records.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-base font-semibold flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-green-600" />
+                    Payment History
+                    <Badge variant="secondary" className="text-xs">Read-only</Badge>
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Reference</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoice.payment_records.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell>{formatDateSafe(payment.payment_date)}</TableCell>
+                          <TableCell className="capitalize">
+                            {payment.payment_method?.replace('_', ' ') || 'N/A'}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(payment.payment_amount || 0)}
+                          </TableCell>
+                          <TableCell>{payment.payment_reference || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
 
-            {/* Notes Section */}
+            <Separator />
             <div className="space-y-4">
               <h3 className="text-base font-semibold">Notes</h3>
               <div className="space-y-2">
@@ -482,7 +592,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="px-6 py-4 border-t bg-muted/30">
           <div className="flex items-center justify-between w-full">
