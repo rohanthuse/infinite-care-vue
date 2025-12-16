@@ -429,9 +429,22 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pay Method</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Select payment method" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="direct_debit">Direct Debit</SelectItem>
+                        <SelectItem value="bacs">BACS</SelectItem>
+                        <SelectItem value="faster_payment">Faster Payment</SelectItem>
+                        <SelectItem value="card">Card</SelectItem>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="cheque">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

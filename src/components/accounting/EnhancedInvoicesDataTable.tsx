@@ -35,6 +35,17 @@ interface EnhancedInvoicesDataTableProps {
   onExportInvoice?: (invoiceId: string) => void;
   onDeleteInvoice?: (invoiceId: string) => void;
 }
+// Pay method labels for display
+const payMethodLabels: Record<string, string> = {
+  'bank_transfer': 'Bank Transfer',
+  'direct_debit': 'Direct Debit',
+  'bacs': 'BACS',
+  'faster_payment': 'Faster Payment',
+  'card': 'Card',
+  'cash': 'Cash',
+  'cheque': 'Cheque'
+};
+
 const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   branchId,
   branchName,
@@ -332,6 +343,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                   <ArrowUpDown className="h-4 w-4" />
                 </div>
               </TableHead>
+              <TableHead className="min-w-[100px]">Bill To</TableHead>
               <TableHead className="min-w-[120px]">Pay Method</TableHead>
               <TableHead className="text-center w-[60px]">Actions</TableHead>
             </TableRow>
@@ -390,9 +402,22 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                       </div>}
                   </TableCell>
                   <TableCell>
-                    {invoice.pay_method ? <span className="capitalize">
-                        {invoice.pay_method.replace('_', ' ')}
-                      </span> : <span className="text-muted-foreground">-</span>}
+                    {invoice.bill_to_type ? (
+                      <Badge variant={invoice.bill_to_type === 'authority' ? 'default' : 'secondary'}>
+                        {invoice.bill_to_type === 'authority' ? 'Authority' : 'Client'}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {invoice.pay_method ? (
+                      <span className="capitalize">
+                        {payMethodLabels[invoice.pay_method] || invoice.pay_method.replace(/_/g, ' ')}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center">
