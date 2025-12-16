@@ -134,10 +134,18 @@ export function CarerReportsTab() {
   const rejectedReports = reports.filter(r => r.status === 'rejected');
   const revisionReports = reports.filter(r => r.status === 'requires_revision');
 
-  // Filter past appointments (completed or done status, before current time)
+  // Filter past appointments (completed or done status, before current time) with defensive null checks
   const pastAppointments = allBookings.filter(booking => {
-    const startTime = new Date(booking.start_time);
-    return (booking.status === 'done' || booking.status === 'completed') && startTime < new Date();
+    if (!booking.start_time) return false;
+    try {
+      const startTime = new Date(booking.start_time);
+      return !isNaN(startTime.getTime()) && 
+             (booking.status === 'done' || booking.status === 'completed') && 
+             startTime < new Date();
+    } catch (e) {
+      console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
+      return false;
+    }
   });
 
   // Cross-reference with reports to get full report status
@@ -150,7 +158,7 @@ export function CarerReportsTab() {
     };
   });
 
-  // Filter past appointments based on search query
+  // Filter past appointments based on search query with defensive null checks
   const filteredPastAppointments = useMemo(() => {
     if (!pastSearchQuery.trim()) {
       return pastAppointmentsWithReportStatus;
@@ -159,23 +167,37 @@ export function CarerReportsTab() {
     const query = pastSearchQuery.toLowerCase().trim();
     
     return pastAppointmentsWithReportStatus.filter(booking => {
-      // Search by Booking ID
-      const bookingIdMatch = booking.id.toLowerCase().includes(query);
-      
-      // Search by Client Name
-      const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
-      const clientMatch = clientName.includes(query);
-      
-      // Search by Service Name
-      const serviceMatch = (booking.service_name || '').toLowerCase().includes(query);
-      
-      // Search by Date (multiple formats for flexibility)
-      const startTime = new Date(booking.start_time);
-      const dateFormatted = format(startTime, 'MMM dd, yyyy').toLowerCase();
-      const dateISO = format(startTime, 'yyyy-MM-dd');
-      const dateMatch = dateFormatted.includes(query) || dateISO.includes(query);
-      
-      return bookingIdMatch || clientMatch || serviceMatch || dateMatch;
+      try {
+        // Search by Booking ID
+        const bookingIdMatch = (booking.id || '').toLowerCase().includes(query);
+        
+        // Search by Client Name
+        const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
+        const clientMatch = clientName.includes(query);
+        
+        // Search by Service Name
+        const serviceMatch = (booking.service_name || '').toLowerCase().includes(query);
+        
+        // Search by Date (with null check for start_time)
+        let dateMatch = false;
+        if (booking.start_time) {
+          try {
+            const startTime = new Date(booking.start_time);
+            if (!isNaN(startTime.getTime())) {
+              const dateFormatted = format(startTime, 'MMM dd, yyyy').toLowerCase();
+              const dateISO = format(startTime, 'yyyy-MM-dd');
+              dateMatch = dateFormatted.includes(query) || dateISO.includes(query);
+            }
+          } catch (dateError) {
+            console.warn('[CarerReportsTab] Date parsing error for booking:', booking.id, dateError);
+          }
+        }
+        
+        return bookingIdMatch || clientMatch || serviceMatch || dateMatch;
+      } catch (filterError) {
+        console.error('[CarerReportsTab] Filter error for booking:', booking.id, filterError);
+        return false;
+      }
     });
   }, [pastAppointmentsWithReportStatus, pastSearchQuery]);
   const getStatusColor = (status: string) => {
