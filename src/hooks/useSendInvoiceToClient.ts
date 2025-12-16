@@ -91,14 +91,15 @@ export const useSendInvoiceToClient = () => {
           status, 
           invoice_number, 
           client_id, 
-          bill_to_type
+          bill_to_type,
+          authority_id
         `)
         .eq('id', invoiceId)
         .single();
 
       if (checkError) throw checkError;
 
-      // Fetch service payer setting for the client
+      // Fetch service payer setting and authority_id for the client
       const { data: accountingSettings, error: settingsError } = await supabase
         .from('client_accounting_settings')
         .select('service_payer')
@@ -109,6 +110,17 @@ export const useSendInvoiceToClient = () => {
         console.error('Error fetching accounting settings:', settingsError);
       }
 
+      // Fetch client's authority_id
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('authority_id')
+        .eq('id', existingInvoice.client_id)
+        .single();
+
+      if (clientError) {
+        console.error('Error fetching client data:', clientError);
+      }
+
       const servicePayer = accountingSettings?.service_payer;
 
       // Validate service payer is configured
@@ -116,17 +128,20 @@ export const useSendInvoiceToClient = () => {
         throw new Error("Cannot send invoice: 'Who pays for the service' is not configured for this client. Please configure this in Client → General → Accounting Settings.");
       }
 
-      // Auto-set bill_to_type based on service payer if not already set
+      // Force-correct bill_to_type based on service payer (never allow mismatch for locked types)
       let billToType = existingInvoice.bill_to_type;
-      if (!billToType) {
-        if (servicePayer === 'self_funder') {
-          billToType = 'private';
-        } else if (servicePayer === 'authorities') {
-          billToType = 'authority';
-        } else {
-          // direct_payment, other - default to private
-          billToType = 'private';
+      if (servicePayer === 'self_funder') {
+        billToType = 'private'; // Force private for self-funder
+      } else if (servicePayer === 'authorities') {
+        billToType = 'authority'; // Force authority for authorities payer
+        
+        // Validate authority_id exists
+        if (!existingInvoice.authority_id && !clientData?.authority_id) {
+          throw new Error("Cannot send invoice: Client is configured for Authority billing but no Authority is selected. Please configure this in Client → General Settings → Funding Configuration.");
         }
+      } else if (!billToType) {
+        // direct_payment, other - default to private if not set
+        billToType = 'private';
       }
 
       // Check if already sent (has sent_date)

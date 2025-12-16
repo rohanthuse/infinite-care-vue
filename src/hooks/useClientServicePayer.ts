@@ -9,6 +9,7 @@ export interface ServicePayerConfig {
   showBillToSelector: boolean;
   requireAuthority: boolean;
   canProceed: boolean;
+  isLocked: boolean;
   errorMessage?: string;
 }
 
@@ -27,15 +28,17 @@ export const getServicePayerConfig = (servicePayer: ServicePayerType): ServicePa
         defaultBillTo: 'private',
         showBillToSelector: false,
         requireAuthority: false,
-        canProceed: true
+        canProceed: true,
+        isLocked: true
       };
     case 'authorities':
       return {
         servicePayer,
         defaultBillTo: 'authority',
-        showBillToSelector: true,
+        showBillToSelector: false,
         requireAuthority: true,
-        canProceed: true
+        canProceed: true,
+        isLocked: true
       };
     case 'direct_payment':
       return {
@@ -43,7 +46,8 @@ export const getServicePayerConfig = (servicePayer: ServicePayerType): ServicePa
         defaultBillTo: 'private',
         showBillToSelector: true,
         requireAuthority: false,
-        canProceed: true
+        canProceed: true,
+        isLocked: false
       };
     case 'other':
       return {
@@ -51,7 +55,8 @@ export const getServicePayerConfig = (servicePayer: ServicePayerType): ServicePa
         defaultBillTo: null,
         showBillToSelector: true,
         requireAuthority: false,
-        canProceed: true
+        canProceed: true,
+        isLocked: false
       };
     default: // null or undefined
       return {
@@ -60,6 +65,7 @@ export const getServicePayerConfig = (servicePayer: ServicePayerType): ServicePa
         showBillToSelector: false,
         requireAuthority: false,
         canProceed: false,
+        isLocked: false,
         errorMessage: "Please select 'Who pays for the service' in General Accounting Settings before creating an invoice."
       };
   }

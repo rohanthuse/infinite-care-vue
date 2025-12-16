@@ -183,6 +183,15 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
   const servicePayer = form.watch('service_payer');
   const isAuthorityPayer = servicePayer === 'authorities';
 
+  // Auto-sync funding_type when service_payer changes
+  useEffect(() => {
+    if (servicePayer === 'authorities') {
+      form.setValue('funding_type', 'authority');
+    } else if (servicePayer === 'self_funder') {
+      form.setValue('funding_type', 'private');
+    }
+  }, [servicePayer, form]);
+
   if (settingsLoading) {
     return <div>Loading settings...</div>;
   }

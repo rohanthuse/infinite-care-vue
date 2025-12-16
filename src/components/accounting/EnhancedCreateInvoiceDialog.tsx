@@ -75,8 +75,20 @@ export const EnhancedCreateInvoiceDialog = ({
     if (!selectedClientId || !servicePayerData) {
       return getServicePayerConfig(null);
     }
-    return getServicePayerConfig(servicePayerData.service_payer);
-  }, [selectedClientId, servicePayerData]);
+    
+    const config = getServicePayerConfig(servicePayerData.service_payer);
+    
+    // Additional validation: if authorities, check if authority_id exists
+    if (config.requireAuthority && !clientFunding?.authority_id) {
+      return {
+        ...config,
+        canProceed: false,
+        errorMessage: "Cannot create invoice: Client has 'Authority' as payer but no Authority organization is selected. Please configure this in Client → General Settings → Funding Configuration."
+      };
+    }
+    
+    return config;
+  }, [selectedClientId, servicePayerData, clientFunding]);
 
   // Load existing invoice data for edit mode
   useEffect(() => {
@@ -139,15 +151,25 @@ export const EnhancedCreateInvoiceDialog = ({
   useEffect(() => {
     if (step === 'client_selection' && selectedClientId && !isLoadingServicePayer && servicePayerData) {
       if (servicePayerConfig.canProceed) {
-        // Skip bill_to step if selector not needed (self_funder)
-        if (!servicePayerConfig.showBillToSelector) {
+        // If bill_to is locked (authorities or self_funder), skip bill_to step
+        if (servicePayerConfig.isLocked) {
+          // Auto-set bill_to based on service payer
+          if (servicePayerConfig.defaultBillTo) {
+            setBillToType(servicePayerConfig.defaultBillTo);
+          }
+          // Auto-populate authority from client settings
+          if (servicePayerConfig.defaultBillTo === 'authority' && clientFunding?.authority_id) {
+            setSelectedAuthorityId(clientFunding.authority_id);
+          }
+          setStep('entity_selection');
+        } else if (!servicePayerConfig.showBillToSelector) {
           setStep('entity_selection');
         } else {
           setStep('bill_to');
         }
       }
     }
-  }, [step, selectedClientId, isLoadingServicePayer, servicePayerData, servicePayerConfig]);
+  }, [step, selectedClientId, isLoadingServicePayer, servicePayerData, servicePayerConfig, clientFunding]);
 
   // Auto-advance from bill_to to entity_selection
   useEffect(() => {
@@ -312,14 +334,27 @@ export const EnhancedCreateInvoiceDialog = ({
             </div>
           )}
 
-          {/* Step 1: Bill To Type Selection (shown only when showBillToSelector is true) */}
+          {/* Step 1: Bill To Type Selection (shown only when showBillToSelector is true and not locked) */}
           {step === 'bill_to' && (
             <div className="space-y-4">
               {getServicePayerBadge()}
-              <BillToSelector
-                selectedType={billToType}
-                onTypeChange={setBillToType}
-              />
+              
+              {servicePayerConfig.isLocked ? (
+                <Alert className="bg-muted">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>Bill To is automatically set based on "Who Pays for the Service":</span>
+                    <Badge variant={billToType === 'authority' ? 'default' : 'secondary'}>
+                      {billToType === 'authority' ? 'Authority' : 'Client (Private)'}
+                    </Badge>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <BillToSelector
+                  selectedType={billToType}
+                  onTypeChange={setBillToType}
+                />
+              )}
             </div>
           )}
 

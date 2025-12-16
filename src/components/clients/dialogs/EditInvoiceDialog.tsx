@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Edit, AlertTriangle, Lock, Save, RefreshCw, CreditCard } from "lucide-react";
+import { Edit, AlertTriangle, Lock, Save, RefreshCw, CreditCard, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,7 @@ import { useInvoiceExpenseEntries, useDeleteInvoiceExpenseEntry } from "@/hooks/
 import { useInvoiceExtraTimeEntries, useRemoveExtraTimeFromInvoice, calculateExtraTimeTotals } from "@/hooks/useInvoiceExtraTimeEntries";
 import { useInvoiceCancelledBookings } from "@/hooks/useInvoiceCancelledBookings";
 import { useUpdateCancelledBookingInvoiceStatus } from "@/hooks/useUpdateCancelledBookingInvoiceStatus";
+import { useClientServicePayer, getServicePayerConfig, servicePayerLabels } from "@/hooks/useClientServicePayer";
 import { EditableLineItemsSection, EditableLineItem } from "./EditableLineItemsSection";
 import { EditableExtraTimeSection } from "./EditableExtraTimeSection";
 import { EditableExpensesSection } from "./EditableExpensesSection";
@@ -76,6 +77,15 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
   
   // Fetch client data
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
+  
+  // Fetch service payer config for the client
+  const { data: servicePayerData } = useClientServicePayer(invoice?.client_id || '');
+  
+  // Calculate service payer config
+  const servicePayerConfig = useMemo(() => {
+    if (!invoice?.client_id || !servicePayerData) return null;
+    return getServicePayerConfig(servicePayerData.service_payer);
+  }, [invoice?.client_id, servicePayerData]);
   
   // Fetch related data
   const { data: expenseEntries = [], isLoading: isLoadingExpenses } = useInvoiceExpenseEntries(invoice?.id);
@@ -465,20 +475,45 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
 
                 {/* Bill-to Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="bill_to_type">Bill To</Label>
-                  <Select
-                    value={watch('bill_to_type') || 'private'}
-                    onValueChange={(value) => setValue('bill_to_type', value)}
-                    disabled={isReadOnly || isSent}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select billing type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="private">Client (Private)</SelectItem>
-                      <SelectItem value="authority">Authority</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="bill_to_type" className="flex items-center gap-2">
+                    Bill To
+                    {servicePayerConfig?.isLocked && (
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Lock className="h-3 w-3" />
+                        Locked
+                      </Badge>
+                    )}
+                  </Label>
+                  {servicePayerConfig?.isLocked ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Who Pays:</span>
+                        <Badge variant="outline">
+                          {servicePayerData?.service_payer ? servicePayerLabels[servicePayerData.service_payer] : 'Not Set'}
+                        </Badge>
+                      </div>
+                      <Input 
+                        value={watch('bill_to_type') === 'authority' ? 'Authority' : 'Client (Private)'} 
+                        disabled 
+                        className="bg-muted" 
+                      />
+                    </div>
+                  ) : (
+                    <Select
+                      value={watch('bill_to_type') || 'private'}
+                      onValueChange={(value) => setValue('bill_to_type', value)}
+                      disabled={isReadOnly || isSent}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select billing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">Client (Private)</SelectItem>
+                        <SelectItem value="authority">Authority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>
