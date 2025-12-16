@@ -6,6 +6,7 @@ import FinancialSummaryCards from './FinancialSummaryCards';
 import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
 import { EnhancedCreateInvoiceDialog } from './EnhancedCreateInvoiceDialog';
+import { EditInvoiceDialog } from '../clients/dialogs/EditInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
@@ -46,7 +47,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<EnhancedClientBilling | null>(null);
-  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<string>('');
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<EnhancedClientBilling | null>(null);
   const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
   const [selectedPaymentForView, setSelectedPaymentForView] = useState<string | null>(null);
   const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
@@ -393,19 +394,34 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     }
   };
 
-  // Handler for editing invoice
+  // Handler for editing invoice - fetch FULL invoice data for comprehensive EditInvoiceDialog
   const handleEditInvoice = async (invoiceId: string) => {
     try {
       const { data: invoiceData, error } = await supabase
         .from('client_billing')
-        .select('client_id')
+        .select(`
+          *,
+          invoice_line_items(*),
+          payment_records(*)
+        `)
         .eq('id', invoiceId)
         .single();
 
       if (error) throw error;
 
-      setSelectedClientId(invoiceData.client_id);
-      setSelectedInvoiceForEdit(invoiceId);
+      // Transform to EnhancedClientBilling type for EditInvoiceDialog
+      const enhancedInvoice: EnhancedClientBilling = {
+        ...invoiceData,
+        status: invoiceData.status as 'draft' | 'sent' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'refunded',
+        invoice_type: invoiceData.invoice_type as 'manual' | 'automatic',
+        line_items: invoiceData.invoice_line_items || [],
+        payment_records: (invoiceData.payment_records || []).map(record => ({
+          ...record,
+          payment_method: record.payment_method as 'cash' | 'card' | 'bank_transfer' | 'online' | 'check'
+        }))
+      };
+
+      setSelectedInvoiceForEdit(enhancedInvoice);
       setIsEditInvoiceOpen(true);
     } catch (error) {
       console.error('Error loading invoice for edit:', error);
@@ -620,21 +636,28 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         onViewInvoices={handleViewGeneratedInvoices}
       />
 
-      {/* Invoice Creation/Edit Dialog */}
+      {/* Invoice Creation Dialog - for NEW invoices only */}
       <EnhancedCreateInvoiceDialog
-        isOpen={isCreateInvoiceOpen || isEditInvoiceOpen}
+        isOpen={isCreateInvoiceOpen}
         onClose={() => {
           setIsCreateInvoiceOpen(false);
-          setIsEditInvoiceOpen(false);
           setSelectedClientId('');
-          setSelectedInvoiceForEdit('');
           setSelectedInvoicePeriod(null);
         }}
         branchId={branchId!}
         organizationId={organizationId || ''}
         preSelectedClientId={selectedClientId}
-        invoiceId={selectedInvoiceForEdit || undefined}
         invoicePeriod={selectedInvoicePeriod || undefined}
+      />
+
+      {/* Edit Invoice Dialog - comprehensive editing for existing invoices */}
+      <EditInvoiceDialog
+        open={isEditInvoiceOpen}
+        onOpenChange={(open) => {
+          setIsEditInvoiceOpen(open);
+          if (!open) setSelectedInvoiceForEdit(null);
+        }}
+        invoice={selectedInvoiceForEdit}
       />
 
       {/* Record Payment Dialog */}
