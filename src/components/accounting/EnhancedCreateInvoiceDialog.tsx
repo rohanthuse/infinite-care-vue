@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, User, Building2, Settings } from 'lucide-react';
 import { useClientFundingInfo } from '@/hooks/useClientFunding';
 import { useCreateEnhancedInvoice, useClientsByAuthority } from '@/hooks/useAuthorityBilling';
+import { useClientAccountingSettings } from '@/hooks/useClientAccounting';
 import { useClientServicePayer, getServicePayerConfig, servicePayerLabels } from '@/hooks/useClientServicePayer';
 import { BillToSelector } from './BillToSelector';
 import { AuthoritySelector } from './AuthoritySelector';
@@ -65,6 +66,7 @@ export const EnhancedCreateInvoiceDialog = ({
 
   const { data: clientFunding } = useClientFundingInfo(selectedClientId);
   const { data: servicePayerData, isLoading: isLoadingServicePayer } = useClientServicePayer(selectedClientId);
+  const { data: clientAccountingSettings } = useClientAccountingSettings(selectedClientId);
   const { data: authorityClients = [] } = useClientsByAuthority(selectedAuthorityId, branchId);
   const createInvoice = useCreateEnhancedInvoice();
 
@@ -203,7 +205,8 @@ export const EnhancedCreateInvoiceDialog = ({
         invoice_date: formData.invoice_date,
         due_date: formData.due_date,
         notes: formData.notes,
-        organization_id: organizationId
+        organization_id: organizationId,
+        pay_method: clientAccountingSettings?.pay_method || null
       };
 
       await createInvoice.mutateAsync(invoiceData);

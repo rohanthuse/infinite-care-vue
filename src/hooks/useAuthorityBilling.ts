@@ -124,7 +124,7 @@ export const useCreateEnhancedInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: EnhancedInvoiceCreationData & { organization_id: string }) => {
+    mutationFn: async (data: EnhancedInvoiceCreationData & { organization_id: string; pay_method?: string | null }) => {
       const invoiceData = {
         client_id: data.client_id,
         description: data.description,
@@ -137,6 +137,7 @@ export const useCreateEnhancedInvoice = () => {
         bill_to_type: data.bill_to_type,
         authority_id: data.authority_id,
         consolidation_type: data.consolidation_type,
+        pay_method: data.pay_method || null,
         invoice_number: `INV-${Date.now()}`, // Generate unique invoice number
         status: 'pending',
         organization_id: data.organization_id
