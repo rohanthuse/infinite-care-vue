@@ -601,9 +601,26 @@ export function useCreatePayrollRecord() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Payroll record created successfully');
+      
+      // Send notification to staff
+      try {
+        const { notifyStaffPayrollCreated } = await import('@/utils/notificationHelpers');
+        await notifyStaffPayrollCreated({
+          staffId: data.staff_id,
+          branchId: data.branch_id,
+          payrollId: data.id,
+          payPeriodStart: data.pay_period_start,
+          payPeriodEnd: data.pay_period_end,
+          netPay: data.net_pay,
+          paymentStatus: data.payment_status,
+        });
+      } catch (notifError) {
+        console.error('[useCreatePayrollRecord] Failed to send notification:', notifError);
+      }
     },
     onError: (error) => {
       console.error('Error creating payroll record:', error);

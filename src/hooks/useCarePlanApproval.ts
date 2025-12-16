@@ -188,11 +188,36 @@ export const useApproveCarePlan = () => {
 
   return useMutation({
     mutationFn: approveCarePlan,
-    onSuccess: () => {
+    onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Care plan approved and activated successfully! Your care team has been notified.');
+      
+      // Notify admins about the approval
+      try {
+        const { data: carePlan } = await supabase
+          .from('client_care_plans')
+          .select('client_id, clients(first_name, last_name, branch_id)')
+          .eq('id', variables.carePlanId)
+          .single();
+        
+        const clientData = carePlan?.clients as any;
+        if (clientData?.branch_id) {
+          const { notifyAdminsCarePlanApproval } = await import('@/utils/notificationHelpers');
+          const clientName = `${clientData.first_name} ${clientData.last_name}`;
+          
+          await notifyAdminsCarePlanApproval({
+            branchId: clientData.branch_id,
+            carePlanId: variables.carePlanId,
+            clientName,
+            action: 'approved',
+            comments: variables.comments,
+          });
+        }
+      } catch (notifError) {
+        console.error('[useApproveCarePlan] Failed to send admin notification:', notifError);
+      }
     },
     onError: (error: any) => {
       console.error('Failed to approve care plan:', error);
@@ -229,11 +254,36 @@ export const useRejectCarePlan = () => {
 
   return useMutation({
     mutationFn: rejectCarePlan,
-    onSuccess: () => {
+    onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Change request submitted successfully! Your care team will review your comments.');
+      
+      // Notify admins about the rejection/change request
+      try {
+        const { data: carePlan } = await supabase
+          .from('client_care_plans')
+          .select('client_id, clients(first_name, last_name, branch_id)')
+          .eq('id', variables.carePlanId)
+          .single();
+        
+        const clientData = carePlan?.clients as any;
+        if (clientData?.branch_id) {
+          const { notifyAdminsCarePlanApproval } = await import('@/utils/notificationHelpers');
+          const clientName = `${clientData.first_name} ${clientData.last_name}`;
+          
+          await notifyAdminsCarePlanApproval({
+            branchId: clientData.branch_id,
+            carePlanId: variables.carePlanId,
+            clientName,
+            action: 'rejected',
+            comments: variables.comments,
+          });
+        }
+      } catch (notifError) {
+        console.error('[useRejectCarePlan] Failed to send admin notification:', notifError);
+      }
     },
     onError: (error: any) => {
       console.error('Failed to request changes:', error);
