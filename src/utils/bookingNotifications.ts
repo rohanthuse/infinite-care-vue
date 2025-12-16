@@ -159,6 +159,20 @@ export async function notifyBookingCreated(booking: BookingNotificationData): Pr
     }
   }
 
+  // Notify branch admins
+  const adminIds = await getBranchAdminUserIds(booking.branchId);
+  for (const adminId of adminIds) {
+    await createBookingNotification({
+      userId: adminId,
+      branchId: booking.branchId,
+      organizationId: booking.organizationId,
+      title: '📅 New Booking Created',
+      message: `Booking created${booking.clientName ? ` for ${booking.clientName}` : ''}${booking.carerName ? ` with ${booking.carerName}` : ''}${booking.startTime ? ` on ${new Date(booking.startTime).toLocaleDateString()}` : ''}`,
+      priority: 'low',
+      data: { ...baseData, notification_type: 'booking_created_admin' },
+    });
+  }
+
   console.log('[bookingNotifications] Booking creation notifications sent');
 }
 
@@ -313,6 +327,20 @@ export async function notifyBookingCancelled(booking: BookingNotificationData & 
         data: baseData,
       });
     }
+  }
+
+  // Notify branch admins
+  const adminIds = await getBranchAdminUserIds(booking.branchId);
+  for (const adminId of adminIds) {
+    await createBookingNotification({
+      userId: adminId,
+      branchId: booking.branchId,
+      organizationId: booking.organizationId,
+      title: '❌ Booking Cancelled',
+      message: `Booking cancelled${booking.clientName ? ` for ${booking.clientName}` : ''}${booking.carerName ? ` (${booking.carerName})` : ''}${booking.cancellationReason ? `: ${booking.cancellationReason}` : ''}`,
+      priority: 'medium',
+      data: { ...baseData, notification_type: 'booking_cancelled_admin' },
+    });
   }
 
   console.log('[bookingNotifications] Booking cancellation notifications sent');

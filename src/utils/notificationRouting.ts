@@ -24,8 +24,12 @@ const EXTENDED_TYPES: Record<string, string> = {
   'care_plan_update': 'care_plan',
   'care_plan_activation': 'care_plan',
   'care_plan_status': 'care_plan',
+  'care_plan_client_approved': 'care_plan',
+  'care_plan_client_rejected': 'care_plan',
   'booking_reminder': 'booking',
   'booking_update': 'booking',
+  'booking_created_admin': 'booking',
+  'booking_cancelled_admin': 'booking',
   'leave_request': 'leave',
   'leave_approved': 'leave',
   'leave_rejected': 'leave',
@@ -36,6 +40,9 @@ const EXTENDED_TYPES: Record<string, string> = {
   'health_update': 'health',
   'payment_due': 'payment',
   'invoice_generated': 'payment',
+  'invoice_created': 'payment',
+  'invoice_paid': 'payment',
+  'invoice_partially_paid': 'payment',
   'review_request': 'review',
   'event_shared': 'events_logs',
   'task_assigned': 'task',
@@ -44,6 +51,9 @@ const EXTENDED_TYPES: Record<string, string> = {
   'meeting_created': 'meeting',
   'meeting_updated': 'meeting',
   'meeting_cancelled': 'meeting',
+  // Payroll types
+  'payroll_generated': 'payroll',
+  'payroll_paid': 'payroll',
 };
 
 // Organization dashboard route mappings
@@ -94,6 +104,8 @@ const CARER_ROUTES: Record<string, string> = {
   events_logs: '/events-logs',
   client: '/clients',
   payment: '/payments',
+  payroll: '/payments',
+  invoice: '/payments',
   schedule: '/schedule',
   system: '',
   info: '', // Generic info type - no specific route

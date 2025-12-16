@@ -295,6 +295,9 @@ export const useAddPaymentRecord = () => {
       
       // After recording payment, check if invoice is fully paid
       const invoiceId = data.invoice_id;
+      let invoiceData: any = null;
+      let isPaid = false;
+      
       if (invoiceId) {
         // Fetch invoice with all payments
         const { data: invoice, error: invoiceError } = await supabase
@@ -304,6 +307,7 @@ export const useAddPaymentRecord = () => {
           .single();
         
         if (!invoiceError && invoice) {
+          invoiceData = invoice;
           const totalPaid = (invoice.payment_records || []).reduce(
             (sum: number, p: any) => sum + (Number(p.payment_amount) || 0), 
             0
@@ -312,6 +316,7 @@ export const useAddPaymentRecord = () => {
           
           // If fully paid, update invoice status
           if (totalPaid >= totalAmount && invoice.status !== 'paid') {
+            isPaid = true;
             await supabase
               .from('client_billing')
               .update({ 
@@ -325,14 +330,38 @@ export const useAddPaymentRecord = () => {
         }
       }
       
-      return result;
+      return { result, invoiceData, isPaid, paymentAmount: data.payment_amount };
     },
-    onSuccess: () => {
+    onSuccess: async ({ result, invoiceData, isPaid, paymentAmount }) => {
       toast.success('Payment recorded successfully');
       queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing'] });
       queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['branch-payments'] });
       queryClient.invalidateQueries({ queryKey: ['client-portal-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      // Send notification to client about payment
+      if (invoiceData?.client_id) {
+        try {
+          const { notifyClientInvoicePayment } = await import('@/utils/notificationHelpers');
+          
+          // Get branch_id from organization or default
+          const branchId = invoiceData.branch_id || invoiceData.organization_id;
+          
+          if (branchId) {
+            await notifyClientInvoicePayment({
+              clientId: invoiceData.client_id,
+              branchId,
+              invoiceId: invoiceData.id,
+              invoiceNumber: invoiceData.invoice_number,
+              amountPaid: Number(paymentAmount) || 0,
+              status: isPaid ? 'paid' : 'partially_paid',
+            });
+          }
+        } catch (notifError) {
+          console.error('[useAddPaymentRecord] Failed to send client notification:', notifError);
+        }
+      }
     },
     onError: (error) => {
       console.error('Error recording payment:', error);
