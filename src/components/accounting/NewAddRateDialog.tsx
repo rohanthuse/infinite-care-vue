@@ -238,6 +238,35 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
 
     // Transform form data to match database schema
     const rateBlock = rateBlocks[0]; // Primary rate block
+
+    // Helper function to map UI values to database charge_type
+    const mapToChargeType = (chargeBasedOn: string, rateChargingMethod: string, rateCalculationType: string): string => {
+      if (chargeBasedOn === 'services') {
+        switch (rateChargingMethod) {
+          case 'flat': return 'flat_rate';
+          case 'pro': return 'pro_rata';
+          case 'hourly': return 'hourly_rate';
+          default: return 'flat_rate';
+        }
+      } else if (chargeBasedOn === 'hours_minutes') {
+        switch (rateCalculationType) {
+          case 'rate_per_hour': return 'rate_per_hour';
+          case 'rate_per_minutes_pro': return 'rate_per_minutes_pro_rata';
+          case 'rate_per_minutes_flat': return 'rate_per_minutes_flat_rate';
+          default: return 'rate_per_hour';
+        }
+      }
+      return 'flat_rate';
+    };
+
+    // Helper function to map UI values to database pay_based_on
+    const mapToPayBasedOn = (chargeBasedOn: string): string => {
+      switch (chargeBasedOn) {
+        case 'services': return 'service';
+        case 'hours_minutes': return 'hours_minutes';
+        default: return 'service';
+      }
+    };
     
     // Determine amount from rate block
     let amount = 0;
@@ -285,8 +314,12 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       rate_60_minutes: rateBlock?.rateAt60Minutes ? parseFloat(rateBlock.rateAt60Minutes) : null,
       consecutive_hours: rateBlock?.consecutiveHours ? parseFloat(rateBlock.consecutiveHours) : null,
       service_type: rateBlock?.isVatable ? 'vatable' : 'standard',
-      charge_type: rateBlock?.chargeBasedOn || 'hourly_rate',
-      pay_based_on: rateBlock?.rateChargingMethod || 'service',
+      charge_type: mapToChargeType(
+        rateBlock?.chargeBasedOn || 'services',
+        rateBlock?.rateChargingMethod || 'flat',
+        rateBlock?.rateCalculationType || 'rate_per_hour'
+      ),
+      pay_based_on: mapToPayBasedOn(rateBlock?.chargeBasedOn || 'services'),
     };
 
     // If editing, include the rate ID
