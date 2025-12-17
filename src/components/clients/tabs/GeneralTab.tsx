@@ -31,6 +31,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { PrivateAccountingSettings } from './accounting/PrivateAccountingSettings';
+import { AuthorityAccountingSettings } from './accounting/AuthorityAccountingSettings';
 
 const formSchema = z.object({
   core_lead_id: z.string().nullable(),
@@ -189,10 +190,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
   return (
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general-setting">General Setting</TabsTrigger>
           <TabsTrigger value="general-accounting">General Accounting Settings</TabsTrigger>
           <TabsTrigger value="private-accounting">Private Accounting Setting</TabsTrigger>
+          <TabsTrigger value="authority-accounting">Authority Accounting Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general-setting" className="mt-6">
@@ -634,6 +636,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         
         <TabsContent value="private-accounting" className="mt-6">
           <PrivateAccountingSettings clientId={clientId} branchId={branchId || ''} />
+        </TabsContent>
+        
+        <TabsContent value="authority-accounting" className="mt-6">
+          <AuthorityAccountingSettings clientId={clientId} branchId={branchId || ''} />
         </TabsContent>
       </Tabs>
     </div>

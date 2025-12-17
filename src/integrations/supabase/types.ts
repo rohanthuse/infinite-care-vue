@@ -1895,6 +1895,94 @@ export type Database = {
           },
         ]
       }
+      client_authority_accounting: {
+        Row: {
+          authority_id: string
+          branch_id: string | null
+          charge_based_on: string | null
+          client_contribution_required: boolean | null
+          client_id: string
+          created_at: string | null
+          extra_time_calculation: boolean | null
+          id: string
+          organization_id: string | null
+          reference_number: string | null
+          travel_rate_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          authority_id: string
+          branch_id?: string | null
+          charge_based_on?: string | null
+          client_contribution_required?: boolean | null
+          client_id: string
+          created_at?: string | null
+          extra_time_calculation?: boolean | null
+          id?: string
+          organization_id?: string | null
+          reference_number?: string | null
+          travel_rate_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          authority_id?: string
+          branch_id?: string | null
+          charge_based_on?: string | null
+          client_contribution_required?: boolean | null
+          client_id?: string
+          created_at?: string | null
+          extra_time_calculation?: boolean | null
+          id?: string
+          organization_id?: string | null
+          reference_number?: string | null
+          travel_rate_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_authority_accounting_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_authority_accounting_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_authority_accounting_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_authority_accounting_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_authority_accounting_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_authority_accounting_travel_rate_id_fkey"
+            columns: ["travel_rate_id"]
+            isOneToOne: false
+            referencedRelation: "travel_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_behavior_support: {
         Row: {
           behavior_triggers: string | null
