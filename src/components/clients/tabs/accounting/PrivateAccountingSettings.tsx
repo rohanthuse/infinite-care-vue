@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useClientPrivateAccounting, useCreateOrUpdateClientPrivateAccounting } from '@/hooks/useClientAccounting';
 import { useTravelRates } from '@/hooks/useTravelRates';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantSafe } from '@/hooks/useTenantSafe';
 import { ChargeBasedOn, chargeBasedOnLabels } from '@/types/clientAccounting';
 
 const privateAccountingSchema = z.object({
@@ -33,7 +33,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
   clientId,
   branchId
 }) => {
-  const { organization } = useTenant();
+  const { organization } = useTenantSafe();
   const { data: settings, isLoading: settingsLoading } = useClientPrivateAccounting(clientId);
   const { data: travelRates } = useTravelRates(branchId);
   const updateSettings = useCreateOrUpdateClientPrivateAccounting();
