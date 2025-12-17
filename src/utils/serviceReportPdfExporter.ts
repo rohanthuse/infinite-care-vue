@@ -473,46 +473,94 @@ export const generatePDFForServiceReport = async (
     incident_occurred: report.incident_occurred ?? false,
   };
 
-  // Validate visit_record_id
-  if (!safeReport.visit_record_id) {
-    throw new Error('Service report is missing visit record information');
+  // Try to find visit_record_id - first from report, then via booking_id
+  let visitRecordId = safeReport.visit_record_id;
+
+  if (!visitRecordId && safeReport.booking_id) {
+    // Try to find visit record via booking_id
+    const { data: foundVisitRecord } = await supabase
+      .from('visit_records')
+      .select('id')
+      .eq('booking_id', safeReport.booking_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (foundVisitRecord) {
+      visitRecordId = foundVisitRecord.id;
+    }
+  }
+
+  // If no visit record found, generate simplified PDF with report data only
+  if (!visitRecordId) {
+    await exportSingleServiceReportPDF({
+      report: safeReport,
+      visitRecord: null,
+      tasks: [],
+      medications: [],
+      news2Readings: [],
+      otherVitals: [],
+      events: [],
+      incidents: [],
+      accidents: [],
+      observations: [],
+      branchId: branchId || safeReport.branch_id,
+    });
+    return;
   }
 
   // Fetch visit record
   const { data: visitRecord, error: visitError } = await supabase
     .from('visit_records')
     .select('*')
-    .eq('id', safeReport.visit_record_id)
+    .eq('id', visitRecordId)
     .single();
 
-  if (visitError) throw new Error(`Failed to fetch visit record: ${visitError.message}`);
+  if (visitError) {
+    // If visit record fetch fails, generate PDF without visit data
+    console.warn('Could not fetch visit record, generating simplified PDF:', visitError.message);
+    await exportSingleServiceReportPDF({
+      report: safeReport,
+      visitRecord: null,
+      tasks: [],
+      medications: [],
+      news2Readings: [],
+      otherVitals: [],
+      events: [],
+      incidents: [],
+      accidents: [],
+      observations: [],
+      branchId: branchId || safeReport.branch_id,
+    });
+    return;
+  }
 
   // Fetch tasks
   const { data: tasks, error: tasksError } = await supabase
     .from('visit_tasks')
     .select('*')
-    .eq('visit_record_id', safeReport.visit_record_id)
+    .eq('visit_record_id', visitRecordId)
     .order('created_at', { ascending: true });
 
-  if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+  if (tasksError) console.warn('Failed to fetch tasks:', tasksError.message);
 
   // Fetch medications
   const { data: medications, error: medsError } = await supabase
     .from('visit_medications')
     .select('*')
-    .eq('visit_record_id', safeReport.visit_record_id)
+    .eq('visit_record_id', visitRecordId)
     .order('prescribed_time', { ascending: true });
 
-  if (medsError) throw new Error(`Failed to fetch medications: ${medsError.message}`);
+  if (medsError) console.warn('Failed to fetch medications:', medsError.message);
 
   // Fetch vitals
   const { data: vitals, error: vitalsError } = await supabase
     .from('visit_vitals')
     .select('*')
-    .eq('visit_record_id', safeReport.visit_record_id)
+    .eq('visit_record_id', visitRecordId)
     .order('reading_time', { ascending: true });
 
-  if (vitalsError) throw new Error(`Failed to fetch vitals: ${vitalsError.message}`);
+  if (vitalsError) console.warn('Failed to fetch vitals:', vitalsError.message);
 
   const news2Readings = vitals?.filter(v => v.vital_type === 'news2') || [];
   const otherVitals = vitals?.filter(v => v.vital_type !== 'news2') || [];
@@ -521,10 +569,10 @@ export const generatePDFForServiceReport = async (
   const { data: allEvents, error: eventsError } = await supabase
     .from('visit_events')
     .select('*')
-    .eq('visit_record_id', safeReport.visit_record_id)
+    .eq('visit_record_id', visitRecordId)
     .order('event_time', { ascending: true });
 
-  if (eventsError) throw new Error(`Failed to fetch events: ${eventsError.message}`);
+  if (eventsError) console.warn('Failed to fetch events:', eventsError.message);
 
   // Separate events by type
   const events = allEvents?.filter(e => e.event_type === 'general') || [];
