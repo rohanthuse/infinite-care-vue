@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Building2, User, FileText, Settings } from "lucide-react";
@@ -99,13 +98,12 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-y-auto">
+        <DialogHeader className="sticky top-0 z-10 bg-background px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-xl font-semibold">Authority Information</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full px-6">
+        <div className="px-6">
           <Form {...form}>
             <form id="authority-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               {/* Section 1: Authority Info */}
@@ -396,10 +394,9 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
               </Card>
             </form>
           </Form>
-          </ScrollArea>
         </div>
 
-        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-background flex-shrink-0">
+        <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
