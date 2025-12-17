@@ -38,6 +38,7 @@ const formSchema = z.object({
   core_lead_id: z.string().nullable(),
   agreement_id: z.string().nullable(),
   expiry_date: z.date().nullable(),
+  join_date: z.date().nullable(),
   show_in_task_matrix: z.boolean(),
   show_in_form_matrix: z.boolean(),
   enable_geo_fencing: z.boolean(),
@@ -95,6 +96,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       core_lead_id: null,
       agreement_id: null,
       expiry_date: null,
+      join_date: null,
       show_in_task_matrix: false,
       show_in_form_matrix: false,
       enable_geo_fencing: false,
@@ -124,6 +126,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         core_lead_id: settings.core_lead_id,
         agreement_id: settings.agreement_id,
         expiry_date: settings.expiry_date ? new Date(settings.expiry_date) : null,
+        join_date: settings.join_date ? new Date(settings.join_date) : null,
         show_in_task_matrix: settings.show_in_task_matrix,
         show_in_form_matrix: settings.show_in_form_matrix,
         enable_geo_fencing: settings.enable_geo_fencing,
@@ -155,6 +158,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
           core_lead_id: values.core_lead_id,
           agreement_id: values.agreement_id,
           expiry_date: values.expiry_date ? values.expiry_date.toISOString().split('T')[0] : null,
+          registered_on: values.join_date ? values.join_date.toISOString().split('T')[0] : null,
           show_in_task_matrix: values.show_in_task_matrix,
           show_in_form_matrix: values.show_in_form_matrix,
           enable_geo_fencing: values.enable_geo_fencing,
@@ -273,6 +277,23 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Join Date Field */}
+                    <FormField
+                      control={form.control}
+                      name="join_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Join Date</FormLabel>
+                          <EnhancedDatePicker
+                            value={field.value || undefined}
+                            onChange={(date) => field.onChange(date || null)}
+                            placeholder="Select join date"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
