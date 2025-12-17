@@ -205,8 +205,8 @@ export function AdminServiceReportsTab({
           onOpenChange={(open) => {
             setViewReportDialog({ open, report: open ? viewReportDialog.report : null });
           }}
-          report={viewReportDialog.report}
-          adminMode={false}
+        report={viewReportDialog.report}
+        adminMode={true}
         />
       )}
 
