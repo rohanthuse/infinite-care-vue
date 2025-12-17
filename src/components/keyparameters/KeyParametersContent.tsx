@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, FileText, Calendar, Car, MessageSquare, PoundSterling, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2, Stethoscope } from "lucide-react";
+import { ChevronRight, FileText, Calendar, Car, MessageSquare, PoundSterling, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2, Stethoscope, Building2 } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
 } from "@/components/ui/tabs";
@@ -29,6 +29,7 @@ import {
   type ExpenseType,
 } from "@/hooks/useKeyParameters";
 import { useDiagnosis, type Diagnosis } from "@/hooks/useDiagnosis";
+import AuthoritiesTab from "@/components/workflow/AuthoritiesTab";
 
 interface KeyParametersContentProps {
   branchId?: string;
@@ -289,7 +290,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
       <Card className="mb-8 border-none shadow-md">
         <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 md:grid-cols-8 p-0 rounded-t-lg rounded-b-none border-b bg-muted">
+          <TabsList className="w-full grid grid-cols-5 md:grid-cols-9 p-0 rounded-t-lg rounded-b-none border-b bg-muted">
             <TabsTrigger 
               value="report-types" 
               className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
@@ -353,6 +354,14 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               <Stethoscope className="h-4 w-4" />
               <span className="hidden md:inline">Diagnosis</span>
               <span className="md:hidden">Diagnosis</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="authorities" 
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
+            >
+              <Building2 className="h-4 w-4" />
+              <span className="hidden md:inline">Authorities</span>
+              <span className="md:hidden">Auth</span>
             </TabsTrigger>
           </TabsList>
 
@@ -465,6 +474,13 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               )}
             </TabsContent>
           ))}
+
+          {/* Authorities Tab Content */}
+          <TabsContent value="authorities" className="p-0 border-0">
+            <div className="p-4 border-t-0 rounded-b-lg bg-card">
+              <AuthoritiesTab />
+            </div>
+          </TabsContent>
         </Tabs>
       </Card>
 
