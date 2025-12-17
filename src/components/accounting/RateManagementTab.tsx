@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -7,16 +6,17 @@ import {
   Check, Info, AlertTriangle, Clock, RefreshCw, PoundSterling
 } from "lucide-react";
 import RatesTable from "./RatesTable";
-import { ServiceRate, useServiceRates, useCreateServiceRate, useDeleteServiceRate, useStaffList } from "@/hooks/useAccountingData";
+import { ServiceRate, useServiceRates, useCreateServiceRate, useUpdateServiceRate, useDeleteServiceRate, useStaffList } from "@/hooks/useAccountingData";
 import { cn, formatCurrency } from "@/lib/utils";
-import NewAddRateDialog from "./NewAddRateDialog";
-import EditRateDialog from "./EditRateDialog";
-import ViewRateDialog from "./ViewRateDialog";
+import NewAddRateDialog, { DialogMode } from "./NewAddRateDialog";
 import FilterRateDialog from "./FilterRateDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ServiceRate as UIServiceRate, RateFilter as UIRateFilter } from "@/types/rate";
+import { RateFilter as UIRateFilter } from "@/types/rate";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuthorities } from "@/contexts/AuthoritiesContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 // Define filter interface compatible with database types
 interface RateFilter {
@@ -38,50 +38,70 @@ interface RateManagementTabProps {
   branchName?: string;
 }
 
+// Hook to get branch organization
+function useBranchOrganization(branchId?: string) {
+  return useQuery({
+    queryKey: ['branch-organization', branchId],
+    queryFn: async () => {
+      if (!branchId) return null;
+      const { data, error } = await supabase
+        .from('branches')
+        .select('organization_id')
+        .eq('id', branchId)
+        .single();
+      if (error) throw error;
+      return data?.organization_id;
+    },
+    enabled: !!branchId,
+  });
+}
+
 const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchName }) => {
   console.log('[RateManagementTab] Received props:', { branchId, branchName });
+  
   // Use real database data instead of mock data
   const { data: rates = [], isLoading, error, refetch } = useServiceRates(branchId);
   const { data: staffList = [] } = useStaffList(branchId);
+  const { data: organizationId } = useBranchOrganization(branchId);
+  const { authorities } = useAuthorities();
+  
   const createServiceRate = useCreateServiceRate();
+  const updateServiceRate = useUpdateServiceRate();
   const deleteServiceRate = useDeleteServiceRate();
   const { data: currentUser } = useUserRole();
   
   const [filteredRates, setFilteredRates] = useState<ServiceRate[]>([]);
   const [activeFilter, setActiveFilter] = useState<RateFilter | undefined>(undefined);
   
-  const [isAddRateDialogOpen, setIsAddRateDialogOpen] = useState(false);
-  const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
-  const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
+  const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>('create');
+  const [selectedRate, setSelectedRate] = useState<ServiceRate | null>(null);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  
-  const [selectedRate, setSelectedRate] = useState<UIServiceRate | null>(null);
   const [rateToDelete, setRateToDelete] = useState<string | null>(null);
+
+  // Create staff map for table
+  const staffMap = useMemo(() => {
+    const map = new Map<string, { first_name: string; last_name: string }>();
+    staffList.forEach(staff => {
+      map.set(staff.id, { first_name: staff.first_name, last_name: staff.last_name });
+    });
+    return map;
+  }, [staffList]);
+
+  // Create authorities map for table
+  const authoritiesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    authorities.forEach(auth => {
+      map.set(auth.id, auth.organization);
+    });
+    return map;
+  }, [authorities]);
 
   // Update filteredRates when rates change
   useEffect(() => {
     setFilteredRates(rates);
   }, [rates]);
-
-  // Helper function to transform database ServiceRate to UI ServiceRate
-  const transformDbRateToUI = (dbRate: ServiceRate): UIServiceRate => ({
-    id: dbRate.id,
-    serviceName: dbRate.service_name,
-    serviceCode: dbRate.service_code,
-    rateType: dbRate.rate_type as any,
-    amount: dbRate.amount,
-    effectiveFrom: dbRate.effective_from,
-    effectiveTo: dbRate.effective_to,
-    description: dbRate.description,
-    applicableDays: dbRate.applicable_days,
-    clientType: dbRate.client_type as any,
-    fundingSource: dbRate.funding_source as any,
-    status: dbRate.status as any,
-    lastUpdated: dbRate.updated_at,
-    createdBy: dbRate.created_by,
-    isDefault: dbRate.is_default
-  });
 
   // Helper function to transform database RateFilter to UI RateFilter
   const transformDbFilterToUI = (dbFilter: RateFilter): UIRateFilter => ({
@@ -110,10 +130,8 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     let creatorStaffId: string;
     
     if (currentUser.staffId) {
-      // Current user is a carer with a staff record
       creatorStaffId = currentUser.staffId;
     } else if (staffList.length > 0) {
-      // Use the first staff member in the branch
       creatorStaffId = staffList[0].id;
     } else {
       toast.error('No staff members found in this branch. Please add at least one staff member before creating rates.');
@@ -126,18 +144,17 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         ...rateData,
         branch_id: branchId,
         created_by: creatorStaffId,
-        // Normalize effective_to: pass null instead of empty string
         effective_to: rateData.effective_to || null,
       };
 
       // Remove fields that should be auto-generated by the database
       delete cleanRateData.id;
-      delete cleanRateData.created_at;
-      delete cleanRateData.updated_at;
+      delete (cleanRateData as any).created_at;
+      delete (cleanRateData as any).updated_at;
 
       await createServiceRate.mutateAsync(cleanRateData as Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>);
       
-      setIsAddRateDialogOpen(false);
+      setIsRateDialogOpen(false);
       toast.success('Service rate created successfully');
     } catch (error) {
       console.error('Error creating service rate:', error);
@@ -146,11 +163,39 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     }
   };
 
-  const handleUpdateRate = (rateId: string, rateData: any) => {
-    // TODO: Implement update mutation
-    toast.success("Rate updated successfully", {
-      description: `${rateData.service_name} - ${formatCurrency(rateData.amount)}`,
-    });
+  const handleUpdateRate = async (rateData: Partial<ServiceRate> & { id: string }) => {
+    if (!branchId) {
+      toast.error('No branch selected');
+      return;
+    }
+
+    try {
+      const { id, ...updates } = rateData;
+      
+      // Remove fields that shouldn't be updated
+      delete (updates as any).created_at;
+      delete (updates as any).updated_at;
+      delete (updates as any).created_by;
+      delete (updates as any).branch_id;
+
+      await updateServiceRate.mutateAsync({ rateId: id, updates });
+      
+      setIsRateDialogOpen(false);
+      setSelectedRate(null);
+      toast.success('Service rate updated successfully');
+    } catch (error) {
+      console.error('Error updating service rate:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update service rate';
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleSaveRate = async (rateData: any) => {
+    if (dialogMode === 'edit' && rateData.id) {
+      await handleUpdateRate(rateData);
+    } else {
+      await handleAddRate(rateData);
+    }
   };
 
   const handleDeleteRate = (rateId: string) => {
@@ -163,26 +208,34 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       try {
         await deleteServiceRate.mutateAsync(rateToDelete);
         
-        // Remove the item from local state immediately for better UX
         setFilteredRates(prev => prev.filter(r => r.id !== rateToDelete));
         
         setRateToDelete(null);
         setIsDeleteDialogOpen(false);
+        toast.success('Service rate deleted successfully');
       } catch (error) {
         console.error('Error deleting service rate:', error);
-        // Error toast is handled by the hook
+        toast.error('Failed to delete service rate');
       }
     }
   };
 
   const handleViewRate = (rate: ServiceRate) => {
-    setSelectedRate(transformDbRateToUI(rate));
-    setIsViewRateDialogOpen(true);
+    setSelectedRate(rate);
+    setDialogMode('view');
+    setIsRateDialogOpen(true);
   };
 
   const handleEditRate = (rate: ServiceRate) => {
-    setSelectedRate(transformDbRateToUI(rate));
-    setIsEditRateDialogOpen(true);
+    setSelectedRate(rate);
+    setDialogMode('edit');
+    setIsRateDialogOpen(true);
+  };
+
+  const handleOpenAddDialog = () => {
+    setSelectedRate(null);
+    setDialogMode('create');
+    setIsRateDialogOpen(true);
   };
 
   const applyFilter = (filter: UIRateFilter | undefined, ratesList = rates) => {
@@ -192,7 +245,6 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       return;
     }
     
-    // Convert UI filter to database filter format
     const dbFilter: RateFilter = {
       serviceNames: filter.serviceNames,
       rateTypes: filter.rateTypes as string[],
@@ -206,7 +258,6 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     
     let result = [...ratesList];
     
-    // Filter by service name
     if (dbFilter.serviceNames && dbFilter.serviceNames.length) {
       const searchTerm = dbFilter.serviceNames[0].toLowerCase();
       result = result.filter(rate => 
@@ -215,27 +266,22 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       );
     }
     
-    // Filter by rate type
     if (dbFilter.rateTypes && dbFilter.rateTypes.length) {
       result = result.filter(rate => dbFilter.rateTypes?.includes(rate.rate_type));
     }
     
-    // Filter by client type
     if (dbFilter.clientTypes && dbFilter.clientTypes.length) {
       result = result.filter(rate => dbFilter.clientTypes?.includes(rate.client_type));
     }
     
-    // Filter by funding source
     if (dbFilter.fundingSources && dbFilter.fundingSources.length) {
       result = result.filter(rate => dbFilter.fundingSources?.includes(rate.funding_source));
     }
     
-    // Filter by status
     if (dbFilter.statuses && dbFilter.statuses.length) {
       result = result.filter(rate => dbFilter.statuses?.includes(rate.status));
     }
     
-    // Filter by date range
     if (dbFilter.dateRange) {
       if (dbFilter.dateRange.from) {
         result = result.filter(rate => {
@@ -253,7 +299,6 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       }
     }
     
-    // Filter by amount range
     if (dbFilter.minAmount !== undefined) {
       result = result.filter(rate => rate.amount >= dbFilter.minAmount!);
     }
@@ -292,25 +337,6 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     .filter(r => r.rate_type === 'hourly' && r.status === 'active')
     .reduce((sum, rate) => sum + rate.amount, 0) / 
     (filteredRates.filter(r => r.rate_type === 'hourly' && r.status === 'active').length || 1);
-
-  // Transform database ServiceRate to UI ServiceRate format for the table
-  const transformedRates = filteredRates.map(rate => ({
-    id: rate.id,
-    serviceName: rate.service_name,
-    serviceCode: rate.service_code,
-    rateType: rate.rate_type as any,
-    amount: rate.amount,
-    effectiveFrom: rate.effective_from,
-    effectiveTo: rate.effective_to,
-    description: rate.description,
-    applicableDays: rate.applicable_days,
-    clientType: rate.client_type as any,
-    fundingSource: rate.funding_source as any,
-    status: rate.status as any,
-    lastUpdated: rate.updated_at,
-    createdBy: rate.created_by,
-    isDefault: rate.is_default
-  }));
 
   if (isLoading) {
     return (
@@ -380,7 +406,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
           </div>
           
           <Button
-            onClick={() => setIsAddRateDialogOpen(true)}
+            onClick={handleOpenAddDialog}
             size="sm"
             className="bg-blue-600 hover:bg-blue-700"
             disabled={staffList.length === 0}
@@ -473,7 +499,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
           <Button 
             variant="default" 
             className="mt-4 bg-blue-600 hover:bg-blue-700"
-            onClick={() => setIsAddRateDialogOpen(true)}
+            onClick={handleOpenAddDialog}
             disabled={staffList.length === 0}
             title={staffList.length === 0 ? "Add at least one staff member to create rates" : ""}
           >
@@ -484,45 +510,28 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       ) : (
         <div className="bg-white border rounded-lg shadow-sm">
           <RatesTable
-            rates={transformedRates}
-            onViewRate={(uiRate) => {
-              // Find the original database rate using the ID
-              const dbRate = rates.find(r => r.id === uiRate.id);
-              if (dbRate) handleViewRate(dbRate);
-            }}
-            onEditRate={(uiRate) => {
-              // Find the original database rate using the ID
-              const dbRate = rates.find(r => r.id === uiRate.id);
-              if (dbRate) handleEditRate(dbRate);
-            }}
+            rates={filteredRates}
+            staffMap={staffMap}
+            authoritiesMap={authoritiesMap}
+            onViewRate={handleViewRate}
+            onEditRate={handleEditRate}
             onDeleteRate={handleDeleteRate}
           />
         </div>
       )}
       
-      {/* Dialogs */}
+      {/* Single Dialog for Add/View/Edit */}
       <NewAddRateDialog
-        open={isAddRateDialogOpen}
-        onClose={() => setIsAddRateDialogOpen(false)}
-        onSave={handleAddRate}
-      />
-      
-      <EditRateDialog
-        open={isEditRateDialogOpen}
-        onClose={() => setIsEditRateDialogOpen(false)}
-        onUpdateRate={handleUpdateRate}
-        rate={selectedRate}
-      />
-      
-      <ViewRateDialog
-        open={isViewRateDialogOpen}
-        onClose={() => setIsViewRateDialogOpen(false)}
-        onEdit={(rate) => {
-          setSelectedRate(rate);
-          setIsViewRateDialogOpen(false);
-          setIsEditRateDialogOpen(true);
+        open={isRateDialogOpen}
+        onClose={() => {
+          setIsRateDialogOpen(false);
+          setSelectedRate(null);
         }}
-        rate={selectedRate}
+        onSave={handleSaveRate}
+        mode={dialogMode}
+        rateData={selectedRate}
+        organizationId={organizationId || undefined}
+        branchId={branchId}
       />
       
       <FilterRateDialog
@@ -536,9 +545,9 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this rate?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the rate.
+              This action cannot be undone. This will permanently delete the rate from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
