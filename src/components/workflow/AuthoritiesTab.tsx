@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Building2, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Building2, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,8 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddAuthorityDialog, AuthorityData, DialogMode } from "./AddAuthorityDialog";
-import { useAuthorities } from "@/contexts/AuthoritiesContext";
+import { AddAuthorityDialog, DialogMode } from "./AddAuthorityDialog";
+import { useAuthorities, AuthorityData } from "@/contexts/AuthoritiesContext";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const AuthoritiesTab = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -29,14 +31,26 @@ export const AuthoritiesTab = () => {
   const [selectedAuthority, setSelectedAuthority] = useState<AuthorityData | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [authorityToDelete, setAuthorityToDelete] = useState<AuthorityData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const { authorities, addAuthority, updateAuthority, removeAuthority } = useAuthorities();
+  const { authorities, isLoading, addAuthority, updateAuthority, removeAuthority } = useAuthorities();
 
-  const handleSaveAuthority = (data: AuthorityData) => {
-    if (dialogMode === 'edit') {
-      updateAuthority(data);
-    } else {
-      addAuthority(data);
+  const handleSaveAuthority = async (data: AuthorityData) => {
+    setIsSaving(true);
+    try {
+      if (dialogMode === 'edit') {
+        await updateAuthority(data);
+        toast.success("Authority updated successfully");
+      } else {
+        await addAuthority(data);
+        toast.success("Authority added successfully");
+      }
+    } catch (error) {
+      console.error('Error saving authority:', error);
+      toast.error("Failed to save authority");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -57,10 +71,19 @@ export const AuthoritiesTab = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (authorityToDelete) {
-      removeAuthority(authorityToDelete.id);
-      setAuthorityToDelete(null);
+      setIsDeleting(true);
+      try {
+        await removeAuthority(authorityToDelete.id);
+        toast.success("Authority deleted successfully");
+        setAuthorityToDelete(null);
+      } catch (error) {
+        console.error('Error deleting authority:', error);
+        toast.error("Failed to delete authority");
+      } finally {
+        setIsDeleting(false);
+      }
     }
     setDeleteDialogOpen(false);
   };
@@ -79,12 +102,39 @@ export const AuthoritiesTab = () => {
     }
   };
 
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <Skeleton className="h-7 w-32 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <Card className="bg-card border border-border">
+          <div className="p-4 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-4">
+                <Skeleton className="h-12 flex-1" />
+                <Skeleton className="h-12 flex-1" />
+                <Skeleton className="h-12 flex-1" />
+                <Skeleton className="h-12 w-24" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 tracking-tight">Authorities</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage authority organizations and their configurations</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Authorities</h2>
+          <p className="text-sm text-muted-foreground mt-1">Manage authority organizations and their configurations</p>
         </div>
         <Button onClick={handleAddNew} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -93,7 +143,7 @@ export const AuthoritiesTab = () => {
       </div>
 
       {authorities.length > 0 ? (
-        <Card className="bg-white border border-gray-200">
+        <Card className="bg-card border border-border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -146,13 +196,13 @@ export const AuthoritiesTab = () => {
           </Table>
         </Card>
       ) : (
-        <Card className="bg-white border border-gray-200">
+        <Card className="bg-card border border-border">
           <CardContent className="p-12 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Building2 className="h-8 w-8 text-gray-400" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Building2 className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-gray-800 text-lg mb-2">No Authorities Added</h3>
-            <p className="text-sm text-gray-500 mb-4 max-w-sm">
+            <h3 className="font-semibold text-foreground text-lg mb-2">No Authorities Added</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
               Get started by adding your first authority organization to manage billing and integrations.
             </p>
             <Button onClick={handleAddNew} variant="outline" className="gap-2">
@@ -181,9 +231,20 @@ export const AuthoritiesTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
