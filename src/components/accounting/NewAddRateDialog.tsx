@@ -52,11 +52,9 @@ const dayOptions = [
 ];
 
 const rateTypeOptions = [
-  { value: "hourly", label: "Hourly" },
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "fixed", label: "Fixed Rate" },
+  { value: "standard", label: "Standard" },
+  { value: "adult", label: "Adult" },
+  { value: "cyp", label: "CYP" },
 ];
 
 const chargeBasedOnOptions = [
