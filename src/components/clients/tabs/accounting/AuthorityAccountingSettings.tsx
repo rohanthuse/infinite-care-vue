@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Building2 } from 'lucide-react';
 import { useAuthorities } from '@/contexts/AuthoritiesContext';
 import { useTravelRates } from '@/hooks/useTravelRates';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantSafe } from '@/hooks/useTenantSafe';
 import {
   useClientAuthorityAccountingList,
   useCreateClientAuthorityAccounting,
@@ -311,7 +311,7 @@ export const AuthorityAccountingSettings: React.FC<AuthorityAccountingSettingsPr
   clientId,
   branchId,
 }) => {
-  const { organization } = useTenant();
+  const { organization } = useTenantSafe();
   const [showNewEntry, setShowNewEntry] = useState(false);
   
   const { data: entries = [], isLoading } = useClientAuthorityAccountingList(clientId);

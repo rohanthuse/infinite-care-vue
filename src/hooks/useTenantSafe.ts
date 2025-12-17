@@ -1,11 +1,15 @@
-// Safe version of useTenant that doesn't throw an error when TenantProvider is not available
+import { useContext } from 'react';
+import { TenantContext } from '@/contexts/TenantContext';
+
+/**
+ * Safe version of useTenant that doesn't throw an error when TenantProvider is not available.
+ * Returns default values instead of throwing when the context is undefined.
+ */
 export const useTenantSafe = () => {
-  try {
-    // Try to import and use the real useTenant hook
-    const { useTenant } = require('@/contexts/TenantContext');
-    return useTenant();
-  } catch {
-    // If import fails or context is not available, return safe defaults
+  const context = useContext(TenantContext);
+  
+  // Return default values if context is not available (no TenantProvider in tree)
+  if (context === undefined) {
     return {
       organization: null,
       tenantSlug: null,
@@ -14,4 +18,6 @@ export const useTenantSafe = () => {
       refreshOrganization: () => {},
     };
   }
+  
+  return context;
 };
