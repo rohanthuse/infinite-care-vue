@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -18,9 +21,17 @@ interface RateBlock {
   id: string;
   applicableDays: string[];
   rateType: string;
-  effectiveFrom: Date | undefined;
-  effectiveUntil: Date | undefined;
+  effectiveFrom: string;
+  effectiveUntil: string;
   chargeBasedOn: string;
+  rateChargingMethod: string;
+  services: string[];
+  rateAt15Minutes: string;
+  rateAt30Minutes: string;
+  rateAt45Minutes: string;
+  rateAt60Minutes: string;
+  consecutiveHours: string;
+  isVatable: boolean;
 }
 
 interface NewAddRateDialogProps {
@@ -49,6 +60,7 @@ const rateTypeOptions = [
 ];
 
 const chargeBasedOnOptions = [
+  { value: "service", label: "Service" },
   { value: "actual_time", label: "Actual Time" },
   { value: "booked_time", label: "Booked Time" },
   { value: "fixed_amount", label: "Fixed Amount" },
@@ -58,6 +70,16 @@ const typeOptions = [
   { value: "client", label: "Client Rate" },
   { value: "staff", label: "Staff Rate" },
   { value: "authority", label: "Authority Rate" },
+  { value: "fees", label: "Fees" },
+];
+
+const servicesOptions = [
+  { label: "Personal Care", value: "personal_care" },
+  { label: "Medication Support", value: "medication_support" },
+  { label: "Domestic Help", value: "domestic_help" },
+  { label: "Companionship", value: "companionship" },
+  { label: "Night Care", value: "night_care" },
+  { label: "Respite Care", value: "respite_care" },
 ];
 
 const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
@@ -68,8 +90,9 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   // Basic Rate Information
   const [type, setType] = useState<string>("");
   const [authority, setAuthority] = useState<string>("");
-  const [captionStartDate, setCaptionStartDate] = useState<Date | undefined>();
-  const [captionEndDate, setCaptionEndDate] = useState<Date | undefined>();
+  const [caption, setCaption] = useState<string>("");
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
   // Rate Blocks
   const [rateBlocks, setRateBlocks] = useState<RateBlock[]>([]);
@@ -81,9 +104,17 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     id: crypto.randomUUID(),
     applicableDays: [],
     rateType: "",
-    effectiveFrom: undefined,
-    effectiveUntil: undefined,
+    effectiveFrom: "",
+    effectiveUntil: "",
     chargeBasedOn: "",
+    rateChargingMethod: "",
+    services: [],
+    rateAt15Minutes: "",
+    rateAt30Minutes: "",
+    rateAt45Minutes: "",
+    rateAt60Minutes: "",
+    consecutiveHours: "",
+    isVatable: false,
   });
 
   const handleAddRateBlock = () => {
@@ -137,8 +168,9 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     const data = {
       type,
       authority,
-      captionStartDate,
-      captionEndDate,
+      caption,
+      startDate,
+      endDate,
       rateBlocks,
     };
 
@@ -151,8 +183,9 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     // Reset form
     setType("");
     setAuthority("");
-    setCaptionStartDate(undefined);
-    setCaptionEndDate(undefined);
+    setCaption("");
+    setStartDate(undefined);
+    setEndDate(undefined);
     setRateBlocks([]);
     onClose();
   };
@@ -216,28 +249,39 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
               )}
             </div>
 
-            {/* Caption Dates */}
+            {/* Caption */}
+            <div className="space-y-2">
+              <Label htmlFor="caption">Caption</Label>
+              <Input
+                id="caption"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="Enter caption"
+              />
+            </div>
+
+            {/* Start Date & End Date */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Caption Start Date</Label>
+                <Label>Start Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !captionStartDate && "text-muted-foreground"
+                        !startDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {captionStartDate ? format(captionStartDate, "PPP") : "Pick a date"}
+                      {startDate ? format(startDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
                     <Calendar
                       mode="single"
-                      selected={captionStartDate}
-                      onSelect={setCaptionStartDate}
+                      selected={startDate}
+                      onSelect={setStartDate}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
@@ -246,25 +290,25 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Caption End Date</Label>
+                <Label>End Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !captionEndDate && "text-muted-foreground"
+                        !endDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {captionEndDate ? format(captionEndDate, "PPP") : "Pick a date"}
+                      {endDate ? format(endDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
                     <Calendar
                       mode="single"
-                      selected={captionEndDate}
-                      onSelect={setCaptionEndDate}
+                      selected={endDate}
+                      onSelect={setEndDate}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
@@ -369,68 +413,36 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                   </Select>
                 </div>
 
-                {/* Effective Dates */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Effective From</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !block.effectiveFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {block.effectiveFrom
-                            ? format(block.effectiveFrom, "PPP")
-                            : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={block.effectiveFrom}
-                          onSelect={(date) =>
-                            handleRateBlockChange(block.id, "effectiveFrom", date)
-                          }
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Effective Until</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !block.effectiveUntil && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {block.effectiveUntil
-                            ? format(block.effectiveUntil, "PPP")
-                            : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={block.effectiveUntil}
-                          onSelect={(date) =>
-                            handleRateBlockChange(block.id, "effectiveUntil", date)
-                          }
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                {/* Effective Time */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Effective Time</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        Effective From
+                      </Label>
+                      <Input
+                        type="time"
+                        value={block.effectiveFrom}
+                        onChange={(e) =>
+                          handleRateBlockChange(block.id, "effectiveFrom", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        Effective Until
+                      </Label>
+                      <Input
+                        type="time"
+                        value={block.effectiveUntil}
+                        onChange={(e) =>
+                          handleRateBlockChange(block.id, "effectiveUntil", e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -455,6 +467,129 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Service-based Charge Options */}
+                {block.chargeBasedOn === "service" && (
+                  <div className="space-y-4 p-4 bg-background/50 rounded-lg border">
+                    {/* Rate Charging Method - Radio Group */}
+                    <div className="space-y-2">
+                      <Label>Rate Charging Method</Label>
+                      <RadioGroup
+                        value={block.rateChargingMethod}
+                        onValueChange={(value) =>
+                          handleRateBlockChange(block.id, "rateChargingMethod", value)
+                        }
+                        className="flex flex-wrap gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="flat" id={`${block.id}-flat`} />
+                          <Label htmlFor={`${block.id}-flat`} className="font-normal cursor-pointer">
+                            Flat Rate
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="pro" id={`${block.id}-pro`} />
+                          <Label htmlFor={`${block.id}-pro`} className="font-normal cursor-pointer">
+                            Pro Rate
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="hourly" id={`${block.id}-hourly`} />
+                          <Label htmlFor={`${block.id}-hourly`} className="font-normal cursor-pointer">
+                            Hourly Rate
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Services Multi-Select */}
+                    <div className="space-y-2">
+                      <Label>Services</Label>
+                      <MultiSelect
+                        options={servicesOptions}
+                        selected={block.services}
+                        onSelectionChange={(selected) =>
+                          handleRateBlockChange(block.id, "services", selected)
+                        }
+                        placeholder="Select services..."
+                      />
+                    </div>
+
+                    {/* Additional Rate Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Rate at 15 Minutes</Label>
+                        <Input
+                          value={block.rateAt15Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt15Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 30 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt30Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt30Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 45 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt45Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt45Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 60 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt60Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt60Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Consecutive Hours</Label>
+                      <Input
+                        value={block.consecutiveHours}
+                        onChange={(e) =>
+                          handleRateBlockChange(block.id, "consecutiveHours", e.target.value)
+                        }
+                        placeholder="Enter hours"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`${block.id}-vatable`}
+                        checked={block.isVatable}
+                        onCheckedChange={(checked) =>
+                          handleRateBlockChange(block.id, "isVatable", checked === true)
+                        }
+                      />
+                      <Label htmlFor={`${block.id}-vatable`} className="font-normal cursor-pointer">
+                        Is this rate VATable?
+                      </Label>
+                    </div>
+                  </div>
+                )}
               </Card>
             ))}
           </div>
