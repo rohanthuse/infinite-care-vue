@@ -112,13 +112,8 @@ export function ViewServiceReportDialog({
                            !safeReport?.client_engagement || 
                            !safeReport?.carer_observations?.trim();
 
-  // Report is editable only if:
-  // 1. Not in admin mode
-  // 2. Status is 'requires_revision' OR has missing required fields
-  const isEditable = !adminMode && safeReport && (
-    safeReport.status === 'requires_revision' ||
-    hasMissingFields
-  );
+  // Report is editable for carers regardless of status (not in admin mode)
+  const isEditable = !adminMode && safeReport;
 
   // Determine if report is submitted and awaiting approval
   const isAwaitingApproval = safeReport?.status === 'pending' && !hasMissingFields;
@@ -298,7 +293,7 @@ export function ViewServiceReportDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
+        <ScrollArea className="max-h-[calc(90vh-140px)] overflow-y-auto px-6 pb-6">
           <div className="space-y-6 mt-6">
             {/* Status Message Card */}
             {(isEditable || isAwaitingApproval || safeReport.status === 'approved' || safeReport.status === 'rejected') && (

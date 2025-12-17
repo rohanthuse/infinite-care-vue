@@ -233,21 +233,28 @@ export function CreateServiceReportDialog({
         id: existingReport.id,
         updates: {
           ...reportData,
-          status: 'approved',
-          visible_to_client: true,
+          status: 'pending',
+          visible_to_client: false,
+          submitted_at: new Date().toISOString(),
         }
       }, {
         onSuccess: () => {
           onOpenChange(false);
           form.reset();
-          toast.success('Service report updated successfully');
+          toast.success('Service report updated and submitted for review');
         },
       });
     } else {
-      createServiceReport.mutate(reportData, {
+      createServiceReport.mutate({
+        ...reportData,
+        status: 'pending',
+        visible_to_client: false,
+        submitted_at: new Date().toISOString(),
+      }, {
         onSuccess: () => {
           onOpenChange(false);
           form.reset();
+          toast.success('Service report submitted for admin review');
         },
       });
     }
@@ -295,9 +302,9 @@ export function CreateServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
         {/* Fixed Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <div className="flex items-start gap-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={existingReport?.clients?.avatar_url} />
@@ -312,9 +319,9 @@ export function CreateServiceReportDialog({
                   <User className="h-3 w-3" />
                   Carer: {carerName}
                 </Badge>
-                <Badge variant="default" className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  APPROVED
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  PENDING REVIEW
                 </Badge>
               </div>
             </div>
@@ -322,7 +329,7 @@ export function CreateServiceReportDialog({
         </DialogHeader>
 
         {/* Scrollable Form Body */}
-        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-200px)] overflow-y-auto px-6">
           <Form {...form}>
             <form id="service-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               

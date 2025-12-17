@@ -514,40 +514,39 @@ export function CarerReportsTab() {
                                     <Plus className="h-4 w-4" />
                                     Add Report
                                   </Button>
-                                ) : booking.report?.status === 'requires_revision' ? (
-                                  <Button 
-                                    size="sm" 
-                                    variant="default" 
-                                    onClick={() => {
-                                      const report = reports.find(r => r.booking_id === booking.id);
-                                      if (report) {
-                                        setSelectedReport(report);
-                                        setViewDialogOpen(true);
-                                      }
-                                    }} 
-                                    className="flex items-center gap-2"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    Edit Report
-                                  </Button>
-                                ) : booking.report?.status === 'pending' ? (
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => {
-                                      const report = reports.find(r => r.booking_id === booking.id);
-                                      if (report) {
-                                        setSelectedReport(report);
-                                        setViewDialogOpen(true);
-                                      }
-                                    }} 
-                                    className="flex items-center gap-2 text-xs"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                    View
-                                  </Button>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">—</span>
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost"
+                                      onClick={() => {
+                                        const report = reports.find(r => r.booking_id === booking.id);
+                                        if (report) {
+                                          setSelectedReport(report);
+                                          setViewDialogOpen(true);
+                                        }
+                                      }} 
+                                      className="flex items-center gap-1 text-xs"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                      View
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={() => {
+                                        const report = reports.find(r => r.booking_id === booking.id);
+                                        if (report) {
+                                          setSelectedReport(report);
+                                          setEditDialogOpen(true);
+                                        }
+                                      }} 
+                                      className="flex items-center gap-1 text-xs"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                      Edit
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
                             </TableRow>
