@@ -11,13 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddAuthorityDialog, AuthorityData } from "./AddAuthorityDialog";
+import { useAuthorities } from "@/contexts/AuthoritiesContext";
 
 export const AuthoritiesTab = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [authorities, setAuthorities] = useState<AuthorityData[]>([]);
+  const { authorities, addAuthority } = useAuthorities();
 
   const handleSaveAuthority = (data: AuthorityData) => {
-    setAuthorities((prev) => [...prev, data]);
+    addAuthority(data);
   };
 
   return (

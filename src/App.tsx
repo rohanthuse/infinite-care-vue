@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
+import { AuthoritiesProvider } from "@/contexts/AuthoritiesContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
@@ -231,6 +232,7 @@ const AppContent = () => {
       <BrowserRouter>
         <LoginNavigationInterceptor />
         <NavigationProvider>
+          <AuthoritiesProvider>
           <TaskProvider>
             <ErrorBoundary fallback={(error, errorInfo) => <RoutingErrorFallback error={error} errorInfo={errorInfo} />}>
               <NavigationGuard />
@@ -360,6 +362,7 @@ const AppContent = () => {
             </Routes>
           </ErrorBoundary>
         </TaskProvider>
+          </AuthoritiesProvider>
       </NavigationProvider>
       </BrowserRouter>
     </AuthErrorBoundary>
