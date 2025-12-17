@@ -99,12 +99,13 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">Authority Information</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full px-6">
           <Form {...form}>
             <form id="authority-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               {/* Section 1: Authority Info */}
@@ -395,9 +396,10 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
               </Card>
             </form>
           </Form>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
-        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-background">
+        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-background flex-shrink-0">
           <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
