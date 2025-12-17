@@ -20,6 +20,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Building2, User, FileText, Settings } from "lucide-react";
 
@@ -38,6 +45,8 @@ const formSchema = z.object({
   contactEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
   
   // Section 3: Authority Invoice Configuration
+  invoiceSetting: z.string().optional(),
+  invoiceNameDisplay: z.string().optional(),
   billingAddress: z.string().optional(),
   invoiceEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
   
@@ -68,6 +77,8 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
       contactName: "",
       contactPhone: "",
       contactEmail: "",
+      invoiceSetting: "",
+      invoiceNameDisplay: "",
       billingAddress: "",
       invoiceEmail: "",
       needsCM2000: false,
@@ -243,6 +254,53 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="invoiceSetting"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select invoice setting</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an invoice setting" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard Invoice</SelectItem>
+                            <SelectItem value="detailed">Detailed Invoice</SelectItem>
+                            <SelectItem value="summary">Summary Invoice</SelectItem>
+                            <SelectItem value="custom">Custom Invoice</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="invoiceNameDisplay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select how you want names to appear in the invoices</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select name display option" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="initials">Initials</SelectItem>
+                            <SelectItem value="full_name">Full Name</SelectItem>
+                            <SelectItem value="none">No initials or Name</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="billingAddress"
