@@ -44,6 +44,11 @@ const formSchema = z.object({
   
   // Section 4: CM2000 Integration
   needsCM2000: z.boolean().default(false),
+  cm2000Organization: z.string().optional(),
+  cm2000Telephone: z.string().regex(phoneRegex, "Invalid phone number").optional().or(z.literal("")),
+  cm2000Address: z.string().optional(),
+  cm2000Email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  cm2000BillingAddress: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,8 +72,15 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
       billingAddress: "",
       invoiceEmail: "",
       needsCM2000: false,
+      cm2000Organization: "",
+      cm2000Telephone: "",
+      cm2000Address: "",
+      cm2000Email: "",
+      cm2000BillingAddress: "",
     },
   });
+
+  const needsCM2000 = form.watch("needsCM2000");
 
   const onSubmit = (data: FormValues) => {
     console.log("Authority form data:", data);
@@ -274,8 +286,8 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
                     CM2000 Integration
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm font-medium text-gray-700 mb-4">CM2000</p>
+                <CardContent className="space-y-4">
+                  <p className="text-sm font-medium text-gray-700">CM2000</p>
                   <FormField
                     control={form.control}
                     name="needsCM2000"
@@ -295,6 +307,90 @@ export const AddAuthorityDialog = ({ open, onOpenChange }: AddAuthorityDialogPro
                       </FormItem>
                     )}
                   />
+                  
+                  {needsCM2000 && (
+                    <div className="space-y-4 pt-4 border-t border-gray-200">
+                      <FormField
+                        control={form.control}
+                        name="cm2000Organization"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Organization</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter CM2000 organization" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="cm2000Telephone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telephone</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter CM2000 telephone" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="cm2000Email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="Enter CM2000 email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="cm2000Address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Enter CM2000 address" 
+                                className="min-h-[80px] resize-none"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="cm2000BillingAddress"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Billing Address</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Enter CM2000 billing address" 
+                                className="min-h-[80px] resize-none"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </form>
