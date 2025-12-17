@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Building2 } from 'lucide-react';
 import { useAuthorities } from '@/contexts/AuthoritiesContext';
 import { useTravelRates } from '@/hooks/useTravelRates';
-import { useTenantSafe } from '@/hooks/useTenantSafe';
 import {
   useClientAuthorityAccountingList,
   useCreateClientAuthorityAccounting,
@@ -36,6 +35,7 @@ type AuthorityAccountingFormData = z.infer<typeof authorityAccountingSchema>;
 interface AuthorityAccountingSettingsProps {
   clientId: string;
   branchId: string;
+  organizationId?: string;
 }
 
 interface AuthorityEntryCardProps {
@@ -310,8 +310,8 @@ const AuthorityEntryCard: React.FC<AuthorityEntryCardProps> = ({
 export const AuthorityAccountingSettings: React.FC<AuthorityAccountingSettingsProps> = ({
   clientId,
   branchId,
+  organizationId,
 }) => {
-  const { organization } = useTenantSafe();
   const [showNewEntry, setShowNewEntry] = useState(false);
   
   const { data: entries = [], isLoading } = useClientAuthorityAccountingList(clientId);
@@ -376,7 +376,7 @@ export const AuthorityAccountingSettings: React.FC<AuthorityAccountingSettingsPr
         <AuthorityEntryCard
           clientId={clientId}
           branchId={branchId}
-          organizationId={organization?.id}
+          organizationId={organizationId}
           onSave={handleCreate}
           onUpdate={() => {}}
           onCancel={() => setShowNewEntry(false)}
@@ -401,7 +401,7 @@ export const AuthorityAccountingSettings: React.FC<AuthorityAccountingSettingsPr
             entry={entry}
             clientId={clientId}
             branchId={branchId}
-            organizationId={organization?.id}
+            organizationId={organizationId}
             onSave={() => {}}
             onUpdate={handleUpdate}
             onDelete={handleDelete}

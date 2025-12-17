@@ -635,11 +635,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         </TabsContent>
         
         <TabsContent value="private-accounting" className="mt-6">
-          <PrivateAccountingSettings clientId={clientId} branchId={branchId || ''} />
+          <PrivateAccountingSettings clientId={clientId} branchId={branchId || ''} organizationId={accountingSettings?.organization_id} />
         </TabsContent>
         
         <TabsContent value="authority-accounting" className="mt-6">
-          <AuthorityAccountingSettings clientId={clientId} branchId={branchId || ''} />
+          <AuthorityAccountingSettings clientId={clientId} branchId={branchId || ''} organizationId={accountingSettings?.organization_id} />
         </TabsContent>
       </Tabs>
     </div>
