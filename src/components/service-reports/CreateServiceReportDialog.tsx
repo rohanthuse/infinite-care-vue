@@ -295,9 +295,9 @@ export function CreateServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
         {/* Fixed Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <div className="flex items-start gap-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={existingReport?.clients?.avatar_url} />
@@ -322,7 +322,7 @@ export function CreateServiceReportDialog({
         </DialogHeader>
 
         {/* Scrollable Form Body */}
-        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
+        <ScrollArea className="flex-1 min-h-0 px-6">
           <Form {...form}>
             <form id="service-report-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               
@@ -749,7 +749,7 @@ export function CreateServiceReportDialog({
         </ScrollArea>
 
         {/* Fixed Footer with Action Buttons */}
-        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-background">
+        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-background flex-shrink-0">
           <Button
             type="button"
             variant="outline"
