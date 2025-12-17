@@ -24,11 +24,9 @@ import {
   invoiceMethodLabels,
   invoiceDisplayTypeLabels,
   servicePayerLabels,
-  authorityCategoryLabels,
   InvoiceMethod,
   InvoiceDisplayType,
-  ServicePayer,
-  AuthorityCategory
+  ServicePayer
 } from '@/types/clientAccounting';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,15 +51,7 @@ const accountingFormSchema = z.object({
   billing_address: z.string().nullable(),
   mileage_rule_no_payment: z.boolean(),
   service_payer: z.enum(['authorities', 'direct_payment', 'self_funder', 'other']),
-  authority_category: z.enum(['private', 'local_authority', 'nhs', 'insurance', 'charity', 'other']).nullable(),
-}).refine((data) => {
-  if (data.service_payer === 'authorities') {
-    return data.authority_category !== null;
-  }
-  return true;
-}, {
-  message: "Please select an authority category",
-  path: ["authority_category"],
+  pay_method: z.string().optional(),
 });
 
 type AccountingFormValues = z.infer<typeof accountingFormSchema>;
@@ -112,12 +102,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       billing_address: null,
       mileage_rule_no_payment: false,
       service_payer: 'authorities',
-      authority_category: null,
+      pay_method: '',
     },
   });
 
   const billingAddressSameAsPersonal = accountingForm.watch('billing_address_same_as_personal');
-  const servicePayer = accountingForm.watch('service_payer');
   
   // Load data into form when available
   useEffect(() => {
@@ -144,7 +133,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         billing_address: accountingSettings.billing_address || null,
         mileage_rule_no_payment: accountingSettings.mileage_rule_no_payment || false,
         service_payer: (accountingSettings.service_payer as ServicePayer) || 'authorities',
-        authority_category: (accountingSettings.authority_category as AuthorityCategory) || null,
+        pay_method: (accountingSettings as any).pay_method || '',
       });
     }
   }, [accountingSettings, accountingForm]);
@@ -183,7 +172,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         billing_address: values.billing_address_same_as_personal ? null : values.billing_address,
         mileage_rule_no_payment: values.mileage_rule_no_payment,
         service_payer: values.service_payer as ServicePayer,
-        authority_category: values.service_payer === 'authorities' ? values.authority_category : null,
+        pay_method: values.pay_method || null,
         show_in_task_matrix: accountingSettings?.show_in_task_matrix || false,
         show_in_form_matrix: accountingSettings?.show_in_form_matrix || false,
         enable_geo_fencing: accountingSettings?.enable_geo_fencing || false,
@@ -555,25 +544,27 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                       )}
                     />
 
-                    {/* Who Pays for the Service */}
+                    {/* Pay Method */}
                     <FormField
                       control={accountingForm.control}
-                      name="service_payer"
+                      name="pay_method"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Who pays for the service</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
+                          <FormLabel>Pay Method</FormLabel>
+                          <Select value={field.value || ''} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select service payer" />
+                                <SelectValue placeholder="Select pay method" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {Object.entries(servicePayerLabels).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
+                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="direct_debit">Direct Debit</SelectItem>
+                              <SelectItem value="bacs">BACS</SelectItem>
+                              <SelectItem value="faster_payment">Faster Payment</SelectItem>
+                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="cheque">Cheque</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -581,36 +572,49 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                       )}
                     />
 
-                    {/* Authority Category - Conditional */}
-                    {servicePayer === 'authorities' && (
-                      <FormField
-                        control={accountingForm.control}
-                        name="authority_category"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Authority Category</FormLabel>
-                            <Select 
-                              value={field.value || ''} 
+                    {/* Who Pays for the Service */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="service_payer"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Who pays for the service</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              value={field.value}
                               onValueChange={field.onChange}
+                              className="flex flex-col gap-2"
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select authority category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {Object.entries(authorityCategoryLabels).map(([value, label]) => (
-                                  <SelectItem key={value} value={value}>
-                                    {label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="authorities" id="payer-authorities" />
+                                <Label htmlFor="payer-authorities" className="font-normal cursor-pointer">
+                                  Authorities
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="direct_payment" id="payer-direct" />
+                                <Label htmlFor="payer-direct" className="font-normal cursor-pointer">
+                                  Direct Payment
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="self_funder" id="payer-self" />
+                                <Label htmlFor="payer-self" className="font-normal cursor-pointer">
+                                  Self-Funder
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="other" id="payer-other" />
+                                <Label htmlFor="payer-other" className="font-normal cursor-pointer">
+                                  Other
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     {/* Submit Button */}
                     <div className="flex justify-end pt-4">
