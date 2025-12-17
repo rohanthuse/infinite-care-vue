@@ -70,6 +70,7 @@ const rateTypeOptions = [
 const chargeBasedOnOptions = [
   { value: "hours_minutes", label: "Hours/Minutes" },
   { value: "services", label: "Services" },
+  { value: "fix_flat_rate", label: "Fix Flat Rate" },
 ];
 
 const typeOptions = [
@@ -95,6 +96,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [endDateOptional, setEndDateOptional] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("active");
 
   // Rate Blocks
   const [rateBlocks, setRateBlocks] = useState<RateBlock[]>([]);
@@ -128,6 +130,11 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       } else {
         setEndDate(undefined);
         setEndDateOptional(true);
+      }
+
+      // Set status for edit mode
+      if (rateData.status) {
+        setStatus(rateData.status);
       }
 
       // Create a rate block from existing data
@@ -248,6 +255,9 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
           case 'hourly': return 'hourly_rate';
           default: return 'flat_rate';
         }
+      } else if (chargeBasedOn === 'fix_flat_rate') {
+        // Fix Flat Rate always maps to flat_rate
+        return 'flat_rate';
       } else if (chargeBasedOn === 'hours_minutes') {
         switch (rateCalculationType) {
           case 'rate_per_hour': return 'rate_per_hour';
@@ -263,6 +273,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     const mapToPayBasedOn = (chargeBasedOn: string): string => {
       switch (chargeBasedOn) {
         case 'services': return 'service';
+        case 'fix_flat_rate': return 'fixed';
         case 'hours_minutes': return 'hours_minutes';
         default: return 'service';
       }
@@ -305,7 +316,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       funding_source: authority || "self_funded",
       applicable_days: rateBlock?.applicableDays || [],
       is_default: false,
-      status: "active",
+      status: isEditMode ? status : "active",
       description: `Rate for ${serviceName}`,
       // Rate minute fields (for pro rate)
       rate_15_minutes: rateBlock?.rateAt15Minutes ? parseFloat(rateBlock.rateAt15Minutes) : null,
@@ -340,6 +351,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     setStartDate(undefined);
     setEndDate(undefined);
     setEndDateOptional(false);
+    setStatus("active");
     setRateBlocks([]);
     onClose();
   };
@@ -507,6 +519,22 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Status - Only show in Edit mode */}
+            {isEditMode && (
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Rates Section */}
@@ -788,7 +816,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                 )}
 
                 {/* Service-based Charge Options */}
-                {block.chargeBasedOn === "services" && (
+                {(block.chargeBasedOn === "services" || block.chargeBasedOn === "fix_flat_rate") && (
                   <div className="space-y-4 p-4 bg-background/50 rounded-lg border">
                     {/* Rate Charging Method - Radio Group */}
                     <div className="space-y-2">
