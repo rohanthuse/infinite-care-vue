@@ -247,7 +247,7 @@ export function ViewServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-0">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
@@ -293,7 +293,7 @@ export function ViewServiceReportDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-140px)] overflow-y-auto px-6 pb-6">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-140px)] overflow-y-auto px-6 pb-6">
           <div className="space-y-6 mt-6">
             {/* Status Message Card */}
             {(isEditable || isAwaitingApproval || safeReport.status === 'approved' || safeReport.status === 'rejected') && (
