@@ -11,7 +11,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useClientPrivateAccounting, useCreateOrUpdateClientPrivateAccounting } from '@/hooks/useClientAccounting';
 import { useTravelRates } from '@/hooks/useTravelRates';
-import { useTenantSafe } from '@/hooks/useTenantSafe';
 import { ChargeBasedOn, chargeBasedOnLabels } from '@/types/clientAccounting';
 
 const privateAccountingSchema = z.object({
@@ -27,13 +26,14 @@ type PrivateAccountingFormData = z.infer<typeof privateAccountingSchema>;
 interface PrivateAccountingSettingsProps {
   clientId: string;
   branchId: string;
+  organizationId?: string;
 }
 
 export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps> = ({
   clientId,
-  branchId
+  branchId,
+  organizationId,
 }) => {
-  const { organization } = useTenantSafe();
   const { data: settings, isLoading: settingsLoading } = useClientPrivateAccounting(clientId);
   const { data: travelRates } = useTravelRates(branchId);
   const updateSettings = useCreateOrUpdateClientPrivateAccounting();
@@ -64,7 +64,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
   const onSubmit = (data: PrivateAccountingFormData) => {
     // Sanitize all UUID fields - convert empty strings to null for database
     const sanitizedBranchId = branchId && branchId.trim() !== '' ? branchId : null;
-    const sanitizedOrganizationId = organization?.id && organization.id.trim() !== '' ? organization.id : null;
+    const sanitizedOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : null;
     const sanitizedTravelRateId = data.travel_rate_id && data.travel_rate_id.trim() !== '' ? data.travel_rate_id : null;
     const sanitizedPrivateInvoiceConfig = data.private_invoice_config && data.private_invoice_config.trim() !== '' ? data.private_invoice_config : null;
     
