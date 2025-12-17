@@ -284,8 +284,9 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       rate_45_minutes: rateBlock?.rateAt45Minutes ? parseFloat(rateBlock.rateAt45Minutes) : null,
       rate_60_minutes: rateBlock?.rateAt60Minutes ? parseFloat(rateBlock.rateAt60Minutes) : null,
       consecutive_hours: rateBlock?.consecutiveHours ? parseFloat(rateBlock.consecutiveHours) : null,
-      is_vatable: rateBlock?.isVatable || false,
-      service_type_codes: rateBlock?.services || [],
+      service_type: rateBlock?.isVatable ? 'vatable' : 'standard',
+      charge_type: rateBlock?.chargeBasedOn || 'hourly_rate',
+      pay_based_on: rateBlock?.rateChargingMethod || 'service',
     };
 
     // If editing, include the rate ID

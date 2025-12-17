@@ -155,10 +155,10 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       await createServiceRate.mutateAsync(cleanRateData as Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>);
       
       setIsRateDialogOpen(false);
-      toast.success('Service rate created successfully');
+      toast.success('Rate created successfully');
     } catch (error) {
-      console.error('Error creating service rate:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create service rate';
+      console.error('Error creating rate:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create rate';
       toast.error(errorMessage);
     }
   };
@@ -182,10 +182,10 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       
       setIsRateDialogOpen(false);
       setSelectedRate(null);
-      toast.success('Service rate updated successfully');
+      toast.success('Rate updated successfully');
     } catch (error) {
-      console.error('Error updating service rate:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update service rate';
+      console.error('Error updating rate:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update rate';
       toast.error(errorMessage);
     }
   };
@@ -212,10 +212,10 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         
         setRateToDelete(null);
         setIsDeleteDialogOpen(false);
-        toast.success('Service rate deleted successfully');
+        toast.success('Rate deleted successfully');
       } catch (error) {
-        console.error('Error deleting service rate:', error);
-        toast.error('Failed to delete service rate');
+        console.error('Error deleting rate:', error);
+        toast.error('Failed to delete rate');
       }
     }
   };
@@ -343,7 +343,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading service rates...</p>
+          <p className="text-gray-500">Loading rates...</p>
         </div>
       </div>
     );
@@ -352,7 +352,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600">Error loading service rates. Please try again.</p>
+        <p className="text-red-600">Error loading rates. Please try again.</p>
         <Button onClick={() => refetch()} className="mt-2">
           Retry
         </Button>
