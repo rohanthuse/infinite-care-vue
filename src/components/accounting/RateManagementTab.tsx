@@ -9,7 +9,7 @@ import {
 import RatesTable from "./RatesTable";
 import { ServiceRate, useServiceRates, useCreateServiceRate, useDeleteServiceRate, useStaffList } from "@/hooks/useAccountingData";
 import { cn, formatCurrency } from "@/lib/utils";
-import AddRateDialog from "./AddRateDialog";
+import NewAddRateDialog from "./NewAddRateDialog";
 import EditRateDialog from "./EditRateDialog";
 import ViewRateDialog from "./ViewRateDialog";
 import FilterRateDialog from "./FilterRateDialog";
@@ -501,11 +501,10 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       )}
       
       {/* Dialogs */}
-      <AddRateDialog
+      <NewAddRateDialog
         open={isAddRateDialogOpen}
         onClose={() => setIsAddRateDialogOpen(false)}
-        onAddRate={handleAddRate}
-        branchId={branchId}
+        onSave={handleAddRate}
       />
       
       <EditRateDialog
