@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Plus, Trash2, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { useAuthorities } from "@/contexts/AuthoritiesContext";
+import { useServices } from "@/data/hooks/useServices";
+import { ServiceRate } from "@/hooks/useAccountingData";
 
 interface RateBlock {
   id: string;
@@ -36,10 +38,16 @@ interface RateBlock {
   isVatable: boolean;
 }
 
+export type DialogMode = 'create' | 'view' | 'edit';
+
 interface NewAddRateDialogProps {
   open: boolean;
   onClose: () => void;
   onSave?: (data: any) => void;
+  mode?: DialogMode;
+  rateData?: ServiceRate | null;
+  organizationId?: string;
+  branchId?: string;
 }
 
 const dayOptions = [
@@ -71,19 +79,14 @@ const typeOptions = [
   { value: "fees", label: "Fees" },
 ];
 
-const servicesOptions = [
-  { label: "Personal Care", value: "personal_care" },
-  { label: "Medication Support", value: "medication_support" },
-  { label: "Domestic Help", value: "domestic_help" },
-  { label: "Companionship", value: "companionship" },
-  { label: "Night Care", value: "night_care" },
-  { label: "Respite Care", value: "respite_care" },
-];
-
 const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   open,
   onClose,
   onSave,
+  mode = 'create',
+  rateData,
+  organizationId,
+  branchId,
 }) => {
   // Basic Rate Information
   const [type, setType] = useState<string>("");
@@ -98,6 +101,57 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
 
   // Get authorities from context
   const { authorities, isLoading: authoritiesLoading } = useAuthorities();
+
+  // Get services from database
+  const { data: services = [], isLoading: servicesLoading } = useServices(organizationId);
+
+  // Transform services for MultiSelect
+  const servicesOptions = services.map(service => ({
+    label: service.title,
+    value: service.id
+  }));
+
+  const isViewMode = mode === 'view';
+  const isEditMode = mode === 'edit';
+
+  // Populate form when editing or viewing existing rate
+  useEffect(() => {
+    if ((isEditMode || isViewMode) && rateData && open) {
+      setCaption(rateData.service_name || "");
+      setAuthority(rateData.funding_source || "");
+      setType(rateData.client_type || "");
+      setStartDate(rateData.effective_from ? new Date(rateData.effective_from) : undefined);
+      
+      if (rateData.effective_to) {
+        setEndDate(new Date(rateData.effective_to));
+        setEndDateOptional(false);
+      } else {
+        setEndDate(undefined);
+        setEndDateOptional(true);
+      }
+
+      // Create a rate block from existing data
+      const existingBlock: RateBlock = {
+        id: crypto.randomUUID(),
+        applicableDays: rateData.applicable_days || [],
+        rateType: rateData.rate_type || "",
+        effectiveFrom: "",
+        effectiveUntil: "",
+        chargeBasedOn: "services",
+        rateChargingMethod: rateData.rate_type === "hourly" ? "hourly" : "flat",
+        rateCalculationType: "",
+        services: rateData.service_id ? [rateData.service_id] : [],
+        rate: rateData.amount?.toString() || "",
+        rateAt15Minutes: "",
+        rateAt30Minutes: "",
+        rateAt45Minutes: "",
+        rateAt60Minutes: "",
+        consecutiveHours: "",
+        isVatable: false,
+      };
+      setRateBlocks([existingBlock]);
+    }
+  }, [isEditMode, isViewMode, rateData, open]);
 
   const createNewRateBlock = (): RateBlock => ({
     id: crypto.randomUUID(),
@@ -119,14 +173,17 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   });
 
   const handleAddRateBlock = () => {
+    if (isViewMode) return;
     setRateBlocks((prev) => [...prev, createNewRateBlock()]);
   };
 
   const handleRemoveRateBlock = (id: string) => {
+    if (isViewMode) return;
     setRateBlocks((prev) => prev.filter((block) => block.id !== id));
   };
 
   const handleRateBlockChange = (id: string, field: keyof RateBlock, value: any) => {
+    if (isViewMode) return;
     setRateBlocks((prev) =>
       prev.map((block) =>
         block.id === id ? { ...block, [field]: value } : block
@@ -135,6 +192,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   };
 
   const handleDayToggle = (blockId: string, dayId: string) => {
+    if (isViewMode) return;
     setRateBlocks((prev) =>
       prev.map((block) => {
         if (block.id !== blockId) return block;
@@ -148,6 +206,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   };
 
   const handleSelectAllDays = (blockId: string) => {
+    if (isViewMode) return;
     setRateBlocks((prev) =>
       prev.map((block) =>
         block.id === blockId
@@ -158,6 +217,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   };
 
   const handleClearAllDays = (blockId: string) => {
+    if (isViewMode) return;
     setRateBlocks((prev) =>
       prev.map((block) =>
         block.id === blockId ? { ...block, applicableDays: [] } : block
@@ -166,6 +226,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   };
 
   const handleEndDateOptionalChange = (checked: boolean) => {
+    if (isViewMode) return;
     setEndDateOptional(checked);
     if (checked) {
       setEndDate(undefined);
@@ -173,18 +234,67 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   };
 
   const handleSave = () => {
-    const data = {
-      type,
-      authority,
-      caption,
-      startDate,
-      endDate: endDateOptional ? null : endDate,
-      endDateOptional,
-      rateBlocks,
+    if (isViewMode) return;
+
+    // Transform form data to match database schema
+    const rateBlock = rateBlocks[0]; // Primary rate block
+    
+    // Determine amount from rate block
+    let amount = 0;
+    if (rateBlock) {
+      if (rateBlock.rateChargingMethod === "flat" || rateBlock.rateChargingMethod === "hourly") {
+        amount = parseFloat(rateBlock.rate) || 0;
+      } else if (rateBlock.rateAt60Minutes) {
+        amount = parseFloat(rateBlock.rateAt60Minutes) || 0;
+      }
+    }
+
+    // Get service name from selected services
+    let serviceName = caption;
+    let serviceCode = caption.toLowerCase().replace(/\s+/g, '_');
+    let serviceId: string | undefined;
+
+    if (rateBlock?.services?.length > 0) {
+      const selectedService = services.find(s => s.id === rateBlock.services[0]);
+      if (selectedService) {
+        serviceName = serviceName || selectedService.title;
+        serviceCode = selectedService.code || serviceCode;
+        serviceId = selectedService.id;
+      }
+    }
+
+    const dbRateData = {
+      service_name: serviceName || "Unnamed Rate",
+      service_code: serviceCode || "unknown",
+      service_id: serviceId,
+      rate_type: rateBlock?.rateChargingMethod || rateBlock?.rateType || "hourly",
+      amount: amount,
+      currency: "GBP",
+      effective_from: startDate ? format(startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+      effective_to: endDateOptional ? null : (endDate ? format(endDate, 'yyyy-MM-dd') : null),
+      client_type: type || "standard",
+      funding_source: authority || "self_funded",
+      applicable_days: rateBlock?.applicableDays || [],
+      is_default: false,
+      status: "active",
+      description: `Rate for ${serviceName}`,
+      // Rate minute fields (for pro rate)
+      rate_15_minutes: rateBlock?.rateAt15Minutes ? parseFloat(rateBlock.rateAt15Minutes) : null,
+      rate_30_minutes: rateBlock?.rateAt30Minutes ? parseFloat(rateBlock.rateAt30Minutes) : null,
+      rate_45_minutes: rateBlock?.rateAt45Minutes ? parseFloat(rateBlock.rateAt45Minutes) : null,
+      rate_60_minutes: rateBlock?.rateAt60Minutes ? parseFloat(rateBlock.rateAt60Minutes) : null,
+      consecutive_hours: rateBlock?.consecutiveHours ? parseFloat(rateBlock.consecutiveHours) : null,
+      is_vatable: rateBlock?.isVatable || false,
+      service_type_codes: rateBlock?.services || [],
     };
 
-    onSave?.(data);
-    toast.success("Rate saved successfully");
+    // If editing, include the rate ID
+    if (isEditMode && rateData?.id) {
+      onSave?.({ ...dbRateData, id: rateData.id });
+    } else {
+      onSave?.(dbRateData);
+    }
+    
     handleClose();
   };
 
@@ -200,11 +310,22 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     onClose();
   };
 
+  const getDialogTitle = () => {
+    switch (mode) {
+      case 'view':
+        return 'View Rate';
+      case 'edit':
+        return 'Edit Rate';
+      default:
+        return 'Add New Rate';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Rate</DialogTitle>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -217,7 +338,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
             {/* Type */}
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={setType} disabled={isViewMode}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Type" />
                 </SelectTrigger>
@@ -234,7 +355,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
             {/* Authority */}
             <div className="space-y-2">
               <Label htmlFor="authority">Authority</Label>
-              <Select value={authority} onValueChange={setAuthority} disabled={authoritiesLoading}>
+              <Select value={authority} onValueChange={setAuthority} disabled={authoritiesLoading || isViewMode}>
                 <SelectTrigger>
                   <SelectValue placeholder={authoritiesLoading ? "Loading authorities..." : "Select Authority"} />
                 </SelectTrigger>
@@ -271,6 +392,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Enter caption"
+                disabled={isViewMode}
               />
             </div>
 
@@ -286,6 +408,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                         "w-full justify-start text-left font-normal",
                         !startDate && "text-muted-foreground"
                       )}
+                      disabled={isViewMode}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {startDate ? format(startDate, "PPP") : "Pick a date"}
@@ -311,6 +434,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                       id="endDateOptional"
                       checked={endDateOptional}
                       onCheckedChange={(checked) => handleEndDateOptionalChange(checked === true)}
+                      disabled={isViewMode}
                     />
                     <Label htmlFor="endDateOptional" className="text-sm font-normal cursor-pointer">
                       Optional
@@ -330,6 +454,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           "w-full justify-start text-left font-normal",
                           !endDate && "text-muted-foreground"
                         )}
+                        disabled={isViewMode}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {endDate ? format(endDate, "PPP") : "Pick a date"}
@@ -354,15 +479,17 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="text-sm font-semibold text-foreground">Rates</h3>
-              <Button variant="outline" size="sm" onClick={handleAddRateBlock}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Rate
-              </Button>
+              {!isViewMode && (
+                <Button variant="outline" size="sm" onClick={handleAddRateBlock}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Rate
+                </Button>
+              )}
             </div>
 
             {rateBlocks.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Click "Add Rate" to add rate configuration
+                {isViewMode ? "No rate configuration" : "Click \"Add Rate\" to add rate configuration"}
               </p>
             )}
 
@@ -371,38 +498,42 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
               <Card key={block.id} className="p-4 space-y-4 bg-muted/30">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Rate #{index + 1}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveRateBlock(block.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {!isViewMode && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveRateBlock(block.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </div>
 
                 {/* Applicable Days */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Applicable Days</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="h-auto p-0 text-xs"
-                        onClick={() => handleSelectAllDays(block.id)}
-                      >
-                        Select All
-                      </Button>
-                      <span className="text-muted-foreground">|</span>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="h-auto p-0 text-xs"
-                        onClick={() => handleClearAllDays(block.id)}
-                      >
-                        Clear All
-                      </Button>
-                    </div>
+                    {!isViewMode && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => handleSelectAllDays(block.id)}
+                        >
+                          Select All
+                        </Button>
+                        <span className="text-muted-foreground">|</span>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => handleClearAllDays(block.id)}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {dayOptions.map((day) => (
@@ -411,6 +542,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           id={`${block.id}-${day.id}`}
                           checked={block.applicableDays.includes(day.id)}
                           onCheckedChange={() => handleDayToggle(block.id, day.id)}
+                          disabled={isViewMode}
                         />
                         <Label
                           htmlFor={`${block.id}-${day.id}`}
@@ -431,6 +563,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                     onValueChange={(value) =>
                       handleRateBlockChange(block.id, "rateType", value)
                     }
+                    disabled={isViewMode}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select rate type" />
@@ -460,6 +593,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                         onChange={(e) =>
                           handleRateBlockChange(block.id, "effectiveFrom", e.target.value)
                         }
+                        disabled={isViewMode}
                       />
                     </div>
                     <div className="space-y-2">
@@ -473,6 +607,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                         onChange={(e) =>
                           handleRateBlockChange(block.id, "effectiveUntil", e.target.value)
                         }
+                        disabled={isViewMode}
                       />
                     </div>
                   </div>
@@ -486,6 +621,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                     onValueChange={(value) =>
                       handleRateBlockChange(block.id, "chargeBasedOn", value)
                     }
+                    disabled={isViewMode}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select option" />
@@ -512,21 +648,22 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           handleRateBlockChange(block.id, "rateCalculationType", value)
                         }
                         className="flex flex-col gap-3"
+                        disabled={isViewMode}
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="rate_per_hour" id={`${block.id}-rate_per_hour`} />
+                          <RadioGroupItem value="rate_per_hour" id={`${block.id}-rate_per_hour`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-rate_per_hour`} className="font-normal cursor-pointer">
                             Rate per Hour
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="rate_per_minutes_pro" id={`${block.id}-rate_per_minutes_pro`} />
+                          <RadioGroupItem value="rate_per_minutes_pro" id={`${block.id}-rate_per_minutes_pro`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-rate_per_minutes_pro`} className="font-normal cursor-pointer">
                             Rate per Minutes (Pro Rate)
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="rate_per_minutes_flat" id={`${block.id}-rate_per_minutes_flat`} />
+                          <RadioGroupItem value="rate_per_minutes_flat" id={`${block.id}-rate_per_minutes_flat`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-rate_per_minutes_flat`} className="font-normal cursor-pointer">
                             Rate per Minutes (Flat Rate)
                           </Label>
@@ -544,6 +681,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                             handleRateBlockChange(block.id, "rateAt15Minutes", e.target.value)
                           }
                           placeholder="Enter rate"
+                          disabled={isViewMode}
                         />
                       </div>
                       <div className="space-y-2">
@@ -556,6 +694,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                             handleRateBlockChange(block.id, "rateAt30Minutes", e.target.value)
                           }
                           placeholder="Enter rate"
+                          disabled={isViewMode}
                         />
                       </div>
                       <div className="space-y-2">
@@ -568,6 +707,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                             handleRateBlockChange(block.id, "rateAt45Minutes", e.target.value)
                           }
                           placeholder="Enter rate"
+                          disabled={isViewMode}
                         />
                       </div>
                       <div className="space-y-2">
@@ -580,6 +720,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                             handleRateBlockChange(block.id, "rateAt60Minutes", e.target.value)
                           }
                           placeholder="Enter rate"
+                          disabled={isViewMode}
                         />
                       </div>
                     </div>
@@ -592,6 +733,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           handleRateBlockChange(block.id, "consecutiveHours", e.target.value)
                         }
                         placeholder="Enter hours"
+                        disabled={isViewMode}
                       />
                     </div>
 
@@ -602,6 +744,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                         onCheckedChange={(checked) =>
                           handleRateBlockChange(block.id, "isVatable", checked === true)
                         }
+                        disabled={isViewMode}
                       />
                       <Label htmlFor={`${block.id}-vatable-hours`} className="font-normal cursor-pointer">
                         Is this rate VATable?
@@ -622,21 +765,22 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           handleRateBlockChange(block.id, "rateChargingMethod", value)
                         }
                         className="flex flex-wrap gap-4"
+                        disabled={isViewMode}
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="flat" id={`${block.id}-flat`} />
+                          <RadioGroupItem value="flat" id={`${block.id}-flat`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-flat`} className="font-normal cursor-pointer">
                             Flat Rate
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="pro" id={`${block.id}-pro`} />
+                          <RadioGroupItem value="pro" id={`${block.id}-pro`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-pro`} className="font-normal cursor-pointer">
                             Pro Rate
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="hourly" id={`${block.id}-hourly`} />
+                          <RadioGroupItem value="hourly" id={`${block.id}-hourly`} disabled={isViewMode} />
                           <Label htmlFor={`${block.id}-hourly`} className="font-normal cursor-pointer">
                             Hourly Rate
                           </Label>
@@ -644,17 +788,28 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                       </RadioGroup>
                     </div>
 
-                    {/* Services Multi-Select */}
+                    {/* Services Multi-Select - Fetched from database */}
                     <div className="space-y-2">
                       <Label>Services</Label>
-                      <MultiSelect
-                        options={servicesOptions}
-                        selected={block.services}
-                        onSelectionChange={(selected) =>
-                          handleRateBlockChange(block.id, "services", selected)
-                        }
-                        placeholder="Select services..."
-                      />
+                      {servicesLoading ? (
+                        <div className="h-10 flex items-center px-3 border rounded-md bg-muted/50 text-muted-foreground text-sm">
+                          Loading services...
+                        </div>
+                      ) : servicesOptions.length > 0 ? (
+                        <MultiSelect
+                          options={servicesOptions}
+                          selected={block.services}
+                          onSelectionChange={(selected) =>
+                            handleRateBlockChange(block.id, "services", selected)
+                          }
+                          placeholder="Select services..."
+                          disabled={isViewMode}
+                        />
+                      ) : (
+                        <div className="h-10 flex items-center px-3 border rounded-md bg-muted/50 text-muted-foreground text-sm">
+                          No services available. Add services in Core Settings.
+                        </div>
+                      )}
                     </div>
 
                     {/* Single Rate Field - For Flat Rate or Hourly Rate */}
@@ -670,6 +825,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                           }
                           placeholder="Enter rate"
                           type="number"
+                          disabled={isViewMode}
                         />
                       </div>
                     )}
@@ -686,6 +842,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                                 handleRateBlockChange(block.id, "rateAt15Minutes", e.target.value)
                               }
                               placeholder="Enter rate"
+                              disabled={isViewMode}
                             />
                           </div>
                           <div className="space-y-2">
@@ -698,6 +855,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                                 handleRateBlockChange(block.id, "rateAt30Minutes", e.target.value)
                               }
                               placeholder="Enter rate"
+                              disabled={isViewMode}
                             />
                           </div>
                           <div className="space-y-2">
@@ -710,6 +868,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                                 handleRateBlockChange(block.id, "rateAt45Minutes", e.target.value)
                               }
                               placeholder="Enter rate"
+                              disabled={isViewMode}
                             />
                           </div>
                           <div className="space-y-2">
@@ -722,6 +881,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                                 handleRateBlockChange(block.id, "rateAt60Minutes", e.target.value)
                               }
                               placeholder="Enter rate"
+                              disabled={isViewMode}
                             />
                           </div>
                         </div>
@@ -734,6 +894,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                               handleRateBlockChange(block.id, "consecutiveHours", e.target.value)
                             }
                             placeholder="Enter hours"
+                            disabled={isViewMode}
                           />
                         </div>
                       </>
@@ -746,6 +907,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                         onCheckedChange={(checked) =>
                           handleRateBlockChange(block.id, "isVatable", checked === true)
                         }
+                        disabled={isViewMode}
                       />
                       <Label htmlFor={`${block.id}-vatable`} className="font-normal cursor-pointer">
                         Is this rate VATable?
@@ -759,10 +921,20 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>Save Rate</Button>
+          {isViewMode ? (
+            <Button variant="outline" onClick={handleClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                {isEditMode ? 'Update Rate' : 'Save Rate'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
