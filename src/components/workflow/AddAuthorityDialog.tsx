@@ -28,8 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
 import { Building2, User, FileText, Settings } from "lucide-react";
+import { AuthorityData } from "@/contexts/AuthoritiesContext";
 
 const phoneRegex = /^[\d\s\-\+\(\)]*$/;
 
@@ -57,15 +57,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export interface AuthorityData {
-  id: string;
-  organization: string;
-  telephone: string;
-  contactName: string;
-  address: string;
-  needsCM2000: boolean;
-}
-
 export type DialogMode = 'add' | 'view' | 'edit';
 
 interface AddAuthorityDialogProps {
@@ -91,15 +82,15 @@ export const AddAuthorityDialog = ({
     defaultValues: {
       organization: initialData?.organization || "",
       telephone: initialData?.telephone || "",
-      email: "",
+      email: initialData?.email || "",
       address: initialData?.address || "",
       contactName: initialData?.contactName || "",
-      contactPhone: "",
-      contactEmail: "",
-      invoiceSetting: "",
-      invoiceNameDisplay: "",
-      billingAddress: "",
-      invoiceEmail: "",
+      contactPhone: initialData?.contactPhone || "",
+      contactEmail: initialData?.contactEmail || "",
+      invoiceSetting: initialData?.invoiceSetting || "",
+      invoiceNameDisplay: initialData?.invoiceNameDisplay || "",
+      billingAddress: initialData?.billingAddress || "",
+      invoiceEmail: initialData?.invoiceEmail || "",
       needsCM2000: initialData?.needsCM2000 || false,
     },
   });
@@ -110,15 +101,15 @@ export const AddAuthorityDialog = ({
       form.reset({
         organization: initialData.organization || "",
         telephone: initialData.telephone || "",
-        email: "",
+        email: initialData.email || "",
         address: initialData.address || "",
         contactName: initialData.contactName || "",
-        contactPhone: "",
-        contactEmail: "",
-        invoiceSetting: "",
-        invoiceNameDisplay: "",
-        billingAddress: "",
-        invoiceEmail: "",
+        contactPhone: initialData.contactPhone || "",
+        contactEmail: initialData.contactEmail || "",
+        invoiceSetting: initialData.invoiceSetting || "",
+        invoiceNameDisplay: initialData.invoiceNameDisplay || "",
+        billingAddress: initialData.billingAddress || "",
+        invoiceEmail: initialData.invoiceEmail || "",
         needsCM2000: initialData.needsCM2000 || false,
       });
     } else if (open && !initialData) {
@@ -140,21 +131,24 @@ export const AddAuthorityDialog = ({
   }, [open, initialData, form]);
 
   const onSubmit = (data: FormValues) => {
+    // Include ALL form fields in the authority data
     const authorityData: AuthorityData = {
       id: isEditMode && initialData ? initialData.id : crypto.randomUUID(),
       organization: data.organization,
       telephone: data.telephone || "",
-      contactName: data.contactName || "",
+      email: data.email || "",
       address: data.address || "",
+      contactName: data.contactName || "",
+      contactPhone: data.contactPhone || "",
+      contactEmail: data.contactEmail || "",
+      invoiceSetting: data.invoiceSetting || "",
+      invoiceNameDisplay: data.invoiceNameDisplay || "",
+      billingAddress: data.billingAddress || "",
+      invoiceEmail: data.invoiceEmail || "",
       needsCM2000: data.needsCM2000,
     };
     
     onSave?.(authorityData);
-    
-    toast({
-      title: isEditMode ? "Authority Updated" : "Authority Added",
-      description: `${data.organization} has been ${isEditMode ? 'updated' : 'added'} successfully.`,
-    });
     form.reset();
     onOpenChange(false);
   };
@@ -183,7 +177,7 @@ export const AddAuthorityDialog = ({
           <Form {...form}>
             <form id="authority-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
               {/* Section 1: Authority Info */}
-              <Card className="border border-gray-200">
+              <Card className="border border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-primary" />
@@ -257,7 +251,7 @@ export const AddAuthorityDialog = ({
               </Card>
 
               {/* Section 2: Key Contact */}
-              <Card className="border border-gray-200">
+              <Card className="border border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <User className="h-4 w-4 text-primary" />
@@ -312,7 +306,7 @@ export const AddAuthorityDialog = ({
               </Card>
 
               {/* Section 3: Authority Invoice Configuration */}
-              <Card className="border border-gray-200">
+              <Card className="border border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
@@ -403,7 +397,7 @@ export const AddAuthorityDialog = ({
               </Card>
 
               {/* Section 4: CM2000 Integration */}
-              <Card className="border border-gray-200">
+              <Card className="border border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <Settings className="h-4 w-4 text-primary" />
@@ -415,7 +409,7 @@ export const AddAuthorityDialog = ({
                     control={form.control}
                     name="needsCM2000"
                     render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                      <FormItem className="flex items-center justify-between rounded-lg border border-border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-sm font-normal">
                             Does this authority need to send data to CM2000?

@@ -775,6 +775,84 @@ export type Database = {
           },
         ]
       }
+      authorities: {
+        Row: {
+          address: string | null
+          billing_address: string | null
+          branch_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          invoice_email: string | null
+          invoice_name_display: string | null
+          invoice_setting: string | null
+          needs_cm2000: boolean | null
+          organization_id: string | null
+          organization_name: string
+          status: string | null
+          telephone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          billing_address?: string | null
+          branch_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          invoice_email?: string | null
+          invoice_name_display?: string | null
+          invoice_setting?: string | null
+          needs_cm2000?: boolean | null
+          organization_id?: string | null
+          organization_name: string
+          status?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          billing_address?: string | null
+          branch_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          invoice_email?: string | null
+          invoice_name_display?: string | null
+          invoice_setting?: string | null
+          needs_cm2000?: boolean | null
+          organization_id?: string | null
+          organization_name?: string
+          status?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authorities_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authorities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_holidays: {
         Row: {
           created_at: string

@@ -98,7 +98,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   const [rateBlocks, setRateBlocks] = useState<RateBlock[]>([]);
 
   // Get authorities from context
-  const { authorities } = useAuthorities();
+  const { authorities, isLoading: authoritiesLoading } = useAuthorities();
 
   const createNewRateBlock = (): RateBlock => ({
     id: crypto.randomUUID(),
@@ -224,12 +224,16 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
             {/* Authority */}
             <div className="space-y-2">
               <Label htmlFor="authority">Authority</Label>
-              <Select value={authority} onValueChange={setAuthority}>
+              <Select value={authority} onValueChange={setAuthority} disabled={authoritiesLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Authority" />
+                  <SelectValue placeholder={authoritiesLoading ? "Loading authorities..." : "Select Authority"} />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {authorities.length > 0 ? (
+                  {authoritiesLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading authorities...
+                    </SelectItem>
+                  ) : authorities.length > 0 ? (
                     authorities.map((auth) => (
                       <SelectItem key={auth.id} value={auth.id}>
                         {auth.organization}
@@ -242,7 +246,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                   )}
                 </SelectContent>
               </Select>
-              {authorities.length === 0 && (
+              {!authoritiesLoading && authorities.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   Add authorities in Workflow Management → Authorities tab
                 </p>
