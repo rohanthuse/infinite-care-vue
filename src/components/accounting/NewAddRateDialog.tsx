@@ -25,6 +25,7 @@ interface RateBlock {
   effectiveUntil: string;
   chargeBasedOn: string;
   rateChargingMethod: string;
+  rateCalculationType: string;
   services: string[];
   rateAt15Minutes: string;
   rateAt30Minutes: string;
@@ -58,10 +59,8 @@ const rateTypeOptions = [
 ];
 
 const chargeBasedOnOptions = [
-  { value: "service", label: "Service" },
-  { value: "actual_time", label: "Actual Time" },
-  { value: "booked_time", label: "Booked Time" },
-  { value: "fixed_amount", label: "Fixed Amount" },
+  { value: "hours_minutes", label: "Hours/Minutes" },
+  { value: "services", label: "Services" },
 ];
 
 const typeOptions = [
@@ -91,6 +90,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
   const [caption, setCaption] = useState<string>("");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [endDateOptional, setEndDateOptional] = useState<boolean>(false);
 
   // Rate Blocks
   const [rateBlocks, setRateBlocks] = useState<RateBlock[]>([]);
@@ -106,6 +106,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     effectiveUntil: "",
     chargeBasedOn: "",
     rateChargingMethod: "",
+    rateCalculationType: "",
     services: [],
     rateAt15Minutes: "",
     rateAt30Minutes: "",
@@ -162,13 +163,21 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     );
   };
 
+  const handleEndDateOptionalChange = (checked: boolean) => {
+    setEndDateOptional(checked);
+    if (checked) {
+      setEndDate(undefined);
+    }
+  };
+
   const handleSave = () => {
     const data = {
       type,
       authority,
       caption,
       startDate,
-      endDate,
+      endDate: endDateOptional ? null : endDate,
+      endDateOptional,
       rateBlocks,
     };
 
@@ -184,6 +193,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
     setCaption("");
     setStartDate(undefined);
     setEndDate(undefined);
+    setEndDateOptional(false);
     setRateBlocks([]);
     onClose();
   };
@@ -292,30 +302,48 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>End Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
+                <div className="flex items-center justify-between">
+                  <Label>End Date</Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="endDateOptional"
+                      checked={endDateOptional}
+                      onCheckedChange={(checked) => handleEndDateOptionalChange(checked === true)}
                     />
-                  </PopoverContent>
-                </Popover>
+                    <Label htmlFor="endDateOptional" className="text-sm font-normal cursor-pointer">
+                      Optional
+                    </Label>
+                  </div>
+                </div>
+                {endDateOptional ? (
+                  <div className="h-10 flex items-center px-3 border rounded-md bg-muted/50 text-muted-foreground text-sm">
+                    No end date
+                  </div>
+                ) : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </div>
           </div>
@@ -470,8 +498,118 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                   </Select>
                 </div>
 
+                {/* Hours/Minutes based Charge Options */}
+                {block.chargeBasedOn === "hours_minutes" && (
+                  <div className="space-y-4 p-4 bg-background/50 rounded-lg border">
+                    {/* Rate Calculation Type - Radio Group */}
+                    <div className="space-y-3">
+                      <Label>Rate Calculation Options</Label>
+                      <RadioGroup
+                        value={block.rateCalculationType}
+                        onValueChange={(value) =>
+                          handleRateBlockChange(block.id, "rateCalculationType", value)
+                        }
+                        className="flex flex-col gap-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_hour" id={`${block.id}-rate_per_hour`} />
+                          <Label htmlFor={`${block.id}-rate_per_hour`} className="font-normal cursor-pointer">
+                            Rate per Hour
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_minutes_pro" id={`${block.id}-rate_per_minutes_pro`} />
+                          <Label htmlFor={`${block.id}-rate_per_minutes_pro`} className="font-normal cursor-pointer">
+                            Rate per Minutes (Pro Rate)
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_minutes_flat" id={`${block.id}-rate_per_minutes_flat`} />
+                          <Label htmlFor={`${block.id}-rate_per_minutes_flat`} className="font-normal cursor-pointer">
+                            Rate per Minutes (Flat Rate)
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Rate Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Rate at 15 Minutes</Label>
+                        <Input
+                          value={block.rateAt15Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt15Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 30 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt30Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt30Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 45 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt45Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt45Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          Rate at 60 Minutes <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          value={block.rateAt60Minutes}
+                          onChange={(e) =>
+                            handleRateBlockChange(block.id, "rateAt60Minutes", e.target.value)
+                          }
+                          placeholder="Enter rate"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Consecutive Hours</Label>
+                      <Input
+                        value={block.consecutiveHours}
+                        onChange={(e) =>
+                          handleRateBlockChange(block.id, "consecutiveHours", e.target.value)
+                        }
+                        placeholder="Enter hours"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`${block.id}-vatable-hours`}
+                        checked={block.isVatable}
+                        onCheckedChange={(checked) =>
+                          handleRateBlockChange(block.id, "isVatable", checked === true)
+                        }
+                      />
+                      <Label htmlFor={`${block.id}-vatable-hours`} className="font-normal cursor-pointer">
+                        Is this rate VATable?
+                      </Label>
+                    </div>
+                  </div>
+                )}
+
                 {/* Service-based Charge Options */}
-                {block.chargeBasedOn === "service" && (
+                {block.chargeBasedOn === "services" && (
                   <div className="space-y-4 p-4 bg-background/50 rounded-lg border">
                     {/* Rate Charging Method - Radio Group */}
                     <div className="space-y-2">
