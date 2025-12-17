@@ -561,7 +561,7 @@ export function CarerReportsTab() {
         </TabsContent>
 
         <TabsContent value="pending" className="space-y-4">
-          {pendingReports.length === 0 ? <EmptyState message="No pending reports" /> : pendingReports.map(report => <ReportCard key={report.id} report={report} canEdit={false} />)}
+          {pendingReports.length === 0 ? <EmptyState message="No pending reports" /> : pendingReports.map(report => <ReportCard key={report.id} report={report} canEdit={true} onEdit={() => handleEditReport(report)} />)}
         </TabsContent>
 
         <TabsContent value="revision" className="space-y-4">
@@ -569,7 +569,7 @@ export function CarerReportsTab() {
         </TabsContent>
 
         <TabsContent value="approved" className="space-y-4">
-          {approvedReports.length === 0 ? <EmptyState message="No approved reports" /> : approvedReports.map(report => <ReportCard key={report.id} report={report} />)}
+          {approvedReports.length === 0 ? <EmptyState message="No approved reports" /> : approvedReports.map(report => <ReportCard key={report.id} report={report} canEdit={true} onEdit={() => handleEditReport(report)} />)}
         </TabsContent>
 
         <TabsContent value="rejected" className="space-y-4">
