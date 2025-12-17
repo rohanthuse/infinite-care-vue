@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -10,15 +10,73 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AddAuthorityDialog, AuthorityData } from "./AddAuthorityDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AddAuthorityDialog, AuthorityData, DialogMode } from "./AddAuthorityDialog";
 import { useAuthorities } from "@/contexts/AuthoritiesContext";
 
 export const AuthoritiesTab = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { authorities, addAuthority } = useAuthorities();
+  const [dialogMode, setDialogMode] = useState<DialogMode>('add');
+  const [selectedAuthority, setSelectedAuthority] = useState<AuthorityData | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [authorityToDelete, setAuthorityToDelete] = useState<AuthorityData | null>(null);
+  
+  const { authorities, addAuthority, updateAuthority, removeAuthority } = useAuthorities();
 
   const handleSaveAuthority = (data: AuthorityData) => {
-    addAuthority(data);
+    if (dialogMode === 'edit') {
+      updateAuthority(data);
+    } else {
+      addAuthority(data);
+    }
+  };
+
+  const handleView = (authority: AuthorityData) => {
+    setSelectedAuthority(authority);
+    setDialogMode('view');
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (authority: AuthorityData) => {
+    setSelectedAuthority(authority);
+    setDialogMode('edit');
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (authority: AuthorityData) => {
+    setAuthorityToDelete(authority);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (authorityToDelete) {
+      removeAuthority(authorityToDelete.id);
+      setAuthorityToDelete(null);
+    }
+    setDeleteDialogOpen(false);
+  };
+
+  const handleAddNew = () => {
+    setSelectedAuthority(null);
+    setDialogMode('add');
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setSelectedAuthority(null);
+      setDialogMode('add');
+    }
   };
 
   return (
@@ -28,7 +86,7 @@ export const AuthoritiesTab = () => {
           <h2 className="text-xl font-bold text-gray-800 tracking-tight">Authorities</h2>
           <p className="text-sm text-gray-500 mt-1">Manage authority organizations and their configurations</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+        <Button onClick={handleAddNew} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Authorities
         </Button>
@@ -43,6 +101,7 @@ export const AuthoritiesTab = () => {
                 <TableHead>Telephone</TableHead>
                 <TableHead>Key Contact Name</TableHead>
                 <TableHead>Address</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -52,6 +111,35 @@ export const AuthoritiesTab = () => {
                   <TableCell>{authority.telephone || "-"}</TableCell>
                   <TableCell>{authority.contactName || "-"}</TableCell>
                   <TableCell>{authority.address || "-"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleView(authority)}
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(authority)}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(authority)}
+                        title="Delete"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -67,7 +155,7 @@ export const AuthoritiesTab = () => {
             <p className="text-sm text-gray-500 mb-4 max-w-sm">
               Get started by adding your first authority organization to manage billing and integrations.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} variant="outline" className="gap-2">
+            <Button onClick={handleAddNew} variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
               Add Your First Authority
             </Button>
@@ -77,9 +165,29 @@ export const AuthoritiesTab = () => {
 
       <AddAuthorityDialog 
         open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={handleDialogClose}
         onSave={handleSaveAuthority}
+        mode={dialogMode}
+        initialData={selectedAuthority}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this authority?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the authority
+              "{authorityToDelete?.organization}" from your records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
