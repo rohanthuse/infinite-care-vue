@@ -1,3 +1,4 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -65,34 +66,82 @@ export interface AuthorityData {
   needsCM2000: boolean;
 }
 
+export type DialogMode = 'add' | 'view' | 'edit';
+
 interface AddAuthorityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave?: (data: AuthorityData) => void;
+  mode?: DialogMode;
+  initialData?: AuthorityData | null;
 }
 
-export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityDialogProps) => {
+export const AddAuthorityDialog = ({ 
+  open, 
+  onOpenChange, 
+  onSave, 
+  mode = 'add',
+  initialData 
+}: AddAuthorityDialogProps) => {
+  const isViewMode = mode === 'view';
+  const isEditMode = mode === 'edit';
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      organization: "",
-      telephone: "",
+      organization: initialData?.organization || "",
+      telephone: initialData?.telephone || "",
       email: "",
-      address: "",
-      contactName: "",
+      address: initialData?.address || "",
+      contactName: initialData?.contactName || "",
       contactPhone: "",
       contactEmail: "",
       invoiceSetting: "",
       invoiceNameDisplay: "",
       billingAddress: "",
       invoiceEmail: "",
-      needsCM2000: false,
+      needsCM2000: initialData?.needsCM2000 || false,
     },
   });
 
+  // Reset form when initialData changes
+  React.useEffect(() => {
+    if (open && initialData) {
+      form.reset({
+        organization: initialData.organization || "",
+        telephone: initialData.telephone || "",
+        email: "",
+        address: initialData.address || "",
+        contactName: initialData.contactName || "",
+        contactPhone: "",
+        contactEmail: "",
+        invoiceSetting: "",
+        invoiceNameDisplay: "",
+        billingAddress: "",
+        invoiceEmail: "",
+        needsCM2000: initialData.needsCM2000 || false,
+      });
+    } else if (open && !initialData) {
+      form.reset({
+        organization: "",
+        telephone: "",
+        email: "",
+        address: "",
+        contactName: "",
+        contactPhone: "",
+        contactEmail: "",
+        invoiceSetting: "",
+        invoiceNameDisplay: "",
+        billingAddress: "",
+        invoiceEmail: "",
+        needsCM2000: false,
+      });
+    }
+  }, [open, initialData, form]);
+
   const onSubmit = (data: FormValues) => {
     const authorityData: AuthorityData = {
-      id: crypto.randomUUID(),
+      id: isEditMode && initialData ? initialData.id : crypto.randomUUID(),
       organization: data.organization,
       telephone: data.telephone || "",
       contactName: data.contactName || "",
@@ -103,8 +152,8 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
     onSave?.(authorityData);
     
     toast({
-      title: "Authority Added",
-      description: `${data.organization} has been added successfully.`,
+      title: isEditMode ? "Authority Updated" : "Authority Added",
+      description: `${data.organization} has been ${isEditMode ? 'updated' : 'added'} successfully.`,
     });
     form.reset();
     onOpenChange(false);
@@ -115,11 +164,19 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
     onOpenChange(false);
   };
 
+  const getDialogTitle = () => {
+    switch (mode) {
+      case 'view': return 'View Authority';
+      case 'edit': return 'Edit Authority';
+      default: return 'Authority Information';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 bg-background px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="text-xl font-semibold">Authority Information</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">{getDialogTitle()}</DialogTitle>
         </DialogHeader>
 
         <div className="px-6">
@@ -141,7 +198,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                       <FormItem>
                         <FormLabel>Organization <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter organization name" {...field} />
+                          <Input placeholder="Enter organization name" {...field} disabled={isViewMode} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -156,7 +213,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                         <FormItem>
                           <FormLabel>Telephone</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter phone number" {...field} />
+                            <Input placeholder="Enter phone number" {...field} disabled={isViewMode} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -170,7 +227,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Enter email address" {...field} />
+                            <Input type="email" placeholder="Enter email address" {...field} disabled={isViewMode} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -189,6 +246,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                             placeholder="Enter full address" 
                             className="min-h-[80px] resize-none"
                             {...field} 
+                            disabled={isViewMode}
                           />
                         </FormControl>
                         <FormMessage />
@@ -214,7 +272,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                       <FormItem>
                         <FormLabel>Contact Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter contact name" {...field} />
+                          <Input placeholder="Enter contact name" {...field} disabled={isViewMode} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,7 +287,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                         <FormItem>
                           <FormLabel>Contact Phone</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter contact phone" {...field} />
+                            <Input placeholder="Enter contact phone" {...field} disabled={isViewMode} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -243,7 +301,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                         <FormItem>
                           <FormLabel>Contact Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Enter contact email" {...field} />
+                            <Input type="email" placeholder="Enter contact email" {...field} disabled={isViewMode} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -268,9 +326,9 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Select invoice setting</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isViewMode}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger disabled={isViewMode}>
                               <SelectValue placeholder="Select an invoice setting" />
                             </SelectTrigger>
                           </FormControl>
@@ -292,9 +350,9 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Select how you want names to appear in the invoices</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isViewMode}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger disabled={isViewMode}>
                               <SelectValue placeholder="Select name display option" />
                             </SelectTrigger>
                           </FormControl>
@@ -320,6 +378,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                             placeholder="Enter billing address" 
                             className="min-h-[80px] resize-none"
                             {...field} 
+                            disabled={isViewMode}
                           />
                         </FormControl>
                         <FormMessage />
@@ -334,7 +393,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                       <FormItem>
                         <FormLabel>Invoice Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="Enter invoice email" {...field} />
+                          <Input type="email" placeholder="Enter invoice email" {...field} disabled={isViewMode} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -366,6 +425,7 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            disabled={isViewMode}
                           />
                         </FormControl>
                       </FormItem>
@@ -379,12 +439,20 @@ export const AddAuthorityDialog = ({ open, onOpenChange, onSave }: AddAuthorityD
 
         {/* Sticky Footer */}
         <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" form="authority-form">
-            Save
-          </Button>
+          {isViewMode ? (
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" form="authority-form">
+                Save
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

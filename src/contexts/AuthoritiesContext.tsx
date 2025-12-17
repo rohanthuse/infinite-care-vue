@@ -12,6 +12,7 @@ export interface AuthorityData {
 interface AuthoritiesContextType {
   authorities: AuthorityData[];
   addAuthority: (data: AuthorityData) => void;
+  updateAuthority: (data: AuthorityData) => void;
   removeAuthority: (id: string) => void;
 }
 
@@ -24,12 +25,16 @@ export const AuthoritiesProvider: React.FC<{ children: ReactNode }> = ({ childre
     setAuthorities((prev) => [...prev, data]);
   };
 
+  const updateAuthority = (data: AuthorityData) => {
+    setAuthorities((prev) => prev.map((a) => (a.id === data.id ? data : a)));
+  };
+
   const removeAuthority = (id: string) => {
     setAuthorities((prev) => prev.filter((a) => a.id !== id));
   };
 
   return (
-    <AuthoritiesContext.Provider value={{ authorities, addAuthority, removeAuthority }}>
+    <AuthoritiesContext.Provider value={{ authorities, addAuthority, updateAuthority, removeAuthority }}>
       {children}
     </AuthoritiesContext.Provider>
   );
