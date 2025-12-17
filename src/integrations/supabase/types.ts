@@ -3793,6 +3793,77 @@ export type Database = {
           },
         ]
       }
+      client_rate_assignments: {
+        Row: {
+          authority_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          service_rate_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          authority_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          service_rate_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          authority_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          service_rate_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_rate_assignments_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rate_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rate_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rate_assignments_service_rate_id_fkey"
+            columns: ["service_rate_id"]
+            isOneToOne: false
+            referencedRelation: "service_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_rate_schedules: {
         Row: {
           authority_type: string

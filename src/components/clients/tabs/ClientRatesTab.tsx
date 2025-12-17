@@ -1,125 +1,175 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Plus, Eye, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Eye, Trash2, Calendar, Save, DollarSign } from "lucide-react";
 import { format } from "date-fns";
-import { useClientRateSchedules, useDeleteClientRateSchedule, useUpdateClientRateSchedule } from "@/hooks/useClientAccounting";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { AddRateScheduleDialog } from "@/components/clients/tabs/accounting/AddRateScheduleDialog";
-import { EditRateScheduleDialog } from "@/components/clients/tabs/accounting/EditRateScheduleDialog";
-import { ViewRateScheduleDialog } from "@/components/clients/tabs/accounting/ViewRateScheduleDialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/utils";
-import { ClientRateSchedule } from "@/types/clientAccounting";
-import { ServiceTypesDisplay } from '@/components/carer-profile/accounting/ServiceTypesDisplay';
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
+import { ViewRateDetailsDialog } from "@/components/clients/tabs/dialogs/ViewRateDetailsDialog";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
+import {
+  useClientRateAssignments,
+  useCreateClientRateAssignment,
+  useDeleteClientRateAssignment,
+  ClientRateAssignment,
+} from "@/hooks/useClientRateAssignments";
+import { useAuthorities } from "@/contexts/AuthoritiesContext";
+import { useServiceRates } from "@/hooks/useAccountingData";
 
 interface ClientRatesTabProps {
   clientId: string;
   branchId: string;
 }
 
+type RateOption = 'use_defined' | 'create_new' | 'change_percent' | '';
+
 export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branchId }) => {
-  const queryClient = useQueryClient();
-  const [isAddRateDialogOpen, setIsAddRateDialogOpen] = useState(false);
-  const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
-  const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
+  // State for "Set a New Rate" section
+  const [rateOption, setRateOption] = useState<RateOption>('');
+  const [selectedAuthority, setSelectedAuthority] = useState<string>('');
+  const [selectedRate, setSelectedRate] = useState<string>('');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  
+  // Dialog states
+  const [showRateDetails, setShowRateDetails] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<ClientRateSchedule | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<ClientRateAssignment | null>(null);
 
-  const { data: rateSchedules = [], isLoading } = useClientRateSchedules(clientId);
-  const deleteRateSchedule = useDeleteClientRateSchedule();
-  const updateRateSchedule = useUpdateClientRateSchedule();
+  // Data fetching
+  const { authorities, isLoading: authoritiesLoading } = useAuthorities();
+  const { data: allServiceRates = [], isLoading: ratesLoading } = useServiceRates(branchId);
+  const { data: assignments = [], isLoading: assignmentsLoading } = useClientRateAssignments(clientId);
+  
+  // Mutations
+  const createAssignment = useCreateClientRateAssignment();
+  const deleteAssignment = useDeleteClientRateAssignment();
 
-  console.log('[ClientRatesTab] Client-specific rate schedules:', rateSchedules.length);
+  // Filter rates by selected authority (using funding_source field)
+  const filteredRates = useMemo(() => {
+    if (!selectedAuthority || !allServiceRates) return [];
+    return allServiceRates.filter(rate => 
+      rate.funding_source === selectedAuthority || 
+      rate.funding_source === 'local_authority' // Include general authority rates
+    );
+  }, [selectedAuthority, allServiceRates]);
 
-  const handleViewRate = (schedule: ClientRateSchedule) => {
-    setSelectedSchedule(schedule);
-    setIsViewRateDialogOpen(true);
+  // Get the selected rate details - transform to match dialog interface
+  const selectedRateDetails = useMemo(() => {
+    if (!selectedRate) return null;
+    const rate = allServiceRates.find(r => r.id === selectedRate) as any;
+    if (!rate) return null;
+    
+    return {
+      id: rate.id,
+      service_name: rate.service_name,
+      service_code: rate.service_code,
+      rate_type: rate.rate_type,
+      amount: rate.amount,
+      currency: rate.currency || 'GBP',
+      effective_from: rate.effective_from,
+      effective_to: rate.effective_to || null,
+      client_type: rate.client_type,
+      funding_source: rate.funding_source,
+      applicable_days: rate.applicable_days || [],
+      is_default: rate.is_default,
+      status: rate.status,
+      description: rate.description || null,
+      time_from: rate.time_from || null,
+      time_until: rate.time_until || null,
+      rate_category: rate.rate_category || null,
+      pay_based_on: rate.pay_based_on || null,
+      charge_type: rate.charge_type || null,
+      rate_15_minutes: rate.rate_15_minutes ?? null,
+      rate_30_minutes: rate.rate_30_minutes ?? null,
+      rate_45_minutes: rate.rate_45_minutes ?? null,
+      rate_60_minutes: rate.rate_60_minutes ?? null,
+    };
+  }, [selectedRate, allServiceRates]);
+
+  // Get authority name for display
+  const getAuthorityName = (authorityId: string | null) => {
+    if (!authorityId) return 'N/A';
+    const authority = authorities.find(a => a.id === authorityId);
+    return authority?.organization || 'Unknown';
   };
 
-  const handleEditRate = (schedule: ClientRateSchedule) => {
-    setSelectedSchedule(schedule);
-    setIsEditRateDialogOpen(true);
+  // Reset form
+  const resetForm = () => {
+    setRateOption('');
+    setSelectedAuthority('');
+    setSelectedRate('');
+    setStartDate(undefined);
+    setEndDate(undefined);
   };
 
-  const handleDeleteRate = (schedule: ClientRateSchedule) => {
-    setSelectedSchedule(schedule);
+  // Handle save rate assignment
+  const handleSaveRateAssignment = async () => {
+    if (!selectedRate || !startDate) {
+      toast.error('Please select a rate and start date');
+      return;
+    }
+
+    try {
+      await createAssignment.mutateAsync({
+        client_id: clientId,
+        service_rate_id: selectedRate,
+        authority_id: selectedAuthority || null,
+        start_date: format(startDate, 'yyyy-MM-dd'),
+        end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
+      });
+      resetForm();
+    } catch (error) {
+      console.error('[ClientRatesTab] Error creating assignment:', error);
+    }
+  };
+
+  // Handle delete
+  const handleDeleteAssignment = (assignment: ClientRateAssignment) => {
+    setSelectedAssignment(assignment);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleToggleActive = (schedule: ClientRateSchedule, newValue: boolean) => {
-    updateRateSchedule.mutate({
-      id: schedule.id,
-      is_active: newValue
-    });
-  };
-
   const confirmDelete = async () => {
-    if (!selectedSchedule) {
-      console.error('[ClientRatesTab] No schedule selected for deletion');
-      return;
-    }
-    
-    const scheduleId = selectedSchedule.id;
-    if (!scheduleId) {
-      console.error('[ClientRatesTab] Selected schedule has no ID:', selectedSchedule);
-      toast.error('Cannot delete schedule: Invalid schedule ID');
-      return;
-    }
-    
-    console.log('[ClientRatesTab] Attempting to delete schedule:', scheduleId);
+    if (!selectedAssignment) return;
     
     try {
-      await deleteRateSchedule.mutateAsync(scheduleId);
-      
-      // Optimistically update the UI by removing the deleted schedule from cache
-      queryClient.setQueryData(['client-rate-schedules', clientId], (oldData: any) => {
-        if (Array.isArray(oldData)) {
-          return oldData.filter(r => r.id !== scheduleId);
-        }
-        return oldData;
-      });
-      
-      console.log('[ClientRatesTab] Schedule deleted successfully:', scheduleId);
+      await deleteAssignment.mutateAsync(selectedAssignment.id);
       setIsDeleteDialogOpen(false);
-      setSelectedSchedule(null);
+      setSelectedAssignment(null);
     } catch (error) {
-      console.error('[ClientRatesTab] Error deleting schedule:', error);
-      toast.error(`Failed to delete schedule: ${error.message || 'Unknown error'}`);
+      console.error('[ClientRatesTab] Error deleting assignment:', error);
     }
   };
 
-  const getStatusBadge = (isActive: boolean, startDate: string, endDate?: string) => {
-    const now = new Date();
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : null;
-
-    if (!isActive) {
-      return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
+  // View rate details from assignment
+  const handleViewAssignmentRate = (assignment: ClientRateAssignment) => {
+    if (assignment.service_rate) {
+      setSelectedAssignment(assignment);
+      setShowRateDetails(true);
     }
-    if (now < start) {
-      return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-    }
-    if (end && now > end) {
-      return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
-    }
-    return <Badge className="bg-green-100 text-green-800">Active</Badge>;
   };
 
-  const formatDate = (dateString: string | undefined) => {
+  const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return "Ongoing";
     return format(new Date(dateString), "dd/MM/yyyy");
   };
 
-  const formatDays = (days: string[]) => {
-    if (!days || days.length === 0) return "None";
-    if (days.length === 7) return "All Days";
-    return days.join(", ");
-  };
+  const isLoading = authoritiesLoading || ratesLoading || assignmentsLoading;
 
   if (isLoading) {
     return (
@@ -129,196 +179,277 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold">Service Rate Schedules</CardTitle>
-            <CardDescription>Manage rate schedules specific to this client</CardDescription>
-          </div>
-          <Button onClick={() => setIsAddRateDialogOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Rate Schedule
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {rateSchedules.length === 0 ? (
-          <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-1">No Rate Schedules</h3>
-            <p className="text-muted-foreground">Start by adding a rate schedule for this client.</p>
-            <Button 
-              onClick={() => setIsAddRateDialogOpen(true)} 
-              className="mt-4"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Rate Schedule
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Service</TableHead>
-                <TableHead>Authority</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Base Rate</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Effective Period</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rateSchedules.map((schedule) => (
-                <TableRow key={schedule.id}>
-                  <TableCell>
-                    <ServiceTypesDisplay 
-                      serviceCodes={schedule.service_type_codes || []} 
-                      maxVisible={2}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {schedule.authority_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {schedule.rate_category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(schedule.base_rate)}
-                    {schedule.is_vatable && (
-                      <span className="text-xs text-muted-foreground ml-1">(+VAT)</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDays(schedule.days_covered)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Calendar className="h-3 w-3" />
-                      {formatDate(schedule.start_date)} - {formatDate(schedule.end_date)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={schedule.is_active}
-                        onCheckedChange={(checked) => handleToggleActive(schedule, checked)}
-                        disabled={updateRateSchedule.isPending}
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {schedule.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                        {schedule.is_active && (
-                          <span className="text-xs text-muted-foreground">
-                            {(() => {
-                              const today = new Date();
-                              const startDate = new Date(schedule.start_date);
-                              const endDate = schedule.end_date ? new Date(schedule.end_date) : null;
-                              
-                              if (startDate > today) return 'Starts soon';
-                              if (endDate && endDate < today) return 'Expired';
-                              return 'In use';
-                            })()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewRate(schedule)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditRate(schedule)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteRate(schedule);
-                        }}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+  // Prepare rate details for dialog
+  const getRateDetailsForDialog = () => {
+    if (selectedAssignment?.service_rate) {
+      return selectedAssignment.service_rate;
+    }
+    return selectedRateDetails;
+  };
 
-      {/* Dialogs */}
-      <AddRateScheduleDialog
-        open={isAddRateDialogOpen}
-        onOpenChange={setIsAddRateDialogOpen}
-        clientId={clientId}
-        branchId={branchId}
+  return (
+    <div className="space-y-6">
+      {/* Set a New Rate Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Set a New Rate</CardTitle>
+          <CardDescription>Assign a rate from Rate Management to this client</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Main Rate Option Dropdown */}
+          <div className="space-y-2">
+            <Label>Set a New Rate</Label>
+            <Select value={rateOption} onValueChange={(value: RateOption) => {
+              setRateOption(value);
+              setSelectedAuthority('');
+              setSelectedRate('');
+              setStartDate(undefined);
+              setEndDate(undefined);
+            }}>
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="use_defined">Use a Defined Rate</SelectItem>
+                <SelectItem value="create_new">Create a New Rate</SelectItem>
+                <SelectItem value="change_percent">Change by %</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Conditional Fields for "Use a Defined Rate" */}
+          {rateOption === 'use_defined' && (
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              {/* Authority Dropdown */}
+              <div className="space-y-2">
+                <Label>Authority</Label>
+                <Select 
+                  value={selectedAuthority} 
+                  onValueChange={(value) => {
+                    setSelectedAuthority(value);
+                    setSelectedRate(''); // Reset rate when authority changes
+                  }}
+                >
+                  <SelectTrigger className="w-full md:w-[400px]">
+                    <SelectValue placeholder="Select Authority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authorities.map((auth) => (
+                      <SelectItem key={auth.id} value={auth.id}>
+                        {auth.organization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Rate Dropdown - Enabled only when authority is selected */}
+              <div className="space-y-2">
+                <Label>Rate</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={selectedRate} 
+                    onValueChange={setSelectedRate}
+                    disabled={!selectedAuthority}
+                  >
+                    <SelectTrigger className="w-full md:w-[400px]">
+                      <SelectValue placeholder={selectedAuthority ? "Select Rate" : "Select Authority first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredRates.length === 0 ? (
+                        <SelectItem value="no-rates" disabled>
+                          No rates available for this authority
+                        </SelectItem>
+                      ) : (
+                        filteredRates.map((rate) => (
+                          <SelectItem key={rate.id} value={rate.id}>
+                            {rate.service_name} - {formatCurrency(rate.amount)}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* View Button */}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowRateDetails(true)}
+                    disabled={!selectedRate}
+                    className="shrink-0"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                </div>
+              </div>
+
+              {/* Date Pickers */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date <span className="text-destructive">*</span></Label>
+                  <EnhancedDatePicker
+                    value={startDate}
+                    onChange={setStartDate}
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <EnhancedDatePicker
+                    value={endDate}
+                    onChange={setEndDate}
+                    placeholder="Select end date (optional)"
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end pt-2">
+                <Button 
+                  onClick={handleSaveRateAssignment}
+                  disabled={!selectedRate || !startDate || createAssignment.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {createAssignment.isPending ? 'Saving...' : 'Save Rate Assignment'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Placeholder for other options */}
+          {rateOption === 'create_new' && (
+            <div className="p-4 border rounded-lg bg-muted/30 text-center text-muted-foreground">
+              Create New Rate functionality coming soon
+            </div>
+          )}
+
+          {rateOption === 'change_percent' && (
+            <div className="p-4 border rounded-lg bg-muted/30 text-center text-muted-foreground">
+              Change by % functionality coming soon
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Assigned Rates Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Assigned Rates</CardTitle>
+          <CardDescription>Rates currently assigned to this client</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {assignments.length === 0 ? (
+            <div className="text-center py-12">
+              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No Rates Assigned</h3>
+              <p className="text-muted-foreground">Use the section above to assign rates to this client.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Authority</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Effective Period</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{assignment.service_rate?.service_name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {assignment.service_rate?.service_code || ''}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {assignment.authority?.organization_name || getAuthorityName(assignment.authority_id)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {assignment.service_rate ? formatCurrency(assignment.service_rate.amount) : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Calendar className="h-3 w-3" />
+                        {formatDate(assignment.start_date)} - {formatDate(assignment.end_date)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        className={assignment.is_active 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-gray-100 text-gray-800"
+                        }
+                      >
+                        {assignment.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewAssignmentRate(assignment)}
+                          className="h-8 w-8 p-0"
+                          disabled={!assignment.service_rate}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteAssignment(assignment)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* View Rate Details Dialog */}
+      <ViewRateDetailsDialog
+        open={showRateDetails}
+        onOpenChange={setShowRateDetails}
+        rate={getRateDetailsForDialog()}
+        authorityName={selectedAssignment?.authority?.organization_name || getAuthorityName(selectedAuthority)}
       />
 
-      {selectedSchedule && (
-        <>
-          <EditRateScheduleDialog
-            open={isEditRateDialogOpen}
-            onOpenChange={(open) => {
-              setIsEditRateDialogOpen(open);
-              if (!open) setSelectedSchedule(null);
-            }}
-            schedule={selectedSchedule}
-            clientId={clientId}
-            branchId={branchId}
-          />
-
-          <ViewRateScheduleDialog
-            open={isViewRateDialogOpen}
-            onOpenChange={(open) => {
-              setIsViewRateDialogOpen(open);
-              if (!open) setSelectedSchedule(null);
-            }}
-            schedule={selectedSchedule}
-            clientId={clientId}
-          />
-        </>
-      )}
-
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Rate Schedule</AlertDialogTitle>
+            <AlertDialogTitle>Remove Rate Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate this rate schedule? This action will mark it as inactive.
+              Are you sure you want to remove this rate assignment? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-            <AlertDialogAction type="button" onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction 
+              type="button" 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 };
