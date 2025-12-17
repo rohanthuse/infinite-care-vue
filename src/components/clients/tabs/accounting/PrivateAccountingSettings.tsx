@@ -125,11 +125,11 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
                 name="travel_rate_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Default Rate</FormLabel>
+                    <FormLabel>Travel Rate</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select default rate" />
+                          <SelectValue placeholder="Select travel rate" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -172,7 +172,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
                 name="charge_based_on"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Charge Based On</FormLabel>
+                    <FormLabel>Do you want to charge based on Planned Time or Actual Time?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -197,7 +197,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
                 name="extra_time_calculation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Extra Time Calculation</FormLabel>
+                    <FormLabel>Do you want to calculate extra time?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={(value) => field.onChange(value === 'true')}
