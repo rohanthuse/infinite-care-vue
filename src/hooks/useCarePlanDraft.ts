@@ -117,18 +117,20 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const isManualSavingRef = useRef(false);
 
-  // Query to find existing draft for client when no carePlanId is provided
-  // Skip this query entirely if forceNew is true (creating a new care plan)
+  // ALWAYS check for existing draft for this client, regardless of forceNew
+  // This prevents creating duplicate drafts
   const { data: existingDraft, isLoading: isCheckingExistingDraft } = useQuery({
-    queryKey: ['existing-care-plan-draft', clientId, forceNew],
+    queryKey: ['existing-care-plan-draft', clientId],
     queryFn: async () => {
-      // Skip if we already have a carePlanId or if forceNew is true
-      if (carePlanId || forceNew) return null;
+      // If we already have a specific carePlanId, use that instead
+      if (carePlanId) return null;
       
+      // Always check for existing draft for this client
       const { data, error } = await supabase
         .from('client_care_plans')
         .select('id, auto_save_data, last_step_completed, completion_percentage, status')
         .eq('client_id', clientId)
+        .eq('status', 'draft') // Only look for draft status
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -140,10 +142,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
       
       return data;
     },
-    enabled: !!clientId && !carePlanId && !forceNew,
+    enabled: !!clientId && !carePlanId,
   });
 
   // Determine the effective care plan ID (provided or from existing draft)
+  // Always use existing draft if one exists for this client
   const effectiveCarePlanId = carePlanId || existingDraft?.id;
 
   // Query to load existing draft data
