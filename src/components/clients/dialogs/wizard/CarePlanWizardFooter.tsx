@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
+interface WizardStep {
+  id: number;
+  name: string;
+  description: string;
+  childOnly?: boolean;
+}
+
 interface CarePlanWizardFooterProps {
   currentStep: number;
   totalSteps: number;
+  filteredSteps: WizardStep[];
   onPrevious: () => void;
   onNext: () => void;
   onSaveDraft: () => Promise<void>;
@@ -19,6 +27,7 @@ interface CarePlanWizardFooterProps {
 export function CarePlanWizardFooter({
   currentStep,
   totalSteps,
+  filteredSteps,
   onPrevious,
   onNext,
   onSaveDraft,
@@ -27,8 +36,10 @@ export function CarePlanWizardFooter({
   isDraft,
   formData
 }: CarePlanWizardFooterProps) {
-  const isFirstStep = currentStep === 1;
-  const isLastStep = currentStep === totalSteps;
+  // Calculate first/last step based on filtered steps (handles adult vs child clients)
+  const currentIndex = filteredSteps.findIndex(s => s.id === currentStep);
+  const isFirstStep = currentIndex === 0;
+  const isLastStep = currentIndex === filteredSteps.length - 1;
 
   // Check if care plan has minimum content for finalization
   const getSectionStatus = (sectionData: any) => {
@@ -99,25 +110,21 @@ export function CarePlanWizardFooter({
   };
 
   const handleFinalize = () => {
-    if (!hasMinimumContent) {
-      toast.error("Please complete at least 3 sections before finalizing", {
-        description: "Fill in more details about the client's care requirements"
-      });
-      return;
-    }
-
-    if (!hasProviderInfo) {
-      toast.error("Please assign a provider before finalizing", {
-        description: "Select a staff member or specify a provider name"
-      });
-      return;
-    }
-
-    if (!canFinalize) {
-      toast.error("Cannot finalize care plan", {
-        description: "Please ensure all required information is completed"
-      });
-      return;
+    // Show warning for incomplete plans but allow user to proceed
+    if (!hasMinimumContent || !hasProviderInfo) {
+      const warnings: string[] = [];
+      if (!hasMinimumContent) {
+        warnings.push(`Only ${completedSections.length}/3 sections completed`);
+      }
+      if (!hasProviderInfo) {
+        warnings.push("No provider assigned");
+      }
+      
+      const proceed = window.confirm(
+        `This care plan has incomplete information:\n\n• ${warnings.join('\n• ')}\n\nAre you sure you want to send it for client approval?`
+      );
+      
+      if (!proceed) return;
     }
 
     onFinalize();
@@ -171,13 +178,9 @@ export function CarePlanWizardFooter({
             <Button
               type="button"
               onClick={handleFinalize}
-              disabled={isLoading || !canFinalize}
-              className={`flex items-center space-x-2 w-full sm:w-auto ${
-                canFinalize 
-                  ? "bg-green-600 hover:bg-green-700" 
-                  : "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
-              }`}
-              title={!canFinalize ? getFinalizationMessage() : "Send to client for approval"}
+              disabled={isLoading}
+              className="flex items-center space-x-2 w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              title="Send to client for approval"
             >
               <CheckCircle className="h-4 w-4" />
               <span>{isLoading ? "Finalizing..." : "Send for Approval"}</span>

@@ -631,9 +631,12 @@ export function CarePlanCreationWizard({
 
   const handleNext = () => {
     try {
-      if (currentStep < totalSteps) {
-        console.log(`Moving from step ${currentStep} to ${currentStep + 1}`);
-        setCurrentStep(currentStep + 1);
+      // Find current position in filtered steps array
+      const currentIndex = filteredSteps.findIndex(s => s.id === currentStep);
+      if (currentIndex < filteredSteps.length - 1) {
+        const nextStep = filteredSteps[currentIndex + 1];
+        console.log(`Moving from step ${currentStep} (index ${currentIndex}) to step ${nextStep.id} (${nextStep.name})`);
+        setCurrentStep(nextStep.id);
         setStepError(null);
       }
     } catch (error) {
@@ -644,9 +647,12 @@ export function CarePlanCreationWizard({
 
   const handlePrevious = () => {
     try {
-      if (currentStep > 1) {
-        console.log(`Moving from step ${currentStep} to ${currentStep - 1}`);
-        setCurrentStep(currentStep - 1);
+      // Find current position in filtered steps array
+      const currentIndex = filteredSteps.findIndex(s => s.id === currentStep);
+      if (currentIndex > 0) {
+        const prevStep = filteredSteps[currentIndex - 1];
+        console.log(`Moving from step ${currentStep} (index ${currentIndex}) to step ${prevStep.id} (${prevStep.name})`);
+        setCurrentStep(prevStep.id);
         setStepError(null);
       }
     } catch (error) {
@@ -812,6 +818,7 @@ export function CarePlanCreationWizard({
                 <CarePlanWizardFooter
                   currentStep={currentStep}
                   totalSteps={totalSteps}
+                  filteredSteps={filteredSteps}
                   onPrevious={handlePrevious}
                   onNext={handleNext}
                   onSaveDraft={handleSaveDraft}
