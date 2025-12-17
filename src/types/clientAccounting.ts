@@ -46,6 +46,21 @@ export interface ClientPrivateAccounting {
   organization_id: string;
 }
 
+export interface ClientAuthorityAccounting {
+  id: string;
+  client_id: string;
+  authority_id: string;
+  reference_number?: string;
+  travel_rate_id?: string;
+  charge_based_on: 'planned_time' | 'actual_time';
+  extra_time_calculation: boolean;
+  client_contribution_required: boolean;
+  branch_id?: string;
+  organization_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ServiceType {
   id: string;
   name: string;
