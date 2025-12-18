@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Calendar, User, Stethoscope, Building2, Phone, Mail, MapPin } from 'lucide-react';
+import { FileText, Calendar, User, Users, Stethoscope, Building2, Phone, Mail, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -48,6 +48,41 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
   const hasGpInfo = gpInfo.name || gpInfo.phone || gpInfo.email || gpInfo.address;
   const hasPharmacyInfo = pharmacyInfo.name || pharmacyInfo.phone || pharmacyInfo.email || pharmacyInfo.address;
 
+  // Get assigned staff - support both single staff and multiple staff_assignments
+  const getAssignedStaff = () => {
+    // First check staff_assignments array (new multi-staff approach)
+    if (carePlan.staff_assignments && carePlan.staff_assignments.length > 0) {
+      return carePlan.staff_assignments.map((assignment: any) => ({
+        name: assignment.staff 
+          ? `${assignment.staff.first_name} ${assignment.staff.last_name}`
+          : 'Unknown Staff',
+        isPrimary: assignment.is_primary
+      }));
+    }
+    
+    // Fall back to single staff (backward compatibility)
+    if (carePlan.staff) {
+      return [{
+        name: `${carePlan.staff.first_name} ${carePlan.staff.last_name}`,
+        isPrimary: true
+      }];
+    }
+    
+    // Fall back to provider_name
+    if (carePlan.provider_name) {
+      // Check if provider_name contains multiple names (comma-separated)
+      const names = carePlan.provider_name.split(',').map((n: string) => n.trim()).filter(Boolean);
+      return names.map((name: string, index: number) => ({
+        name,
+        isPrimary: index === 0
+      }));
+    }
+    
+    return [];
+  };
+
+  const assignedStaff = getAssignedStaff();
+
   return (
     <div className="space-y-6">
       <Card>
@@ -65,11 +100,30 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
             </div>
             
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Care Provider</label>
-              <p className="text-base mt-1 flex items-center gap-2">
-                <User className="h-4 w-4" />
-                {carePlan.provider_name || 'Not assigned'}
-              </p>
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                {assignedStaff.length > 1 ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                Assigned Care Staff
+              </label>
+              <div className="mt-1">
+                {assignedStaff.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {assignedStaff.map((staff: { name: string; isPrimary: boolean }, index: number) => (
+                      <Badge 
+                        key={index} 
+                        variant={staff.isPrimary ? "default" : "secondary"}
+                        className="text-sm"
+                      >
+                        {staff.name}
+                        {staff.isPrimary && assignedStaff.length > 1 && (
+                          <span className="ml-1 text-xs opacity-75">(Primary)</span>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Not assigned</p>
+                )}
+              </div>
             </div>
 
             <div>

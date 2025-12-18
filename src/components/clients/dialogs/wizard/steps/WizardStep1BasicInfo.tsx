@@ -4,8 +4,9 @@ import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Stethoscope, Phone, Mail, MapPin, Building } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useParams } from "react-router-dom";
+import { StaffMultiSelect } from "@/components/ui/staff-multi-select";
+import { EnhancedStaff } from "@/hooks/useSearchableStaff";
 
 import {
   Form,
@@ -38,8 +39,18 @@ interface WizardStep1BasicInfoProps {
 
 export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
   const { id: branchId } = useParams();
-  const { data: branchStaff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
   const [providerType, setProviderType] = React.useState<"staff" | "external">("staff");
+
+  // Initialize staff_ids from existing staff_id for backward compatibility
+  React.useEffect(() => {
+    const existingStaffId = form.getValues('staff_id');
+    const existingStaffIds = form.getValues('staff_ids');
+    
+    // If we have a single staff_id but no staff_ids array, initialize it
+    if (existingStaffId && (!existingStaffIds || existingStaffIds.length === 0)) {
+      form.setValue('staff_ids', [existingStaffId]);
+    }
+  }, [form]);
 
   React.useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -49,11 +60,21 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
           form.setValue("provider_name", "");
         } else {
           form.setValue("staff_id", null);
+          form.setValue("staff_ids", []);
         }
       }
     });
     return () => subscription.unsubscribe();
   }, [form]);
+
+  const handleStaffSelectionChange = (ids: string[], staffData: EnhancedStaff[]) => {
+    form.setValue('staff_ids', ids);
+    // Set primary staff_id for backward compatibility
+    form.setValue('staff_id', ids.length > 0 ? ids[0] : null);
+    // Set provider_name as comma-separated list of names
+    const names = staffData.map(s => s.full_name).join(', ');
+    form.setValue('provider_name', names || '');
+  };
 
   return (
     <div className="space-y-6">
@@ -108,29 +129,18 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
           {providerType === "staff" ? (
             <FormField
               control={form.control}
-              name="staff_id"
+              name="staff_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assigned Staff Member *</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value || null)}
-                    value={field.value || ""}
-                    disabled={isLoadingStaff}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingStaff ? "Loading staff..." : "Select a staff member"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {branchStaff.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          {staff.first_name} {staff.last_name}
-                          {staff.specialization && ` - ${staff.specialization}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Assigned Staff Members *</FormLabel>
+                  <FormControl>
+                    <StaffMultiSelect
+                      branchId={branchId || ''}
+                      selectedIds={field.value || []}
+                      onChange={handleStaffSelectionChange}
+                      placeholder="Select staff members..."
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
