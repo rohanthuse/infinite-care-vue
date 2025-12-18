@@ -197,6 +197,8 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         priority: formData.priority || 'medium',
         care_plan_type: formData.care_plan_type || 'standard',
         provider_name: formData.provider_name || 'Not Assigned',
+        // Explicitly save primary staff_id for backward compatibility
+        staff_id: formData.staff_id || (formData.staff_ids?.length > 0 ? formData.staff_ids[0] : null),
       };
 
       // Use existing draft ID if available

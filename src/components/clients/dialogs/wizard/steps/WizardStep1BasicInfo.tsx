@@ -42,13 +42,28 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
   const [providerType, setProviderType] = React.useState<"staff" | "external">("staff");
 
   // Initialize staff_ids from existing staff_id for backward compatibility
+  // This runs once on mount to handle legacy single-staff data
+  const initializedRef = React.useRef(false);
+  
   React.useEffect(() => {
+    // Only run initialization once
+    if (initializedRef.current) return;
+    
     const existingStaffId = form.getValues('staff_id');
     const existingStaffIds = form.getValues('staff_ids');
     
-    // If we have a single staff_id but no staff_ids array, initialize it
+    // If staff_ids already has data (loaded from junction table), don't overwrite
+    if (existingStaffIds && existingStaffIds.length > 0) {
+      console.log('[WizardStep1BasicInfo] staff_ids already populated:', existingStaffIds);
+      initializedRef.current = true;
+      return;
+    }
+    
+    // If we have a single staff_id but no staff_ids array, initialize it (backward compat)
     if (existingStaffId && (!existingStaffIds || existingStaffIds.length === 0)) {
+      console.log('[WizardStep1BasicInfo] Initializing staff_ids from legacy staff_id:', existingStaffId);
       form.setValue('staff_ids', [existingStaffId]);
+      initializedRef.current = true;
     }
   }, [form]);
 
