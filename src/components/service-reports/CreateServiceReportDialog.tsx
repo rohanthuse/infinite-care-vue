@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -122,6 +122,29 @@ export function CreateServiceReportDialog({
   const [newGoals, setNewGoals] = useState<{ description: string; status: string; progress: number; notes: string }[]>([]);
   const [newActivities, setNewActivities] = useState<{ name: string; duration_minutes: number; notes: string }[]>([]);
 
+  // Reset all pending states when dialog opens to prevent stale data
+  useEffect(() => {
+    if (open) {
+      setNewTasks([]);
+      setNewMedications([]);
+      setNewEvents([]);
+      setNewGoals([]);
+      setNewActivities([]);
+      setPendingVitalChanges(null);
+      setPendingTaskChanges(new Map());
+      setPendingMedicationChanges(new Map());
+      setPendingEventChanges(new Map());
+      setPendingGoalChanges(new Map());
+      setPendingActivityChanges(new Map());
+      setPendingVisitSummary(null);
+    }
+  }, [open]);
+
+  // In edit mode, use existing report's visit_record_id for fetching data
+  const actualVisitRecordId = mode === 'edit' && existingReport?.visit_record_id 
+    ? existingReport.visit_record_id 
+    : visitRecordId;
+
   // Fetch client's care plan ID
   const { data: clientCarePlan } = useQuery({
     queryKey: ['client-care-plan', preSelectedClient?.id],
@@ -143,42 +166,42 @@ export function CreateServiceReportDialog({
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedications = [] } = useQuery({
-    queryKey: ['visit-medications', visitRecordId],
+    queryKey: ['visit-medications', actualVisitRecordId],
     queryFn: async () => {
-      if (!visitRecordId) return [];
+      if (!actualVisitRecordId) return [];
       
       const { data, error } = await supabase
         .from('visit_medications')
         .select('*')
-        .eq('visit_record_id', visitRecordId)
+        .eq('visit_record_id', actualVisitRecordId)
         .order('prescribed_time', { ascending: true });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!visitRecordId && open,
+    enabled: !!actualVisitRecordId && open,
   });
 
   // Fetch visit record details when visitRecordId is provided
   const { data: visitRecord } = useQuery({
-    queryKey: ['visit-record-details', visitRecordId],
+    queryKey: ['visit-record-details', actualVisitRecordId],
     queryFn: async () => {
-      if (!visitRecordId) return null;
+      if (!actualVisitRecordId) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
-        .eq('id', visitRecordId)
+        .eq('id', actualVisitRecordId)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!visitRecordId && open,
+    enabled: !!actualVisitRecordId && open,
   });
 
   // Fetch visit tasks
-  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(visitRecordId);
+  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(actualVisitRecordId);
 
   // Fetch visit events (incidents, accidents, observations)
   const { 
@@ -187,7 +210,7 @@ export function CreateServiceReportDialog({
     accidents = [], 
     observations = [],
     updateEvent
-  } = useVisitEvents(visitRecordId);
+  } = useVisitEvents(actualVisitRecordId);
 
   // Fetch visit vitals (NEWS2 readings)
   const { 
@@ -196,24 +219,24 @@ export function CreateServiceReportDialog({
     otherVitals = [],
     isLoading: isLoadingVitals,
     updateVital
-  } = useVisitVitals(visitRecordId);
+  } = useVisitVitals(actualVisitRecordId);
 
   // Fetch full visit record with signatures
   const { data: fullVisitRecord } = useQuery({
-    queryKey: ['full-visit-record', visitRecordId],
+    queryKey: ['full-visit-record', actualVisitRecordId],
     queryFn: async () => {
-      if (!visitRecordId) return null;
+      if (!actualVisitRecordId) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
-        .eq('id', visitRecordId)
+        .eq('id', actualVisitRecordId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!visitRecordId && open,
+    enabled: !!actualVisitRecordId && open,
   });
 
   const form = useForm<FormData>({
@@ -280,9 +303,9 @@ export function CreateServiceReportDialog({
       }
     };
 
-    // Get or create visit record ID
+    // Get or create visit record ID - ALWAYS create for past appointments to ensure proper linking
     let effectiveVisitRecordId = visitRecordId;
-    if (!effectiveVisitRecordId && (newTasks.length > 0 || newMedications.length > 0 || newEvents.length > 0 || pendingVitalChanges)) {
+    if (!effectiveVisitRecordId && bookingId) {
       effectiveVisitRecordId = await createVisitRecordIfNeeded();
     }
 
@@ -464,7 +487,7 @@ export function CreateServiceReportDialog({
       client_feedback: data.client_feedback,
       staff_id: carerContext.staffProfile.id,
       branch_id: carerContext.staffProfile.branch_id,
-      visit_record_id: visitRecordId,
+      visit_record_id: effectiveVisitRecordId,
       created_by: carerContext.staffProfile.id,
     };
 
