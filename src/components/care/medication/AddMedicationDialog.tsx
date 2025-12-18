@@ -52,7 +52,7 @@ const NHS_MEDICATIONS = [
 ];
 
 const MEDICATION_SHAPES = [
-  "Tablet", "Capsule", "Liquid", "Injection", "Patch", "Inhaler", 
+  "Tablet", "Capsule", "Liquid", "Gel", "Injection", "Patch", "Inhaler", 
   "Drops", "Cream", "Ointment", "Spray", "Suppository"
 ];
 
