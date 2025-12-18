@@ -38,6 +38,12 @@ const SECTION_BG = {
   activities: { r: 255, g: 247, b: 237 }, // Light orange
 };
 
+// Safe color accessor with fallback
+const getGrayColor = (shade: number): { r: number; g: number; b: number } => {
+  const color = PDF_COLORS.gray[shade as keyof typeof PDF_COLORS.gray];
+  return color || PDF_COLORS.gray[700]; // Default to gray-700
+};
+
 /**
  * Add compact professional header with thin blue top strip, logo LEFT, org details RIGHT
  */
@@ -492,7 +498,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   doc.roundedRect(leftX, currentY - 3, halfWidth, 7, 1, 1, 'F');
   doc.setFontSize(7);
   doc.setFont(undefined, 'bold');
-  doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
+  const gray800 = getGrayColor(800);
+  doc.setTextColor(gray800.r, gray800.g, gray800.b);
   doc.text('CARE PLAN GOALS', leftX + 2, currentY + 1);
   
   // Right Column Header: ACTIVITIES
@@ -500,7 +507,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   doc.roundedRect(rightX, currentY - 3, halfWidth, 7, 1, 1, 'F');
   doc.setFontSize(7);
   doc.setFont(undefined, 'bold');
-  doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
+  doc.setTextColor(gray800.r, gray800.g, gray800.b);
   doc.text('ACTIVITIES', rightX + 2, currentY + 1);
   
   currentY += 6;
@@ -777,10 +784,11 @@ export const generatePDFForServiceReport = async (
   reportInput: any,
   branchId?: string
 ) => {
-  // CRITICAL FIX: Always fetch fresh report data from database to ensure latest edits are included
-  let report = reportInput;
-  
-  if (reportInput?.id) {
+  try {
+    // CRITICAL FIX: Always fetch fresh report data from database to ensure latest edits are included
+    let report = reportInput;
+    
+    if (reportInput?.id) {
     console.log('[PDF] Fetching fresh report data for ID:', reportInput.id);
     const { data: freshReport, error } = await supabase
       .from('client_service_reports')
@@ -984,4 +992,8 @@ export const generatePDFForServiceReport = async (
     activities: clientActivities,
     branchId: branchId || safeReport.branch_id,
   });
+  } catch (error) {
+    console.error('[PDF Generation Error]:', error);
+    throw new Error('Unable to generate PDF. Please try again later.');
+  }
 };
