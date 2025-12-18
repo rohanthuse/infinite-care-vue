@@ -84,6 +84,74 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
     },
   });
 
+  // Update existing vital signs
+  const updateVital = useMutation({
+    mutationFn: async ({ vitalId, updates }: { vitalId: string; updates: Partial<VisitVital> }) => {
+      // If NEWS2 fields are being updated, recalculate the score
+      let finalUpdates = { ...updates };
+      
+      if (updates.vital_type === 'news2' || 
+          updates.respiratory_rate !== undefined ||
+          updates.oxygen_saturation !== undefined ||
+          updates.supplemental_oxygen !== undefined ||
+          updates.systolic_bp !== undefined ||
+          updates.pulse_rate !== undefined ||
+          updates.consciousness_level !== undefined ||
+          updates.temperature !== undefined) {
+        
+        // Get the existing vital to merge with updates
+        const { data: existingVital } = await supabase
+          .from('visit_vitals')
+          .select('*')
+          .eq('id', vitalId)
+          .single();
+        
+        if (existingVital && existingVital.vital_type === 'news2') {
+          const mergedVitals = {
+            respiratory_rate: updates.respiratory_rate ?? existingVital.respiratory_rate,
+            oxygen_saturation: updates.oxygen_saturation ?? existingVital.oxygen_saturation,
+            supplemental_oxygen: updates.supplemental_oxygen ?? existingVital.supplemental_oxygen,
+            systolic_bp: updates.systolic_bp ?? existingVital.systolic_bp,
+            pulse_rate: updates.pulse_rate ?? existingVital.pulse_rate,
+            consciousness_level: (updates.consciousness_level ?? existingVital.consciousness_level) as 'A' | 'V' | 'P' | 'U',
+            temperature: updates.temperature ?? existingVital.temperature,
+          };
+          
+          const { score, riskLevel } = calculateNEWS2Score(mergedVitals);
+          finalUpdates.news2_total_score = score;
+          finalUpdates.news2_risk_level = riskLevel;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('visit_vitals')
+        .update(finalUpdates)
+        .eq('id', vitalId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['visit-vitals', visitRecordId] });
+      
+      // Alert for high risk NEWS2 scores
+      if (data.vital_type === 'news2' && data.news2_risk_level === 'high') {
+        toast.error('HIGH RISK NEWS2 Score!', {
+          description: `Score: ${data.news2_total_score}. Consider immediate medical attention.`,
+        });
+      } else {
+        toast.success('Vital signs updated successfully');
+      }
+    },
+    onError: (error: any) => {
+      console.error('[useVisitVitals] Error updating vitals:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to record vital signs: ${errorMessage}`, { duration: 5000 });
+    },
+  });
+
   // Calculate NEWS2 score
   const calculateNEWS2Score = (vitals: {
     respiratory_rate: number;
@@ -200,6 +268,7 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
     latestNEWS2,
     isLoading,
     recordVitals,
+    updateVital,
     recordNEWS2,
     calculateNEWS2Score,
   };
