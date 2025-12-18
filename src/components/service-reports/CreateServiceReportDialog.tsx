@@ -353,7 +353,7 @@ export function CreateServiceReportDialog({
           is_administered: med.is_administered,
           administration_time: med.administration_time ? new Date(`1970-01-01T${med.administration_time}`).toISOString() : null,
           administration_notes: med.administration_notes || null,
-          not_administered_reason: med.not_administered_reason || null,
+          missed_reason: med.not_administered_reason || null,
         });
       }
 
@@ -435,7 +435,7 @@ export function CreateServiceReportDialog({
                 is_administered: changes.is_administered,
                 administration_time: changes.administration_time ? new Date(`1970-01-01T${changes.administration_time}`).toISOString() : null,
                 administration_notes: changes.administration_notes || null,
-                not_administered_reason: changes.not_administered_reason || null,
+                missed_reason: changes.not_administered_reason || null,
               })
               .eq('id', medId);
           }

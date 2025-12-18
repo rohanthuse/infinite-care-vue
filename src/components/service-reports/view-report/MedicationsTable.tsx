@@ -13,7 +13,7 @@ interface Medication {
   is_administered: boolean;
   administration_time?: string;
   administration_notes?: string;
-  not_administered_reason?: string;
+  missed_reason?: string;
 }
 
 interface MedicationsTableProps {
@@ -22,7 +22,7 @@ interface MedicationsTableProps {
 
 export function MedicationsTable({ medications }: MedicationsTableProps) {
   const administeredCount = medications.filter(m => m.is_administered).length;
-  const missedCount = medications.filter(m => !m.is_administered && m.not_administered_reason).length;
+  const missedCount = medications.filter(m => !m.is_administered && m.missed_reason).length;
   const pendingCount = medications.length - administeredCount - missedCount;
 
   const getStatusBadge = (medication: Medication) => {
@@ -34,7 +34,7 @@ export function MedicationsTable({ medications }: MedicationsTableProps) {
         </Badge>
       );
     }
-    if (medication.not_administered_reason) {
+    if (medication.missed_reason) {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="h-3 w-3" />
@@ -117,10 +117,10 @@ export function MedicationsTable({ medications }: MedicationsTableProps) {
                 {medication.administration_notes && (
                   <p className="text-muted-foreground">{medication.administration_notes}</p>
                 )}
-                {medication.not_administered_reason && (
+                {medication.missed_reason && (
                   <p className="text-red-600 flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
-                    {medication.not_administered_reason}
+                    {medication.missed_reason}
                   </p>
                 )}
               </TableCell>

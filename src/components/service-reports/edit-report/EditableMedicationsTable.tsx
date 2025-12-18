@@ -16,7 +16,7 @@ interface Medication {
   is_administered: boolean;
   administration_time?: string;
   administration_notes?: string;
-  not_administered_reason?: string;
+  missed_reason?: string;
 }
 
 interface MedicationChange {
@@ -68,7 +68,7 @@ export function EditableMedicationsTable({
         is_administered: med.is_administered,
         administration_time: med.administration_time ? new Date(med.administration_time).toTimeString().slice(0, 5) : '',
         administration_notes: med.administration_notes || '',
-        not_administered_reason: med.not_administered_reason || '',
+        not_administered_reason: med.missed_reason || '',
       });
     });
     setMedChanges(initialChanges);
@@ -333,7 +333,7 @@ export function EditableMedicationsTable({
             {medications.map((medication) => {
               const change = medChanges.get(medication.id);
               const isAdministered = change?.is_administered ?? medication.is_administered;
-              const hasReason = change?.not_administered_reason || medication.not_administered_reason;
+              const hasReason = change?.not_administered_reason || medication.missed_reason;
 
               return (
                 <TableRow key={medication.id}>
