@@ -64,6 +64,10 @@ interface CreateServiceReportDialogProps {
   preSelectedBooking?: any;
   existingReport?: any;
   mode?: 'create' | 'edit';
+  /** Admin mode allows editing without carer context - preserves original staff attribution */
+  adminMode?: boolean;
+  /** Branch ID for admin context when adminMode is true */
+  adminBranchId?: string;
 }
 
 const moodOptions = [
@@ -91,6 +95,8 @@ export function CreateServiceReportDialog({
   preSelectedBooking,
   existingReport,
   mode = 'create',
+  adminMode = false,
+  adminBranchId,
 }: CreateServiceReportDialogProps) {
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
@@ -271,7 +277,16 @@ export function CreateServiceReportDialog({
   }, [mode, existingReport, open, form]);
 
   const onSubmit = async (data: FormData) => {
-    if (!carerContext?.staffProfile?.id || !carerContext?.staffProfile?.branch_id || !data.client_id) {
+    // For admin edit mode, don't require carer context - use existing report data
+    const isAdminEdit = mode === 'edit' && adminMode && existingReport;
+    
+    if (!isAdminEdit && (!carerContext?.staffProfile?.id || !carerContext?.staffProfile?.branch_id)) {
+      console.warn('[CreateServiceReportDialog] No carer context available for non-admin mode');
+      return;
+    }
+    
+    if (!data.client_id) {
+      console.warn('[CreateServiceReportDialog] No client ID');
       return;
     }
 
@@ -487,30 +502,44 @@ export function CreateServiceReportDialog({
       }
     }
 
+    // In edit mode with adminMode, preserve original staff attribution
+    // Admin edits should NOT change who created/owns the report
+    const staffId = isAdminEdit && existingReport?.staff_id 
+      ? existingReport.staff_id 
+      : carerContext?.staffProfile?.id;
+    
+    const branchId = isAdminEdit && existingReport?.branch_id 
+      ? existingReport.branch_id 
+      : (adminBranchId || carerContext?.staffProfile?.branch_id);
+    
+    const createdBy = isAdminEdit && existingReport?.created_by 
+      ? existingReport.created_by 
+      : carerContext?.staffProfile?.id;
+
     const reportData = {
       client_id: data.client_id,
       booking_id: bookingId || data.booking_id || null,
       service_date: preSelectedBooking 
         ? format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd')
-        : format(new Date(), 'yyyy-MM-dd'),
+        : (existingReport?.service_date || format(new Date(), 'yyyy-MM-dd')),
       service_duration_minutes: preSelectedBooking 
         ? Math.round((new Date(preSelectedBooking.end_time).getTime() - new Date(preSelectedBooking.start_time).getTime()) / 60000)
-        : 60,
+        : (existingReport?.service_duration_minutes || 60),
       tasks_completed: data.tasks_completed,
       client_mood: data.client_mood,
       client_engagement: data.client_engagement,
       activities_undertaken: data.activities_undertaken,
-      medication_administered: false,
-      medication_notes: null,
-      incident_occurred: false,
-      incident_details: null,
+      medication_administered: existingReport?.medication_administered || false,
+      medication_notes: existingReport?.medication_notes || null,
+      incident_occurred: existingReport?.incident_occurred || false,
+      incident_details: existingReport?.incident_details || null,
       next_visit_preparations: data.next_visit_preparations,
       carer_observations: data.carer_observations,
       client_feedback: data.client_feedback,
-      staff_id: carerContext.staffProfile.id,
-      branch_id: carerContext.staffProfile.branch_id,
+      staff_id: staffId,
+      branch_id: branchId,
       visit_record_id: effectiveVisitRecordId,
-      created_by: carerContext.staffProfile.id,
+      created_by: createdBy,
     };
 
     if (mode === 'edit' && existingReport) {
