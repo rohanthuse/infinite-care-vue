@@ -227,6 +227,8 @@ export function AdminServiceReportsTab({
           visitRecordId={editReportDialog.report.visit_record_id}
           existingReport={editReportDialog.report}
           mode="edit"
+          adminMode={true}
+          adminBranchId={branchId}
         />
       )}
 
