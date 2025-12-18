@@ -399,7 +399,12 @@ const CarerVisitWorkflow = () => {
 
   // Initialize tasks and medications when visit record is created
   const [tasksInitialized, setTasksInitialized] = useState(false);
-  const [medicationsInitialized, setMedicationsInitialized] = useState(false);
+  const medicationsInitializedRef = useRef(false);
+
+  // Reset medications ref when appointment changes
+  useEffect(() => {
+    medicationsInitializedRef.current = false;
+  }, [appointmentId]);
 
   // Removed auto-generation of common tasks - only show admin-assigned tasks
   // useEffect(() => {
@@ -412,15 +417,16 @@ const CarerVisitWorkflow = () => {
 
   useEffect(() => {
     // Don't initialize medications in view-only mode
-    if (!isViewOnly && visitRecord && !medicationsInitialized && (medications?.length === 0 || medications === undefined) && currentAppointment?.client_id) {
+    // Use ref to prevent duplicate calls (synchronous update vs async state)
+    if (!isViewOnly && visitRecord && !medicationsInitializedRef.current && currentAppointment?.client_id) {
       console.log('Initializing common medications for visit record:', visitRecord.id);
-      setMedicationsInitialized(true);
+      medicationsInitializedRef.current = true;
       addCommonMedications.mutate({ 
         visitRecordId: visitRecord.id, 
         clientId: currentAppointment.client_id 
       });
     }
-  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id, medicationsInitialized, isViewOnly]);
+  }, [visitRecord?.id, currentAppointment?.client_id, isViewOnly]);
 
   // Load existing visit data (but don't overwrite existing signatures)
   // Initialize medication notes from existing data
@@ -2423,7 +2429,11 @@ const CarerVisitWorkflow = () => {
                                   <div>
                                     <span className="text-muted-foreground">Time:</span>
                                     <span className="ml-2 font-medium capitalize">
-                                      {(activity as any).time_of_day.replace('_', ' ')}
+                                      {typeof (activity as any).time_of_day === 'string' 
+                                        ? (activity as any).time_of_day.replace(/_/g, ' ')
+                                        : Array.isArray((activity as any).time_of_day)
+                                          ? (activity as any).time_of_day.map((t: string) => String(t).replace(/_/g, ' ')).join(', ')
+                                          : String((activity as any).time_of_day)}
                                     </span>
                                   </div>
                                 )}

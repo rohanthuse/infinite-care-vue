@@ -172,9 +172,10 @@ export const useVisitMedications = (visitRecordId?: string) => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecordId] });
       if (data && data.length > 0) {
-        toast.success(`${data.length} active medications loaded for this visit`);
+        toast.success(`${data.length} active medications loaded for this visit`, { id: 'medications-loaded' });
       } else {
-        toast.info('No active medications found for this client');
+        // Use unique ID to prevent duplicate toasts
+        toast.info('No active medications found for this client', { id: 'no-medications-info' });
       }
     },
     onError: (error) => {
