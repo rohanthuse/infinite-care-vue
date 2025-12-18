@@ -140,10 +140,16 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   // Tasks
+  currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+  currentY = addSectionHeader(doc, 'Task Details', currentY, SECTION_COLORS.tasks);
   if (tasks?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
-    currentY = addSectionHeader(doc, 'Task Details', currentY, SECTION_COLORS.tasks);
-    const taskData = tasks.map(t => [t.task_categories?.name || 'Uncategorized', t.tasks?.name || 'N/A', t.is_completed ? '✓' : '✗', t.completed_at ? format(new Date(t.completed_at), 'HH:mm') : '-', t.notes || '-']);
+    const taskData = tasks.map(t => [
+      t.task_category || 'Uncategorized',
+      t.task_name || 'N/A',
+      t.is_completed ? '✓' : '✗',
+      t.completed_at ? format(new Date(t.completed_at), 'HH:mm') : '-',
+      t.completion_notes || '-'
+    ]);
     autoTable(doc, {
       startY: currentY,
       head: [['Category', 'Task', 'Done', 'Time', 'Notes']],
@@ -154,13 +160,26 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       alternateRowStyles: { fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No tasks recorded', 25, currentY);
+    currentY += 15;
   }
 
   // Medications
+  currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+  currentY = addSectionHeader(doc, 'Medication Details', currentY, SECTION_COLORS.medications);
   if (medications?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
-    currentY = addSectionHeader(doc, 'Medication Details', currentY, SECTION_COLORS.medications);
-    const medData = medications.map(m => [m.medications?.name || 'N/A', [m.medications?.dosage, m.medications?.route].filter(Boolean).join(' - ') || 'N/A', m.scheduled_time || '-', m.is_administered ? 'Administered' : m.missed_reason ? 'Missed' : 'Pending', m.administered_at ? format(new Date(m.administered_at), 'HH:mm') : '-', m.administration_notes || m.missed_reason || '-']);
+    const medData = medications.map(m => [
+      m.medication_name || 'N/A',
+      [m.dosage, m.administration_method].filter(Boolean).join(' - ') || 'N/A',
+      m.prescribed_time || '-',
+      m.is_administered ? 'Administered' : m.missed_reason ? 'Missed' : 'Pending',
+      m.administration_time ? format(new Date(m.administration_time), 'HH:mm') : '-',
+      m.administration_notes || m.missed_reason || '-'
+    ]);
     autoTable(doc, {
       startY: currentY,
       head: [['Medication', 'Dosage & Route', 'Scheduled', 'Status', 'Actual Time', 'Notes']],
@@ -171,12 +190,18 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       alternateRowStyles: { fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No medications recorded', 25, currentY);
+    currentY += 15;
   }
 
   // NEWS2 & Vitals
+  currentY = await checkAndAddNewPage(doc, currentY, 70, orgSettings, logoBase64);
+  currentY = addSectionHeader(doc, 'NEWS2 & Vital Signs', currentY, SECTION_COLORS.vitals);
   if (news2Readings?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 70, orgSettings, logoBase64);
-    currentY = addSectionHeader(doc, 'NEWS2 & Vital Signs', currentY, SECTION_COLORS.vitals);
     news2Readings.forEach((r: any) => {
       autoTable(doc, {
         startY: currentY,
@@ -189,97 +214,98 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       });
       currentY = (doc as any).lastAutoTable.finalY + 10;
     });
+  } else {
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No vital signs recorded', 25, currentY);
+    currentY += 15;
   }
 
   // Events & Incidents
-  let hasEvents = false;
-
-  if (incidents?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
-    if (!hasEvents) {
-      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
-      hasEvents = true;
-    }
-    
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text('Incidents:', 20, currentY);
-    currentY += 6;
-    
-    const incidentData = incidents.map(inc => [
-      inc.time ? format(new Date(inc.time), 'HH:mm') : '-',
-      inc.title || 'Incident',
-      inc.description || '-',
-      inc.severity || 'Low'
-    ]);
-    
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Time', 'Title', 'Description', 'Severity']],
-      body: incidentData,
-      theme: 'striped',
-      headStyles: { fillColor: [251, 191, 36], fontSize: 9, fontStyle: 'bold', textColor: [0, 0, 0] },
-      styles: { fontSize: 8, cellPadding: 3 },
-    });
-    currentY = (doc as any).lastAutoTable.finalY + 10;
-  }
-
-  if (accidents?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
-    if (!hasEvents) {
-      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
-      hasEvents = true;
-    }
-    
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text('Accidents:', 20, currentY);
-    currentY += 6;
-    
-    const accidentData = accidents.map(acc => [
-      acc.time ? format(new Date(acc.time), 'HH:mm') : '-',
-      acc.title || 'Accident',
-      acc.description || '-',
-      acc.follow_up_required ? 'Yes' : 'No'
-    ]);
-    
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Time', 'Title', 'Description', 'Follow-up Required']],
-      body: accidentData,
-      theme: 'striped',
-      headStyles: { fillColor: [239, 68, 68], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
-      styles: { fontSize: 8, cellPadding: 3 },
-    });
-    currentY = (doc as any).lastAutoTable.finalY + 10;
-  }
-
-  if (observations?.length > 0) {
-    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
-    if (!hasEvents) {
-      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
-      hasEvents = true;
-    }
-    
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text('Observations:', 20, currentY);
-    currentY += 6;
-    
-    doc.setFont(undefined, 'normal');
+  currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+  currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
+  
+  const hasAnyEvents = (incidents?.length > 0) || (accidents?.length > 0) || (observations?.length > 0);
+  
+  if (!hasAnyEvents) {
     doc.setFontSize(9);
-    observations.forEach((obs: any) => {
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No events or incidents recorded', 25, currentY);
+    currentY += 15;
+  } else {
+    if (incidents?.length > 0) {
       doc.setFont(undefined, 'bold');
-      doc.text(`${obs.time ? format(new Date(obs.time), 'HH:mm') : '-'}:`, 25, currentY);
+      doc.setFontSize(10);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text('Incidents:', 20, currentY);
+      currentY += 6;
+      
+      const incidentData = incidents.map(inc => [
+        inc.event_time ? format(new Date(inc.event_time), 'HH:mm') : '-',
+        inc.event_title || 'Incident',
+        inc.event_description || '-',
+        inc.severity || 'Low'
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Time', 'Title', 'Description', 'Severity']],
+        body: incidentData,
+        theme: 'striped',
+        headStyles: { fillColor: [251, 191, 36], fontSize: 9, fontStyle: 'bold', textColor: [0, 0, 0] },
+        styles: { fontSize: 8, cellPadding: 3 },
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    if (accidents?.length > 0) {
+      currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text('Accidents:', 20, currentY);
+      currentY += 6;
+      
+      const accidentData = accidents.map(acc => [
+        acc.event_time ? format(new Date(acc.event_time), 'HH:mm') : '-',
+        acc.event_title || 'Accident',
+        acc.event_description || '-',
+        acc.follow_up_required ? 'Yes' : 'No'
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Time', 'Title', 'Description', 'Follow-up Required']],
+        body: accidentData,
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
+        styles: { fontSize: 8, cellPadding: 3 },
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    if (observations?.length > 0) {
+      currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text('Observations:', 20, currentY);
+      currentY += 6;
+      
       doc.setFont(undefined, 'normal');
-      const lines = doc.splitTextToSize(obs.observation || '-', pageWidth - 60);
-      doc.text(lines, 40, currentY);
-      currentY += lines.length * 4 + 3;
-    });
-    currentY += 5;
+      doc.setFontSize(9);
+      observations.forEach((obs: any) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(`${obs.event_time ? format(new Date(obs.event_time), 'HH:mm') : '-'}:`, 25, currentY);
+        doc.setFont(undefined, 'normal');
+        const lines = doc.splitTextToSize(obs.event_description || '-', pageWidth - 60);
+        doc.text(lines, 40, currentY);
+        currentY += lines.length * 4 + 3;
+      });
+      currentY += 5;
+    }
   }
 
   // Carer Details
@@ -451,9 +477,32 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
  * This is a standalone function that can be called from anywhere
  */
 export const generatePDFForServiceReport = async (
-  report: any,
+  reportInput: any,
   branchId?: string
 ) => {
+  // CRITICAL FIX: Always fetch fresh report data from database to ensure latest edits are included
+  let report = reportInput;
+  
+  if (reportInput?.id) {
+    console.log('[PDF] Fetching fresh report data for ID:', reportInput.id);
+    const { data: freshReport, error } = await supabase
+      .from('client_service_reports')
+      .select(`
+        *,
+        clients:client_id (first_name, last_name, email),
+        staff:staff_id (first_name, last_name, email)
+      `)
+      .eq('id', reportInput.id)
+      .maybeSingle();
+    
+    if (!error && freshReport) {
+      console.log('[PDF] Using fresh report data from database');
+      report = freshReport;
+    } else if (error) {
+      console.warn('[PDF] Could not fetch fresh data, using provided report:', error.message);
+    }
+  }
+
   // Create safeReport with fallbacks (same as ViewServiceReportDialog)
   const safeReport = {
     ...report,
