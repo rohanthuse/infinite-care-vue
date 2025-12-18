@@ -146,6 +146,25 @@ export function ViewServiceReportDialog({
   const { vitals = [], news2Readings = [], latestNEWS2, isLoading: vitalsLoading } = useVisitVitals(safeReport?.visit_record_id);
   const { events = [], incidents = [], accidents = [], observations = [], isLoading: eventsLoading } = useVisitEvents(safeReport?.visit_record_id);
 
+  // Fetch client's care plan for goals and activities display
+  const { data: clientCarePlan } = useQuery({
+    queryKey: ['client-care-plan-for-view', safeReport?.client_id],
+    queryFn: async () => {
+      if (!safeReport?.client_id) return null;
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id')
+        .eq('client_id', safeReport.client_id)
+        .in('status', ['draft', 'pending', 'confirmed', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!safeReport?.client_id && open,
+  });
+
   const isDataLoading = visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
 
   // NOW we can do the early return - AFTER all hooks are called
@@ -532,7 +551,7 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <GoalsDisplay carePlanId={safeReport.care_plan_id} />
+                <GoalsDisplay carePlanId={clientCarePlan?.id} />
               </CardContent>
             </Card>
 
@@ -545,7 +564,7 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ActivitiesDisplay carePlanId={safeReport.care_plan_id} />
+                <ActivitiesDisplay carePlanId={clientCarePlan?.id} />
               </CardContent>
             </Card>
 

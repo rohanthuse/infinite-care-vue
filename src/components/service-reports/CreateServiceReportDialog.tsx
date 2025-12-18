@@ -154,7 +154,7 @@ export function CreateServiceReportDialog({
         .from('client_care_plans')
         .select('id')
         .eq('client_id', preSelectedClient.id)
-        .eq('status', 'confirmed')
+        .in('status', ['draft', 'pending', 'confirmed', 'active'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
