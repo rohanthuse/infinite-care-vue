@@ -58,43 +58,82 @@ const checkPageBreak = (
   currentY: number,
   requiredSpace: number,
   orgSettings: OrganizationSettings | null,
-  branchName: string
+  branchName: string,
+  logoBase64: string | null,
+  clientName: string,
+  visitDate: string,
+  reportId: string
 ): number => {
   if (currentY + requiredSpace > SAFE_BOTTOM) {
     // Add new page
     doc.addPage();
-    // Add simplified header to new page
-    const newY = addSimplePageHeader(doc, orgSettings, branchName);
+    // Add full header to new page (matches first page)
+    const newY = addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
     return newY;
   }
   return currentY;
 };
 
 /**
- * Add simplified header for continuation pages
+ * Add full header for continuation pages (matches first page header)
  */
-const addSimplePageHeader = (
+const addFullPageHeader = (
   doc: jsPDF,
   orgSettings: OrganizationSettings | null,
-  branchName: string
+  logoBase64: string | null,
+  branchName: string,
+  clientName: string,
+  visitDate: string,
+  reportId: string
 ): number => {
   const pageWidth = doc.internal.pageSize.getWidth();
-  
-  // Thin blue strip
+  const margin = 15;
+
+  // Thin blue top strip (same as page 1)
   doc.setFillColor(SECTION_BG.header.r, SECTION_BG.header.g, SECTION_BG.header.b);
   doc.rect(0, 0, pageWidth, 5, 'F');
+
+  // LEFT SIDE: Logo (same as page 1)
+  if (logoBase64) {
+    try {
+      const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+        if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+        if (base64.includes('data:image/gif')) return 'GIF';
+        return 'PNG';
+      };
+      doc.addImage(logoBase64, getImageFormat(logoBase64), margin, 8, 40, 22);
+    } catch (e) {
+      console.error('Error adding logo:', e);
+    }
+  }
+
+  // RIGHT SIDE: Organization details (aligned right)
+  const rightX = pageWidth - margin;
   
-  // Simple header text
-  doc.setFontSize(9);
+  doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+  doc.setFontSize(11);
   doc.setFont(undefined, 'bold');
-  doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-  doc.text(`${orgSettings?.name || 'Healthcare Services'} - SERVICE REPORT (Continued)`, 15, 12);
+  doc.text(orgSettings?.name || 'Healthcare Services', rightX, 12, { align: 'right' });
   
   doc.setFontSize(7);
   doc.setFont(undefined, 'normal');
-  doc.text(`Branch: ${branchName}`, 15, 17);
+  doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
+  doc.text(`Branch: ${branchName}`, rightX, 17, { align: 'right' });
+  doc.text(`Date: ${visitDate}`, rightX, 22, { align: 'right' });
+
+  // CENTERED TITLE WITH CLIENT NAME
+  let currentY = 32;
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+  doc.text('SERVICE REPORT', pageWidth / 2, currentY, { align: 'center' });
   
-  return 25; // Return Y position after simplified header
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+  doc.text(`Client: ${clientName} | Report ID: ${reportId}`, pageWidth / 2, currentY + 5, { align: 'center' });
+
+  return 42; // Return Y position after full header
 };
 
 /**
@@ -415,8 +454,13 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         3: { cellWidth: 15, halign: 'center' },
         4: { cellWidth: 'auto', halign: 'center' }
       },
-      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
-      alternateRowStyles: { fillColor: [240, 253, 244] }
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+      alternateRowStyles: { fillColor: [240, 253, 244] },
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+        }
+      }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
   } else {
@@ -462,8 +506,13 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         4: { cellWidth: 15, halign: 'center' },
         5: { cellWidth: 'auto' }
       },
-      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
-      alternateRowStyles: { fillColor: [245, 243, 255] }
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+      alternateRowStyles: { fillColor: [245, 243, 255] },
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+        }
+      }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
   } else {
@@ -477,7 +526,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === NEWS2 & VITAL SIGNS (Table Format) ===
   currentY += 5;
   // Check for page break before NEWS2 section (requires ~80mm for table + score)
-  currentY = checkPageBreak(doc, currentY, 80, orgSettings, branchName);
+  currentY = checkPageBreak(doc, currentY, 80, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
   currentY = addCompactSectionHeader(doc, 'NEWS2 & VITAL SIGNS', currentY, SECTION_BG.vitals);
   
   if (news2Readings?.length > 0) {
@@ -513,8 +562,13 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         2: { cellWidth: 25, halign: 'center' },
         3: { cellWidth: 'auto', halign: 'center' }
       },
-      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
-      alternateRowStyles: { fillColor: [254, 242, 242] }
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+      alternateRowStyles: { fillColor: [254, 242, 242] },
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+        }
+      }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
     
@@ -543,7 +597,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === CARE PLAN GOALS & ACTIVITIES (Two-Column Side-by-Side Layout) ===
   currentY += 5;
   // Check for page break before Goals & Activities section (requires ~60mm)
-  currentY = checkPageBreak(doc, currentY, 60, orgSettings, branchName);
+  currentY = checkPageBreak(doc, currentY, 60, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
   
   const halfWidth = (pageWidth - (margin * 2) - 5) / 2;
   const leftX = margin;
@@ -660,7 +714,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
   currentY += 5;
   // Check for page break before Events section (requires ~40mm)
-  currentY = checkPageBreak(doc, currentY, 40, orgSettings, branchName);
+  currentY = checkPageBreak(doc, currentY, 40, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
   const hasEvents = (incidents?.length > 0) || (accidents?.length > 0);
   
   currentY = addCompactSectionHeader(doc, 'INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
@@ -696,8 +750,13 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         3: { cellWidth: 18, halign: 'center' },
         4: { cellWidth: 'auto' }
       },
-      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
-      alternateRowStyles: { fillColor: [254, 226, 226] }
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+      alternateRowStyles: { fillColor: [254, 226, 226] },
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+        }
+      }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
   } else {
@@ -711,7 +770,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
   currentY += 5;
   // Check for page break before Notes section (requires ~50mm)
-  currentY = checkPageBreak(doc, currentY, 50, orgSettings, branchName);
+  currentY = checkPageBreak(doc, currentY, 50, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
   const hasNotes = report.carer_observations || report.client_mood || 
                    report.client_feedback || report.next_visit_preparations;
   
@@ -758,7 +817,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   if (visitRecord?.staff_signature_data || visitRecord?.client_signature_data) {
     currentY += 5;
     // Check for page break before Signatures section (requires ~35mm)
-    currentY = checkPageBreak(doc, currentY, 35, orgSettings, branchName);
+    currentY = checkPageBreak(doc, currentY, 35, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
     currentY = addCompactSectionHeader(doc, 'SIGNATURES', currentY, SECTION_BG.signatures);
     
     const sigBoxWidth = (pageWidth - (margin * 2) - 5) / 2;
@@ -806,7 +865,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === ADMIN REVIEW (Compact - only if exists) ===
   if (report.reviewed_at && report.review_notes) {
     // Check for page break before Admin Review section (requires ~20mm)
-    currentY = checkPageBreak(doc, currentY, 20, orgSettings, branchName);
+    currentY = checkPageBreak(doc, currentY, 20, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
     currentY = addCompactSectionHeader(doc, 'ADMIN REVIEW', currentY, SECTION_BG.light);
     
     doc.setFillColor(SECTION_BG.light.r, SECTION_BG.light.g, SECTION_BG.light.b);
