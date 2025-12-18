@@ -12,6 +12,7 @@ import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 import { useCarePlanDraft } from "@/hooks/useCarePlanDraft";
 import { useCarePlanCreation } from "@/hooks/useCarePlanCreation";
 import { useClientProfile } from "@/hooks/useClientData";
+import { fetchCarePlanStaffAssignments } from "@/hooks/useCarePlanStaffAssignments";
 import { toast } from "sonner";
 
 const carePlanSchema = z.object({
@@ -449,6 +450,41 @@ export function CarePlanCreationWizard({
         setStepError(null);
       } catch (error) {
         console.error('Error loading draft data:', error);
+      }
+    }
+  }, [draftData?.auto_save_data, isDraftLoading, clientDataLoaded, form, totalSteps]);
+
+  // Load staff assignments from junction table when editing an existing care plan
+  useEffect(() => {
+    const loadStaffAssignments = async () => {
+      const targetCarePlanId = savedCarePlanId || carePlanId;
+      if (!targetCarePlanId) return;
+      
+      try {
+        console.log('[CarePlanCreationWizard] Loading staff assignments for care plan:', targetCarePlanId);
+        const assignments = await fetchCarePlanStaffAssignments(targetCarePlanId);
+        
+        if (assignments.length > 0) {
+          const staffIds = assignments.map(a => a.staff_id);
+          const currentStaffIds = (form.getValues as any)('staff_ids');
+          
+          // Only update if different from current values to prevent loops
+          if (JSON.stringify(staffIds) !== JSON.stringify(currentStaffIds)) {
+            console.log('[CarePlanCreationWizard] Setting staff_ids from junction table:', staffIds);
+            (form.setValue as any)('staff_ids', staffIds);
+            form.setValue('staff_id', staffIds[0]); // Primary for backward compat
+            
+            // Also set provider_name from staff names
+            const names = assignments
+              .map(a => a.staff ? `${a.staff.first_name} ${a.staff.last_name}` : 'Unknown')
+              .join(', ');
+            if (names) {
+              form.setValue('provider_name', names);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[CarePlanCreationWizard] Error loading staff assignments:', error);
         setStepError('Failed to load saved data');
       }
     }
