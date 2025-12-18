@@ -32,12 +32,22 @@ export const useCarerNavigation = () => {
       }
     }
 
+    console.log('[useCarerNavigation] Building path:', {
+      tenantSlug: finalTenantSlug,
+      inputPath: path,
+      currentPath: location.pathname
+    });
+
     if (finalTenantSlug) {
-      return `/${finalTenantSlug}/carer-dashboard${path}`;
+      const outputPath = `/${finalTenantSlug}/carer-dashboard${path}`;
+      console.log('[useCarerNavigation] Generated path:', outputPath);
+      return outputPath;
     }
     
     console.warn('[useCarerNavigation] No tenant slug found, returning non-tenant path');
-    return `/carer-dashboard${path}`;
+    const fallbackPath = `/carer-dashboard${path}`;
+    console.log('[useCarerNavigation] Fallback path:', fallbackPath);
+    return fallbackPath;
   };
 
   const navigateToCarerPage = (path: string, state?: any) => {

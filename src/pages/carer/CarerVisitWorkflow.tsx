@@ -129,7 +129,7 @@ const CarerVisitWorkflow = () => {
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
   
   // Fetch real appointment data from database
-  const { data: appointmentData, isLoading: appointmentLoading } = useQuery({
+  const { data: appointmentData, isLoading: appointmentLoading, error: appointmentError } = useQuery({
     queryKey: ['appointment', appointmentId],
     queryFn: async () => {
       if (!appointmentId) return null;
@@ -143,12 +143,16 @@ const CarerVisitWorkflow = () => {
           branches(name)
         `)
         .eq('id', appointmentId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[CarerVisitWorkflow] Error fetching appointment:', error);
+        return null;
+      }
       return data;
     },
     enabled: !!appointmentId,
+    retry: 1,
   });
 
   // Use appointmentData if available, otherwise fall back to location state
@@ -1070,13 +1074,72 @@ const CarerVisitWorkflow = () => {
     }
   };
 
+  // Show error state for query errors
+  if (appointmentError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md p-8">
+          <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Error Loading Visit</h2>
+          <p className="text-muted-foreground mb-6">
+            There was a problem loading the visit details. Please try again.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+            <Button onClick={() => navigateToCarerPage("/appointments")}>
+              Back to Appointments
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show loading state
-  if (appointmentLoading || !currentAppointment) {
+  if (appointmentLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading visit details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show visit not found state
+  if (!currentAppointment && appointmentId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md p-8">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Visit Not Found</h2>
+          <p className="text-muted-foreground mb-6">
+            The visit you're looking for doesn't exist or you don't have permission to access it.
+          </p>
+          <Button onClick={() => navigateToCarerPage("/appointments")}>
+            Return to Appointments
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback if no appointment ID provided
+  if (!currentAppointment) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md p-8">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No Visit Selected</h2>
+          <p className="text-muted-foreground mb-6">
+            Please select a visit from your appointments.
+          </p>
+          <Button onClick={() => navigateToCarerPage("/appointments")}>
+            Go to Appointments
+          </Button>
         </div>
       </div>
     );

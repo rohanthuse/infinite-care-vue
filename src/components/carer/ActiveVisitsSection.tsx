@@ -6,7 +6,8 @@ import { Clock, User, Play, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveVisits } from '@/hooks/useActiveVisits';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
-import { format, differenceInMinutes } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
+import { toast } from 'sonner';
 
 export const ActiveVisitsSection: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,12 @@ export const ActiveVisitsSection: React.FC = () => {
   const { data: activeVisits = [], isLoading } = useActiveVisits();
 
   const handleContinueVisit = (bookingId: string) => {
+    if (!bookingId) {
+      console.error('[ActiveVisitsSection] Missing booking_id');
+      toast.error('Unable to continue visit - booking ID missing');
+      return;
+    }
+    console.log('[ActiveVisitsSection] Navigating to visit:', bookingId);
     navigate(createCarerPath(`/visit/${bookingId}`));
   };
 
