@@ -37,11 +37,11 @@ export function WizardStepMedication({
   
   // Handle saving new medication
   const handleSaveMedication = (medication: any) => {
-    // Add to form state
+    // Add to form state temporarily
     const currentMedications = form.getValues("medical_info.medication_manager.medications") || [];
     form.setValue("medical_info.medication_manager.medications", [...currentMedications, medication]);
     
-    // If we have a care plan ID, also persist to database
+    // If we have a care plan ID, persist to database
     if (effectiveCarePlanId) {
       createMedicationMutation.mutate({
         care_plan_id: effectiveCarePlanId,
@@ -53,6 +53,11 @@ export function WizardStepMedication({
         status: medication.status || "active"
       }, {
         onSuccess: () => {
+          // Remove local medication from form state after successful DB save
+          // The database version will be fetched via existingMedications query
+          const updatedMedications = form.getValues("medical_info.medication_manager.medications") || [];
+          const filteredMedications = updatedMedications.filter((med: any) => med.id !== medication.id);
+          form.setValue("medical_info.medication_manager.medications", filteredMedications);
           toast.success("Medication added successfully");
         },
         onError: (error) => {
@@ -123,9 +128,19 @@ export function WizardStepMedication({
     setSelectedMedication(null);
   };
 
-  // Get medications from form and database
+  // Get medications from form and database with deduplication
   const formMedications = form.watch("medical_info.medication_manager.medications") || [];
-  const allMedications = [...formMedications, ...existingMedications];
+  
+  // Deduplicate: Filter out local medications that already exist in database
+  const uniqueFormMedications = formMedications.filter((formMed: any) => 
+    !existingMedications.some((dbMed: any) => 
+      dbMed.name === formMed.name && 
+      dbMed.dosage === formMed.dosage &&
+      dbMed.frequency === formMed.frequency
+    )
+  );
+  
+  const allMedications = [...uniqueFormMedications, ...existingMedications];
 
   return (
     <div className="space-y-6">
