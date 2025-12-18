@@ -243,6 +243,7 @@ export function CarePlanCreationWizard({
   const { 
     draftData, 
     isDraftLoading, 
+    isCheckingExistingDraft,
     saveDraft, 
     autoSave, 
     isSaving,
@@ -662,6 +663,12 @@ export function CarePlanCreationWizard({
   };
 
   const handleSaveDraft = async () => {
+    // Block save if still checking for existing draft
+    if (isCheckingExistingDraft) {
+      toast.warning("Please wait, checking for existing draft...");
+      return;
+    }
+    
     try {
       const formData = form.getValues();
       await saveDraft(formData, currentStep);
