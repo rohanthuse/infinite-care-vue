@@ -179,6 +179,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         throw new Error('Manual save in progress, skipping auto-save');
       }
 
+      // CRITICAL: Block saves until existing draft check is complete to prevent duplicates
+      if (isCheckingExistingDraft) {
+        throw new Error('Still checking for existing draft, please wait');
+      }
+
       // Calculate content-based completion percentage instead of step-based
       const completionPercentage = calculateContentBasedCompletion(formData);
       
@@ -194,13 +199,26 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         provider_name: formData.provider_name || 'Not Assigned',
       };
 
-      // Only set status to 'draft' for new care plans, preserve existing status for updates
-      if (!effectiveCarePlanId) {
-        draftPayload.status = 'draft';
-      }
+      // Use existing draft ID if available
+      let targetCarePlanId = effectiveCarePlanId;
 
-      // Use existing draft ID if available, otherwise create new
-      const targetCarePlanId = effectiveCarePlanId;
+      // SAFETY NET: If no ID yet, do a synchronous check to prevent race condition duplicates
+      if (!targetCarePlanId) {
+        console.log('[useCarePlanDraft] No effectiveCarePlanId - doing synchronous check for existing draft');
+        const { data: existingDraftCheck } = await supabase
+          .from('client_care_plans')
+          .select('id')
+          .eq('client_id', clientId)
+          .eq('status', 'draft')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingDraftCheck?.id) {
+          console.log('[useCarePlanDraft] Found existing draft via synchronous check:', existingDraftCheck.id);
+          targetCarePlanId = existingDraftCheck.id;
+        }
+      }
 
       if (targetCarePlanId) {
         // Update existing draft
@@ -214,7 +232,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         if (error) throw error;
         return data;
       } else {
+        // Only set status to 'draft' for new care plans
+        draftPayload.status = 'draft';
+        
         // Create new draft only if no existing draft found
+        console.log('[useCarePlanDraft] Creating new draft for client:', clientId);
         const { data, error } = await supabase
           .from('client_care_plans')
           .insert(draftPayload)
@@ -314,6 +336,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
   return {
     draftData,
     isDraftLoading: isDraftLoading || isCheckingExistingDraft,
+    isCheckingExistingDraft, // Expose separately for UI blocking
     saveDraft,
     autoSave,
     isSaving: saveDraftMutation.isPending,
