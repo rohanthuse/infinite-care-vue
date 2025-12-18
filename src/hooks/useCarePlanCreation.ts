@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { syncCarePlanStaffAssignments, sendStaffAssignmentNotifications } from "./useCarePlanStaffAssignments";
 
 interface CarePlanCreationData {
   client_id: string;
@@ -8,6 +9,7 @@ interface CarePlanCreationData {
   care_plan_id?: string;
   provider_name?: string;
   staff_id?: string;
+  staff_ids?: string[];
   clear_change_request?: boolean;
   [key: string]: any;
 }
@@ -310,49 +312,35 @@ export const useCarePlanCreation = () => {
         // Don't fail the operation for notification errors
       }
 
-      // Create notification for assigned staff (if any)
-      if (updatedCarePlan.staff_id) {
+      // Handle multi-staff assignments
+      const staffIds = data.staff_ids || (data.staff_id ? [data.staff_id] : []);
+      if (staffIds.length > 0 && user) {
         try {
-          const { data: clientData } = await supabase
-            .from('clients')
-            .select('first_name, last_name, branch_id')
-            .eq('id', data.client_id)
-            .single();
+          console.log('[useCarePlanCreation] Syncing staff assignments:', staffIds);
+          
+          // Sync staff assignments to junction table
+          const { added, removed } = await syncCarePlanStaffAssignments(
+            data.care_plan_id,
+            staffIds,
+            user.id
+          );
 
-          // Get staff auth_user_id for notification
-          const { data: staffData } = await supabase
-            .from('staff')
-            .select('auth_user_id')
-            .eq('id', updatedCarePlan.staff_id)
-            .single();
+          // Send notifications to all assigned staff
+          await sendStaffAssignmentNotifications(
+            data.care_plan_id,
+            data.client_id,
+            added,
+            removed,
+            staffIds.filter(id => !added.includes(id)), // unchanged staff
+            updatedCarePlan.title || 'Care Plan',
+            updatedCarePlan.display_id || '',
+            false // Don't notify unchanged on creation
+          );
 
-          if (clientData && staffData?.auth_user_id) {
-            const isActive = data.status === 'active';
-            const notification = {
-              user_id: staffData.auth_user_id,
-              branch_id: clientData.branch_id,
-              type: 'care_plan',
-              category: 'info',
-              priority: 'medium',
-              title: isActive ? 'New Care Plan Assigned' : 'Care Plan Assignment Updated',
-              message: `You have been assigned to ${updatedCarePlan.display_id || 'care plan'} for ${clientData.first_name} ${clientData.last_name}`,
-              data: {
-                care_plan_id: data.care_plan_id,
-                action: isActive ? 'activation' : 'status_change',
-                care_plan_title: updatedCarePlan.title || 'Care Plan',
-                care_plan_display_id: updatedCarePlan.display_id,
-                client_name: `${clientData.first_name} ${clientData.last_name}`
-              }
-            };
-
-            await supabase.from('notifications').insert([notification]);
-            console.log('[useCarePlanCreation] Staff notification created successfully');
-          } else {
-            console.warn('[useCarePlanCreation] Staff has no auth_user_id, cannot send notification');
-          }
-        } catch (notificationError) {
-          console.error('[useCarePlanCreation] Error creating staff notification:', notificationError);
-          // Don't fail the operation for notification errors
+          console.log('[useCarePlanCreation] Staff assignments synced successfully');
+        } catch (staffError) {
+          console.error('[useCarePlanCreation] Error syncing staff assignments:', staffError);
+          // Don't fail the operation for staff assignment errors
         }
       }
 

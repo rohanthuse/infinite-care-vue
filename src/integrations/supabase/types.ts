@@ -1470,6 +1470,54 @@ export type Database = {
           },
         ]
       }
+      care_plan_staff_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          care_plan_id: string
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          staff_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          care_plan_id: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          staff_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          care_plan_id?: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          staff_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_staff_assignments_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_staff_assignments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_plan_status_history: {
         Row: {
           care_plan_id: string

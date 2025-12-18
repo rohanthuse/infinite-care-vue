@@ -126,6 +126,12 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
         id,
         first_name,
         last_name
+      ),
+      staff_assignments:care_plan_staff_assignments(
+        id,
+        staff_id,
+        is_primary,
+        staff:staff(id, first_name, last_name, specialization)
       )
     `);
 
@@ -402,6 +408,12 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
         id,
         first_name,
         last_name
+      ),
+      staff_assignments:care_plan_staff_assignments(
+        id,
+        staff_id,
+        is_primary,
+        staff:staff(id, first_name, last_name, specialization)
       )
     `)
     .eq('client_id', clientId)
@@ -769,6 +781,7 @@ export const useCarerAssignedCarePlans = (carerId: string) => {
 };
 
 // Optimized version that accepts staffId and branchId directly
+// Now also queries junction table for multi-staff assignments
 export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: string) => {
   return useQuery({
     queryKey: ['carer-assigned-care-plans-optimized', staffId, branchId],
@@ -780,7 +793,7 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
 
       console.log(`[useCarerAssignedCarePlansOptimized] Staff ID: ${staffId}, Branch ID: ${branchId}`);
 
-      // Fetch care plans assigned directly to the carer OR in their branch (fallback)
+      // Query 1: Care plans assigned directly via staff_id (backward compatibility)
       const directQuery = supabase
         .from('client_care_plans')
         .select(`
@@ -799,12 +812,51 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
             id,
             first_name,
             last_name
+          ),
+          staff_assignments:care_plan_staff_assignments(
+            id,
+            staff_id,
+            is_primary,
+            staff:staff(id, first_name, last_name)
           )
         `)
         .eq('staff_id', staffId)
         .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
-      // Then get branch-level care plans where staff_id is null
+      // Query 2: Care plans assigned via junction table (multi-staff)
+      const junctionQuery = supabase
+        .from('care_plan_staff_assignments')
+        .select(`
+          care_plan_id,
+          is_primary,
+          care_plan:client_care_plans(
+            *,
+            client:clients(
+              id,
+              first_name,
+              last_name,
+              avatar_initials,
+              branch_id
+            ),
+            goals:client_care_plan_goals(*),
+            activities:client_activities(*),
+            medications:client_medications(*),
+            staff:staff!staff_id(
+              id,
+              first_name,
+              last_name
+            ),
+            staff_assignments:care_plan_staff_assignments(
+              id,
+              staff_id,
+              is_primary,
+              staff:staff(id, first_name, last_name)
+            )
+          )
+        `)
+        .eq('staff_id', staffId);
+
+      // Query 3: Branch-level care plans where staff_id is null
       const branchQuery = supabase
         .from('client_care_plans')
         .select(`
@@ -823,24 +875,48 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
             id,
             first_name,
             last_name
+          ),
+          staff_assignments:care_plan_staff_assignments(
+            id,
+            staff_id,
+            is_primary,
+            staff:staff(id, first_name, last_name)
           )
         `)
         .eq('client.branch_id', branchId)
         .is('staff_id', null)
         .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
 
-      const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
+      const [directResult, junctionResult, branchResult] = await Promise.all([directQuery, junctionQuery, branchQuery]);
 
-      if (directResult.error && branchResult.error) {
-        console.error('Error fetching carer assigned care plans:', directResult.error || branchResult.error);
-        throw directResult.error || branchResult.error;
+      if (directResult.error && junctionResult.error && branchResult.error) {
+        console.error('Error fetching carer assigned care plans:', directResult.error || junctionResult.error || branchResult.error);
+        throw directResult.error || junctionResult.error || branchResult.error;
       }
 
-      // Combine the results
-      const combinedData = [
-        ...(directResult.data || []),
-        ...(branchResult.data || [])
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Extract care plans from junction query results
+      const junctionCarePlans = (junctionResult.data || [])
+        .filter((item: any) => item.care_plan && ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval'].includes(item.care_plan.status))
+        .map((item: any) => item.care_plan);
+
+      // Combine all results and deduplicate by care plan ID
+      const carePlanMap = new Map();
+      
+      // Add direct results first (highest priority)
+      (directResult.data || []).forEach((cp: any) => carePlanMap.set(cp.id, cp));
+      
+      // Add junction results (if not already present)
+      junctionCarePlans.forEach((cp: any) => {
+        if (!carePlanMap.has(cp.id)) carePlanMap.set(cp.id, cp);
+      });
+      
+      // Add branch results last (lowest priority)
+      (branchResult.data || []).forEach((cp: any) => {
+        if (!carePlanMap.has(cp.id)) carePlanMap.set(cp.id, cp);
+      });
+
+      const combinedData = Array.from(carePlanMap.values())
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       // Transform the data
       const transformedData: CarePlanWithDetails[] = combinedData.map(item => {
@@ -894,7 +970,8 @@ export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: st
           service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
           equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
           documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : [],
-          isDirectlyAssigned: item.staff_id === staffId
+          isDirectlyAssigned: item.staff_id === staffId || (item.staff_assignments && item.staff_assignments.some((a: any) => a.staff_id === staffId)),
+          staff_assignments: item.staff_assignments || []
         };
       });
 
