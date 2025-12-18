@@ -5,12 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Trash2, Calendar, Save, DollarSign } from "lucide-react";
+import { Eye, Trash2, Calendar, Save, DollarSign, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { ViewRateDetailsDialog } from "@/components/clients/tabs/dialogs/ViewRateDetailsDialog";
+import { RateBlockForm, RateBlock, createNewRateBlock, dayOptions } from "@/components/accounting/RateBlockForm";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -28,7 +29,10 @@ import {
   ClientRateAssignment,
 } from "@/hooks/useClientRateAssignments";
 import { useAuthorities } from "@/contexts/AuthoritiesContext";
-import { useServiceRates } from "@/hooks/useAccountingData";
+import { useServiceRates, useCreateServiceRate } from "@/hooks/useAccountingData";
+import { useServices } from "@/data/hooks/useServices";
+import { useUserOrganization } from "@/hooks/useUserOrganization";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientRatesTabProps {
   clientId: string;
@@ -45,6 +49,13 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   
+  // State for "Create a New Rate"
+  const [createRateAuthority, setCreateRateAuthority] = useState<string>('');
+  const [createRateStartDate, setCreateRateStartDate] = useState<Date | undefined>();
+  const [createRateEndDate, setCreateRateEndDate] = useState<Date | undefined>();
+  const [rateBlocks, setRateBlocks] = useState<RateBlock[]>([]);
+  const [isSavingNewRate, setIsSavingNewRate] = useState(false);
+  
   // Dialog states
   const [showRateDetails, setShowRateDetails] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -54,10 +65,22 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const { authorities, isLoading: authoritiesLoading } = useAuthorities();
   const { data: allServiceRates = [], isLoading: ratesLoading } = useServiceRates(branchId);
   const { data: assignments = [], isLoading: assignmentsLoading } = useClientRateAssignments(clientId);
+  const { data: userOrg } = useUserOrganization();
+  const organizationId = userOrg?.id;
+  const { data: services = [], isLoading: servicesLoading } = useServices(organizationId || undefined);
   
   // Mutations
   const createAssignment = useCreateClientRateAssignment();
   const deleteAssignment = useDeleteClientRateAssignment();
+  const createServiceRate = useCreateServiceRate();
+
+  // Transform services for MultiSelect
+  const servicesOptions = useMemo(() => {
+    return services.map(service => ({
+      label: service.title,
+      value: service.id
+    }));
+  }, [services]);
 
   // Filter rates by selected authority (using funding_source field)
   const filteredRates = useMemo(() => {
@@ -117,7 +140,15 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     setEndDate(undefined);
   };
 
-  // Handle save rate assignment
+  // Reset create new rate form
+  const resetCreateNewRateForm = () => {
+    setCreateRateAuthority('');
+    setCreateRateStartDate(undefined);
+    setCreateRateEndDate(undefined);
+    setRateBlocks([]);
+  };
+
+  // Handle save rate assignment (Use a Defined Rate)
   const handleSaveRateAssignment = async () => {
     if (!selectedRate || !startDate) {
       toast.error('Please select a rate and start date');
@@ -135,6 +166,211 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
       resetForm();
     } catch (error) {
       console.error('[ClientRatesTab] Error creating assignment:', error);
+    }
+  };
+
+  // Rate block handlers
+  const handleAddRateBlock = () => {
+    setRateBlocks((prev) => [...prev, createNewRateBlock()]);
+  };
+
+  const handleRemoveRateBlock = (id: string) => {
+    setRateBlocks((prev) => prev.filter((block) => block.id !== id));
+  };
+
+  const handleRateBlockChange = (id: string, field: keyof RateBlock, value: any) => {
+    setRateBlocks((prev) =>
+      prev.map((block) =>
+        block.id === id ? { ...block, [field]: value } : block
+      )
+    );
+  };
+
+  const handleDayToggle = (blockId: string, dayId: string) => {
+    setRateBlocks((prev) =>
+      prev.map((block) => {
+        if (block.id !== blockId) return block;
+        const currentDays = block.applicableDays;
+        const newDays = currentDays.includes(dayId)
+          ? currentDays.filter((d) => d !== dayId)
+          : [...currentDays, dayId];
+        return { ...block, applicableDays: newDays };
+      })
+    );
+  };
+
+  const handleSelectAllDays = (blockId: string) => {
+    setRateBlocks((prev) =>
+      prev.map((block) =>
+        block.id === blockId
+          ? { ...block, applicableDays: dayOptions.map((d) => d.id) }
+          : block
+      )
+    );
+  };
+
+  const handleClearAllDays = (blockId: string) => {
+    setRateBlocks((prev) =>
+      prev.map((block) =>
+        block.id === blockId ? { ...block, applicableDays: [] } : block
+      )
+    );
+  };
+
+  // Helper function to map UI values to database charge_type
+  const mapToChargeType = (chargeBasedOn: string, rateChargingMethod: string, rateCalculationType: string): string => {
+    if (chargeBasedOn === 'services') {
+      switch (rateChargingMethod) {
+        case 'flat': return 'flat_rate';
+        case 'pro': return 'pro_rata';
+        case 'hourly': return 'hourly_rate';
+        default: return 'flat_rate';
+      }
+    } else if (chargeBasedOn === 'fix_flat_rate') {
+      return 'flat_rate';
+    } else if (chargeBasedOn === 'hours_minutes') {
+      switch (rateCalculationType) {
+        case 'rate_per_hour': return 'rate_per_hour';
+        case 'rate_per_minutes_pro': return 'rate_per_minutes_pro_rata';
+        case 'rate_per_minutes_flat': return 'rate_per_minutes_flat_rate';
+        default: return 'rate_per_hour';
+      }
+    }
+    return 'flat_rate';
+  };
+
+  // Helper function to map UI values to database pay_based_on
+  const mapToPayBasedOn = (chargeBasedOn: string): string => {
+    switch (chargeBasedOn) {
+      case 'services': return 'service';
+      case 'fix_flat_rate': return 'fixed';
+      case 'hours_minutes': return 'hours_minutes';
+      default: return 'service';
+    }
+  };
+
+  // Handle save new rate (Create a New Rate)
+  const handleSaveNewRate = async () => {
+    // Validation
+    if (!createRateAuthority) {
+      toast.error('Please select an authority');
+      return;
+    }
+    if (!createRateStartDate) {
+      toast.error('Please select a start date');
+      return;
+    }
+    if (rateBlocks.length === 0) {
+      toast.error('Please add at least one rate block');
+      return;
+    }
+
+    const rateBlock = rateBlocks[0]; // Primary rate block
+
+    // Validate rate block
+    if (!rateBlock.chargeBasedOn) {
+      toast.error('Please select a "Charge Based On" option');
+      return;
+    }
+
+    // Determine amount from rate block
+    let amount = 0;
+    if (rateBlock.rateChargingMethod === "flat" || rateBlock.rateChargingMethod === "hourly") {
+      if (!rateBlock.rate) {
+        toast.error('Please enter a rate amount');
+        return;
+      }
+      amount = parseFloat(rateBlock.rate) || 0;
+    } else if (rateBlock.chargeBasedOn === "hours_minutes" || rateBlock.rateChargingMethod === "pro") {
+      if (!rateBlock.rateAt30Minutes || !rateBlock.rateAt45Minutes || !rateBlock.rateAt60Minutes) {
+        toast.error('Please enter required rate amounts (30, 45, 60 minutes)');
+        return;
+      }
+      amount = parseFloat(rateBlock.rateAt60Minutes) || 0;
+    }
+
+    setIsSavingNewRate(true);
+
+    try {
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to create a rate');
+        setIsSavingNewRate(false);
+        return;
+      }
+      // Get service name from selected services
+      let serviceName = "Client Rate";
+      let serviceCode = "client_rate";
+      let serviceId: string | undefined;
+
+      if (rateBlock.services?.length > 0) {
+        const selectedService = services.find(s => s.id === rateBlock.services[0]);
+        if (selectedService) {
+          serviceName = selectedService.title;
+          serviceCode = selectedService.code || serviceCode;
+          serviceId = selectedService.id;
+        }
+      }
+
+      // Get authority name for caption
+      const authorityData = authorities.find(a => a.id === createRateAuthority);
+      const authorityName = authorityData?.organization || 'Authority';
+
+      // Build rate data for database
+      const dbRateData = {
+        service_name: serviceName,
+        service_code: serviceCode,
+        service_id: serviceId,
+        rate_type: rateBlock.rateChargingMethod || rateBlock.rateType || "hourly",
+        amount: amount,
+        currency: "GBP",
+        effective_from: format(createRateStartDate, 'yyyy-MM-dd'),
+        effective_to: createRateEndDate ? format(createRateEndDate, 'yyyy-MM-dd') : null,
+        client_type: rateBlock.rateType || "standard",
+        funding_source: createRateAuthority,
+        applicable_days: rateBlock.applicableDays || [],
+        is_default: false,
+        status: "active",
+        description: `Rate for ${serviceName} - ${authorityName}`,
+        rate_15_minutes: rateBlock.rateAt15Minutes ? parseFloat(rateBlock.rateAt15Minutes) : null,
+        rate_30_minutes: rateBlock.rateAt30Minutes ? parseFloat(rateBlock.rateAt30Minutes) : null,
+        rate_45_minutes: rateBlock.rateAt45Minutes ? parseFloat(rateBlock.rateAt45Minutes) : null,
+        rate_60_minutes: rateBlock.rateAt60Minutes ? parseFloat(rateBlock.rateAt60Minutes) : null,
+        consecutive_hours: rateBlock.consecutiveHours ? parseFloat(rateBlock.consecutiveHours) : null,
+        service_type: rateBlock.isVatable ? 'vatable' : 'standard',
+        charge_type: mapToChargeType(
+          rateBlock.chargeBasedOn || 'services',
+          rateBlock.rateChargingMethod || 'flat',
+          rateBlock.rateCalculationType || 'rate_per_hour'
+        ),
+        pay_based_on: mapToPayBasedOn(rateBlock.chargeBasedOn || 'services'),
+        time_from: rateBlock.effectiveFrom || null,
+        time_until: rateBlock.effectiveUntil || null,
+        branch_id: branchId,
+        organization_id: organizationId,
+      };
+
+      // Create the service rate
+      const newRate = await createServiceRate.mutateAsync(dbRateData);
+
+      // Create the client rate assignment
+      await createAssignment.mutateAsync({
+        client_id: clientId,
+        service_rate_id: newRate.id,
+        authority_id: createRateAuthority,
+        start_date: format(createRateStartDate, 'yyyy-MM-dd'),
+        end_date: createRateEndDate ? format(createRateEndDate, 'yyyy-MM-dd') : null,
+      });
+
+      toast.success('Rate created and assigned successfully');
+      resetCreateNewRateForm();
+      setRateOption('');
+    } catch (error) {
+      console.error('[ClientRatesTab] Error creating new rate:', error);
+      toast.error('Failed to create rate. Please try again.');
+    } finally {
+      setIsSavingNewRate(false);
     }
   };
 
@@ -205,6 +441,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
               setSelectedRate('');
               setStartDate(undefined);
               setEndDate(undefined);
+              resetCreateNewRateForm();
             }}>
               <SelectTrigger className="w-full md:w-[300px]">
                 <SelectValue placeholder="Select an option" />
@@ -316,10 +553,118 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
             </div>
           )}
 
-          {/* Placeholder for other options */}
+          {/* Create a New Rate Section */}
           {rateOption === 'create_new' && (
-            <div className="p-4 border rounded-lg bg-muted/30 text-center text-muted-foreground">
-              Create New Rate functionality coming soon
+            <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
+              {/* Authority Dropdown */}
+              <div className="space-y-2">
+                <Label>Authorities <span className="text-destructive">*</span></Label>
+                <Select 
+                  value={createRateAuthority} 
+                  onValueChange={setCreateRateAuthority}
+                  disabled={authoritiesLoading}
+                >
+                  <SelectTrigger className="w-full md:w-[400px]">
+                    <SelectValue placeholder={authoritiesLoading ? "Loading authorities..." : "Select Authority"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authoritiesLoading ? (
+                      <SelectItem value="loading" disabled>
+                        Loading authorities...
+                      </SelectItem>
+                    ) : authorities.length > 0 ? (
+                      authorities.map((auth) => (
+                        <SelectItem key={auth.id} value={auth.id}>
+                          {auth.organization}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-authorities" disabled>
+                        No authorities available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {!authoritiesLoading && authorities.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Add authorities in Workflow Management → Authorities tab
+                  </p>
+                )}
+              </div>
+
+              {/* Date Pickers */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date <span className="text-destructive">*</span></Label>
+                  <EnhancedDatePicker
+                    value={createRateStartDate}
+                    onChange={setCreateRateStartDate}
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <EnhancedDatePicker
+                    value={createRateEndDate}
+                    onChange={setCreateRateEndDate}
+                    placeholder="Select end date (optional)"
+                  />
+                </div>
+              </div>
+
+              {/* Rates Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h3 className="text-sm font-semibold text-foreground">Rates</h3>
+                  <Button variant="outline" size="sm" onClick={handleAddRateBlock}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Rate
+                  </Button>
+                </div>
+
+                {rateBlocks.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Click "Add Rate" to add rate configuration
+                  </p>
+                )}
+
+                {/* Rate Blocks */}
+                {rateBlocks.map((block, index) => (
+                  <RateBlockForm
+                    key={block.id}
+                    block={block}
+                    index={index}
+                    isViewMode={false}
+                    servicesOptions={servicesOptions}
+                    servicesLoading={servicesLoading}
+                    onBlockChange={handleRateBlockChange}
+                    onDayToggle={handleDayToggle}
+                    onSelectAllDays={handleSelectAllDays}
+                    onClearAllDays={handleClearAllDays}
+                    onRemoveBlock={handleRemoveRateBlock}
+                  />
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    resetCreateNewRateForm();
+                    setRateOption('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveNewRate}
+                  disabled={!createRateAuthority || !createRateStartDate || rateBlocks.length === 0 || isSavingNewRate}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSavingNewRate ? 'Saving...' : 'Save New Rate'}
+                </Button>
+              </div>
             </div>
           )}
 
@@ -453,3 +798,5 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     </div>
   );
 };
+
+export default ClientRatesTab;
