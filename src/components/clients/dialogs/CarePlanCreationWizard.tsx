@@ -387,7 +387,7 @@ export function CarePlanCreationWizard({
             let value = savedData[key];
             
             // Handle array fields with safety checks
-            if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities'].includes(key)) {
+            if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities', 'staff_ids'].includes(key)) {
               value = initializeArrayField(value);
             }
             // Handle equipment field specially to preserve backward compatibility
@@ -458,6 +458,7 @@ export function CarePlanCreationWizard({
   }, [draftData?.auto_save_data, isDraftLoading, clientDataLoaded, form, totalSteps]);
 
   // Load staff assignments from junction table when editing an existing care plan
+  // PRIORITY: auto_save_data.staff_ids > junction table (draft may be more up-to-date)
   useEffect(() => {
     const loadStaffAssignments = async () => {
       const targetCarePlanId = savedCarePlanId || carePlanId;
@@ -465,19 +466,39 @@ export function CarePlanCreationWizard({
       
       try {
         console.log('[CarePlanCreationWizard] Loading staff assignments for care plan:', targetCarePlanId);
-        const assignments = await fetchCarePlanStaffAssignments(targetCarePlanId);
         
-        if (assignments.length > 0) {
-          const staffIds = assignments.map(a => a.staff_id);
-          const currentStaffIds = (form.getValues as any)('staff_ids');
+        // Get staff_ids from auto_save_data (draft) - this is the source of truth for unsaved changes
+        const autoSaveData = draftData?.auto_save_data as Record<string, unknown> | null;
+        const draftStaffIds = (Array.isArray(autoSaveData?.staff_ids) ? autoSaveData.staff_ids : []) as string[];
+        
+        // Get staff_ids from junction table (finalized data)
+        const assignments = await fetchCarePlanStaffAssignments(targetCarePlanId);
+        const junctionStaffIds = assignments.map(a => a.staff_id);
+        
+        console.log('[CarePlanCreationWizard] Staff IDs comparison:', {
+          draft: draftStaffIds,
+          junction: junctionStaffIds,
+          draftCount: draftStaffIds.length,
+          junctionCount: junctionStaffIds.length
+        });
+        
+        // Use whichever has MORE data - draft may be more up-to-date than junction
+        // This fixes the bug where junction table sync overwrites correct draft data
+        const staffIds = draftStaffIds.length >= junctionStaffIds.length 
+          ? draftStaffIds 
+          : junctionStaffIds;
+        
+        const currentStaffIds = form.getValues('staff_ids') || [];
+        
+        // Only update if we have staff and it's different from current
+        if (staffIds.length > 0 && JSON.stringify(staffIds) !== JSON.stringify(currentStaffIds)) {
+          console.log('[CarePlanCreationWizard] Setting staff_ids (using', 
+            draftStaffIds.length >= junctionStaffIds.length ? 'draft' : 'junction', '):', staffIds);
+          form.setValue('staff_ids', staffIds);
+          form.setValue('staff_id', staffIds[0]); // Primary for backward compat
           
-          // Only update if different from current values to prevent loops
-          if (JSON.stringify(staffIds) !== JSON.stringify(currentStaffIds)) {
-            console.log('[CarePlanCreationWizard] Setting staff_ids from junction table:', staffIds);
-            (form.setValue as any)('staff_ids', staffIds);
-            form.setValue('staff_id', staffIds[0]); // Primary for backward compat
-            
-            // Also set provider_name from staff names
+          // Also set provider_name from staff names if using junction data
+          if (draftStaffIds.length < junctionStaffIds.length && assignments.length > 0) {
             const names = assignments
               .map(a => a.staff ? `${a.staff.first_name} ${a.staff.last_name}` : 'Unknown')
               .join(', ');
@@ -490,8 +511,11 @@ export function CarePlanCreationWizard({
         console.error('[CarePlanCreationWizard] Error loading staff assignments:', error);
         setStepError('Failed to load saved data');
       }
-    }
-  }, [draftData, isDraftLoading, clientDataLoaded, form]);
+    };
+    
+    loadStaffAssignments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedCarePlanId, carePlanId, draftData?.auto_save_data, form]);
 
   // Auto-save on form changes
   useEffect(() => {
