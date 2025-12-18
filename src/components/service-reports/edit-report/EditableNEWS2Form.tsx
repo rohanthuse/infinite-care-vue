@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Activity, Heart, Thermometer, Wind } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Activity, Heart, Thermometer, Wind, Plus } from 'lucide-react';
 import { VisitVital } from '@/hooks/useVisitVitals';
 
 interface NEWS2Values {
@@ -23,6 +24,7 @@ interface NEWS2Values {
 interface EditableNEWS2FormProps {
   latestNEWS2?: VisitVital;
   onVitalChange: (values: NEWS2Values) => void;
+  allowCreate?: boolean;
 }
 
 // NEWS2 Score calculation function
@@ -80,30 +82,43 @@ const calculateNEWS2Score = (vitals: NEWS2Values) => {
   return { score, riskLevel };
 };
 
-export function EditableNEWS2Form({ latestNEWS2, onVitalChange }: EditableNEWS2FormProps) {
+const defaultValues: NEWS2Values = {
+  respiratory_rate: 16,
+  oxygen_saturation: 98,
+  supplemental_oxygen: false,
+  systolic_bp: 120,
+  diastolic_bp: 80,
+  pulse_rate: 72,
+  consciousness_level: 'A',
+  temperature: 36.5,
+};
+
+export function EditableNEWS2Form({ latestNEWS2, onVitalChange, allowCreate = true }: EditableNEWS2FormProps) {
+  const [showForm, setShowForm] = useState(!!latestNEWS2);
   const [values, setValues] = useState<NEWS2Values>({
-    respiratory_rate: latestNEWS2?.respiratory_rate || 16,
-    oxygen_saturation: latestNEWS2?.oxygen_saturation || 98,
-    supplemental_oxygen: latestNEWS2?.supplemental_oxygen || false,
-    systolic_bp: latestNEWS2?.systolic_bp || 120,
-    diastolic_bp: latestNEWS2?.diastolic_bp || 80,
-    pulse_rate: latestNEWS2?.pulse_rate || 72,
-    consciousness_level: (latestNEWS2?.consciousness_level as 'A' | 'V' | 'P' | 'U') || 'A',
-    temperature: latestNEWS2?.temperature || 36.5,
+    respiratory_rate: latestNEWS2?.respiratory_rate || defaultValues.respiratory_rate,
+    oxygen_saturation: latestNEWS2?.oxygen_saturation || defaultValues.oxygen_saturation,
+    supplemental_oxygen: latestNEWS2?.supplemental_oxygen || defaultValues.supplemental_oxygen,
+    systolic_bp: latestNEWS2?.systolic_bp || defaultValues.systolic_bp,
+    diastolic_bp: latestNEWS2?.diastolic_bp || defaultValues.diastolic_bp,
+    pulse_rate: latestNEWS2?.pulse_rate || defaultValues.pulse_rate,
+    consciousness_level: (latestNEWS2?.consciousness_level as 'A' | 'V' | 'P' | 'U') || defaultValues.consciousness_level,
+    temperature: latestNEWS2?.temperature || defaultValues.temperature,
   });
 
   // Update values when latestNEWS2 changes
   useEffect(() => {
     if (latestNEWS2) {
+      setShowForm(true);
       setValues({
-        respiratory_rate: latestNEWS2.respiratory_rate || 16,
-        oxygen_saturation: latestNEWS2.oxygen_saturation || 98,
-        supplemental_oxygen: latestNEWS2.supplemental_oxygen || false,
-        systolic_bp: latestNEWS2.systolic_bp || 120,
-        diastolic_bp: latestNEWS2.diastolic_bp || 80,
-        pulse_rate: latestNEWS2.pulse_rate || 72,
-        consciousness_level: (latestNEWS2.consciousness_level as 'A' | 'V' | 'P' | 'U') || 'A',
-        temperature: latestNEWS2.temperature || 36.5,
+        respiratory_rate: latestNEWS2.respiratory_rate || defaultValues.respiratory_rate,
+        oxygen_saturation: latestNEWS2.oxygen_saturation || defaultValues.oxygen_saturation,
+        supplemental_oxygen: latestNEWS2.supplemental_oxygen || defaultValues.supplemental_oxygen,
+        systolic_bp: latestNEWS2.systolic_bp || defaultValues.systolic_bp,
+        diastolic_bp: latestNEWS2.diastolic_bp || defaultValues.diastolic_bp,
+        pulse_rate: latestNEWS2.pulse_rate || defaultValues.pulse_rate,
+        consciousness_level: (latestNEWS2.consciousness_level as 'A' | 'V' | 'P' | 'U') || defaultValues.consciousness_level,
+        temperature: latestNEWS2.temperature || defaultValues.temperature,
       });
     }
   }, [latestNEWS2]);
@@ -115,6 +130,11 @@ export function EditableNEWS2Form({ latestNEWS2, onVitalChange }: EditableNEWS2F
     const newValues = { ...values, [field]: value };
     setValues(newValues);
     onVitalChange(newValues);
+  };
+
+  const handleStartRecording = () => {
+    setShowForm(true);
+    onVitalChange(values);
   };
 
   const getRiskBadge = (risk: string) => {
@@ -130,6 +150,29 @@ export function EditableNEWS2Form({ latestNEWS2, onVitalChange }: EditableNEWS2F
       </Badge>
     );
   };
+
+  // Show empty state with option to add vitals
+  if (!showForm && allowCreate) {
+    return (
+      <div className="text-center py-6 text-muted-foreground">
+        <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+        <p className="text-sm mb-4">No vital signs recorded for this visit</p>
+        <Button variant="outline" size="sm" onClick={handleStartRecording}>
+          <Plus className="h-4 w-4 mr-2" />
+          Record Vital Signs
+        </Button>
+      </div>
+    );
+  }
+
+  if (!showForm) {
+    return (
+      <div className="text-center py-6 text-muted-foreground">
+        <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+        <p className="text-sm">No vital signs recorded for this visit</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -174,7 +217,9 @@ export function EditableNEWS2Form({ latestNEWS2, onVitalChange }: EditableNEWS2F
       {/* Editable Parameters */}
       <Card>
         <CardContent className="pt-6">
-          <h4 className="font-semibold mb-4">Edit NEWS2 Parameters</h4>
+          <h4 className="font-semibold mb-4">
+            {latestNEWS2 ? 'Edit NEWS2 Parameters' : 'Enter NEWS2 Parameters'}
+          </h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="respiratory_rate">Respiration Rate (/min)</Label>
