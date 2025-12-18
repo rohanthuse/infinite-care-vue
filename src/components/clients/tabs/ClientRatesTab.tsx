@@ -349,6 +349,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
         time_until: rateBlock.effectiveUntil || null,
         branch_id: branchId,
         organization_id: organizationId,
+        created_by: user.id,
       };
 
       // Create the service rate
