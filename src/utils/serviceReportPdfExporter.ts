@@ -289,21 +289,23 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === TITLE ===
   currentY = addTitle(doc, reportId, currentY);
   
-  // === CLIENT INFORMATION (Two-Column) ===
-  currentY = addCompactSectionHeader(doc, 'CLIENT INFORMATION', currentY, SECTION_BG.light);
+  // === CLIENT & CARER DETAILS (Combined Two-Column Layout) ===
+  currentY = addCompactSectionHeader(doc, 'CLIENT & CARER DETAILS', currentY, SECTION_BG.light);
   currentY = addTwoColumnBox(doc, 
     [
       { label: 'Client Name', value: clientName },
-      { label: 'Client ID', value: report.client_id?.substring(0, 8).toUpperCase() || 'N/A' },
-    ],
-    [
       { label: 'Date of Birth', value: 'On file' },
       { label: 'Address', value: 'On file' },
+    ],
+    [
+      { label: 'Staff Name', value: carerName },
+      { label: 'Contact', value: report.staff?.email || 'N/A' },
     ],
     currentY, SECTION_BG.light
   );
   
   // === SERVICE DETAILS (Two-Column) ===
+  currentY += 5;
   currentY = addCompactSectionHeader(doc, 'SERVICE DETAILS', currentY, SECTION_BG.light);
   
   const statusText = (report.status || 'pending').toUpperCase();
@@ -320,23 +322,10 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     ],
     currentY, SECTION_BG.light
   );
-  
-  // === CARER / STAFF DETAILS (Two-Column) ===
-  currentY = addCompactSectionHeader(doc, 'CARER / STAFF DETAILS', currentY, SECTION_BG.light);
-  currentY = addTwoColumnBox(doc, 
-    [
-      { label: 'Staff Name', value: carerName },
-      { label: 'Staff ID', value: report.staff_id?.substring(0, 8).toUpperCase() || 'N/A' },
-    ],
-    [
-      { label: 'Role', value: 'Care Worker' },
-      { label: 'Email', value: report.staff?.email || 'N/A' },
-    ],
-    currentY, SECTION_BG.light
-  );
 
   // === TASKS SECTION (Enhanced with Description and Duration) ===
-  currentY = addCompactSectionHeader(doc, 'TASKS COMPLETED', currentY + 1, SECTION_BG.tasks);
+  currentY += 5;
+  currentY = addCompactSectionHeader(doc, 'TASKS COMPLETED', currentY, SECTION_BG.tasks);
   
   if (tasks?.length > 0) {
     const taskData = tasks.map(t => [
@@ -380,6 +369,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   // === MEDICATIONS SECTION (Enhanced with Frequency) ===
+  currentY += 5;
   currentY = addCompactSectionHeader(doc, 'MEDICATIONS', currentY, SECTION_BG.meds);
   
   if (medications?.length > 0) {
@@ -426,6 +416,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   // === NEWS2 & VITALS (Fixed field mappings) ===
+  currentY += 5;
   currentY = addCompactSectionHeader(doc, 'VITAL SIGNS', currentY, SECTION_BG.vitals);
   
   if (news2Readings?.length > 0) {
@@ -475,6 +466,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   // === CARE PLAN GOALS SECTION (NEW) ===
+  currentY += 5;
   currentY = addCompactSectionHeader(doc, 'CARE PLAN GOALS', currentY, SECTION_BG.goals);
   
   if (carePlanGoals?.length > 0) {
@@ -515,6 +507,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   // === ACTIVITIES SECTION (NEW) ===
+  currentY += 5;
   currentY = addCompactSectionHeader(doc, 'ACTIVITIES', currentY, SECTION_BG.activities);
   
   if (activities?.length > 0) {
@@ -563,50 +556,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     currentY += 8;
   }
 
-  // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
-  const hasNotes = report.carer_observations || report.client_mood || 
-                   report.client_feedback || report.next_visit_preparations;
-  
-  currentY = addCompactSectionHeader(doc, 'SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
-  
-  if (hasNotes || observations?.length > 0) {
-    doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
-    
-    doc.setFontSize(7);
-    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    
-    const noteItems: string[] = [];
-    if (report.client_mood) noteItems.push(`Client Mood: ${report.client_mood}`);
-    if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations.substring(0, 80)}`);
-    if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback.substring(0, 60)}`);
-    if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations.substring(0, 50)}`);
-    
-    observations?.slice(0, 2).forEach(obs => {
-      noteItems.push(`Observation: ${(obs.event_description || '').substring(0, 60)}`);
-    });
-    
-    if (noteItems.length > 0) {
-      const boxHeight = noteItems.length * 5 + 4;
-      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
-      
-      noteItems.forEach((note, i) => {
-        doc.text(`• ${note}`, margin + 3, currentY + 4 + (i * 5));
-      });
-      currentY += boxHeight + 3;
-    } else {
-      doc.setFont(undefined, 'italic');
-      doc.text('No data available', margin + 2, currentY + 3);
-      currentY += 8;
-    }
-  } else {
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'italic');
-    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No data available', margin + 2, currentY + 3);
-    currentY += 8;
-  }
-
   // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
+  currentY += 5;
   const hasEvents = (incidents?.length > 0) || (accidents?.length > 0);
   
   currentY = addCompactSectionHeader(doc, 'INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
@@ -654,8 +605,53 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     currentY += 8;
   }
 
+  // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
+  currentY += 5;
+  const hasNotes = report.carer_observations || report.client_mood || 
+                   report.client_feedback || report.next_visit_preparations;
+  
+  currentY = addCompactSectionHeader(doc, 'SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
+  
+  if (hasNotes || observations?.length > 0) {
+    doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
+    
+    doc.setFontSize(7);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    
+    const noteItems: string[] = [];
+    if (report.client_mood) noteItems.push(`Client Mood: ${report.client_mood}`);
+    if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations.substring(0, 80)}`);
+    if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback.substring(0, 60)}`);
+    if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations.substring(0, 50)}`);
+    
+    observations?.slice(0, 2).forEach(obs => {
+      noteItems.push(`Observation: ${(obs.event_description || '').substring(0, 60)}`);
+    });
+    
+    if (noteItems.length > 0) {
+      const boxHeight = noteItems.length * 5 + 4;
+      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
+      
+      noteItems.forEach((note, i) => {
+        doc.text(`• ${note}`, margin + 3, currentY + 4 + (i * 5));
+      });
+      currentY += boxHeight + 3;
+    } else {
+      doc.setFont(undefined, 'italic');
+      doc.text('No data available', margin + 2, currentY + 3);
+      currentY += 8;
+    }
+  } else {
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No data available', margin + 2, currentY + 3);
+    currentY += 8;
+  }
+
   // === SIGNATURES (Side-by-Side) ===
   if (visitRecord?.staff_signature_data || visitRecord?.client_signature_data) {
+    currentY += 5;
     currentY = addCompactSectionHeader(doc, 'SIGNATURES', currentY, SECTION_BG.signatures);
     
     const sigBoxWidth = (pageWidth - (margin * 2) - 5) / 2;
