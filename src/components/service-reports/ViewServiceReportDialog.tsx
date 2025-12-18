@@ -51,13 +51,16 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertCircle,
-  Download
+  Download,
+  Target
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
 import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
+import { GoalsDisplay } from './view-report/GoalsDisplay';
+import { ActivitiesDisplay } from './view-report/ActivitiesDisplay';
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
 
@@ -432,73 +435,119 @@ export function ViewServiceReportDialog({
               </CardContent>
             </Card>
 
-            {/* Task Details Section */}
-            {tasks && tasks.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5" />
-                    Task Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Task Details Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Task Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tasks && tasks.length > 0 ? (
                   <TasksTable tasks={tasks} />
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No tasks recorded for this visit</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Medication Details Section */}
-            {medications && medications.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Pill className="h-5 w-5" />
-                    Medication Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Medication Details Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5" />
+                  Medication Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {medications && medications.length > 0 ? (
                   <MedicationsTable medications={medications} />
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No medications recorded for this visit</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* NEWS2 & Vital Signs Section */}
-            {(news2Readings.length > 0 || vitals.length > 0) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Heart className="h-5 w-5" />
-                    NEWS2 & Vital Signs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* NEWS2 & Vital Signs Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  NEWS2 & Vital Signs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(news2Readings.length > 0 || vitals.length > 0) ? (
                   <NEWS2Display 
                     news2Readings={news2Readings} 
                     latestNEWS2={latestNEWS2}
                     otherVitals={vitals.filter(v => v.vital_type !== 'news2')}
                   />
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Heart className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No vital signs recorded for this visit</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Events & Incidents Section */}
-            {events && events.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    Events & Incidents
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Events & Incidents Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Events & Incidents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {events && events.length > 0 ? (
                   <EventsList 
                     incidents={incidents}
                     accidents={accidents}
                     observations={observations}
                   />
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No events recorded for this visit</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Goals Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Care Plan Goals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GoalsDisplay carePlanId={safeReport.care_plan_id} />
+              </CardContent>
+            </Card>
+
+            {/* Activities Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActivitiesDisplay carePlanId={safeReport.care_plan_id} />
+              </CardContent>
+            </Card>
 
             {/* Carer Visit Details - Editable Section */}
             {isEditable ? (
