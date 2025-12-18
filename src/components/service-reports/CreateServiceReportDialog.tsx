@@ -18,7 +18,7 @@ import { format, differenceInMinutes } from 'date-fns';
 import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
@@ -28,6 +28,11 @@ import { MedicationsTable } from './view-report/MedicationsTable';
 import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
+import { EditableTasksTable } from './edit-report/EditableTasksTable';
+import { EditableMedicationsTable } from './edit-report/EditableMedicationsTable';
+import { EditableNEWS2Form } from './edit-report/EditableNEWS2Form';
+import { EditableEventsList } from './edit-report/EditableEventsList';
+import { EditableVisitSummary } from './edit-report/EditableVisitSummary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -92,6 +97,23 @@ export function CreateServiceReportDialog({
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
   const updateServiceReport = useUpdateServiceReport();
+  const queryClient = useQueryClient();
+
+  // State for pending changes in edit mode
+  const [pendingTaskChanges, setPendingTaskChanges] = useState<Map<string, { is_completed: boolean; completion_notes: string }>>(new Map());
+  const [pendingMedicationChanges, setPendingMedicationChanges] = useState<Map<string, { is_administered: boolean; administration_time: string; administration_notes: string; not_administered_reason: string }>>(new Map());
+  const [pendingVitalChanges, setPendingVitalChanges] = useState<{
+    respiratory_rate: number;
+    oxygen_saturation: number;
+    supplemental_oxygen: boolean;
+    systolic_bp: number;
+    diastolic_bp: number;
+    pulse_rate: number;
+    consciousness_level: 'A' | 'V' | 'P' | 'U';
+    temperature: number;
+  } | null>(null);
+  const [pendingEventChanges, setPendingEventChanges] = useState<Map<string, { event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }>>(new Map());
+  const [pendingVisitSummary, setPendingVisitSummary] = useState<string | null>(null);
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedications = [] } = useQuery({
@@ -130,14 +152,15 @@ export function CreateServiceReportDialog({
   });
 
   // Fetch visit tasks
-  const { tasks: visitTasks = [], isLoading: isLoadingTasks } = useVisitTasks(visitRecordId);
+  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(visitRecordId);
 
   // Fetch visit events (incidents, accidents, observations)
   const { 
     events: visitEvents = [], 
     incidents = [], 
     accidents = [], 
-    observations = [] 
+    observations = [],
+    updateEvent
   } = useVisitEvents(visitRecordId);
 
   // Fetch visit vitals (NEWS2 readings)
@@ -145,7 +168,8 @@ export function CreateServiceReportDialog({
     news2Readings = [], 
     latestNEWS2,
     otherVitals = [],
-    isLoading: isLoadingVitals 
+    isLoading: isLoadingVitals,
+    updateVital
   } = useVisitVitals(visitRecordId);
 
   // Fetch full visit record with signatures
@@ -200,6 +224,73 @@ export function CreateServiceReportDialog({
   const onSubmit = async (data: FormData) => {
     if (!carerContext?.staffProfile?.id || !carerContext?.staffProfile?.branch_id || !data.client_id) {
       return;
+    }
+
+    // In edit mode, save all pending changes first
+    if (mode === 'edit') {
+      try {
+        // Save task changes
+        for (const [taskId, changes] of pendingTaskChanges) {
+          await updateTask.mutateAsync({
+            taskId,
+            isCompleted: changes.is_completed,
+            notes: changes.completion_notes,
+          });
+        }
+
+        // Save medication changes
+        for (const [medId, changes] of pendingMedicationChanges) {
+          await supabase
+            .from('visit_medications')
+            .update({
+              is_administered: changes.is_administered,
+              administration_time: changes.administration_time ? new Date(`1970-01-01T${changes.administration_time}`).toISOString() : null,
+              administration_notes: changes.administration_notes || null,
+              not_administered_reason: changes.not_administered_reason || null,
+            })
+            .eq('id', medId);
+        }
+
+        // Save vital changes
+        if (pendingVitalChanges && latestNEWS2) {
+          await updateVital.mutateAsync({
+            vitalId: latestNEWS2.id,
+            updates: pendingVitalChanges,
+          });
+        }
+
+        // Save event changes
+        for (const [eventId, changes] of pendingEventChanges) {
+          await updateEvent.mutateAsync({
+            eventId,
+            updates: {
+              event_title: changes.event_title,
+              event_description: changes.event_description,
+              severity: changes.severity as 'low' | 'medium' | 'high' | 'critical',
+              follow_up_required: changes.follow_up_required,
+              follow_up_notes: changes.follow_up_notes,
+            },
+          });
+        }
+
+        // Save visit summary
+        if (pendingVisitSummary !== null && visitRecordId) {
+          await supabase
+            .from('visit_records')
+            .update({ visit_summary: pendingVisitSummary })
+            .eq('id', visitRecordId);
+        }
+
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ['visit-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['visit-medications'] });
+        queryClient.invalidateQueries({ queryKey: ['visit-vitals'] });
+        queryClient.invalidateQueries({ queryKey: ['visit-events'] });
+        queryClient.invalidateQueries({ queryKey: ['visit-record-details'] });
+      } catch (error) {
+        console.error('Error saving changes:', error);
+        toast.error('Failed to save some changes');
+      }
     }
 
     const reportData = {
@@ -432,34 +523,42 @@ export function CreateServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Services Provided */}
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Services Provided</p>
-                    <div className="flex flex-wrap gap-2">
-                      {existingReport?.services_provided?.length > 0 ? (
-                        existingReport.services_provided.map((service: string, index: number) => (
-                          <Badge key={index} variant="secondary">
-                            {service}
-                          </Badge>
-                        ))
-                      ) : preSelectedBooking?.service_name ? (
-                        <Badge variant="secondary">{preSelectedBooking.service_name}</Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No services recorded</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Visit Summary Text */}
-                  {visitRecord?.visit_summary && (
+                  {mode === 'edit' ? (
+                    <EditableVisitSummary
+                      visitSummary={visitRecord?.visit_summary}
+                      servicesProvided={existingReport?.services_provided}
+                      serviceName={preSelectedBooking?.service_name}
+                      onSummaryChange={setPendingVisitSummary}
+                    />
+                  ) : (
                     <>
-                      <Separator />
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">Visit Notes</p>
-                        <p className="text-sm bg-muted/50 p-3 rounded-md">
-                          {visitRecord.visit_summary}
-                        </p>
+                        <p className="text-sm text-muted-foreground mb-2">Services Provided</p>
+                        <div className="flex flex-wrap gap-2">
+                          {existingReport?.services_provided?.length > 0 ? (
+                            existingReport.services_provided.map((service: string, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {service}
+                              </Badge>
+                            ))
+                          ) : preSelectedBooking?.service_name ? (
+                            <Badge variant="secondary">{preSelectedBooking.service_name}</Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No services recorded</span>
+                          )}
+                        </div>
                       </div>
+                      {visitRecord?.visit_summary && (
+                        <>
+                          <Separator />
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Visit Notes</p>
+                            <p className="text-sm bg-muted/50 p-3 rounded-md">
+                              {visitRecord.visit_summary}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
                 </CardContent>
@@ -475,7 +574,11 @@ export function CreateServiceReportDialog({
                 </CardHeader>
                 <CardContent>
                   {visitTasks && visitTasks.length > 0 ? (
-                    <TasksTable tasks={visitTasks} />
+                    mode === 'edit' ? (
+                      <EditableTasksTable tasks={visitTasks} onTasksChange={setPendingTaskChanges} />
+                    ) : (
+                      <TasksTable tasks={visitTasks} />
+                    )
                   ) : (
                     <div className="text-center py-6 text-muted-foreground">
                       <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
@@ -495,7 +598,11 @@ export function CreateServiceReportDialog({
                 </CardHeader>
                 <CardContent>
                   {visitMedications && visitMedications.length > 0 ? (
-                    <MedicationsTable medications={visitMedications} />
+                    mode === 'edit' ? (
+                      <EditableMedicationsTable medications={visitMedications} onMedicationsChange={setPendingMedicationChanges} />
+                    ) : (
+                      <MedicationsTable medications={visitMedications} />
+                    )
                   ) : (
                     <div className="text-center py-6 text-muted-foreground">
                       <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
@@ -515,11 +622,15 @@ export function CreateServiceReportDialog({
                 </CardHeader>
                 <CardContent>
                   {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
-                    <NEWS2Display 
-                      news2Readings={news2Readings} 
-                      latestNEWS2={latestNEWS2}
-                      otherVitals={otherVitals}
-                    />
+                    mode === 'edit' ? (
+                      <EditableNEWS2Form latestNEWS2={latestNEWS2} onVitalChange={setPendingVitalChanges} />
+                    ) : (
+                      <NEWS2Display 
+                        news2Readings={news2Readings} 
+                        latestNEWS2={latestNEWS2}
+                        otherVitals={otherVitals}
+                      />
+                    )
                   ) : (
                     <div className="text-center py-6 text-muted-foreground">
                       <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
@@ -539,11 +650,20 @@ export function CreateServiceReportDialog({
                 </CardHeader>
                 <CardContent>
                   {visitEvents && visitEvents.length > 0 ? (
-                    <EventsList 
-                      incidents={incidents}
-                      accidents={accidents}
-                      observations={observations}
-                    />
+                    mode === 'edit' ? (
+                      <EditableEventsList 
+                        incidents={incidents}
+                        accidents={accidents}
+                        observations={observations}
+                        onEventsChange={setPendingEventChanges}
+                      />
+                    ) : (
+                      <EventsList 
+                        incidents={incidents}
+                        accidents={accidents}
+                        observations={observations}
+                      />
+                    )
                   ) : (
                     <div className="text-center py-6 text-muted-foreground">
                       <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
