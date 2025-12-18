@@ -85,20 +85,20 @@ export function MedicalSection({
           )}
         </div>
 
-        {/* Current Medications */}
+        {/* Current Diagnosis */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-3">Current Medications</h4>
+          <h4 className="font-semibold text-blue-900 mb-3">Current Diagnosis</h4>
           {data.current_medications && data.current_medications.length > 0 ? (
             <ul className="space-y-1">
-              {data.current_medications.map((med: any, idx: number) => (
+              {data.current_medications.map((diagnosis: any, idx: number) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="text-blue-600">•</span>
-                  <span>{typeof med === 'string' ? med : med.name || JSON.stringify(med)}</span>
+                  <span>{typeof diagnosis === 'string' ? diagnosis : diagnosis.name || JSON.stringify(diagnosis)}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-blue-700 italic">No current medications recorded</p>
+            <p className="text-sm text-blue-700 italic">No current diagnosis recorded</p>
           )}
         </div>
 

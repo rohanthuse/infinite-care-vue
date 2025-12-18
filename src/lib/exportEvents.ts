@@ -2645,7 +2645,7 @@ export const exportClientProfileToPDF = async (
         medicalData.push(['Allergies', medicalInfo.allergies.join(', ')]);
       }
       if (medicalInfo.current_medications && Array.isArray(medicalInfo.current_medications) && medicalInfo.current_medications.length > 0) {
-        medicalData.push(['Current Medications', medicalInfo.current_medications.join(', ')]);
+        medicalData.push(['Current Diagnosis', medicalInfo.current_medications.join(', ')]);
       }
       if (medicalInfo.medical_conditions && Array.isArray(medicalInfo.medical_conditions) && medicalInfo.medical_conditions.length > 0) {
         medicalData.push(['Medical Conditions', medicalInfo.medical_conditions.join(', ')]);

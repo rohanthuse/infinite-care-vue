@@ -391,7 +391,7 @@ export class EnhancedPdfGenerator {
       const medicalData: [string, string][] = [
         ["Allergies", clientData.medicalInfo.allergies?.join(', ') || 'None recorded'],
         ["Medical Conditions", clientData.medicalInfo.medical_conditions?.join(', ') || 'None recorded'],
-        ["Current Medications", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
+        ["Current Diagnosis", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
         ["Mobility Status", clientData.medicalInfo.mobility_status || 'N/A'],
         ["Communication Needs", clientData.medicalInfo.communication_needs || 'N/A']
       ];

@@ -325,7 +325,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {medicalInfo.medications && medicalInfo.medications.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Current Medications</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Current Diagnosis</p>
                       <div className="space-y-2">
                         {medicalInfo.medications.map((medication: any, index: number) => (
                           <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded">
