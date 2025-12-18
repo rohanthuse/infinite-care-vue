@@ -48,6 +48,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -1055,7 +1061,25 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {plan.assignedTo}
+                    {plan.assignedStaffCount > 1 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">{plan.assignedTo}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="font-medium mb-1">Assigned Staff:</p>
+                            <ul className="text-sm">
+                              {plan.allAssignedStaff?.map((name: string, idx: number) => (
+                                <li key={idx}>• {name}</li>
+                              ))}
+                            </ul>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      plan.assignedTo
+                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {format(plan.dateCreated, 'MMM dd, yyyy')}
