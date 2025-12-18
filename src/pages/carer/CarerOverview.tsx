@@ -149,7 +149,7 @@ const CarerOverview: React.FC = () => {
         </Card>
       </div>
 
-      <div className="w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {/* Active Visits */}
         <div className="lg:col-span-1">
           <ActiveVisitsSection />
@@ -243,18 +243,18 @@ const CarerOverview: React.FC = () => {
             {upcomingAppointments.length > 0 ? (
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 border rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <div className="text-sm">
                         <div className="font-medium">{appointment.time}</div>
                         <div className="text-gray-500">{appointment.date}</div>
                       </div>
-                      <div>
-                        <div className="font-medium">{appointment.client}</div>
-                        <div className="text-sm text-gray-500">{appointment.service}</div>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{appointment.client}</div>
+                        <div className="text-sm text-gray-500 truncate">{appointment.service}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {appointment.isToday && (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700">Today</Badge>
                       )}
@@ -299,8 +299,8 @@ const CarerOverview: React.FC = () => {
           {tasks.length > 0 ? (
             <div className="space-y-3">
               {tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-start gap-3">
+                <div key={task.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 border rounded-lg">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border mt-1 ${
                       task.priority === 'high' || task.priority === 'urgent'
                         ? "border-red-300 bg-red-50" 
@@ -312,18 +312,18 @@ const CarerOverview: React.FC = () => {
                         <AlertCircle className="h-5 w-5 text-red-500" />
                       )}
                     </div>
-                    <div>
-                      <div className="font-medium">{task.title}</div>
-                      <div className="text-sm text-gray-500 flex items-center gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{task.title}</div>
+                      <div className="text-sm text-gray-500 flex flex-wrap items-center gap-2 sm:gap-4">
                         {task.client && (
                           <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {task.client}
+                            <User className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{task.client}</span>
                           </span>
                         )}
                         {task.dueDate && (
                           <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
+                            <Clock className="h-3 w-3 flex-shrink-0" />
                             Due {task.dueDate}
                           </span>
                         )}
@@ -333,7 +333,7 @@ const CarerOverview: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <Badge className={getPriorityColor(task.priority)}>
+                  <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0`}>
                     {task.priority}
                   </Badge>
                 </div>

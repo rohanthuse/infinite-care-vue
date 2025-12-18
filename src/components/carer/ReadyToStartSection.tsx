@@ -145,9 +145,9 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
             className="hover:shadow-md transition-all border-green-200 bg-green-50/50"
           >
             <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="font-medium">Today</span>
@@ -162,8 +162,8 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">
+                    <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="font-medium truncate">
                       {appointment.clients?.first_name} {appointment.clients?.last_name}
                     </span>
                   </div>
@@ -173,15 +173,15 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   </div>
                   
                   {appointment.clients?.address && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{appointment.clients.address}</span>
+                    <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
+                      <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words">{appointment.clients.address}</span>
                     </div>
                   )}
                   
                   {appointment.clients?.phone && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-4 w-4 flex-shrink-0" />
                       <span>{appointment.clients.phone}</span>
                     </div>
                   )}
@@ -189,7 +189,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   {getTimeInfo(appointment)}
                 </div>
                 
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto">
                   <Badge className="bg-green-100 text-green-700">
                     Ready to Start
                   </Badge>
@@ -197,7 +197,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   <Button 
                     variant="default"
                     size="sm" 
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 flex-1 sm:flex-none w-full sm:w-auto"
                     onClick={() => handleStartVisit(appointment)}
                     disabled={bookingAttendance.isPending}
                   >
