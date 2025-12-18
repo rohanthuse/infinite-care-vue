@@ -106,12 +106,12 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="current_medications">Current Medications (comma-separated)</Label>
+            <Label htmlFor="current_medications">Current Diagnosis (comma-separated)</Label>
             <Input
               id="current_medications"
               value={formData.current_medications}
               onChange={(e) => handleChange('current_medications', e.target.value)}
-              placeholder="e.g., Metformin 500mg, Lisinopril 10mg"
+              placeholder="e.g., Diabetes Type 2, Hypertension, Arthritis"
             />
           </div>
 

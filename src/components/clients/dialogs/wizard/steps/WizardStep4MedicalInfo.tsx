@@ -90,13 +90,21 @@ export function WizardStep4MedicalInfo({
     }
   }, [form]);
 
-  const addMedication = () => {
+  const addDiagnosis = () => {
     const current = form.getValues("medical_info.current_medications") || [];
     form.setValue("medical_info.current_medications", [...current, ""]);
   };
-  const removeMedication = (index: number) => {
+  const removeDiagnosis = (index: number) => {
     const current = form.getValues("medical_info.current_medications") || [];
     form.setValue("medical_info.current_medications", current.filter((_, i) => i !== index));
+  };
+  
+  // Handle diagnosis selection from dropdown or custom entry
+  const handleDiagnosisChange = (index: number, value: string) => {
+    const current = form.getValues("medical_info.current_medications") || [];
+    const updated = [...current];
+    updated[index] = value;
+    form.setValue("medical_info.current_medications", updated);
   };
   const addAllergy = () => {
     const current = form.getValues("medical_info.allergies") || [];
@@ -167,28 +175,62 @@ export function WizardStep4MedicalInfo({
             />
           </div>
 
-          {/* Current Medications */}
+          {/* Current Diagnosis */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <FormLabel className="text-base font-medium">Current Medications</FormLabel>
-              <Button type="button" onClick={addMedication} size="sm" variant="outline">
+              <FormLabel className="text-base font-medium">Current Diagnosis</FormLabel>
+              <Button type="button" onClick={addDiagnosis} size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-1" />
-                Add Medication
+                Add Diagnosis
               </Button>
             </div>
-            {medications.map((_, index) => <div key={index} className="flex items-center gap-2">
-                <FormField control={form.control} name={`medical_info.current_medications.${index}`} render={({
-              field
-            }) => <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="Enter medication name and dosage" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                <Button type="button" onClick={() => removeMedication(index)} size="sm" variant="outline">
+            {medications.map((medication, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Select
+                    value={diagnosisOptions.find(d => d.title === medication)?.id || "custom"}
+                    onValueChange={(selectedId) => {
+                      if (selectedId === "custom") {
+                        // Keep current value for custom entry
+                        return;
+                      }
+                      const selectedDiagnosis = diagnosisOptions.find(d => d.id === selectedId);
+                      if (selectedDiagnosis) {
+                        handleDiagnosisChange(index, selectedDiagnosis.title);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select or enter diagnosis">
+                        {medication || "Select or enter diagnosis"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {diagnosisOptions
+                        .filter(d => d.status === "Active")
+                        .map((diagnosis) => (
+                          <SelectItem key={diagnosis.id} value={diagnosis.id}>
+                            {diagnosis.title}
+                          </SelectItem>
+                        ))}
+                      <SelectItem value="custom">Enter custom diagnosis...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* Show input field for custom entry */}
+                  {(!diagnosisOptions.some(d => d.title === medication && d.status === "Active") || medication === "") && (
+                    <Input
+                      className="mt-2"
+                      placeholder="Enter custom diagnosis"
+                      value={medication || ""}
+                      onChange={(e) => handleDiagnosisChange(index, e.target.value)}
+                    />
+                  )}
+                </div>
+                <Button type="button" onClick={() => removeDiagnosis(index)} size="sm" variant="outline">
                   <X className="h-4 w-4" />
                 </Button>
-              </div>)}
+              </div>
+            ))}
           </div>
 
           {/* Allergies */}
