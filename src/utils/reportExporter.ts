@@ -301,11 +301,12 @@ export class ReportExporter {
       filters: Record<string, string>;
     };
   }) {
-    const { reports, clientName, branchId, branchName, fileName } = options;
+    const { reports, clientName, branchId, branchName: inputBranchName, fileName } = options;
     const doc = new jsPDF();
     
     // Fetch organization settings
     const orgSettings = await fetchOrganizationSettings(branchId);
+    const branchName = inputBranchName || 'Main Branch';
     
     // Load company logo
     let logoBase64: string | null = null;
@@ -313,59 +314,106 @@ export class ReportExporter {
       logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
     }
     
-    const leftMargin = 15;
-    const rightMargin = 15;
+    const margin = 15;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    const contentWidth = pageWidth - leftMargin - rightMargin;
+    const contentWidth = pageWidth - margin * 2;
     
-    // Constants for page management
-    const BULK_FOOTER_SPACE = 20;
-    const BULK_SAFE_BOTTOM = pageHeight - BULK_FOOTER_SPACE;
-    const BULK_HEADER_HEIGHT = 48;
+    // Constants for page management (matching single report)
+    const FOOTER_HEIGHT = 20;
+    const SAFE_BOTTOM = pageHeight - FOOTER_HEIGHT;
     
-    // Section colors for visual hierarchy
-    const SECTION_COLORS = {
-      visitInfo: { r: 248, g: 250, b: 252 },
-      visitSummary: { r: 254, g: 252, b: 232 },
+    // Section colors (matching single report exactly)
+    const SECTION_BG = {
+      header: { r: 59, g: 130, b: 246 },
+      light: { r: 248, g: 250, b: 252 },
       tasks: { r: 240, g: 253, b: 244 },
-      medications: { r: 245, g: 243, b: 255 },
-      news2: { r: 254, g: 242, b: 242 },
-      events: { r: 254, g: 226, b: 226 },
+      meds: { r: 245, g: 243, b: 255 },
+      vitals: { r: 254, g: 242, b: 242 },
+      notes: { r: 254, g: 252, b: 232 },
+      signatures: { r: 240, g: 249, b: 255 },
       goals: { r: 236, g: 253, b: 245 },
       activities: { r: 255, g: 247, b: 237 },
-      notes: { r: 239, g: 246, b: 255 }
     };
     
     /**
-     * Add colored section header
+     * Add compact section header (matching single report)
      */
-    const addBulkSectionHeader = (title: string, currentY: number, bgColor: {r: number, g: number, b: number}): number => {
+    const addCompactSectionHeader = (
+      title: string,
+      currentY: number,
+      bgColor: { r: number; g: number; b: number }
+    ): number => {
       doc.setFillColor(bgColor.r, bgColor.g, bgColor.b);
-      doc.roundedRect(leftMargin, currentY, contentWidth, 8, 1, 1, 'F');
+      doc.rect(margin, currentY - 3, contentWidth, 7, 'F');
       
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text(title, leftMargin + 4, currentY + 5.5);
+      doc.setTextColor(40, 40, 40);
+      doc.text(title, margin + 2, currentY + 1);
       
-      return currentY + 10;
+      return currentY + 6;
     };
     
     /**
-     * Add header for each service report page - Logo on LEFT with report indicator
+     * Add two-column info box (matching single report)
      */
-    const addReportHeader = (report: any, reportIndex: number, totalReports: number): number => {
-      const serviceDate = format(new Date(report.service_date), 'dd MMMM yyyy');
-      const carerName = report.staff 
-        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'Unknown Carer'
-        : 'Unknown Carer';
+    const addTwoColumnBox = (
+      leftData: { label: string; value: string }[],
+      rightData: { label: string; value: string }[],
+      currentY: number,
+      bgColor: { r: number; g: number; b: number }
+    ): number => {
+      const boxHeight = Math.max(leftData.length, rightData.length) * 5 + 4;
       
-      // Blue top strip
-      doc.setFillColor(59, 130, 246);
+      doc.setFillColor(bgColor.r, bgColor.g, bgColor.b);
+      doc.roundedRect(margin, currentY, contentWidth, boxHeight, 1, 1, 'F');
+      
+      const col1X = margin + 3;
+      const col2X = pageWidth / 2 + 3;
+      
+      doc.setFontSize(7);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      
+      // Left column
+      leftData.forEach((item, i) => {
+        const y = currentY + 5 + (i * 5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${item.label}:`, col1X, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(item.value, col1X + 28, y);
+      });
+      
+      // Right column
+      rightData.forEach((item, i) => {
+        const y = currentY + 5 + (i * 5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${item.label}:`, col2X, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(item.value, col2X + 28, y);
+      });
+      
+      return currentY + boxHeight + 3;
+    };
+    
+    /**
+     * Add full page header (matching single report addFullPageHeader)
+     */
+    const addFullPageHeader = (
+      report: any,
+      reportIndex: number,
+      totalReports: number
+    ): number => {
+      const visitDate = report.service_date 
+        ? format(new Date(report.service_date), 'dd/MM/yyyy')
+        : 'N/A';
+      const reportId = report.id?.substring(0, 8).toUpperCase() || 'N/A';
+      
+      // Thin blue top strip
+      doc.setFillColor(SECTION_BG.header.r, SECTION_BG.header.g, SECTION_BG.header.b);
       doc.rect(0, 0, pageWidth, 5, 'F');
       
-      // Logo on LEFT (larger, more visible)
+      // LEFT SIDE: Logo
       if (logoBase64) {
         try {
           const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
@@ -373,483 +421,621 @@ export class ReportExporter {
             if (base64.includes('data:image/gif')) return 'GIF';
             return 'PNG';
           };
-          doc.addImage(logoBase64, getImageFormat(logoBase64), leftMargin, 8, 40, 22);
+          doc.addImage(logoBase64, getImageFormat(logoBase64), margin, 8, 40, 22);
         } catch (e) {
           console.error('Error adding logo:', e);
         }
       }
       
-      // Organization & Branch name next to logo
+      // RIGHT SIDE: Organization details
+      const rightX = pageWidth - margin;
+      
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
-      doc.text(orgSettings?.name || 'Healthcare Services', leftMargin + 45, 14);
+      doc.text(orgSettings?.name || 'Healthcare Services', rightX, 12, { align: 'right' });
       
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
-      doc.text(`Branch: ${branchName || 'N/A'}`, leftMargin + 45, 20);
       
-      // Document title on right
-      const rightX = pageWidth - rightMargin;
-      doc.setFontSize(12);
+      let detailY = 17;
+      if (orgSettings?.address) {
+        const addressLine = orgSettings.address.split('\n')[0];
+        doc.text(addressLine, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.telephone) {
+        doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.email) {
+        doc.text(orgSettings.email, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      doc.text(`Branch: ${branchName}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });
+      
+      // CENTERED TITLE
+      let currentY = 38;
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
-      doc.text('SERVICE REPORT', rightX, 14, { align: 'right' });
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.text('SERVICE REPORT', pageWidth / 2, currentY, { align: 'center' });
       
-      // Client name, service date, carer on right
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.text(`Client: ${clientName}`, rightX, 20, { align: 'right' });
-      doc.text(`Service Date: ${serviceDate}`, rightX, 26, { align: 'right' });
-      doc.text(`Carer: ${carerName}`, rightX, 32, { align: 'right' });
-      
-      // Report indicator (e.g., "Report 3 of 12")
-      doc.setFontSize(7);
       doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-      doc.text(`Report ${reportIndex + 1} of ${totalReports}`, rightX, 38, { align: 'right' });
+      doc.text(`Client: ${clientName} | Report ID: ${reportId} | Report ${reportIndex + 1} of ${totalReports}`, pageWidth / 2, currentY + 5, { align: 'center' });
       
-      // Divider line
-      doc.setDrawColor(PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b);
-      doc.setLineWidth(0.5);
-      doc.line(leftMargin, 42, pageWidth - rightMargin, 42);
-      
-      return BULK_HEADER_HEIGHT;
+      return 48;
     };
     
     /**
-     * Check if page break needed and add header to new page
+     * Add professional footer (matching single report)
+     */
+    const addProfessionalFooter = (pageNumber: number, totalPages: number) => {
+      const footerY = pageHeight - 12;
+      
+      // Divider line
+      doc.setDrawColor(PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b);
+      doc.setLineWidth(0.3);
+      doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+      
+      // Footer text
+      doc.setFontSize(6);
+      doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      doc.setFont('helvetica', 'normal');
+      
+      doc.text('Confidential - For authorised use only', margin, footerY);
+      const centerText = `Generated by Laniwyn Care System | © ${orgSettings?.name || 'Healthcare Services'}`;
+      doc.text(centerText, pageWidth / 2, footerY, { align: 'center' });
+      doc.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+    };
+    
+    /**
+     * Check if page break needed
      */
     const checkPageBreak = (currentY: number, requiredSpace: number, report: any, reportIndex: number): number => {
-      if (currentY + requiredSpace > BULK_SAFE_BOTTOM) {
+      if (currentY + requiredSpace > SAFE_BOTTOM) {
         doc.addPage();
-        return addReportHeader(report, reportIndex, reports.length);
+        return addFullPageHeader(report, reportIndex, reports.length);
       }
       return currentY;
     };
     
-    // ========== START DIRECTLY WITH SERVICE REPORTS (No cover page) ==========
-    
+    // ========== GENERATE EACH SERVICE REPORT ==========
     reports.forEach((report, reportIndex) => {
-      // Each report starts on a new page (except the first)
+      // Each report starts on a new page (except first)
       if (reportIndex > 0) {
         doc.addPage();
       }
       
-      // Add header with this report's specific data and indicator
-      let currentY = addReportHeader(report, reportIndex, reports.length);
+      // Add header
+      let currentY = addFullPageHeader(report, reportIndex, reports.length);
       
-      const serviceDate = format(new Date(report.service_date), 'EEEE, dd MMMM yyyy');
+      // Extract data (matching single report format)
       const carerName = report.staff 
-        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'Unknown Carer'
-        : 'Unknown Carer';
-      const checkInTime = report.check_in_time || '--:--';
-      const checkOutTime = report.check_out_time || '--:--';
-      const duration = report.service_duration_minutes ? `${report.service_duration_minutes} min` : '--';
-      const status = (report.status || 'pending').toLowerCase();
+        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'N/A'
+        : 'N/A';
+      const visitDate = report.service_date 
+        ? format(new Date(report.service_date), 'dd/MM/yyyy')
+        : 'N/A';
+      const startTime = report.check_in_time || 'N/A';
+      const endTime = report.check_out_time || 'N/A';
+      const duration = report.service_duration_minutes ? `${report.service_duration_minutes} mins` : 'N/A';
+      const statusText = (report.status || 'pending').toUpperCase();
       
-      // ========== 1. VISIT INFORMATION SECTION (Two-Column Card) ==========
-      currentY = addBulkSectionHeader('VISIT INFORMATION', currentY, SECTION_COLORS.visitInfo);
+      // === CLIENT & CARER DETAILS (matching single report) ===
+      currentY = addCompactSectionHeader('CLIENT & CARER DETAILS', currentY, SECTION_BG.light);
+      currentY = addTwoColumnBox(
+        [
+          { label: 'Client Name', value: clientName },
+          { label: 'Date of Birth', value: 'On file' },
+          { label: 'Address', value: 'On file' },
+        ],
+        [
+          { label: 'Staff Name', value: carerName },
+          { label: 'Contact', value: report.staff?.email || 'N/A' },
+        ],
+        currentY, SECTION_BG.light
+      );
       
-      // Two-column layout box
-      doc.setFillColor(249, 250, 251);
-      doc.setDrawColor(PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b);
-      doc.roundedRect(leftMargin, currentY, contentWidth, 28, 2, 2, 'FD');
+      // === SERVICE DETAILS (matching single report) ===
+      currentY += 5;
+      currentY = addCompactSectionHeader('SERVICE DETAILS', currentY, SECTION_BG.light);
+      currentY = addTwoColumnBox(
+        [
+          { label: 'Service Date', value: visitDate },
+          { label: 'Start Time', value: startTime },
+          { label: 'Duration', value: duration },
+        ],
+        [
+          { label: 'End Time', value: endTime },
+          { label: 'Service Type', value: 'Home Care Visit' },
+          { label: 'Status', value: statusText },
+        ],
+        currentY, SECTION_BG.light
+      );
       
-      // Left column
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.text('Client:', leftMargin + 4, currentY + 7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(clientName, leftMargin + 28, currentY + 7);
+      // === TASKS COMPLETED (matching single report columns) ===
+      currentY += 5;
+      currentY = addCompactSectionHeader('TASKS COMPLETED', currentY, SECTION_BG.tasks);
       
-      doc.setFont('helvetica', 'bold');
-      doc.text('Service Date:', leftMargin + 4, currentY + 14);
-      doc.setFont('helvetica', 'normal');
-      doc.text(serviceDate, leftMargin + 28, currentY + 14);
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('Time:', leftMargin + 4, currentY + 21);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${checkInTime} - ${checkOutTime} (${duration})`, leftMargin + 28, currentY + 21);
-      
-      // Right column
-      const rightCol = pageWidth / 2 + 5;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Carer:', rightCol, currentY + 7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(carerName, rightCol + 20, currentY + 7);
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('Status:', rightCol, currentY + 14);
-      // Status badge
-      let badgeColor = { r: 107, g: 114, b: 128 };
-      if (status === 'approved') badgeColor = { r: 21, g: 128, b: 61 };
-      else if (status === 'pending') badgeColor = { r: 161, g: 98, b: 7 };
-      else if (status === 'rejected') badgeColor = { r: 185, g: 28, b: 28 };
-      
-      doc.setFillColor(badgeColor.r, badgeColor.g, badgeColor.b);
-      doc.roundedRect(rightCol + 20, currentY + 10, 24, 6, 2, 2, 'F');
-      doc.setFontSize(6);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text(status.toUpperCase(), rightCol + 22, currentY + 14);
-      
-      doc.setFontSize(8);
-      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Location:', rightCol, currentY + 21);
-      doc.setFont('helvetica', 'normal');
-      doc.text(report.location || 'Not specified', rightCol + 20, currentY + 21);
-      
-      currentY += 33;
-      
-      // ========== 2. VISIT SUMMARY SECTION ==========
-      if (report.activities_undertaken || report.visit_summary) {
-        currentY = checkPageBreak(currentY, 30, report, reportIndex);
-        currentY = addBulkSectionHeader('VISIT SUMMARY', currentY, SECTION_COLORS.visitSummary);
+      if (report.tasks?.length > 0) {
+        const taskData = report.tasks.map((t: any) => [
+          t.task_name || t.task_category || 'N/A',
+          (t.task_description || '-').substring(0, 30) + (t.task_description?.length > 30 ? '...' : ''),
+          t.is_completed ? '✓' : '✗',
+          t.completed_at ? format(new Date(t.completed_at), 'HH:mm') : '-',
+          t.completion_time_minutes ? `${t.completion_time_minutes} mins` : '-',
+        ]);
         
-        doc.setFillColor(254, 252, 232);
-        const summaryText = report.visit_summary || report.activities_undertaken || 'No summary';
-        const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 8);
-        const summaryHeight = Math.max(summaryLines.length * 4 + 8, 15);
-        doc.roundedRect(leftMargin, currentY, contentWidth, summaryHeight, 2, 2, 'F');
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Task Name', 'Description', 'Status', 'Time', 'Duration']],
+          body: taskData,
+          theme: 'grid',
+          headStyles: { 
+            fillColor: [34, 197, 94], 
+            fontSize: 7, 
+            fontStyle: 'bold', 
+            textColor: [255, 255, 255],
+            cellPadding: 1.5
+          },
+          styles: { fontSize: 6, cellPadding: 1.5 },
+          columnStyles: {
+            0: { cellWidth: 35 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 12, halign: 'center' },
+            3: { cellWidth: 15, halign: 'center' },
+            4: { cellWidth: 'auto', halign: 'center' }
+          },
+          margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 50 },
+          alternateRowStyles: { fillColor: [240, 253, 244] },
+          didDrawPage: () => {
+            const pageNum = doc.getNumberOfPages();
+            if (pageNum > 1) {
+              addFullPageHeader(report, reportIndex, reports.length);
+            }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 3;
+      } else {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No data available', margin + 2, currentY + 3);
+        currentY += 8;
+      }
+      
+      // === MEDICATIONS (matching single report 6 columns) ===
+      currentY += 5;
+      currentY = checkPageBreak(currentY, 40, report, reportIndex);
+      currentY = addCompactSectionHeader('MEDICATIONS', currentY, SECTION_BG.meds);
+      
+      if (report.medications?.length > 0) {
+        const medData = report.medications.map((m: any) => [
+          m.medication_name || 'N/A',
+          m.dosage || 'N/A',
+          m.prescribed_time || 'As needed',
+          m.administration_method || 'N/A',
+          m.is_administered ? 'Given' : m.missed_reason ? 'Missed' : 'Pending',
+          (m.administration_notes || m.missed_reason || '-').substring(0, 25)
+        ]);
         
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Medication', 'Dosage', 'Frequency', 'Method', 'Status', 'Notes']],
+          body: medData,
+          theme: 'grid',
+          headStyles: { 
+            fillColor: [147, 51, 234], 
+            fontSize: 7, 
+            fontStyle: 'bold', 
+            textColor: [255, 255, 255],
+            cellPadding: 1.5
+          },
+          styles: { fontSize: 6, cellPadding: 1.5 },
+          columnStyles: {
+            0: { cellWidth: 30 },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 20 },
+            4: { cellWidth: 15, halign: 'center' },
+            5: { cellWidth: 'auto' }
+          },
+          margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 50 },
+          alternateRowStyles: { fillColor: [245, 243, 255] },
+          didDrawPage: () => {
+            const pageNum = doc.getNumberOfPages();
+            if (pageNum > 1) {
+              addFullPageHeader(report, reportIndex, reports.length);
+            }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 3;
+      } else {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No data available', margin + 2, currentY + 3);
+        currentY += 8;
+      }
+      
+      // === NEWS2 & VITAL SIGNS (Table Format - matching single report) ===
+      currentY += 5;
+      currentY = checkPageBreak(currentY, 80, report, reportIndex);
+      currentY = addCompactSectionHeader('NEWS2 & VITAL SIGNS', currentY, SECTION_BG.vitals);
+      
+      if (report.news2_readings?.length > 0) {
+        const reading = report.news2_readings[0];
+        const recordedTime = reading.reading_time ? format(new Date(reading.reading_time), 'HH:mm') : '-';
+        
+        // Vitals table (matching single report)
+        const vitalsTableData = [
+          ['Respiratory Rate', reading.respiratory_rate || '-', '/min', recordedTime],
+          ['Oxygen Saturation (SpO2)', reading.oxygen_saturation || reading.spo2 || '-', '%', ''],
+          ['Temperature', reading.temperature || '-', '°C', ''],
+          ['Blood Pressure', reading.systolic_bp ? `${reading.systolic_bp}/${reading.diastolic_bp || '-'}` : '-', 'mmHg', ''],
+          ['Heart Rate', reading.pulse_rate || reading.heart_rate || '-', 'bpm', ''],
+          ['Consciousness Level', reading.consciousness_level || '-', '-', ''],
+        ];
+        
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Vital Sign', 'Value', 'Unit', 'Recorded Time']],
+          body: vitalsTableData,
+          theme: 'grid',
+          headStyles: { 
+            fillColor: [239, 68, 68], 
+            fontSize: 7, 
+            fontStyle: 'bold', 
+            textColor: [255, 255, 255],
+            cellPadding: 1.5
+          },
+          styles: { fontSize: 6, cellPadding: 1.5 },
+          columnStyles: {
+            0: { cellWidth: 55 },
+            1: { cellWidth: 30, halign: 'center' },
+            2: { cellWidth: 25, halign: 'center' },
+            3: { cellWidth: 'auto', halign: 'center' }
+          },
+          margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 50 },
+          alternateRowStyles: { fillColor: [254, 242, 242] },
+          didDrawPage: () => {
+            const pageNum = doc.getNumberOfPages();
+            if (pageNum > 1) {
+              addFullPageHeader(report, reportIndex, reports.length);
+            }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 3;
+        
+        // NEWS2 Score line (matching single report)
+        const news2Score = reading.news2_total_score || reading.total_score || 0;
+        const riskLevel = news2Score >= 7 ? 'High Risk' : news2Score >= 5 ? 'Medium-High Risk' : news2Score >= 3 ? 'Low-Medium Risk' : 'Low Risk';
+        const scoreColor = news2Score >= 5 ? PDF_COLORS.danger : news2Score >= 3 ? PDF_COLORS.warning : PDF_COLORS.success;
+        
+        doc.setFillColor(SECTION_BG.vitals.r, SECTION_BG.vitals.g, SECTION_BG.vitals.b);
+        doc.roundedRect(margin, currentY, contentWidth, 8, 1, 1, 'F');
+        
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
+        doc.setTextColor(scoreColor.r, scoreColor.g, scoreColor.b);
+        doc.text(`NEWS2 Score: ${news2Score} (${riskLevel})`, margin + 3, currentY + 5.5);
+        
+        currentY += 11;
+      } else {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No vital signs recorded', margin + 2, currentY + 3);
+        currentY += 8;
+      }
+      
+      // === CARE PLAN GOALS & ACTIVITIES (Side-by-Side - matching single report) ===
+      currentY += 5;
+      currentY = checkPageBreak(currentY, 60, report, reportIndex);
+      
+      const halfWidth = (contentWidth - 5) / 2;
+      const leftX = margin;
+      const rightX = margin + halfWidth + 5;
+      
+      // Left Column Header: CARE PLAN GOALS
+      doc.setFillColor(SECTION_BG.goals.r, SECTION_BG.goals.g, SECTION_BG.goals.b);
+      doc.roundedRect(leftX, currentY - 3, halfWidth, 7, 1, 1, 'F');
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(40, 40, 40);
+      doc.text('CARE PLAN GOALS', leftX + 2, currentY + 1);
+      
+      // Right Column Header: ACTIVITIES
+      doc.setFillColor(SECTION_BG.activities.r, SECTION_BG.activities.g, SECTION_BG.activities.b);
+      doc.roundedRect(rightX, currentY - 3, halfWidth, 7, 1, 1, 'F');
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(40, 40, 40);
+      doc.text('ACTIVITIES', rightX + 2, currentY + 1);
+      
+      currentY += 6;
+      const goalsContentY = currentY;
+      
+      // Left Column Content: Care Plan Goals
+      let leftColumnHeight = 0;
+      doc.setFillColor(240, 253, 244);
+      
+      if (report.care_plan_goals?.length > 0) {
+        const goalLines: string[] = [];
+        report.care_plan_goals.forEach((g: any, idx: number) => {
+          const goalText = `${idx + 1}. ${(g.description || g.goal_name || 'N/A').substring(0, 45)}${(g.description || g.goal_name)?.length > 45 ? '...' : ''}`;
+          const statusText = `   Status: ${g.status || 'In Progress'}${g.progress ? ` (${g.progress}%)` : ''}`;
+          goalLines.push(goalText, statusText);
+        });
+        leftColumnHeight = goalLines.length * 4 + 4;
+        
+        doc.roundedRect(leftX, goalsContentY, halfWidth, leftColumnHeight, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        
+        goalLines.forEach((line, idx) => {
+          if (line.startsWith('   Status:')) {
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+          } else {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+          }
+          doc.text(line, leftX + 2, goalsContentY + 4 + (idx * 4));
+        });
+      } else {
+        leftColumnHeight = 10;
+        doc.roundedRect(leftX, goalsContentY, halfWidth, leftColumnHeight, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No goals recorded', leftX + 2, goalsContentY + 6);
+      }
+      
+      // Right Column Content: Activities
+      let rightColumnHeight = 0;
+      doc.setFillColor(255, 247, 237);
+      
+      const activities = report.activities || report.activities_list || [];
+      if (activities.length > 0) {
+        const activityLines: string[] = [];
+        activities.forEach((a: any, idx: number) => {
+          const actName = `${idx + 1}. ${(a.name || a.activity_name || 'N/A').substring(0, 40)}`;
+          const actDesc = `   ${(a.description || '-').substring(0, 40)}${a.description?.length > 40 ? '...' : ''}`;
+          activityLines.push(actName, actDesc);
+        });
+        rightColumnHeight = activityLines.length * 4 + 4;
+        
+        doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        
+        activityLines.forEach((line, idx) => {
+          if (line.startsWith('   ')) {
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+          } else {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+          }
+          doc.text(line, rightX + 2, goalsContentY + 4 + (idx * 4));
+        });
+      } else if (report.activities_undertaken) {
+        const activitiesText = doc.splitTextToSize(report.activities_undertaken, halfWidth - 6);
+        rightColumnHeight = activitiesText.length * 4 + 4;
+        doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+        doc.setFontSize(6);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-        doc.text(summaryLines, leftMargin + 4, currentY + 6);
-        currentY += summaryHeight + 5;
+        doc.text(activitiesText, rightX + 2, goalsContentY + 4);
+      } else {
+        rightColumnHeight = 10;
+        doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No activities recorded', rightX + 2, goalsContentY + 6);
       }
       
-      // ========== 3. TASK DETAILS SECTION (autoTable Format) ==========
-      if (report.tasks && report.tasks.length > 0) {
-        currentY = checkPageBreak(currentY, 40, report, reportIndex);
-        currentY = addBulkSectionHeader('TASK DETAILS', currentY, SECTION_COLORS.tasks);
-        
-        const taskTableData = report.tasks.map((task: any) => {
-          let taskTime = '-';
-          if (task.completed_at) {
-            try {
-              taskTime = format(new Date(task.completed_at), 'HH:mm');
-            } catch { /* ignore */ }
-          }
-          return [
-            task.task_name || 'Task',
-            task.task_category || '-',
-            task.is_completed ? '✓ Completed' : '○ Pending',
-            taskTime,
-            (task.completion_notes || '-').substring(0, 40)
-          ];
-        });
-        
-        autoTable(doc, {
-          startY: currentY,
-          head: [['Task', 'Category', 'Status', 'Time', 'Notes']],
-          body: taskTableData,
-          theme: 'grid',
-          styles: { fontSize: 7, cellPadding: 2 },
-          headStyles: { fillColor: [34, 197, 94], textColor: 255, fontStyle: 'bold' },
-          columnStyles: {
-            0: { cellWidth: 50 },
-            1: { cellWidth: 30 },
-            2: { cellWidth: 25 },
-            3: { cellWidth: 18 },
-            4: { cellWidth: 'auto' }
-          },
-          margin: { left: leftMargin, right: rightMargin },
-          didDrawPage: () => {
-            const pageNum = doc.getNumberOfPages();
-            if (pageNum > 1) {
-              addReportHeader(report, reportIndex, reports.length);
-            }
-          }
-        });
-        currentY = (doc as any).lastAutoTable.finalY + 5;
-      }
+      currentY = goalsContentY + Math.max(leftColumnHeight, rightColumnHeight) + 3;
       
-      // ========== 4. MEDICATION DETAILS SECTION (autoTable Format) ==========
-      if (report.medications && report.medications.length > 0) {
-        currentY = checkPageBreak(currentY, 40, report, reportIndex);
-        currentY = addBulkSectionHeader('MEDICATION DETAILS', currentY, SECTION_COLORS.medications);
-        
-        const medTableData = report.medications.map((med: any) => {
-          const statusText = med.is_administered 
-            ? '✓ Administered' 
-            : `✗ ${med.missed_reason || 'Missed'}`;
-          return [
-            med.medication_name || 'Unknown',
-            med.dosage || '-',
-            med.administration_time || med.prescribed_time || '-',
-            statusText,
-            (med.administration_notes || '-').substring(0, 30)
-          ];
-        });
-        
-        autoTable(doc, {
-          startY: currentY,
-          head: [['Medication', 'Dosage', 'Time', 'Status', 'Notes']],
-          body: medTableData,
-          theme: 'grid',
-          styles: { fontSize: 7, cellPadding: 2 },
-          headStyles: { fillColor: [139, 92, 246], textColor: 255, fontStyle: 'bold' },
-          columnStyles: {
-            0: { cellWidth: 45 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 18 },
-            3: { cellWidth: 30 },
-            4: { cellWidth: 'auto' }
-          },
-          margin: { left: leftMargin, right: rightMargin },
-          didDrawPage: () => {
-            const pageNum = doc.getNumberOfPages();
-            if (pageNum > 1) {
-              addReportHeader(report, reportIndex, reports.length);
-            }
-          }
-        });
-        currentY = (doc as any).lastAutoTable.finalY + 5;
-      }
-      
-      // ========== 5. NEWS2 & VITAL SIGNS SECTION ==========
-      if (report.news2_readings?.length > 0 || report.vital_signs) {
-        currentY = checkPageBreak(currentY, 55, report, reportIndex);
-        currentY = addBulkSectionHeader('NEWS2 & VITAL SIGNS', currentY, SECTION_COLORS.news2);
-        
-        const news2 = report.news2_readings?.[0] || report.vital_signs;
-        
-        if (news2) {
-          // NEWS2 Score display box
-          doc.setFillColor(254, 226, 226);
-          doc.roundedRect(leftMargin, currentY, 45, 25, 2, 2, 'F');
-          
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(185, 28, 28);
-          doc.text('NEWS2 Score', leftMargin + 5, currentY + 8);
-          
-          doc.setFontSize(18);
-          doc.setFont('helvetica', 'bold');
-          const totalScore = news2.total_score || news2.news2_score || 0;
-          doc.text(String(totalScore), leftMargin + 18, currentY + 20);
-          
-          // Vital signs grid (3x2 layout)
-          const vitals = [
-            { label: 'Resp Rate', value: news2.respiration_rate || '-', unit: '/min' },
-            { label: 'SpO2', value: news2.spo2 || '-', unit: '%' },
-            { label: 'Temperature', value: news2.temperature || '-', unit: '°C' },
-            { label: 'Blood Pressure', value: news2.systolic_bp && news2.diastolic_bp ? `${news2.systolic_bp}/${news2.diastolic_bp}` : '-', unit: 'mmHg' },
-            { label: 'Pulse', value: news2.pulse || news2.heart_rate || '-', unit: 'bpm' },
-            { label: 'Consciousness', value: news2.consciousness || news2.avpu || '-', unit: '' }
-          ];
-          
-          const vitalStartX = leftMargin + 52;
-          const vitalWidth = (contentWidth - 52) / 3;
-          
-          vitals.forEach((vital, index) => {
-            const row = Math.floor(index / 3);
-            const col = index % 3;
-            const x = vitalStartX + (col * vitalWidth);
-            const y = currentY + (row * 13);
-            
-            doc.setFillColor(249, 250, 251);
-            doc.roundedRect(x, y, vitalWidth - 3, 12, 1, 1, 'F');
-            
-            doc.setFontSize(6);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-            doc.text(vital.label, x + 2, y + 4);
-            
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
-            doc.text(`${vital.value} ${vital.unit}`, x + 2, y + 10);
-          });
-          
-          currentY += 32;
-        }
-      }
-      
-      // ========== 6. EVENTS & INCIDENTS SECTION ==========
-      if (report.incident_occurred || report.events?.length > 0) {
-        currentY = checkPageBreak(currentY, 35, report, reportIndex);
-        currentY = addBulkSectionHeader('EVENTS & INCIDENTS', currentY, SECTION_COLORS.events);
-        
-        if (report.incident_occurred) {
-          doc.setFillColor(254, 226, 226);
-          doc.setDrawColor(220, 38, 38);
-          doc.setLineWidth(0.5);
-          const incidentText = report.incident_details || 'Incident occurred - no details provided';
-          const incidentLines = doc.splitTextToSize(incidentText, contentWidth - 10);
-          const incidentHeight = Math.max(incidentLines.length * 4 + 12, 20);
-          doc.roundedRect(leftMargin, currentY, contentWidth, incidentHeight, 2, 2, 'FD');
-          
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(185, 28, 28);
-          doc.text('⚠ INCIDENT REPORTED', leftMargin + 4, currentY + 7);
-          
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(55, 65, 81);
-          doc.text(incidentLines, leftMargin + 4, currentY + 14);
-          currentY += incidentHeight + 5;
-        }
-        
-        if (report.events?.length > 0) {
-          report.events.forEach((event: any) => {
-            currentY = checkPageBreak(currentY, 15, report, reportIndex);
-            doc.setFillColor(255, 251, 235);
-            doc.roundedRect(leftMargin, currentY, contentWidth, 12, 1, 1, 'F');
-            
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-            doc.text(event.event_type || 'Event', leftMargin + 4, currentY + 5);
-            
-            doc.setFont('helvetica', 'normal');
-            doc.text(event.description?.substring(0, 80) || '-', leftMargin + 4, currentY + 10);
-            currentY += 14;
-          });
-        }
-      }
-      
-      // ========== 7. CARE PLAN GOALS SECTION (Two-Column Layout) ==========
-      if (report.care_plan_goals?.length > 0) {
-        currentY = checkPageBreak(currentY, 40, report, reportIndex);
-        currentY = addBulkSectionHeader('CARE PLAN GOALS', currentY, SECTION_COLORS.goals);
-        
-        const halfWidth = (contentWidth - 5) / 2;
-        const leftGoals = report.care_plan_goals.filter((_: any, i: number) => i % 2 === 0);
-        const rightGoals = report.care_plan_goals.filter((_: any, i: number) => i % 2 === 1);
-        
-        let maxY = currentY;
-        
-        // Left column goals
-        let leftY = currentY;
-        leftGoals.forEach((goal: any) => {
-          doc.setFillColor(236, 253, 245);
-          doc.roundedRect(leftMargin, leftY, halfWidth, 14, 1, 1, 'F');
-          
-          doc.setFontSize(7);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
-          doc.text(`• ${(goal.goal_name || goal.description || 'Goal').substring(0, 40)}`, leftMargin + 2, leftY + 5);
-          
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
-          doc.text(`Progress: ${goal.progress || 'N/A'}`, leftMargin + 2, leftY + 11);
-          leftY += 16;
-        });
-        maxY = Math.max(maxY, leftY);
-        
-        // Right column goals
-        let rightY = currentY;
-        rightGoals.forEach((goal: any) => {
-          doc.setFillColor(236, 253, 245);
-          doc.roundedRect(leftMargin + halfWidth + 5, rightY, halfWidth, 14, 1, 1, 'F');
-          
-          doc.setFontSize(7);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
-          doc.text(`• ${(goal.goal_name || goal.description || 'Goal').substring(0, 40)}`, leftMargin + halfWidth + 7, rightY + 5);
-          
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
-          doc.text(`Progress: ${goal.progress || 'N/A'}`, leftMargin + halfWidth + 7, rightY + 11);
-          rightY += 16;
-        });
-        maxY = Math.max(maxY, rightY);
-        
-        currentY = maxY + 5;
-      }
-      
-      // ========== 8. ACTIVITIES PERFORMED SECTION (Two-Column Layout) ==========
-      if (report.activities?.length > 0 || report.activities_list?.length > 0) {
-        currentY = checkPageBreak(currentY, 35, report, reportIndex);
-        currentY = addBulkSectionHeader('ACTIVITIES PERFORMED', currentY, SECTION_COLORS.activities);
-        
-        const activities = report.activities || report.activities_list || [];
-        const halfWidth = (contentWidth - 5) / 2;
-        const leftActivities = activities.filter((_: any, i: number) => i % 2 === 0);
-        const rightActivities = activities.filter((_: any, i: number) => i % 2 === 1);
-        
-        let maxY = currentY;
-        
-        // Left column activities
-        let leftY = currentY;
-        leftActivities.forEach((activity: any) => {
-          doc.setFillColor(255, 247, 237);
-          doc.roundedRect(leftMargin, leftY, halfWidth, 10, 1, 1, 'F');
-          
-          doc.setFontSize(7);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-          const activityName = typeof activity === 'string' ? activity : (activity.name || activity.activity_name || 'Activity');
-          doc.text(`• ${activityName.substring(0, 45)}`, leftMargin + 2, leftY + 6);
-          leftY += 12;
-        });
-        maxY = Math.max(maxY, leftY);
-        
-        // Right column activities
-        let rightY = currentY;
-        rightActivities.forEach((activity: any) => {
-          doc.setFillColor(255, 247, 237);
-          doc.roundedRect(leftMargin + halfWidth + 5, rightY, halfWidth, 10, 1, 1, 'F');
-          
-          doc.setFontSize(7);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-          const activityName = typeof activity === 'string' ? activity : (activity.name || activity.activity_name || 'Activity');
-          doc.text(`• ${activityName.substring(0, 45)}`, leftMargin + halfWidth + 7, rightY + 6);
-          rightY += 12;
-        });
-        maxY = Math.max(maxY, rightY);
-        
-        currentY = maxY + 5;
-      }
-      
-      // ========== 9. SERVICE NOTES & OBSERVATIONS SECTION ==========
+      // === INCIDENTS / EVENTS (Table Format - matching single report) ===
+      currentY += 5;
       currentY = checkPageBreak(currentY, 40, report, reportIndex);
-      currentY = addBulkSectionHeader('SERVICE NOTES & OBSERVATIONS', currentY, SECTION_COLORS.notes);
+      const hasIncidents = report.incident_occurred || report.incidents?.length > 0 || report.accidents?.length > 0;
       
-      // Notes text box
-      doc.setFillColor(239, 246, 255);
-      const notesText = report.carer_observations || report.notes || 'No additional notes recorded';
-      const notesLines = doc.splitTextToSize(notesText, contentWidth - 8);
-      const notesHeight = Math.max(notesLines.length * 4 + 8, 15);
-      doc.roundedRect(leftMargin, currentY, contentWidth, notesHeight, 2, 2, 'F');
+      currentY = addCompactSectionHeader('INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
       
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.text(notesLines, leftMargin + 4, currentY + 6);
-      currentY += notesHeight + 5;
+      if (hasIncidents) {
+        const allIncidents = [
+          ...(report.incidents || []), 
+          ...(report.accidents || []),
+          ...(report.incident_occurred ? [{ 
+            event_type: 'incident',
+            event_description: report.incident_details || 'Incident occurred',
+            severity: 'Medium'
+          }] : [])
+        ];
+        
+        const incidentData = allIncidents.map((inc: any) => [
+          inc.event_time ? format(new Date(inc.event_time), 'dd/MM HH:mm') : '-',
+          inc.event_type === 'accident' ? 'Accident' : 'Incident',
+          (inc.event_description || inc.event_title || 'No description').substring(0, 40),
+          inc.severity || 'Low',
+          (inc.immediate_action_taken || 'None documented').substring(0, 30),
+        ]);
+        
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Date/Time', 'Type', 'Description', 'Severity', 'Action Taken']],
+          body: incidentData,
+          theme: 'grid',
+          headStyles: { 
+            fillColor: [239, 68, 68], 
+            fontSize: 7, 
+            fontStyle: 'bold', 
+            textColor: [255, 255, 255],
+            cellPadding: 1.5
+          },
+          styles: { fontSize: 6, cellPadding: 1.5 },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 18 },
+            2: { cellWidth: 50 },
+            3: { cellWidth: 18, halign: 'center' },
+            4: { cellWidth: 'auto' }
+          },
+          margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 50 },
+          alternateRowStyles: { fillColor: [254, 226, 226] },
+          didDrawPage: () => {
+            const pageNum = doc.getNumberOfPages();
+            if (pageNum > 1) {
+              addFullPageHeader(report, reportIndex, reports.length);
+            }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 3;
+      } else {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No data available', margin + 2, currentY + 3);
+        currentY += 8;
+      }
       
-      // Client mood/engagement if available
-      if (report.client_mood || report.client_engagement) {
-        doc.setFillColor(249, 250, 251);
-        doc.roundedRect(leftMargin, currentY, contentWidth, 10, 1, 1, 'F');
+      // === SERVICE NOTES & OBSERVATIONS (matching single report) ===
+      currentY += 5;
+      currentY = checkPageBreak(currentY, 50, report, reportIndex);
+      const hasNotes = report.carer_observations || report.client_mood || 
+                       report.client_feedback || report.next_visit_preparations;
+      
+      currentY = addCompactSectionHeader('SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
+      
+      if (hasNotes || report.observations?.length > 0) {
+        doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
         
         doc.setFontSize(7);
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        
+        const noteItems: string[] = [];
+        if (report.client_mood) noteItems.push(`Client Mood: ${report.client_mood}`);
+        if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations.substring(0, 80)}`);
+        if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback.substring(0, 60)}`);
+        if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations.substring(0, 50)}`);
+        
+        report.observations?.slice(0, 2).forEach((obs: any) => {
+          noteItems.push(`Observation: ${(obs.event_description || '').substring(0, 60)}`);
+        });
+        
+        if (noteItems.length > 0) {
+          const boxHeight = noteItems.length * 5 + 4;
+          doc.roundedRect(margin, currentY, contentWidth, boxHeight, 1, 1, 'F');
+          
+          noteItems.forEach((note, i) => {
+            doc.text(`• ${note}`, margin + 3, currentY + 4 + (i * 5));
+          });
+          currentY += boxHeight + 3;
+        } else {
+          doc.setFont('helvetica', 'italic');
+          doc.text('No data available', margin + 2, currentY + 3);
+          currentY += 8;
+        }
+      } else {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('No data available', margin + 2, currentY + 3);
+        currentY += 8;
+      }
+      
+      // === SIGNATURES (matching single report) ===
+      if (report.staff_signature_data || report.client_signature_data || report.visit_record?.staff_signature_data) {
+        currentY += 5;
+        currentY = checkPageBreak(currentY, 35, report, reportIndex);
+        currentY = addCompactSectionHeader('SIGNATURES', currentY, SECTION_BG.signatures);
+        
+        const sigBoxWidth = (contentWidth - 5) / 2;
+        const sigBoxHeight = 25;
+        
+        // Staff signature box (left)
+        doc.setFillColor(SECTION_BG.signatures.r, SECTION_BG.signatures.g, SECTION_BG.signatures.b);
+        doc.roundedRect(margin, currentY, sigBoxWidth, sigBoxHeight, 1, 1, 'F');
+        
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        doc.text('STAFF SIGNATURE', margin + 2, currentY + 4);
+        
+        const staffSig = report.staff_signature_data || report.visit_record?.staff_signature_data;
+        if (staffSig) {
+          try {
+            doc.addImage(staffSig, 'PNG', margin + 5, currentY + 6, 40, 12);
+          } catch (e) { console.error('Error adding staff signature:', e); }
+        }
+        
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
-        const moodText = [
-          report.client_mood ? `Mood: ${report.client_mood}` : '',
-          report.client_engagement ? `Engagement: ${report.client_engagement}` : ''
-        ].filter(Boolean).join(' | ');
-        doc.text(moodText, leftMargin + 4, currentY + 6);
-        currentY += 12;
+        doc.text(`Name: ${carerName}`, margin + 2, currentY + 21);
+        doc.text(`Date: ${visitDate}`, margin + 50, currentY + 21);
+        
+        // Client signature box (right)
+        const rightBoxX = margin + sigBoxWidth + 5;
+        doc.roundedRect(rightBoxX, currentY, sigBoxWidth, sigBoxHeight, 1, 1, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('CLIENT / REP SIGNATURE', rightBoxX + 2, currentY + 4);
+        
+        const clientSig = report.client_signature_data || report.visit_record?.client_signature_data;
+        if (clientSig) {
+          try {
+            doc.addImage(clientSig, 'PNG', rightBoxX + 5, currentY + 6, 40, 12);
+          } catch (e) { console.error('Error adding client signature:', e); }
+        }
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Name: ${clientName}`, rightBoxX + 2, currentY + 21);
+        doc.text(`Date: ${visitDate}`, rightBoxX + 50, currentY + 21);
+        
+        currentY += sigBoxHeight + 3;
+      }
+      
+      // === ADMIN REVIEW (matching single report) ===
+      if (report.reviewed_at && report.review_notes) {
+        currentY = checkPageBreak(currentY, 20, report, reportIndex);
+        currentY = addCompactSectionHeader('ADMIN REVIEW', currentY, SECTION_BG.light);
+        
+        doc.setFillColor(SECTION_BG.light.r, SECTION_BG.light.g, SECTION_BG.light.b);
+        doc.roundedRect(margin, currentY, contentWidth, 12, 1, 1, 'F');
+        
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        doc.text('Status:', margin + 2, currentY + 4);
+        
+        const statusColor = report.status === 'approved' ? PDF_COLORS.success : 
+                           report.status === 'rejected' ? PDF_COLORS.danger : PDF_COLORS.warning;
+        doc.setTextColor(statusColor.r, statusColor.g, statusColor.b);
+        doc.text((report.status || 'pending').toUpperCase(), margin + 15, currentY + 4);
+        
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        doc.setFont('helvetica', 'normal');
+        const reviewNote = (report.review_notes || '').substring(0, 100);
+        doc.text(`Notes: ${reviewNote}`, margin + 2, currentY + 9);
+        
+        currentY += 15;
       }
     });
     
-    // Add footers to all pages at the end
+    // Add professional footers to all pages
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      addPDFFooter(doc, orgSettings, i, totalPages);
+      addProfessionalFooter(i, totalPages);
     }
     
     // Save the PDF
