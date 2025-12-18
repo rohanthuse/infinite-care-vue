@@ -72,7 +72,11 @@ export function ServicePlansTable({
           {plans.map((plan, index) => (
             <TableRow key={plan.id || index}>
               <TableCell className="font-medium">{plan.caption || "—"}</TableCell>
-              <TableCell>{plan.service_name || "—"}</TableCell>
+              <TableCell>
+                {plan.service_names && plan.service_names.length > 0 
+                  ? plan.service_names.join(", ") 
+                  : plan.service_name || "—"}
+              </TableCell>
               <TableCell>{formatDate(plan.start_date)}</TableCell>
               <TableCell>{formatDate(plan.end_date)}</TableCell>
               <TableCell>{formatDateTime(plan.registered_on)}</TableCell>

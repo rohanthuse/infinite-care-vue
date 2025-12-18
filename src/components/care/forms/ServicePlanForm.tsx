@@ -1,6 +1,6 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Calendar, Check, X } from "lucide-react";
+import { Calendar, Check, X, Plus } from "lucide-react";
 import { format } from "date-fns";
 import {
   FormControl,
@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { DaySelector } from "@/components/care/forms/DaySelector";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
 import { FREQUENCY_OPTIONS, ServicePlanData } from "@/types/servicePlan";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 interface ServicePlanFormProps {
   form: UseFormReturn<any>;
@@ -38,6 +39,7 @@ interface ServicePlanFormProps {
   services: Array<{ id: string; title: string }>;
   authorityCategory?: string | null;
   onSave: () => void;
+  onSaveAndAddAnother?: () => void;
   onCancel: () => void;
   isEditing?: boolean;
   planNumber: number;
@@ -49,20 +51,57 @@ export function ServicePlanForm({
   services,
   authorityCategory,
   onSave,
+  onSaveAndAddAnother,
   onCancel,
   isEditing = false,
   planNumber,
 }: ServicePlanFormProps) {
-  const handleServiceChange = (serviceId: string) => {
-    const selectedService = services.find(s => s.id === serviceId);
-    if (selectedService) {
-      form.setValue(`${fieldPrefix}.service_id`, serviceId);
-      form.setValue(`${fieldPrefix}.service_name`, selectedService.title);
+  // Create service options for MultiSelect
+  const serviceOptions: MultiSelectOption[] = services.map(s => ({
+    value: s.id,
+    label: s.title
+  }));
+
+  const handleServicesChange = (selectedIds: string[]) => {
+    const selectedServices = services.filter(s => selectedIds.includes(s.id));
+    form.setValue(`${fieldPrefix}.service_ids`, selectedIds);
+    form.setValue(`${fieldPrefix}.service_names`, selectedServices.map(s => s.title));
+    // Keep backward compatibility - store first selected service in single fields
+    if (selectedIds.length > 0) {
+      form.setValue(`${fieldPrefix}.service_id`, selectedIds[0]);
+      form.setValue(`${fieldPrefix}.service_name`, selectedServices[0]?.title || '');
+    } else {
+      form.setValue(`${fieldPrefix}.service_id`, '');
+      form.setValue(`${fieldPrefix}.service_name`, '');
     }
   };
 
   const handleDaysChange = (days: string[]) => {
     form.setValue(`${fieldPrefix}.selected_days`, days);
+  };
+
+  const handleDateInputChange = (field: any, dateString: string) => {
+    if (dateString) {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        field.onChange(date);
+      }
+    } else {
+      field.onChange(null);
+    }
+  };
+
+  const formatDateForInput = (value: Date | string | null | undefined): string => {
+    if (!value) return '';
+    try {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return format(date, "yyyy-MM-dd");
+      }
+    } catch {
+      return '';
+    }
+    return '';
   };
 
   return (
@@ -102,34 +141,29 @@ export function ServicePlanForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Start Date *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick date</span>
-                          )}
-                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={formatDateForInput(field.value)}
+                      onChange={(e) => handleDateInputChange(field, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" type="button">
+                          <Calendar className="h-4 w-4" />
                         </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -141,34 +175,29 @@ export function ServicePlanForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>End Date *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick date</span>
-                          )}
-                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={formatDateForInput(field.value)}
+                      onChange={(e) => handleDateInputChange(field, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" type="button">
+                          <Calendar className="h-4 w-4" />
                         </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -192,34 +221,16 @@ export function ServicePlanForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Service Name Dropdown */}
-            <FormField
-              control={form.control}
-              name={`${fieldPrefix}.service_id`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Service Name *</FormLabel>
-                  <Select 
-                    onValueChange={handleServiceChange} 
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Service Name MultiSelect */}
+            <div className="space-y-2">
+              <FormLabel>Service Name(s) *</FormLabel>
+              <MultiSelect
+                options={serviceOptions}
+                selected={form.watch(`${fieldPrefix}.service_ids`) || []}
+                onSelectionChange={handleServicesChange}
+                placeholder="Select services"
+              />
+            </div>
 
             {/* Authority (auto-populated) */}
             <div className="space-y-2">
@@ -320,6 +331,12 @@ export function ServicePlanForm({
             <X className="h-4 w-4 mr-1" />
             Cancel
           </Button>
+          {onSaveAndAddAnother && !isEditing && (
+            <Button type="button" variant="secondary" onClick={onSaveAndAddAnother}>
+              <Plus className="h-4 w-4 mr-1" />
+              Save & Add Another
+            </Button>
+          )}
           <Button type="button" onClick={onSave}>
             <Check className="h-4 w-4 mr-1" />
             Save Service Plan

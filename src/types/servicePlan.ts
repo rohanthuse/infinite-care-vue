@@ -9,8 +9,12 @@ export interface ServicePlanData {
   
   // Service Details Section
   selected_days: string[];
-  service_id: string;
-  service_name: string;
+  // Multi-service support
+  service_ids: string[];
+  service_names: string[];
+  // Keep backward compatibility
+  service_id?: string;
+  service_name?: string;
   authority: string;
   authority_category: string;
   start_time: string;
@@ -52,6 +56,8 @@ export const getDefaultServicePlan = (authority?: string, authorityCategory?: st
   start_date: null,
   end_date: null,
   selected_days: [],
+  service_ids: [],
+  service_names: [],
   service_id: '',
   service_name: '',
   authority: authority || '',
