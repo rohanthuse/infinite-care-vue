@@ -20,6 +20,8 @@ interface ServiceReportPdfData {
   incidents: any[];
   accidents: any[];
   observations: any[];
+  carePlanGoals?: any[];
+  activities?: any[];
   branchId?: string;
 }
 
@@ -32,10 +34,12 @@ const SECTION_BG = {
   vitals: { r: 254, g: 242, b: 242 },     // Light red
   notes: { r: 254, g: 252, b: 232 },      // Light yellow
   signatures: { r: 240, g: 249, b: 255 }, // Light blue
+  goals: { r: 236, g: 253, b: 245 },      // Light teal
+  activities: { r: 255, g: 247, b: 237 }, // Light orange
 };
 
 /**
- * Add compact professional header with org info and logo inline
+ * Add compact professional header with thin blue top strip, logo LEFT, org details RIGHT
  */
 const addCompactHeader = async (
   doc: jsPDF,
@@ -46,13 +50,14 @@ const addCompactHeader = async (
 ): Promise<number> => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
-  let currentY = 12;
 
-  // Header background
+  // Thin blue top strip only (5px height)
   doc.setFillColor(SECTION_BG.header.r, SECTION_BG.header.g, SECTION_BG.header.b);
-  doc.rect(0, 0, pageWidth, 28, 'F');
+  doc.rect(0, 0, pageWidth, 5, 'F');
 
-  // Logo on left (smaller)
+  // White background for rest of header (no fill needed, default is white)
+  
+  // LEFT SIDE: Logo
   if (logoBase64) {
     try {
       const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
@@ -60,44 +65,55 @@ const addCompactHeader = async (
         if (base64.includes('data:image/gif')) return 'GIF';
         return 'PNG';
       };
-      doc.addImage(logoBase64, getImageFormat(logoBase64), margin, 4, 35, 20);
+      doc.addImage(logoBase64, getImageFormat(logoBase64), margin, 8, 40, 22);
     } catch (e) {
       console.error('Error adding logo:', e);
     }
   }
 
-  // Organization name and details (center-left)
-  const textStartX = logoBase64 ? margin + 40 : margin;
-  doc.setTextColor(255, 255, 255);
+  // RIGHT SIDE: Organization details (aligned right)
+  const rightX = pageWidth - margin;
+  
+  // Organization name
+  doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
   doc.setFontSize(11);
   doc.setFont(undefined, 'bold');
-  doc.text(orgSettings?.name || 'Healthcare Services', textStartX, currentY);
+  doc.text(orgSettings?.name || 'Healthcare Services', rightX, 12, { align: 'right' });
   
+  // Organization details
   doc.setFontSize(7);
   doc.setFont(undefined, 'normal');
-  currentY += 5;
+  doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
   
-  const contactParts = [];
-  if (orgSettings?.address) contactParts.push(orgSettings.address.split('\n')[0]);
-  if (orgSettings?.telephone) contactParts.push(`Tel: ${orgSettings.telephone}`);
-  if (orgSettings?.email) contactParts.push(orgSettings.email);
+  let detailY = 17;
   
-  const contactLine = contactParts.slice(0, 2).join(' | ');
-  if (contactLine) {
-    doc.text(contactLine, textStartX, currentY);
-    currentY += 4;
+  // Address
+  if (orgSettings?.address) {
+    const addressLine = orgSettings.address.split('\n')[0];
+    doc.text(addressLine, rightX, detailY, { align: 'right' });
+    detailY += 4;
+  }
+  
+  // Contact number
+  if (orgSettings?.telephone) {
+    doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+    detailY += 4;
+  }
+  
+  // Email
+  if (orgSettings?.email) {
+    doc.text(orgSettings.email, rightX, detailY, { align: 'right' });
+    detailY += 4;
   }
   
   // Branch name
-  doc.text(`Branch: ${branchName}`, textStartX, currentY);
+  doc.text(`Branch: ${branchName}`, rightX, detailY, { align: 'right' });
+  detailY += 4;
+  
+  // Report generated date
+  doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });
 
-  // Report generated date (right side)
-  doc.setFontSize(7);
-  doc.setFont(undefined, 'normal');
-  doc.text(`Generated: ${reportDate}`, pageWidth - margin, 12, { align: 'right' });
-  doc.text(`Report Date: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth - margin, 16, { align: 'right' });
-
-  return 32; // Return Y position after header
+  return 38; // Return Y position after header
 };
 
 /**
@@ -162,7 +178,6 @@ const addTwoColumnBox = (
   
   const col1X = margin + 3;
   const col2X = pageWidth / 2 + 3;
-  let rowY = currentY + 5;
   
   doc.setFontSize(7);
   doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
@@ -224,7 +239,7 @@ const addProfessionalFooter = (
 };
 
 export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) => {
-  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations, branchId } = data;
+  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations, carePlanGoals, activities, branchId } = data;
   
   let orgSettings: OrganizationSettings | null = null;
   let logoBase64: string | null = null;
@@ -320,20 +335,21 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     currentY, SECTION_BG.light
   );
 
-  // === TASKS SECTION (Condensed Table) ===
+  // === TASKS SECTION (Enhanced with Description and Duration) ===
   currentY = addCompactSectionHeader(doc, 'TASKS COMPLETED', currentY + 1, SECTION_BG.tasks);
   
   if (tasks?.length > 0) {
     const taskData = tasks.map(t => [
       t.task_name || t.task_category || 'N/A',
+      (t.task_description || '-').substring(0, 30) + (t.task_description?.length > 30 ? '...' : ''),
       t.is_completed ? '✓' : '✗',
       t.completed_at ? format(new Date(t.completed_at), 'HH:mm') : '-',
-      (t.completion_notes || '-').substring(0, 40) + (t.completion_notes?.length > 40 ? '...' : '')
+      t.completion_time_minutes ? `${t.completion_time_minutes} mins` : '-',
     ]);
     
     autoTable(doc, {
       startY: currentY,
-      head: [['Task', 'Done', 'Time', 'Notes']],
+      head: [['Task Name', 'Description', 'Status', 'Time', 'Duration']],
       body: taskData,
       theme: 'grid',
       headStyles: { 
@@ -345,10 +361,11 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       },
       styles: { fontSize: 6, cellPadding: 1.5 },
       columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 'auto' }
+        0: { cellWidth: 35 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 12, halign: 'center' },
+        3: { cellWidth: 15, halign: 'center' },
+        4: { cellWidth: 'auto', halign: 'center' }
       },
       margin: { left: margin, right: margin },
       alternateRowStyles: { fillColor: [240, 253, 244] }
@@ -358,25 +375,26 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     doc.setFontSize(7);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No tasks recorded', margin + 2, currentY + 3);
+    doc.text('No data available', margin + 2, currentY + 3);
     currentY += 8;
   }
 
-  // === MEDICATIONS SECTION (Condensed Table) ===
+  // === MEDICATIONS SECTION (Enhanced with Frequency) ===
   currentY = addCompactSectionHeader(doc, 'MEDICATIONS', currentY, SECTION_BG.meds);
   
   if (medications?.length > 0) {
     const medData = medications.map(m => [
       m.medication_name || 'N/A',
-      [m.dosage, m.administration_method].filter(Boolean).join(' ') || 'N/A',
-      m.prescribed_time || '-',
+      m.dosage || 'N/A',
+      m.prescribed_time || 'As needed',
+      m.administration_method || 'N/A',
       m.is_administered ? 'Given' : m.missed_reason ? 'Missed' : 'Pending',
-      (m.administration_notes || m.missed_reason || '-').substring(0, 30)
+      (m.administration_notes || m.missed_reason || '-').substring(0, 25)
     ]);
     
     autoTable(doc, {
       startY: currentY,
-      head: [['Medication', 'Dosage', 'Time', 'Status', 'Notes']],
+      head: [['Medication', 'Dosage', 'Frequency', 'Method', 'Status', 'Notes']],
       body: medData,
       theme: 'grid',
       headStyles: { 
@@ -388,11 +406,12 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       },
       styles: { fontSize: 6, cellPadding: 1.5 },
       columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 'auto' }
+        0: { cellWidth: 30 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 'auto' }
       },
       margin: { left: margin, right: margin },
       alternateRowStyles: { fillColor: [245, 243, 255] }
@@ -402,11 +421,11 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     doc.setFontSize(7);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No medications recorded', margin + 2, currentY + 3);
+    doc.text('No data available', margin + 2, currentY + 3);
     currentY += 8;
   }
 
-  // === NEWS2 & VITALS (Inline Horizontal Layout) ===
+  // === NEWS2 & VITALS (Fixed field mappings) ===
   currentY = addCompactSectionHeader(doc, 'VITAL SIGNS', currentY, SECTION_BG.vitals);
   
   if (news2Readings?.length > 0) {
@@ -418,13 +437,14 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     doc.setFontSize(6);
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
     
+    // Fixed field mappings: oxygen_saturation, pulse_rate, news2_total_score
     const vitals = [
-      { label: 'Resp', value: reading.respiratory_rate || '-' },
-      { label: 'SpO2', value: reading.spo2 ? `${reading.spo2}%` : '-' },
+      { label: 'Resp Rate', value: reading.respiratory_rate ? `${reading.respiratory_rate}/min` : '-' },
+      { label: 'SpO2', value: reading.oxygen_saturation ? `${reading.oxygen_saturation}%` : (reading.spo2 ? `${reading.spo2}%` : '-') },
       { label: 'Temp', value: reading.temperature ? `${reading.temperature}°C` : '-' },
       { label: 'BP', value: reading.systolic_bp ? `${reading.systolic_bp}/${reading.diastolic_bp || '-'}` : '-' },
-      { label: 'HR', value: reading.heart_rate || '-' },
-      { label: 'Consc', value: reading.consciousness_level?.substring(0, 5) || '-' },
+      { label: 'Heart Rate', value: reading.pulse_rate ? `${reading.pulse_rate} bpm` : (reading.heart_rate ? `${reading.heart_rate} bpm` : '-') },
+      { label: 'Consciousness', value: reading.consciousness_level?.substring(0, 8) || '-' },
     ];
     
     const vitalWidth = (pageWidth - (margin * 2)) / vitals.length;
@@ -436,39 +456,127 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       doc.text(String(vital.value), x, currentY + 9);
     });
     
-    // NEWS2 Score
-    const scoreColor = (reading.total_score || 0) >= 5 ? PDF_COLORS.danger : 
-                       (reading.total_score || 0) >= 3 ? PDF_COLORS.warning : PDF_COLORS.success;
+    // NEWS2 Score - Fixed field name
+    const news2Score = reading.news2_total_score || reading.total_score || 0;
+    const scoreColor = news2Score >= 5 ? PDF_COLORS.danger : 
+                       news2Score >= 3 ? PDF_COLORS.warning : PDF_COLORS.success;
     doc.setFont(undefined, 'bold');
     doc.setTextColor(scoreColor.r, scoreColor.g, scoreColor.b);
     doc.setFontSize(7);
-    doc.text(`NEWS2: ${reading.total_score || 0}`, pageWidth - margin - 20, currentY + 7);
+    doc.text(`NEWS2: ${news2Score}`, pageWidth - margin - 20, currentY + 7);
     
     currentY += 17;
   } else {
     doc.setFontSize(7);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No vital signs recorded', margin + 2, currentY + 3);
+    doc.text('No data available', margin + 2, currentY + 3);
+    currentY += 8;
+  }
+
+  // === CARE PLAN GOALS SECTION (NEW) ===
+  currentY = addCompactSectionHeader(doc, 'CARE PLAN GOALS', currentY, SECTION_BG.goals);
+  
+  if (carePlanGoals?.length > 0) {
+    const goalData = carePlanGoals.map(g => [
+      (g.description || 'N/A').substring(0, 50) + (g.description?.length > 50 ? '...' : ''),
+      g.status || 'In Progress',
+      g.progress ? `${g.progress}%` : '-',
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Goal Description', 'Status', 'Progress']],
+      body: goalData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [20, 184, 166], 
+        fontSize: 7, 
+        fontStyle: 'bold', 
+        textColor: [255, 255, 255],
+        cellPadding: 1.5
+      },
+      styles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 100 },
+        1: { cellWidth: 30, halign: 'center' },
+        2: { cellWidth: 'auto', halign: 'center' }
+      },
+      margin: { left: margin, right: margin },
+      alternateRowStyles: { fillColor: [236, 253, 245] }
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 3;
+  } else {
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No data available', margin + 2, currentY + 3);
+    currentY += 8;
+  }
+
+  // === ACTIVITIES SECTION (NEW) ===
+  currentY = addCompactSectionHeader(doc, 'ACTIVITIES', currentY, SECTION_BG.activities);
+  
+  if (activities?.length > 0) {
+    const activityData = activities.map(a => [
+      a.name || a.activity_name || 'N/A',
+      (a.description || '-').substring(0, 40) + (a.description?.length > 40 ? '...' : ''),
+      a.frequency || a.completed_at ? format(new Date(a.completed_at), 'HH:mm') : '-',
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Activity Name', 'Description', 'Date/Time']],
+      body: activityData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [249, 115, 22], 
+        fontSize: 7, 
+        fontStyle: 'bold', 
+        textColor: [255, 255, 255],
+        cellPadding: 1.5
+      },
+      styles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 'auto', halign: 'center' }
+      },
+      margin: { left: margin, right: margin },
+      alternateRowStyles: { fillColor: [255, 247, 237] }
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 3;
+  } else if (report.activities_undertaken) {
+    doc.setFillColor(SECTION_BG.activities.r, SECTION_BG.activities.g, SECTION_BG.activities.b);
+    const activitiesText = doc.splitTextToSize(report.activities_undertaken, pageWidth - (margin * 2) - 6);
+    const boxHeight = activitiesText.length * 4 + 4;
+    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text(activitiesText, margin + 3, currentY + 4);
+    currentY += boxHeight + 3;
+  } else {
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No data available', margin + 2, currentY + 3);
     currentY += 8;
   }
 
   // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
-  const hasNotes = report.carer_observations || report.client_mood || report.activities_undertaken || 
+  const hasNotes = report.carer_observations || report.client_mood || 
                    report.client_feedback || report.next_visit_preparations;
   
+  currentY = addCompactSectionHeader(doc, 'SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
+  
   if (hasNotes || observations?.length > 0) {
-    currentY = addCompactSectionHeader(doc, 'SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
-    
     doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
-    const notesStartY = currentY;
     
     doc.setFontSize(7);
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
     
     const noteItems: string[] = [];
     if (report.client_mood) noteItems.push(`Client Mood: ${report.client_mood}`);
-    if (report.activities_undertaken) noteItems.push(`Activities: ${report.activities_undertaken.substring(0, 60)}`);
     if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations.substring(0, 80)}`);
     if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback.substring(0, 60)}`);
     if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations.substring(0, 50)}`);
@@ -486,37 +594,64 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       });
       currentY += boxHeight + 3;
     } else {
-      doc.text('No notes recorded', margin + 2, currentY + 3);
+      doc.setFont(undefined, 'italic');
+      doc.text('No data available', margin + 2, currentY + 3);
       currentY += 8;
     }
+  } else {
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No data available', margin + 2, currentY + 3);
+    currentY += 8;
   }
 
-  // === EVENTS & INCIDENTS (Only if present - compact inline) ===
+  // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
   const hasEvents = (incidents?.length > 0) || (accidents?.length > 0);
   
+  currentY = addCompactSectionHeader(doc, 'INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
+  
   if (hasEvents) {
-    currentY = addCompactSectionHeader(doc, '⚠ INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
-    
     const allIncidents = [...(incidents || []), ...(accidents || [])];
     
-    doc.setFillColor(254, 226, 226);
-    const incidentHeight = allIncidents.length * 6 + 4;
-    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), incidentHeight, 1, 1, 'F');
+    const incidentData = allIncidents.map(inc => [
+      inc.event_time ? format(new Date(inc.event_time), 'dd/MM HH:mm') : '-',
+      inc.event_type === 'accident' ? 'Accident' : 'Incident',
+      (inc.event_description || inc.event_title || 'No description').substring(0, 40),
+      inc.severity || 'Low',
+      (inc.immediate_action_taken || 'None documented').substring(0, 30),
+    ]);
     
-    doc.setFontSize(6);
-    allIncidents.slice(0, 3).forEach((inc, i) => {
-      const time = inc.event_time ? format(new Date(inc.event_time), 'HH:mm') : '-';
-      const type = inc.event_type === 'accident' ? 'Accident' : 'Incident';
-      const desc = (inc.event_description || inc.event_title || 'No description').substring(0, 70);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(PDF_COLORS.danger.r, PDF_COLORS.danger.g, PDF_COLORS.danger.b);
-      doc.text(`${time} [${type}]:`, margin + 3, currentY + 4 + (i * 6));
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.text(desc, margin + 35, currentY + 4 + (i * 6));
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Date/Time', 'Type', 'Description', 'Severity', 'Action Taken']],
+      body: incidentData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [239, 68, 68], 
+        fontSize: 7, 
+        fontStyle: 'bold', 
+        textColor: [255, 255, 255],
+        cellPadding: 1.5
+      },
+      styles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 'auto' }
+      },
+      margin: { left: margin, right: margin },
+      alternateRowStyles: { fillColor: [254, 226, 226] }
     });
-    
-    currentY += incidentHeight + 3;
+    currentY = (doc as any).lastAutoTable.finalY + 3;
+  } else {
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+    doc.text('No data available', margin + 2, currentY + 3);
+    currentY += 8;
   }
 
   // === SIGNATURES (Side-by-Side) ===
@@ -669,6 +804,44 @@ export const generatePDFForServiceReport = async (
     }
   }
 
+  // Fetch care plan goals for the client
+  let carePlanGoals: any[] = [];
+  if (safeReport.client_id) {
+    const { data: carePlanData } = await supabase
+      .from('client_care_plans')
+      .select('id')
+      .eq('client_id', safeReport.client_id)
+      .eq('status', 'Active')
+      .maybeSingle();
+
+    if (carePlanData?.id) {
+      const { data: goals } = await supabase
+        .from('client_care_plan_goals')
+        .select('description, status, progress, notes')
+        .eq('care_plan_id', carePlanData.id);
+      carePlanGoals = goals || [];
+    }
+  }
+
+  // Fetch activities for the client
+  let clientActivities: any[] = [];
+  if (safeReport.client_id) {
+    const { data: carePlanData } = await supabase
+      .from('client_care_plans')
+      .select('id')
+      .eq('client_id', safeReport.client_id)
+      .eq('status', 'Active')
+      .maybeSingle();
+
+    if (carePlanData?.id) {
+      const { data: activities } = await supabase
+        .from('client_activities')
+        .select('name, description, frequency, status')
+        .eq('care_plan_id', carePlanData.id);
+      clientActivities = activities || [];
+    }
+  }
+
   // If no visit record found, generate simplified PDF with report data only
   if (!visitRecordId) {
     await exportSingleServiceReportPDF({
@@ -682,6 +855,8 @@ export const generatePDFForServiceReport = async (
       incidents: [],
       accidents: [],
       observations: [],
+      carePlanGoals: carePlanGoals,
+      activities: clientActivities,
       branchId: branchId || safeReport.branch_id,
     });
     return;
@@ -708,6 +883,8 @@ export const generatePDFForServiceReport = async (
       incidents: [],
       accidents: [],
       observations: [],
+      carePlanGoals: carePlanGoals,
+      activities: clientActivities,
       branchId: branchId || safeReport.branch_id,
     });
     return;
@@ -770,6 +947,8 @@ export const generatePDFForServiceReport = async (
     incidents: incidents,
     accidents: accidents,
     observations: observations,
+    carePlanGoals: carePlanGoals,
+    activities: clientActivities,
     branchId: branchId || safeReport.branch_id,
   });
 };
