@@ -282,12 +282,23 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
       }
       amount = parseFloat(rateBlock.rate) || 0;
     } else if (rateBlock.chargeBasedOn === "hours_minutes") {
-      // Hours/Minutes uses single rate field
-      if (!rateBlock.rate) {
-        toast.error('Please enter a rate amount');
-        return;
+      // Hours/Minutes - validate based on rate calculation type
+      if (rateBlock.rateCalculationType === "rate_per_hour") {
+        // Rate per Hour - validate single rate field
+        if (!rateBlock.rate) {
+          toast.error('Please enter a rate amount');
+          return;
+        }
+        amount = parseFloat(rateBlock.rate) || 0;
+      } else if (rateBlock.rateCalculationType === "rate_per_minutes_pro" || 
+                 rateBlock.rateCalculationType === "rate_per_minutes_flat") {
+        // Rate per Minutes - validate minute-based fields
+        if (!rateBlock.rateAt30Minutes || !rateBlock.rateAt45Minutes || !rateBlock.rateAt60Minutes) {
+          toast.error('Please enter required rate amounts (30, 45, 60 minutes)');
+          return;
+        }
+        amount = parseFloat(rateBlock.rateAt60Minutes) || 0;
       }
-      amount = parseFloat(rateBlock.rate) || 0;
     } else if (rateBlock.rateChargingMethod === "pro") {
       // Pro Rate (under Services) now uses single rate field
       if (!rateBlock.rate) {
