@@ -415,146 +415,183 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     currentY += 8;
   }
 
-  // === NEWS2 & VITALS (Fixed field mappings) ===
+  // === NEWS2 & VITAL SIGNS (Table Format) ===
   currentY += 5;
-  currentY = addCompactSectionHeader(doc, 'VITAL SIGNS', currentY, SECTION_BG.vitals);
+  currentY = addCompactSectionHeader(doc, 'NEWS2 & VITAL SIGNS', currentY, SECTION_BG.vitals);
   
   if (news2Readings?.length > 0) {
     const reading = news2Readings[0];
     
-    doc.setFillColor(SECTION_BG.vitals.r, SECTION_BG.vitals.g, SECTION_BG.vitals.b);
-    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), 14, 1, 1, 'F');
-    
-    doc.setFontSize(6);
-    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    
-    // Fixed field mappings: oxygen_saturation, pulse_rate, news2_total_score
-    const vitals = [
-      { label: 'Resp Rate', value: reading.respiratory_rate ? `${reading.respiratory_rate}/min` : '-' },
-      { label: 'SpO2', value: reading.oxygen_saturation ? `${reading.oxygen_saturation}%` : (reading.spo2 ? `${reading.spo2}%` : '-') },
-      { label: 'Temp', value: reading.temperature ? `${reading.temperature}°C` : '-' },
-      { label: 'BP', value: reading.systolic_bp ? `${reading.systolic_bp}/${reading.diastolic_bp || '-'}` : '-' },
-      { label: 'Heart Rate', value: reading.pulse_rate ? `${reading.pulse_rate} bpm` : (reading.heart_rate ? `${reading.heart_rate} bpm` : '-') },
-      { label: 'Consciousness', value: reading.consciousness_level?.substring(0, 8) || '-' },
+    // Create vitals table data with Type | Value | Unit | Time columns
+    const vitalsTableData = [
+      ['Respiratory Rate', reading.respiratory_rate || '-', '/min', reading.reading_time ? format(new Date(reading.reading_time), 'HH:mm') : '-'],
+      ['Oxygen Saturation (SpO2)', reading.oxygen_saturation || reading.spo2 || '-', '%', ''],
+      ['Temperature', reading.temperature || '-', '°C', ''],
+      ['Blood Pressure', reading.systolic_bp ? `${reading.systolic_bp}/${reading.diastolic_bp || '-'}` : '-', 'mmHg', ''],
+      ['Heart Rate', reading.pulse_rate || reading.heart_rate || '-', 'bpm', ''],
+      ['Consciousness Level', reading.consciousness_level || '-', '-', ''],
     ];
     
-    const vitalWidth = (pageWidth - (margin * 2)) / vitals.length;
-    vitals.forEach((vital, i) => {
-      const x = margin + (i * vitalWidth) + 5;
-      doc.setFont(undefined, 'bold');
-      doc.text(vital.label, x, currentY + 5);
-      doc.setFont(undefined, 'normal');
-      doc.text(String(vital.value), x, currentY + 9);
+    // Render vitals table
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Vital Sign', 'Value', 'Unit', 'Recorded Time']],
+      body: vitalsTableData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [239, 68, 68], 
+        fontSize: 7, 
+        fontStyle: 'bold', 
+        textColor: [255, 255, 255],
+        cellPadding: 1.5
+      },
+      styles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 55 },
+        1: { cellWidth: 30, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 'auto', halign: 'center' }
+      },
+      margin: { left: margin, right: margin },
+      alternateRowStyles: { fillColor: [254, 242, 242] }
     });
+    currentY = (doc as any).lastAutoTable.finalY + 3;
     
-    // NEWS2 Score - Fixed field name
+    // NEWS2 Score - Dedicated line below table with proper spacing
     const news2Score = reading.news2_total_score || reading.total_score || 0;
-    const scoreColor = news2Score >= 5 ? PDF_COLORS.danger : 
-                       news2Score >= 3 ? PDF_COLORS.warning : PDF_COLORS.success;
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(scoreColor.r, scoreColor.g, scoreColor.b);
-    doc.setFontSize(7);
-    doc.text(`NEWS2: ${news2Score}`, pageWidth - margin - 20, currentY + 7);
+    const riskLevel = news2Score >= 7 ? 'High Risk' : news2Score >= 5 ? 'Medium-High Risk' : news2Score >= 3 ? 'Low-Medium Risk' : 'Low Risk';
+    const scoreColor = news2Score >= 5 ? PDF_COLORS.danger : news2Score >= 3 ? PDF_COLORS.warning : PDF_COLORS.success;
     
-    currentY += 17;
+    doc.setFillColor(SECTION_BG.vitals.r, SECTION_BG.vitals.g, SECTION_BG.vitals.b);
+    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), 8, 1, 1, 'F');
+    
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(scoreColor.r, scoreColor.g, scoreColor.b);
+    doc.text(`NEWS2 Score: ${news2Score} (${riskLevel})`, margin + 3, currentY + 5.5);
+    
+    currentY += 11;
   } else {
     doc.setFontSize(7);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No data available', margin + 2, currentY + 3);
+    doc.text('No vital signs recorded', margin + 2, currentY + 3);
     currentY += 8;
   }
 
-  // === CARE PLAN GOALS SECTION (NEW) ===
+  // === CARE PLAN GOALS & ACTIVITIES (Two-Column Side-by-Side Layout) ===
   currentY += 5;
-  currentY = addCompactSectionHeader(doc, 'CARE PLAN GOALS', currentY, SECTION_BG.goals);
+  
+  const halfWidth = (pageWidth - (margin * 2) - 5) / 2;
+  const leftX = margin;
+  const rightX = margin + halfWidth + 5;
+  const columnStartY = currentY;
+  
+  // Left Column Header: CARE PLAN GOALS
+  doc.setFillColor(SECTION_BG.goals.r, SECTION_BG.goals.g, SECTION_BG.goals.b);
+  doc.roundedRect(leftX, currentY - 3, halfWidth, 7, 1, 1, 'F');
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
+  doc.text('CARE PLAN GOALS', leftX + 2, currentY + 1);
+  
+  // Right Column Header: ACTIVITIES
+  doc.setFillColor(SECTION_BG.activities.r, SECTION_BG.activities.g, SECTION_BG.activities.b);
+  doc.roundedRect(rightX, currentY - 3, halfWidth, 7, 1, 1, 'F');
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
+  doc.text('ACTIVITIES', rightX + 2, currentY + 1);
+  
+  currentY += 6;
+  
+  // Calculate content for both columns
+  let leftColumnHeight = 0;
+  let rightColumnHeight = 0;
+  
+  // Left Column Content: Care Plan Goals
+  const goalsContentY = currentY;
+  doc.setFillColor(240, 253, 244); // Light green background
   
   if (carePlanGoals?.length > 0) {
-    const goalData = carePlanGoals.map(g => [
-      (g.description || 'N/A').substring(0, 50) + (g.description?.length > 50 ? '...' : ''),
-      g.status || 'In Progress',
-      g.progress ? `${g.progress}%` : '-',
-    ]);
-    
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Goal Description', 'Status', 'Progress']],
-      body: goalData,
-      theme: 'grid',
-      headStyles: { 
-        fillColor: [20, 184, 166], 
-        fontSize: 7, 
-        fontStyle: 'bold', 
-        textColor: [255, 255, 255],
-        cellPadding: 1.5
-      },
-      styles: { fontSize: 6, cellPadding: 1.5 },
-      columnStyles: {
-        0: { cellWidth: 100 },
-        1: { cellWidth: 30, halign: 'center' },
-        2: { cellWidth: 'auto', halign: 'center' }
-      },
-      margin: { left: margin, right: margin },
-      alternateRowStyles: { fillColor: [236, 253, 245] }
+    const goalLines: string[] = [];
+    carePlanGoals.forEach((g, idx) => {
+      const goalText = `${idx + 1}. ${(g.description || 'N/A').substring(0, 45)}${g.description?.length > 45 ? '...' : ''}`;
+      const statusText = `   Status: ${g.status || 'In Progress'}${g.progress ? ` (${g.progress}%)` : ''}`;
+      goalLines.push(goalText, statusText);
     });
-    currentY = (doc as any).lastAutoTable.finalY + 3;
+    leftColumnHeight = goalLines.length * 4 + 4;
+    
+    doc.roundedRect(leftX, goalsContentY, halfWidth, leftColumnHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    
+    goalLines.forEach((line, idx) => {
+      if (line.startsWith('   Status:')) {
+        doc.setFont(undefined, 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      } else {
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      }
+      doc.text(line, leftX + 2, goalsContentY + 4 + (idx * 4));
+    });
   } else {
-    doc.setFontSize(7);
+    leftColumnHeight = 10;
+    doc.roundedRect(leftX, goalsContentY, halfWidth, leftColumnHeight, 1, 1, 'F');
+    doc.setFontSize(6);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No data available', margin + 2, currentY + 3);
-    currentY += 8;
+    doc.text('No goals recorded', leftX + 2, goalsContentY + 6);
   }
-
-  // === ACTIVITIES SECTION (NEW) ===
-  currentY += 5;
-  currentY = addCompactSectionHeader(doc, 'ACTIVITIES', currentY, SECTION_BG.activities);
+  
+  // Right Column Content: Activities
+  doc.setFillColor(255, 247, 237); // Light orange background
   
   if (activities?.length > 0) {
-    const activityData = activities.map(a => [
-      a.name || a.activity_name || 'N/A',
-      (a.description || '-').substring(0, 40) + (a.description?.length > 40 ? '...' : ''),
-      a.frequency || a.completed_at ? format(new Date(a.completed_at), 'HH:mm') : '-',
-    ]);
-    
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Activity Name', 'Description', 'Date/Time']],
-      body: activityData,
-      theme: 'grid',
-      headStyles: { 
-        fillColor: [249, 115, 22], 
-        fontSize: 7, 
-        fontStyle: 'bold', 
-        textColor: [255, 255, 255],
-        cellPadding: 1.5
-      },
-      styles: { fontSize: 6, cellPadding: 1.5 },
-      columnStyles: {
-        0: { cellWidth: 40 },
-        1: { cellWidth: 80 },
-        2: { cellWidth: 'auto', halign: 'center' }
-      },
-      margin: { left: margin, right: margin },
-      alternateRowStyles: { fillColor: [255, 247, 237] }
+    const activityLines: string[] = [];
+    activities.forEach((a, idx) => {
+      const actName = `${idx + 1}. ${(a.name || a.activity_name || 'N/A').substring(0, 40)}`;
+      const actDesc = `   ${(a.description || '-').substring(0, 40)}${a.description?.length > 40 ? '...' : ''}`;
+      activityLines.push(actName, actDesc);
     });
-    currentY = (doc as any).lastAutoTable.finalY + 3;
-  } else if (report.activities_undertaken) {
-    doc.setFillColor(SECTION_BG.activities.r, SECTION_BG.activities.g, SECTION_BG.activities.b);
-    const activitiesText = doc.splitTextToSize(report.activities_undertaken, pageWidth - (margin * 2) - 6);
-    const boxHeight = activitiesText.length * 4 + 4;
-    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
-    doc.setFontSize(7);
+    rightColumnHeight = activityLines.length * 4 + 4;
+    
+    doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'normal');
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text(activitiesText, margin + 3, currentY + 4);
-    currentY += boxHeight + 3;
+    
+    activityLines.forEach((line, idx) => {
+      if (line.startsWith('   ')) {
+        doc.setFont(undefined, 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      } else {
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      }
+      doc.text(line, rightX + 2, goalsContentY + 4 + (idx * 4));
+    });
+  } else if (report.activities_undertaken) {
+    const activitiesText = doc.splitTextToSize(report.activities_undertaken, halfWidth - 6);
+    rightColumnHeight = activitiesText.length * 4 + 4;
+    doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text(activitiesText, rightX + 2, goalsContentY + 4);
   } else {
-    doc.setFontSize(7);
+    rightColumnHeight = 10;
+    doc.roundedRect(rightX, goalsContentY, halfWidth, rightColumnHeight, 1, 1, 'F');
+    doc.setFontSize(6);
     doc.setFont(undefined, 'italic');
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
-    doc.text('No data available', margin + 2, currentY + 3);
-    currentY += 8;
+    doc.text('No activities recorded', rightX + 2, goalsContentY + 6);
   }
+  
+  // Move currentY past the tallest column
+  currentY = goalsContentY + Math.max(leftColumnHeight, rightColumnHeight) + 3;
 
   // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
   currentY += 5;
