@@ -178,7 +178,7 @@ interface CareTabProps {
   branchName: string | undefined;
 }
 
-// Updated hook to fetch care plans with proper staff relationships
+// Updated hook to fetch care plans with proper staff relationships including junction table
 const useCarePlans = (branchId: string | undefined) => {
   return useQuery({
     queryKey: ['care-plans', branchId],
@@ -188,7 +188,7 @@ const useCarePlans = (branchId: string | undefined) => {
       try {
         console.log('[useCarePlans] Fetching care plans for branch:', branchId);
         
-        // Updated query to include staff relationship and filter by branch
+        // Updated query to include both legacy staff relationship AND junction table staff_assignments
         const { data: carePlans, error } = await supabase
           .from('client_care_plans')
           .select(`
@@ -198,6 +198,12 @@ const useCarePlans = (branchId: string | undefined) => {
               id,
               first_name,
               last_name
+            ),
+            staff_assignments:care_plan_staff_assignments(
+              id,
+              staff_id,
+              is_primary,
+              staff:staff(id, first_name, last_name)
             )
           `)
           .eq('client.branch_id', branchId)
@@ -216,15 +222,33 @@ const useCarePlans = (branchId: string | undefined) => {
 
         // Transform database data to match expected format with proper assignedTo logic
         const transformedPlans = carePlans.map((plan, index): any => {
-          // Determine the assigned provider name
-          let assignedTo = "Unknown Provider";
+          // Build list of assigned staff names with proper priority
+          let assignedStaffList: string[] = [];
           
-          if (plan.staff && plan.staff_id) {
-            // If staff relationship exists, use staff member's name
-            assignedTo = `${plan.staff.first_name} ${plan.staff.last_name}`;
-          } else if (plan.provider_name) {
-            // Otherwise, use the provider_name for external providers
-            assignedTo = plan.provider_name;
+          // Priority 1: Check junction table for multi-staff assignments
+          if (plan.staff_assignments && plan.staff_assignments.length > 0) {
+            assignedStaffList = plan.staff_assignments
+              .filter((a: any) => a.staff)
+              .map((a: any) => `${a.staff.first_name} ${a.staff.last_name}`);
+          }
+          
+          // Priority 2: Fall back to legacy single staff relationship
+          if (assignedStaffList.length === 0 && plan.staff && plan.staff_id) {
+            assignedStaffList = [`${plan.staff.first_name} ${plan.staff.last_name}`];
+          }
+          
+          // Priority 3: Fall back to provider_name (external provider) - but not if it's "Not Assigned"
+          if (assignedStaffList.length === 0 && plan.provider_name && 
+              plan.provider_name !== "Not Assigned" && plan.provider_name.trim() !== "") {
+            assignedStaffList = [plan.provider_name];
+          }
+          
+          // Format display: "Name" or "Name +X more" or "Not Assigned"
+          let assignedTo = "Not Assigned";
+          if (assignedStaffList.length === 1) {
+            assignedTo = assignedStaffList[0];
+          } else if (assignedStaffList.length > 1) {
+            assignedTo = `${assignedStaffList[0]} +${assignedStaffList.length - 1} more`;
           }
 
           return {
@@ -241,6 +265,8 @@ const useCarePlans = (branchId: string | undefined) => {
                    plan.status === 'approved' ? 'Client Approved' :
                    plan.status === 'rejected' ? 'Changes Requested' : 'Active',
             assignedTo: assignedTo,
+            allAssignedStaff: assignedStaffList, // Store all names for tooltip
+            assignedStaffCount: assignedStaffList.length,
             avatar: plan.client?.avatar_initials || 
                    (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
             // Store the actual database ID for backend operations and full plan data
