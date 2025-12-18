@@ -267,50 +267,18 @@ export const RateBlockForm: React.FC<RateBlockFormProps> = ({
             </RadioGroup>
           </div>
 
-          {/* Rate Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Rate at 15 Minutes</Label>
-              <Input
-                value={block.rateAt15Minutes}
-                onChange={(e) => onBlockChange(block.id, "rateAt15Minutes", e.target.value)}
-                placeholder="Enter rate"
-                disabled={isViewMode}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                Rate at 30 Minutes <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={block.rateAt30Minutes}
-                onChange={(e) => onBlockChange(block.id, "rateAt30Minutes", e.target.value)}
-                placeholder="Enter rate"
-                disabled={isViewMode}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                Rate at 45 Minutes <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={block.rateAt45Minutes}
-                onChange={(e) => onBlockChange(block.id, "rateAt45Minutes", e.target.value)}
-                placeholder="Enter rate"
-                disabled={isViewMode}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                Rate at 60 Minutes <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={block.rateAt60Minutes}
-                onChange={(e) => onBlockChange(block.id, "rateAt60Minutes", e.target.value)}
-                placeholder="Enter rate"
-                disabled={isViewMode}
-              />
-            </div>
+          {/* Single Rate Field for Hours/Minutes */}
+          <div className="space-y-2">
+            <Label>
+              Rate <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={block.rate}
+              onChange={(e) => onBlockChange(block.id, "rate", e.target.value)}
+              placeholder="Enter rate"
+              type="number"
+              disabled={isViewMode}
+            />
           </div>
 
           <div className="space-y-2">
