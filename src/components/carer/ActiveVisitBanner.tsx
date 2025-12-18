@@ -35,8 +35,8 @@ export const ActiveVisitBanner: React.FC = () => {
   return (
     <Card className="border-l-4 border-l-blue-500 bg-blue-50/50">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center space-x-2">
               <Play className="h-4 w-4 text-blue-600" />
               <Badge variant="secondary" className="bg-blue-600 text-white border-0">
@@ -44,7 +44,7 @@ export const ActiveVisitBanner: React.FC = () => {
               </Badge>
             </div>
             
-            <div className="flex items-center space-x-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
               <div className="flex items-center space-x-1">
                 <User className="h-4 w-4 text-gray-500" />
                 <span className="font-medium">{activeVisit.client_name}</span>
@@ -59,7 +59,7 @@ export const ActiveVisitBanner: React.FC = () => {
             </div>
           </div>
 
-          <Button onClick={handleContinueVisit} size="sm" className="flex items-center space-x-2">
+          <Button onClick={handleContinueVisit} size="sm" className="flex items-center justify-center space-x-2 w-full sm:w-auto">
             <span>Continue Visit</span>
             <ArrowRight className="h-4 w-4" />
           </Button>

@@ -56,9 +56,9 @@ export const ActiveVisitsSection: React.FC = () => {
               const durationMinutes = differenceInMinutes(new Date(), startTime);
               
               return (
-                <div key={visit.id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50/30">
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                <div key={visit.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg bg-blue-50/30">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 w-fit">
                       In Progress
                     </Badge>
                     
@@ -68,7 +68,7 @@ export const ActiveVisitsSection: React.FC = () => {
                         <span className="font-medium">{visit.client_name}</span>
                       </div>
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600">
                         <div className="flex items-center space-x-1">
                           <Clock className="h-3 w-3" />
                           <span>{durationMinutes}m elapsed</span>
@@ -81,7 +81,7 @@ export const ActiveVisitsSection: React.FC = () => {
                   <Button 
                     onClick={() => handleContinueVisit(visit.booking_id)} 
                     size="sm"
-                    className="flex items-center space-x-2"
+                    className="flex items-center justify-center space-x-2 w-full sm:w-auto"
                   >
                     <span>Continue</span>
                     <ArrowRight className="h-4 w-4" />
