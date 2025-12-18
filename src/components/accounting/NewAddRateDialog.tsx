@@ -854,62 +854,23 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
                       </div>
                     )}
 
-                    {/* Minute-based Rate Fields - Only for Pro Rate */}
+                    {/* Pro Rate - Single Rate Field */}
                     {block.rateChargingMethod === "pro" && (
                       <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Rate at 15 Minutes</Label>
-                            <Input
-                              value={block.rateAt15Minutes}
-                              onChange={(e) =>
-                                handleRateBlockChange(block.id, "rateAt15Minutes", e.target.value)
-                              }
-                              placeholder="Enter rate"
-                              disabled={isViewMode}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>
-                              Rate at 30 Minutes <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                              value={block.rateAt30Minutes}
-                              onChange={(e) =>
-                                handleRateBlockChange(block.id, "rateAt30Minutes", e.target.value)
-                              }
-                              placeholder="Enter rate"
-                              disabled={isViewMode}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>
-                              Rate at 45 Minutes <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                              value={block.rateAt45Minutes}
-                              onChange={(e) =>
-                                handleRateBlockChange(block.id, "rateAt45Minutes", e.target.value)
-                              }
-                              placeholder="Enter rate"
-                              disabled={isViewMode}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>
-                              Rate at 60 Minutes <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                              value={block.rateAt60Minutes}
-                              onChange={(e) =>
-                                handleRateBlockChange(block.id, "rateAt60Minutes", e.target.value)
-                              }
-                              placeholder="Enter rate"
-                              disabled={isViewMode}
-                            />
-                          </div>
+                        <div className="space-y-2">
+                          <Label>
+                            Rate <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            value={block.rate}
+                            onChange={(e) =>
+                              handleRateBlockChange(block.id, "rate", e.target.value)
+                            }
+                            placeholder="Enter rate"
+                            type="number"
+                            disabled={isViewMode}
+                          />
                         </div>
-
                         <div className="space-y-2">
                           <Label>Consecutive Hours</Label>
                           <Input
