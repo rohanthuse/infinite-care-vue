@@ -592,18 +592,11 @@ export function CreateServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {visitTasks && visitTasks.length > 0 ? (
-                    mode === 'edit' ? (
-                      <EditableTasksTable tasks={visitTasks} onTasksChange={setPendingTaskChanges} />
-                    ) : (
-                      <TasksTable tasks={visitTasks} />
-                    )
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No tasks recorded for this visit</p>
-                    </div>
-                  )}
+                  <EditableTasksTable 
+                    tasks={visitTasks || []} 
+                    onTasksChange={setPendingTaskChanges}
+                    allowManualAdd={true}
+                  />
                 </CardContent>
               </Card>
 
@@ -616,18 +609,11 @@ export function CreateServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {visitMedications && visitMedications.length > 0 ? (
-                    mode === 'edit' ? (
-                      <EditableMedicationsTable medications={visitMedications} onMedicationsChange={setPendingMedicationChanges} />
-                    ) : (
-                      <MedicationsTable medications={visitMedications} />
-                    )
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No medications recorded for this visit</p>
-                    </div>
-                  )}
+                  <EditableMedicationsTable 
+                    medications={visitMedications || []} 
+                    onMedicationsChange={setPendingMedicationChanges}
+                    allowManualAdd={true}
+                  />
                 </CardContent>
               </Card>
 
@@ -640,22 +626,11 @@ export function CreateServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
-                    mode === 'edit' ? (
-                      <EditableNEWS2Form latestNEWS2={latestNEWS2} onVitalChange={setPendingVitalChanges} />
-                    ) : (
-                      <NEWS2Display 
-                        news2Readings={news2Readings} 
-                        latestNEWS2={latestNEWS2}
-                        otherVitals={otherVitals}
-                      />
-                    )
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No vital signs recorded for this visit</p>
-                    </div>
-                  )}
+                  <EditableNEWS2Form 
+                    latestNEWS2={latestNEWS2} 
+                    onVitalChange={setPendingVitalChanges}
+                    allowCreate={true}
+                  />
                 </CardContent>
               </Card>
 
@@ -668,27 +643,47 @@ export function CreateServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {visitEvents && visitEvents.length > 0 ? (
-                    mode === 'edit' ? (
-                      <EditableEventsList 
-                        incidents={incidents}
-                        accidents={accidents}
-                        observations={observations}
-                        onEventsChange={setPendingEventChanges}
-                      />
-                    ) : (
-                      <EventsList 
-                        incidents={incidents}
-                        accidents={accidents}
-                        observations={observations}
-                      />
-                    )
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No events or incidents recorded for this visit</p>
-                    </div>
-                  )}
+                  <EditableEventsList 
+                    incidents={incidents || []}
+                    accidents={accidents || []}
+                    observations={observations || []}
+                    onEventsChange={setPendingEventChanges}
+                    allowManualAdd={true}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Goals Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Care Plan Goals
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EditableGoalsSection 
+                    carePlanId={clientCarePlan?.id}
+                    onGoalsChange={setPendingGoalChanges}
+                    allowManualAdd={true}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Activities Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Activities Performed
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EditableActivitiesSection 
+                    carePlanId={clientCarePlan?.id}
+                    onActivitiesChange={setPendingActivityChanges}
+                    allowManualAdd={true}
+                  />
                 </CardContent>
               </Card>
 
