@@ -44,6 +44,59 @@ const getGrayColor = (shade: number): { r: number; g: number; b: number } => {
   return color || PDF_COLORS.gray[700]; // Default to gray-700
 };
 
+// Page dimensions and safe margins for pagination
+const PAGE_HEIGHT = 297; // A4 height in mm
+const FOOTER_HEIGHT = 20; // Reserved space for footer
+const SAFE_BOTTOM = PAGE_HEIGHT - FOOTER_HEIGHT; // Content must stop here (277mm)
+
+/**
+ * Check if we need a page break and add one if necessary
+ * Returns the new Y position after potential page break
+ */
+const checkPageBreak = (
+  doc: jsPDF,
+  currentY: number,
+  requiredSpace: number,
+  orgSettings: OrganizationSettings | null,
+  branchName: string
+): number => {
+  if (currentY + requiredSpace > SAFE_BOTTOM) {
+    // Add new page
+    doc.addPage();
+    // Add simplified header to new page
+    const newY = addSimplePageHeader(doc, orgSettings, branchName);
+    return newY;
+  }
+  return currentY;
+};
+
+/**
+ * Add simplified header for continuation pages
+ */
+const addSimplePageHeader = (
+  doc: jsPDF,
+  orgSettings: OrganizationSettings | null,
+  branchName: string
+): number => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Thin blue strip
+  doc.setFillColor(SECTION_BG.header.r, SECTION_BG.header.g, SECTION_BG.header.b);
+  doc.rect(0, 0, pageWidth, 5, 'F');
+  
+  // Simple header text
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+  doc.text(`${orgSettings?.name || 'Healthcare Services'} - SERVICE REPORT (Continued)`, 15, 12);
+  
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'normal');
+  doc.text(`Branch: ${branchName}`, 15, 17);
+  
+  return 25; // Return Y position after simplified header
+};
+
 /**
  * Add compact professional header with thin blue top strip, logo LEFT, org details RIGHT
  */
@@ -362,7 +415,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         3: { cellWidth: 15, halign: 'center' },
         4: { cellWidth: 'auto', halign: 'center' }
       },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
       alternateRowStyles: { fillColor: [240, 253, 244] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
@@ -409,7 +462,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         4: { cellWidth: 15, halign: 'center' },
         5: { cellWidth: 'auto' }
       },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
       alternateRowStyles: { fillColor: [245, 243, 255] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
@@ -423,6 +476,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === NEWS2 & VITAL SIGNS (Table Format) ===
   currentY += 5;
+  // Check for page break before NEWS2 section (requires ~80mm for table + score)
+  currentY = checkPageBreak(doc, currentY, 80, orgSettings, branchName);
   currentY = addCompactSectionHeader(doc, 'NEWS2 & VITAL SIGNS', currentY, SECTION_BG.vitals);
   
   if (news2Readings?.length > 0) {
@@ -458,7 +513,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         2: { cellWidth: 25, halign: 'center' },
         3: { cellWidth: 'auto', halign: 'center' }
       },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
       alternateRowStyles: { fillColor: [254, 242, 242] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
@@ -487,6 +542,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === CARE PLAN GOALS & ACTIVITIES (Two-Column Side-by-Side Layout) ===
   currentY += 5;
+  // Check for page break before Goals & Activities section (requires ~60mm)
+  currentY = checkPageBreak(doc, currentY, 60, orgSettings, branchName);
   
   const halfWidth = (pageWidth - (margin * 2) - 5) / 2;
   const leftX = margin;
@@ -602,6 +659,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
   currentY += 5;
+  // Check for page break before Events section (requires ~40mm)
+  currentY = checkPageBreak(doc, currentY, 40, orgSettings, branchName);
   const hasEvents = (incidents?.length > 0) || (accidents?.length > 0);
   
   currentY = addCompactSectionHeader(doc, 'INCIDENTS / EVENTS', currentY, { r: 254, g: 226, b: 226 });
@@ -637,7 +696,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
         3: { cellWidth: 18, halign: 'center' },
         4: { cellWidth: 'auto' }
       },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
       alternateRowStyles: { fillColor: [254, 226, 226] }
     });
     currentY = (doc as any).lastAutoTable.finalY + 3;
@@ -651,6 +710,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
   currentY += 5;
+  // Check for page break before Notes section (requires ~50mm)
+  currentY = checkPageBreak(doc, currentY, 50, orgSettings, branchName);
   const hasNotes = report.carer_observations || report.client_mood || 
                    report.client_feedback || report.next_visit_preparations;
   
@@ -696,6 +757,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // === SIGNATURES (Side-by-Side) ===
   if (visitRecord?.staff_signature_data || visitRecord?.client_signature_data) {
     currentY += 5;
+    // Check for page break before Signatures section (requires ~35mm)
+    currentY = checkPageBreak(doc, currentY, 35, orgSettings, branchName);
     currentY = addCompactSectionHeader(doc, 'SIGNATURES', currentY, SECTION_BG.signatures);
     
     const sigBoxWidth = (pageWidth - (margin * 2) - 5) / 2;
@@ -742,6 +805,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === ADMIN REVIEW (Compact - only if exists) ===
   if (report.reviewed_at && report.review_notes) {
+    // Check for page break before Admin Review section (requires ~20mm)
+    currentY = checkPageBreak(doc, currentY, 20, orgSettings, branchName);
     currentY = addCompactSectionHeader(doc, 'ADMIN REVIEW', currentY, SECTION_BG.light);
     
     doc.setFillColor(SECTION_BG.light.r, SECTION_BG.light.g, SECTION_BG.light.b);
