@@ -41,6 +41,7 @@ export function WizardStep4MedicalInfo({
   effectiveCarePlanId
 }: WizardStep4MedicalInfoProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [customModeEntries, setCustomModeEntries] = useState<Set<number>>(new Set());
   const { data: diagnosisOptions = [], isLoading: isLoadingDiagnosis } = useDiagnosis();
   
 
@@ -93,19 +94,79 @@ export function WizardStep4MedicalInfo({
   const addDiagnosis = () => {
     const current = form.getValues("medical_info.current_medications") || [];
     form.setValue("medical_info.current_medications", [...current, ""]);
+    // New entries start in dropdown mode (not custom)
   };
+  
   const removeDiagnosis = (index: number) => {
     const current = form.getValues("medical_info.current_medications") || [];
     form.setValue("medical_info.current_medications", current.filter((_, i) => i !== index));
+    // Also remove from custom mode tracking
+    setCustomModeEntries(prev => {
+      const newSet = new Set<number>();
+      prev.forEach(i => {
+        if (i < index) newSet.add(i);
+        else if (i > index) newSet.add(i - 1); // Shift indices down
+      });
+      return newSet;
+    });
   };
   
-  // Handle diagnosis selection from dropdown or custom entry
+  // Handle diagnosis selection from dropdown
+  const handleSelectDiagnosis = (index: number, selectedId: string) => {
+    if (selectedId === "custom") {
+      // Switch to custom mode, clear value for fresh input
+      setCustomModeEntries(prev => new Set([...prev, index]));
+      handleDiagnosisChange(index, "");
+      return;
+    }
+    
+    // Selected a predefined diagnosis - exit custom mode
+    setCustomModeEntries(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    
+    const selectedDiagnosis = diagnosisOptions.find(d => d.id === selectedId);
+    if (selectedDiagnosis) {
+      handleDiagnosisChange(index, selectedDiagnosis.title);
+    }
+  };
+  
+  // Switch back to dropdown mode from custom input
+  const switchToDropdownMode = (index: number) => {
+    setCustomModeEntries(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    handleDiagnosisChange(index, ""); // Clear custom value
+  };
+  
+  // Handle diagnosis value change (for custom input)
   const handleDiagnosisChange = (index: number, value: string) => {
     const current = form.getValues("medical_info.current_medications") || [];
     const updated = [...current];
     updated[index] = value;
     form.setValue("medical_info.current_medications", updated);
   };
+  
+  // Initialize custom mode for existing custom values on load
+  useEffect(() => {
+    const currentMedications = form.getValues("medical_info.current_medications") || [];
+    const customIndices = new Set<number>();
+    
+    currentMedications.forEach((med: string, index: number) => {
+      // If medication has a value but doesn't match any active diagnosis option → custom mode
+      if (med && !diagnosisOptions.some(d => d.title === med && d.status === "Active")) {
+        customIndices.add(index);
+      }
+    });
+    
+    if (customIndices.size > 0) {
+      setCustomModeEntries(customIndices);
+    }
+  }, [diagnosisOptions, form]);
   const addAllergy = () => {
     const current = form.getValues("medical_info.allergies") || [];
     form.setValue("medical_info.allergies", [...current, ""]);
@@ -184,53 +245,63 @@ export function WizardStep4MedicalInfo({
                 Add Diagnosis
               </Button>
             </div>
-            {medications.map((medication, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <Select
-                    value={diagnosisOptions.find(d => d.title === medication)?.id || "custom"}
-                    onValueChange={(selectedId) => {
-                      if (selectedId === "custom") {
-                        // Keep current value for custom entry
-                        return;
-                      }
-                      const selectedDiagnosis = diagnosisOptions.find(d => d.id === selectedId);
-                      if (selectedDiagnosis) {
-                        handleDiagnosisChange(index, selectedDiagnosis.title);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select or enter diagnosis">
-                        {medication || "Select or enter diagnosis"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {diagnosisOptions
-                        .filter(d => d.status === "Active")
-                        .map((diagnosis) => (
-                          <SelectItem key={diagnosis.id} value={diagnosis.id}>
-                            {diagnosis.title}
+            {medications.map((medication, index) => {
+              const isCustomMode = customModeEntries.has(index);
+              const matchedDiagnosis = diagnosisOptions.find(d => d.title === medication && d.status === "Active");
+              
+              return (
+                <div key={index} className="flex items-start gap-2">
+                  <div className="flex-1 space-y-2">
+                    {isCustomMode ? (
+                      // CUSTOM MODE: Show only input field
+                      <>
+                        <Input
+                          placeholder="Enter custom diagnosis name"
+                          value={medication || ""}
+                          onChange={(e) => handleDiagnosisChange(index, e.target.value)}
+                          autoFocus
+                          className="w-full"
+                        />
+                        <button 
+                          type="button"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                          onClick={() => switchToDropdownMode(index)}
+                        >
+                          ← Select from list instead
+                        </button>
+                      </>
+                    ) : (
+                      // DROPDOWN MODE: Show only select
+                      <Select
+                        value={matchedDiagnosis?.id || ""}
+                        onValueChange={(selectedId) => handleSelectDiagnosis(index, selectedId)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select diagnosis...">
+                            {medication || "Select diagnosis..."}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {diagnosisOptions
+                            .filter(d => d.status === "Active")
+                            .map((diagnosis) => (
+                              <SelectItem key={diagnosis.id} value={diagnosis.id}>
+                                {diagnosis.title}
+                              </SelectItem>
+                            ))}
+                          <SelectItem value="custom" className="text-primary border-t mt-1 pt-1">
+                            ✏️ Enter custom diagnosis...
                           </SelectItem>
-                        ))}
-                      <SelectItem value="custom">Enter custom diagnosis...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {/* Show input field for custom entry */}
-                  {(!diagnosisOptions.some(d => d.title === medication && d.status === "Active") || medication === "") && (
-                    <Input
-                      className="mt-2"
-                      placeholder="Enter custom diagnosis"
-                      value={medication || ""}
-                      onChange={(e) => handleDiagnosisChange(index, e.target.value)}
-                    />
-                  )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <Button type="button" onClick={() => removeDiagnosis(index)} size="sm" variant="outline" className="mt-0">
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button type="button" onClick={() => removeDiagnosis(index)} size="sm" variant="outline">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Allergies */}
