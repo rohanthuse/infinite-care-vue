@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useServices } from "@/data/hooks/useServices";
 import { useClientAccountingSettings } from "@/hooks/useClientAccounting";
 import { useTenant } from "@/contexts/TenantContext";
@@ -35,11 +36,13 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
     const existingPlans = form.getValues("service_plans") || [];
     // Map existing plans and mark them as saved
     const mappedPlans = existingPlans
-      .filter((p: ServicePlanData) => p.is_saved || p.caption || p.service_name)
+      .filter((p: ServicePlanData) => p.is_saved || p.caption || p.service_name || (p.service_names && p.service_names.length > 0))
       .map((plan: any) => ({
         ...plan,
         id: plan.id || crypto.randomUUID(),
         caption: plan.caption || '',
+        service_ids: plan.service_ids || (plan.service_id ? [plan.service_id] : []),
+        service_names: plan.service_names || (plan.service_name ? [plan.service_name] : []),
         service_id: plan.service_id || '',
         service_name: plan.service_name || plan.name || '',
         authority: plan.authority || '',
@@ -67,6 +70,25 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   useEffect(() => {
     form.setValue("service_plans", savedPlans);
   }, [savedPlans, form]);
+
+  // Calculate total hours per week from all saved plans
+  const calculateTotalHours = (): number => {
+    return savedPlans.reduce((total, plan) => {
+      if (plan.start_time && plan.end_time) {
+        const [startH, startM] = plan.start_time.split(':').map(Number);
+        const [endH, endM] = plan.end_time.split(':').map(Number);
+        const startMinutes = startH * 60 + (startM || 0);
+        const endMinutes = endH * 60 + (endM || 0);
+        const durationMinutes = endMinutes - startMinutes;
+        if (durationMinutes > 0) {
+          const durationHours = durationMinutes / 60;
+          const daysCount = plan.selected_days?.length || 1;
+          return total + (durationHours * daysCount);
+        }
+      }
+      return total;
+    }, 0);
+  };
 
   const handleAddNew = () => {
     const newPlan = getDefaultServicePlan(
@@ -112,8 +134,10 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
       toast.error("End date is required");
       return false;
     }
-    if (!plan.service_id) {
-      toast.error("Service name is required");
+    // Check for multi-service or single service
+    const hasServices = (plan.service_ids && plan.service_ids.length > 0) || plan.service_id;
+    if (!hasServices) {
+      toast.error("At least one service is required");
       return false;
     }
     if (!plan.start_time) {
@@ -163,12 +187,48 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
     setEditingIndex(null);
   };
 
+  const handleSaveAndAddAnother = () => {
+    const allPlans = form.getValues("service_plans") || [];
+    const planData = allPlans[currentPlanIndex];
+    
+    if (!validatePlan(planData)) {
+      return;
+    }
+
+    const enrichedPlan: ServicePlanData = {
+      ...planData,
+      id: planData.id || crypto.randomUUID(),
+      registered_on: new Date().toISOString(),
+      registered_by: currentUser?.id,
+      registered_by_name: getUserDisplayName(currentUser),
+      status: planData.status || 'active',
+      is_saved: true,
+    };
+
+    // Add new plan
+    const updatedPlans = [...savedPlans, enrichedPlan];
+    setSavedPlans(updatedPlans);
+    toast.success("Service plan saved");
+
+    // Immediately open new form
+    const newPlan = getDefaultServicePlan(
+      accountingSettings?.authority_category || '',
+      accountingSettings?.authority_category || ''
+    );
+    setCurrentPlanIndex(updatedPlans.length);
+    form.setValue("service_plans", [...updatedPlans, newPlan]);
+    setEditingIndex(null);
+    // Form stays open for the next plan
+  };
+
   const handleCancel = () => {
     // Reset form to only saved plans
     form.setValue("service_plans", savedPlans);
     setShowForm(false);
     setEditingIndex(null);
   };
+
+  const totalHours = calculateTotalHours();
 
   return (
     <div className="space-y-6">
@@ -181,17 +241,23 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
 
       <Form {...form}>
         <div className="space-y-6">
-          {/* Header with Add Button */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">
-              Service Plans {savedPlans.length > 0 && `(${savedPlans.length})`}
-            </h3>
-            {!showForm && (
-              <Button type="button" onClick={handleAddNew} size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Service Plan
-              </Button>
-            )}
+          {/* Header with Add Button - ALWAYS VISIBLE */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-medium">
+                Service Plans {savedPlans.length > 0 && `(${savedPlans.length})`}
+              </h3>
+              {savedPlans.length > 0 && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Total: {totalHours.toFixed(1)} hours/week
+                </Badge>
+              )}
+            </div>
+            <Button type="button" onClick={handleAddNew} size="sm" disabled={showForm}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Service Plan
+            </Button>
           </div>
 
           {/* Service Plans Table */}
@@ -219,6 +285,7 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
                 services={services}
                 authorityCategory={accountingSettings?.authority_category}
                 onSave={handleSave}
+                onSaveAndAddAnother={handleSaveAndAddAnother}
                 onCancel={handleCancel}
                 isEditing={editingIndex !== null}
                 planNumber={editingIndex !== null ? editingIndex + 1 : savedPlans.length + 1}
