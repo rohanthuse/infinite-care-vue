@@ -115,6 +115,13 @@ export function CreateServiceReportDialog({
   const [pendingGoalChanges, setPendingGoalChanges] = useState<Map<string, { status: string; progress: number; notes: string }>>(new Map());
   const [pendingActivityChanges, setPendingActivityChanges] = useState<Map<string, { performed: boolean; duration_minutes: number; notes: string }>>(new Map());
 
+  // State for NEW items (to be saved on submit)
+  const [newTasks, setNewTasks] = useState<{ task_category: string; task_name: string; is_completed: boolean; completion_notes: string }[]>([]);
+  const [newMedications, setNewMedications] = useState<{ medication_name: string; dosage: string; is_administered: boolean; administration_time: string; administration_notes: string; not_administered_reason: string }[]>([]);
+  const [newEvents, setNewEvents] = useState<{ event_type: string; event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }[]>([]);
+  const [newGoals, setNewGoals] = useState<{ description: string; status: string; progress: number; notes: string }[]>([]);
+  const [newActivities, setNewActivities] = useState<{ name: string; duration_minutes: number; notes: string }[]>([]);
+
   // Fetch client's care plan ID
   const { data: clientCarePlan } = useQuery({
     queryKey: ['client-care-plan', preSelectedClient?.id],
@@ -245,32 +252,151 @@ export function CreateServiceReportDialog({
       return;
     }
 
-    // In edit mode, save all pending changes first
+    // Helper function to create visit record for past appointments
+    const createVisitRecordIfNeeded = async (): Promise<string | null> => {
+      if (visitRecordId) return visitRecordId;
+      if (!bookingId || !preSelectedClient?.id) return null;
+
+      try {
+        const { data: newRecord, error } = await supabase
+          .from('visit_records')
+          .insert({
+            booking_id: bookingId,
+            client_id: preSelectedClient.id,
+            staff_id: carerContext.staffProfile.id,
+            branch_id: carerContext.staffProfile.branch_id,
+            status: 'completed',
+            visit_start_time: preSelectedBooking?.start_time || new Date().toISOString(),
+            visit_end_time: preSelectedBooking?.end_time || new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        return newRecord?.id || null;
+      } catch (error) {
+        console.error('Error creating visit record:', error);
+        return null;
+      }
+    };
+
+    // Get or create visit record ID
+    let effectiveVisitRecordId = visitRecordId;
+    if (!effectiveVisitRecordId && (newTasks.length > 0 || newMedications.length > 0 || newEvents.length > 0 || pendingVitalChanges)) {
+      effectiveVisitRecordId = await createVisitRecordIfNeeded();
+    }
+
+    // Save NEW tasks (both create and edit modes)
+    if (effectiveVisitRecordId) {
+      for (const task of newTasks) {
+        await supabase.from('visit_tasks').insert({
+          visit_record_id: effectiveVisitRecordId,
+          task_category: task.task_category,
+          task_name: task.task_name,
+          is_completed: task.is_completed,
+          completion_notes: task.completion_notes || null,
+          priority: 'medium',
+        });
+      }
+
+      // Save NEW medications
+      for (const med of newMedications) {
+        await supabase.from('visit_medications').insert({
+          visit_record_id: effectiveVisitRecordId,
+          medication_name: med.medication_name,
+          dosage: med.dosage || null,
+          is_administered: med.is_administered,
+          administration_time: med.administration_time ? new Date(`1970-01-01T${med.administration_time}`).toISOString() : null,
+          administration_notes: med.administration_notes || null,
+          not_administered_reason: med.not_administered_reason || null,
+        });
+      }
+
+      // Save NEW vitals
+      if (pendingVitalChanges) {
+        await supabase.from('visit_vitals').insert({
+          visit_record_id: effectiveVisitRecordId,
+          client_id: preSelectedClient?.id,
+          vital_type: 'news2',
+          respiratory_rate: pendingVitalChanges.respiratory_rate,
+          oxygen_saturation: pendingVitalChanges.oxygen_saturation,
+          supplemental_oxygen: pendingVitalChanges.supplemental_oxygen,
+          systolic_bp: pendingVitalChanges.systolic_bp,
+          diastolic_bp: pendingVitalChanges.diastolic_bp,
+          pulse_rate: pendingVitalChanges.pulse_rate,
+          consciousness_level: pendingVitalChanges.consciousness_level,
+          temperature: pendingVitalChanges.temperature,
+        } as any);
+      }
+
+      // Save NEW events
+      for (const event of newEvents) {
+        await supabase.from('visit_events').insert({
+          visit_record_id: effectiveVisitRecordId,
+          event_type: event.event_type,
+          event_title: event.event_title,
+          event_description: event.event_description,
+          severity: event.severity,
+          follow_up_required: event.follow_up_required,
+          follow_up_notes: event.follow_up_notes || null,
+        });
+      }
+    }
+
+    // Save NEW goals to care plan
+    if (clientCarePlan?.id) {
+      for (const goal of newGoals) {
+        await supabase.from('client_care_plan_goals').insert({
+          care_plan_id: clientCarePlan.id,
+          description: goal.description,
+          status: goal.status,
+          progress: goal.progress,
+          notes: goal.notes || null,
+        });
+      }
+
+      // Save NEW activities to care plan
+      for (const activity of newActivities) {
+        await supabase.from('client_activities').insert({
+          care_plan_id: clientCarePlan.id,
+          name: activity.name,
+          frequency: 'as-needed',
+          status: 'active',
+          description: activity.notes || null,
+        });
+      }
+    }
+
+    // In edit mode, save all pending changes to existing items
     if (mode === 'edit') {
       try {
         // Save task changes
         for (const [taskId, changes] of pendingTaskChanges) {
-          await updateTask.mutateAsync({
-            taskId,
-            isCompleted: changes.is_completed,
-            notes: changes.completion_notes,
-          });
+          if (!taskId.startsWith('manual-')) {
+            await updateTask.mutateAsync({
+              taskId,
+              isCompleted: changes.is_completed,
+              notes: changes.completion_notes,
+            });
+          }
         }
 
         // Save medication changes
         for (const [medId, changes] of pendingMedicationChanges) {
-          await supabase
-            .from('visit_medications')
-            .update({
-              is_administered: changes.is_administered,
-              administration_time: changes.administration_time ? new Date(`1970-01-01T${changes.administration_time}`).toISOString() : null,
-              administration_notes: changes.administration_notes || null,
-              not_administered_reason: changes.not_administered_reason || null,
-            })
-            .eq('id', medId);
+          if (!medId.startsWith('manual-')) {
+            await supabase
+              .from('visit_medications')
+              .update({
+                is_administered: changes.is_administered,
+                administration_time: changes.administration_time ? new Date(`1970-01-01T${changes.administration_time}`).toISOString() : null,
+                administration_notes: changes.administration_notes || null,
+                not_administered_reason: changes.not_administered_reason || null,
+              })
+              .eq('id', medId);
+          }
         }
 
-        // Save vital changes
+        // Save vital changes (if editing existing)
         if (pendingVitalChanges && latestNEWS2) {
           await updateVital.mutateAsync({
             vitalId: latestNEWS2.id,
@@ -280,24 +406,26 @@ export function CreateServiceReportDialog({
 
         // Save event changes
         for (const [eventId, changes] of pendingEventChanges) {
-          await updateEvent.mutateAsync({
-            eventId,
-            updates: {
-              event_title: changes.event_title,
-              event_description: changes.event_description,
-              severity: changes.severity as 'low' | 'medium' | 'high' | 'critical',
-              follow_up_required: changes.follow_up_required,
-              follow_up_notes: changes.follow_up_notes,
-            },
-          });
+          if (!eventId.startsWith('manual-')) {
+            await updateEvent.mutateAsync({
+              eventId,
+              updates: {
+                event_title: changes.event_title,
+                event_description: changes.event_description,
+                severity: changes.severity as 'low' | 'medium' | 'high' | 'critical',
+                follow_up_required: changes.follow_up_required,
+                follow_up_notes: changes.follow_up_notes,
+              },
+            });
+          }
         }
 
         // Save visit summary
-        if (pendingVisitSummary !== null && visitRecordId) {
+        if (pendingVisitSummary !== null && effectiveVisitRecordId) {
           await supabase
             .from('visit_records')
             .update({ visit_summary: pendingVisitSummary })
-            .eq('id', visitRecordId);
+            .eq('id', effectiveVisitRecordId);
         }
 
         // Invalidate queries
@@ -306,6 +434,8 @@ export function CreateServiceReportDialog({
         queryClient.invalidateQueries({ queryKey: ['visit-vitals'] });
         queryClient.invalidateQueries({ queryKey: ['visit-events'] });
         queryClient.invalidateQueries({ queryKey: ['visit-record-details'] });
+        queryClient.invalidateQueries({ queryKey: ['care-plan-goals'] });
+        queryClient.invalidateQueries({ queryKey: ['client-activities'] });
       } catch (error) {
         console.error('Error saving changes:', error);
         toast.error('Failed to save some changes');
@@ -595,6 +725,7 @@ export function CreateServiceReportDialog({
                   <EditableTasksTable 
                     tasks={visitTasks || []} 
                     onTasksChange={setPendingTaskChanges}
+                    onAddTask={(task) => setNewTasks(prev => [...prev, task])}
                     allowManualAdd={true}
                   />
                 </CardContent>
@@ -612,6 +743,7 @@ export function CreateServiceReportDialog({
                   <EditableMedicationsTable 
                     medications={visitMedications || []} 
                     onMedicationsChange={setPendingMedicationChanges}
+                    onAddMedication={(med) => setNewMedications(prev => [...prev, med])}
                     allowManualAdd={true}
                   />
                 </CardContent>
@@ -648,6 +780,7 @@ export function CreateServiceReportDialog({
                     accidents={accidents || []}
                     observations={observations || []}
                     onEventsChange={setPendingEventChanges}
+                    onAddEvent={(event) => setNewEvents(prev => [...prev, event])}
                     allowManualAdd={true}
                   />
                 </CardContent>
@@ -665,6 +798,7 @@ export function CreateServiceReportDialog({
                   <EditableGoalsSection 
                     carePlanId={clientCarePlan?.id}
                     onGoalsChange={setPendingGoalChanges}
+                    onAddGoal={(goal) => setNewGoals(prev => [...prev, goal])}
                     allowManualAdd={true}
                   />
                 </CardContent>
@@ -682,6 +816,7 @@ export function CreateServiceReportDialog({
                   <EditableActivitiesSection 
                     carePlanId={clientCarePlan?.id}
                     onActivitiesChange={setPendingActivityChanges}
+                    onAddActivity={(activity) => setNewActivities(prev => [...prev, activity])}
                     allowManualAdd={true}
                   />
                 </CardContent>
