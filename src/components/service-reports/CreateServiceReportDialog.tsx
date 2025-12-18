@@ -275,12 +275,29 @@ export function CreateServiceReportDialog({
       return;
     }
 
-    // Helper function to create visit record for past appointments
-    const createVisitRecordIfNeeded = async (): Promise<string | null> => {
+    // Helper function to get existing or create visit record for past appointments
+    const getOrCreateVisitRecord = async (): Promise<string | null> => {
       if (visitRecordId) return visitRecordId;
       if (!bookingId || !preSelectedClient?.id) return null;
 
       try {
+        // FIRST: Check if a visit_record already exists for this booking
+        const { data: existingRecord, error: fetchError } = await supabase
+          .from('visit_records')
+          .select('id')
+          .eq('booking_id', bookingId)
+          .limit(1)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+        
+        // If found, return existing record ID
+        if (existingRecord?.id) {
+          console.log('Found existing visit_record:', existingRecord.id);
+          return existingRecord.id;
+        }
+
+        // Only create new if none exists
         const { data: newRecord, error } = await supabase
           .from('visit_records')
           .insert({
@@ -296,17 +313,22 @@ export function CreateServiceReportDialog({
           .single();
 
         if (error) throw error;
+        console.log('Created new visit_record:', newRecord?.id);
         return newRecord?.id || null;
       } catch (error) {
-        console.error('Error creating visit record:', error);
+        console.error('Error getting/creating visit record:', error);
         return null;
       }
     };
 
-    // Get or create visit record ID - ALWAYS create for past appointments to ensure proper linking
+    // Get or create visit record ID
+    // In edit mode, prioritize existing report's visit_record_id
     let effectiveVisitRecordId = visitRecordId;
-    if (!effectiveVisitRecordId && bookingId) {
-      effectiveVisitRecordId = await createVisitRecordIfNeeded();
+    
+    if (mode === 'edit' && existingReport?.visit_record_id) {
+      effectiveVisitRecordId = existingReport.visit_record_id;
+    } else if (!effectiveVisitRecordId && bookingId) {
+      effectiveVisitRecordId = await getOrCreateVisitRecord();
     }
 
     // Save NEW tasks (both create and edit modes)
