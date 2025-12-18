@@ -32,10 +32,18 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
   if (!medication) return null;
 
   const formatFrequency = (frequency: string) => {
+    // Handle weekly with day: "weekly_monday" format
+    if (frequency.startsWith("weekly_")) {
+      const day = frequency.split("_")[1];
+      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
+      return `Weekly (${dayLabel})`;
+    }
+    
     const freqMap: Record<string, string> = {
       once_daily: "Once daily",
       twice_daily: "Twice daily", 
       three_times_daily: "Three times daily",
+      four_times_daily: "Four times daily",
       every_other_day: "Every other day",
       weekly: "Weekly",
       monthly: "Monthly",

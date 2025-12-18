@@ -46,10 +46,21 @@ const FREQUENCY_OPTIONS = [
   { value: "once_daily", label: "Once daily" },
   { value: "twice_daily", label: "Twice daily" },
   { value: "three_times_daily", label: "Three times daily" },
+  { value: "four_times_daily", label: "Four times daily" },
   { value: "every_other_day", label: "Every other day" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
   { value: "as_needed", label: "As needed (PRN)" }
+];
+
+const WEEKDAY_OPTIONS = [
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" }
 ];
 
 const STATUS_OPTIONS = [
@@ -61,6 +72,7 @@ const STATUS_OPTIONS = [
 
 export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: EditPersistedMedicationDialogProps) {
   const updateMedicationMutation = useUpdateMedication();
+  const [selectedWeekDay, setSelectedWeekDay] = React.useState<string>("");
 
   const form = useForm<EditMedicationFormData>({
     resolver: zodResolver(editMedicationSchema),
@@ -73,28 +85,45 @@ export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: E
     }
   });
 
+  const watchedFrequency = form.watch("frequency");
+
   // Reset form when medication changes
   React.useEffect(() => {
     if (medication) {
+      // Parse frequency - check if it's weekly_day format
+      let frequency = medication.frequency;
+      let weekDay = "";
+      if (frequency.startsWith("weekly_")) {
+        weekDay = frequency.split("_")[1];
+        frequency = "weekly";
+      }
+      
       form.reset({
         name: medication.name,
         dosage: medication.dosage,
-        frequency: medication.frequency,
+        frequency: frequency,
         start_date: new Date(medication.start_date),
         end_date: medication.end_date ? new Date(medication.end_date) : undefined,
         status: medication.status || "active"
       });
+      setSelectedWeekDay(weekDay);
     }
   }, [medication, form]);
 
   const handleSave = (data: EditMedicationFormData) => {
     if (!medication?.id) return;
 
+    // Combine frequency with weekday if weekly is selected
+    let finalFrequency = data.frequency;
+    if (data.frequency === "weekly" && selectedWeekDay) {
+      finalFrequency = `weekly_${selectedWeekDay}`;
+    }
+
     updateMedicationMutation.mutate({
       id: medication.id,
       name: data.name,
       dosage: data.dosage,
-      frequency: data.frequency,
+      frequency: finalFrequency,
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date ? data.end_date.toISOString().split('T')[0] : null,
       status: data.status
@@ -112,6 +141,7 @@ export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: E
 
   const handleClose = () => {
     form.reset();
+    setSelectedWeekDay("");
     onClose();
   };
 
@@ -179,6 +209,23 @@ export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: E
                 </FormItem>
               )}
             />
+
+            {/* Weekday selector for Weekly frequency */}
+            {watchedFrequency === "weekly" && (
+              <FormItem>
+                <FormLabel>Day of Week</FormLabel>
+                <Select value={selectedWeekDay} onValueChange={setSelectedWeekDay}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WEEKDAY_OPTIONS.map(day => (
+                      <SelectItem key={day.value} value={day.value}>{day.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               {/* Start Date */}

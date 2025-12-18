@@ -77,10 +77,21 @@ const FREQUENCY_OPTIONS = [
   { value: "once_daily", label: "Once daily" },
   { value: "twice_daily", label: "Twice daily" },
   { value: "three_times_daily", label: "Three times daily" },
+  { value: "four_times_daily", label: "Four times daily" },
   { value: "every_other_day", label: "Every other day" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
   { value: "as_needed", label: "As needed (PRN)" }
+];
+
+const WEEKDAY_OPTIONS = [
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" }
 ];
 
 export function AddMedicationDialog({ 
@@ -93,6 +104,7 @@ export function AddMedicationDialog({
 }: AddMedicationDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredMedications, setFilteredMedications] = useState<string[]>([]);
+  const [selectedWeekDay, setSelectedWeekDay] = useState<string>("");
 
   const form = useForm<MedicationFormData>({
     resolver: zodResolver(medicationSchema),
@@ -134,6 +146,7 @@ export function AddMedicationDialog({
   }, [initialMedication, mode, form]);
 
   const watchedSource = form.watch("source");
+  const watchedFrequency = form.watch("frequency");
 
   // Handle NHS database search
   const handleMedicationSearch = (query: string) => {
@@ -157,6 +170,12 @@ export function AddMedicationDialog({
   };
 
   const handleSave = (data: MedicationFormData) => {
+    // Combine frequency with weekday if weekly is selected
+    let finalFrequency = data.frequency;
+    if (data.frequency === "weekly" && selectedWeekDay) {
+      finalFrequency = `weekly_${selectedWeekDay}`;
+    }
+    
     const medication = {
       id: mode === 'edit' && initialMedication?.id ? initialMedication.id : `med-${Date.now()}`,
       name: data.name,
@@ -168,7 +187,7 @@ export function AddMedicationDialog({
       instruction: data.instruction || "",
       warning: data.warning || "",
       side_effect: data.side_effect || "",
-      frequency: data.frequency,
+      frequency: finalFrequency,
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date ? data.end_date.toISOString().split('T')[0] : undefined,
       status: "active"
@@ -186,6 +205,7 @@ export function AddMedicationDialog({
     form.reset();
     setSearchQuery("");
     setFilteredMedications([]);
+    setSelectedWeekDay("");
     onClose();
   };
 
@@ -364,6 +384,25 @@ export function AddMedicationDialog({
                 )}
               />
             </div>
+
+            {/* Weekday selector for Weekly frequency */}
+            {watchedFrequency === "weekly" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormItem>
+                  <FormLabel>Day of Week *</FormLabel>
+                  <Select value={selectedWeekDay} onValueChange={setSelectedWeekDay}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WEEKDAY_OPTIONS.map(day => (
+                        <SelectItem key={day.value} value={day.value}>{day.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Who Administers */}
