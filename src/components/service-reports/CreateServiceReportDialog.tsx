@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { format, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,16 +23,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
 import { useVisitVitals } from '@/hooks/useVisitVitals';
-import { TasksTable } from './view-report/TasksTable';
-import { MedicationsTable } from './view-report/MedicationsTable';
-import { NEWS2Display } from './view-report/NEWS2Display';
-import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { EditableTasksTable } from './edit-report/EditableTasksTable';
 import { EditableMedicationsTable } from './edit-report/EditableMedicationsTable';
 import { EditableNEWS2Form } from './edit-report/EditableNEWS2Form';
 import { EditableEventsList } from './edit-report/EditableEventsList';
 import { EditableVisitSummary } from './edit-report/EditableVisitSummary';
+import { EditableGoalsSection } from './edit-report/EditableGoalsSection';
+import { EditableActivitiesSection } from './edit-report/EditableActivitiesSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -114,6 +112,27 @@ export function CreateServiceReportDialog({
   } | null>(null);
   const [pendingEventChanges, setPendingEventChanges] = useState<Map<string, { event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }>>(new Map());
   const [pendingVisitSummary, setPendingVisitSummary] = useState<string | null>(null);
+  const [pendingGoalChanges, setPendingGoalChanges] = useState<Map<string, { status: string; progress: number; notes: string }>>(new Map());
+  const [pendingActivityChanges, setPendingActivityChanges] = useState<Map<string, { performed: boolean; duration_minutes: number; notes: string }>>(new Map());
+
+  // Fetch client's care plan ID
+  const { data: clientCarePlan } = useQuery({
+    queryKey: ['client-care-plan', preSelectedClient?.id],
+    queryFn: async () => {
+      if (!preSelectedClient?.id) return null;
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id')
+        .eq('client_id', preSelectedClient.id)
+        .eq('status', 'confirmed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!preSelectedClient?.id && open,
+  });
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedications = [] } = useQuery({
