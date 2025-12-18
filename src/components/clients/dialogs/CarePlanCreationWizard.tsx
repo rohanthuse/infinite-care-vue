@@ -19,6 +19,8 @@ const carePlanSchema = z.object({
   title: z.string().min(1, "Title is required"),
   provider_name: z.string().optional(),
   provider_type: z.string().optional(),
+  staff_id: z.string().nullable().optional(),
+  staff_ids: z.array(z.string()).optional().default([]),
   start_date: z.string().optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   care_plan_type: z.string().optional(),
@@ -195,6 +197,7 @@ export function CarePlanCreationWizard({
       provider_name: "",
       provider_type: "staff",
       staff_id: null,
+      staff_ids: [],
       start_date: new Date().toISOString().split('T')[0],
       priority: "medium" as const,
       care_plan_type: "standard",
@@ -719,18 +722,26 @@ export function CarePlanCreationWizard({
     try {
       const formData = form.getValues();
       
+      // Explicitly get staff_ids to ensure multi-staff selection is passed
+      const staffIds = formData.staff_ids || [];
+      const staffId = formData.staff_id || (staffIds.length > 0 ? staffIds[0] : null);
+      
+      console.log('[handleFinalize] Staff data:', { staff_id: staffId, staff_ids: staffIds });
+      
       // First save as draft to get the latest data
       await saveDraft(formData, currentStep);
       
-        // Set care plan status - always go directly to client approval (no staff approval step)
-        const status = 'pending_client_approval';
+      // Set care plan status - always go directly to client approval (no staff approval step)
+      const status = 'pending_client_approval';
       
-      // Then finalize the care plan
+      // Then finalize the care plan with explicit staff_ids
       await createCarePlan({
         ...formData,
         client_id: clientId,
         status: status,
         care_plan_id: savedCarePlanId || carePlanId,
+        staff_id: staffId,
+        staff_ids: staffIds,
         // Clear change request fields if editing a change request
         ...(isEditingChangeRequest && {
           clear_change_request: true
