@@ -17,6 +17,7 @@ interface ExportServiceReportsDialogProps {
   onOpenChange: (open: boolean) => void;
   clientId: string;
   branchId: string;
+  branchName?: string;
   clientName: string;
 }
 
@@ -25,6 +26,7 @@ export function ExportServiceReportsDialog({
   onOpenChange,
   clientId,
   branchId,
+  branchName,
   clientName,
 }: ExportServiceReportsDialogProps) {
   const [startDate, setStartDate] = useState<Date>(
@@ -125,6 +127,7 @@ export function ExportServiceReportsDialog({
         reports: reportsWithDetails,
         clientName,
         branchId,
+        branchName,
         dateRange: { from: startDate, to: endDate },
         fileName: `service_reports_${clientName.replace(/\s+/g, "_")}_${format(startDate, "yyyyMMdd")}_${format(endDate, "yyyyMMdd")}.pdf`,
         metadata: {

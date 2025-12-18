@@ -291,16 +291,18 @@ export class ReportExporter {
     reports: any[];
     clientName: string;
     branchId: string;
+    branchName?: string;
     dateRange: { from: Date; to: Date };
     fileName: string;
     metadata: {
       totalRecords: number;
       exportedRecords: number;
+      exportedBy?: string;
       filters: Record<string, string>;
     };
   }) {
-    const { reports, clientName, branchId, dateRange, fileName, metadata } = options;
-    const doc = new jsPDF(); // Portrait mode for vertical card layout
+    const { reports, clientName, branchId, branchName, dateRange, fileName, metadata } = options;
+    const doc = new jsPDF();
     
     // Fetch organization settings
     const orgSettings = await fetchOrganizationSettings(branchId);
@@ -317,57 +319,160 @@ export class ReportExporter {
     const pageHeight = doc.internal.pageSize.height;
     const contentWidth = pageWidth - leftMargin - rightMargin;
     
-    // Add cover page
-    let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
-    currentY = addDocumentTitle(doc, 'Service Reports', 
-      `Client: ${clientName} | Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, 
-      currentY);
+    // Constants for page management
+    const BULK_FOOTER_SPACE = 20;
+    const BULK_SAFE_BOTTOM = pageHeight - BULK_FOOTER_SPACE;
+    const BULK_HEADER_HEIGHT = 45;
     
-    // Export information on cover page
-    currentY = addSectionHeader(doc, 'Export Summary', currentY);
+    /**
+     * Add global header for bulk service reports PDF (appears on every page)
+     */
+    const addBulkPDFHeader = (
+      currentReportIndex: number | null,
+      totalReports: number
+    ): number => {
+      // Blue top strip
+      doc.setFillColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
+      doc.rect(0, 0, pageWidth, 5, 'F');
+      
+      // Logo on left
+      if (logoBase64) {
+        try {
+          const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+            if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+            if (base64.includes('data:image/gif')) return 'GIF';
+            return 'PNG';
+          };
+          doc.addImage(logoBase64, getImageFormat(logoBase64), leftMargin, 8, 30, 15);
+        } catch (e) {
+          console.error('Error adding logo:', e);
+        }
+      }
+      
+      // Organization info on right
+      const rightX = pageWidth - rightMargin;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.text(orgSettings?.name || 'Healthcare Services', rightX, 12, { align: 'right' });
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
+      doc.text(`Branch: ${branchName || 'N/A'}`, rightX, 17, { align: 'right' });
+      doc.text(`Client: ${clientName}`, rightX, 22, { align: 'right' });
+      doc.text(`Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, rightX, 27, { align: 'right' });
+      
+      // Centered title
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.text('SERVICE REPORTS (Bulk Export)', pageWidth / 2, 34, { align: 'center' });
+      
+      // If we're on a specific report page, show report indicator
+      if (currentReportIndex !== null) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text(`Report ${currentReportIndex + 1} of ${totalReports}`, pageWidth / 2, 39, { align: 'center' });
+      }
+      
+      // Divider line
+      doc.setDrawColor(PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, 42, pageWidth - rightMargin, 42);
+      
+      return BULK_HEADER_HEIGHT;
+    };
+    
+    /**
+     * Check if page break needed and add header to new page
+     */
+    const checkBulkPageBreak = (
+      currentY: number,
+      requiredSpace: number,
+      reportIndex: number
+    ): number => {
+      if (currentY + requiredSpace > BULK_SAFE_BOTTOM) {
+        doc.addPage();
+        return addBulkPDFHeader(reportIndex, reports.length);
+      }
+      return currentY;
+    };
+    
+    // ========== COVER PAGE ==========
+    let currentY = addBulkPDFHeader(null, reports.length);
+    
+    // Export Summary Box
+    currentY += 5;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b);
+    doc.roundedRect(leftMargin, currentY, contentWidth, 50, 3, 3, 'FD');
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+    doc.text('Export Summary', leftMargin + 5, currentY + 10);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    
+    let summaryY = currentY + 18;
+    doc.text(`Client Name: ${clientName}`, leftMargin + 5, summaryY);
+    summaryY += 7;
+    doc.text(`Total Reports: ${metadata.exportedRecords} of ${metadata.totalRecords}`, leftMargin + 5, summaryY);
+    summaryY += 7;
+    doc.text(`Date Range: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, leftMargin + 5, summaryY);
+    summaryY += 7;
+    doc.text(`Export Date: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, leftMargin + 5, summaryY);
+    if (metadata.exportedBy) {
+      summaryY += 7;
+      doc.text(`Exported By: ${metadata.exportedBy}`, leftMargin + 5, summaryY);
+    }
+    
+    currentY += 60;
+    
+    // Table of Contents
+    currentY = addSectionHeader(doc, 'Table of Contents', currentY);
     doc.setFontSize(9);
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text(`Total Reports in System: ${metadata.totalRecords}`, leftMargin, currentY);
-    currentY += 6;
-    doc.text(`Reports in this Export: ${metadata.exportedRecords}`, leftMargin, currentY);
-    currentY += 6;
-    doc.text(`Export Date: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, leftMargin, currentY);
-    currentY += 6;
-    doc.text(`Date Range: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, leftMargin, currentY);
-    currentY += 15;
     
-    // Table of contents
-    currentY = addSectionHeader(doc, 'Contents', currentY);
-    doc.setFontSize(9);
     reports.forEach((report, index) => {
+      if (currentY > BULK_SAFE_BOTTOM - 10) {
+        doc.addPage();
+        currentY = addBulkPDFHeader(null, reports.length);
+      }
       const reportDate = format(new Date(report.service_date), 'dd/MM/yyyy');
       const carerName = report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "Unknown";
       doc.text(`${index + 1}. Service Report - ${reportDate} (${carerName})`, leftMargin + 5, currentY);
       currentY += 6;
     });
     
-    // Add footer to cover page
-    addPDFFooter(doc, orgSettings, 1, reports.length + 1);
-    
-    // Process each report on a new page
+    // ========== PROCESS EACH REPORT ==========
     reports.forEach((report, reportIndex) => {
       doc.addPage();
-      const pageNum = reportIndex + 2;
       
-      currentY = 20;
+      // Add global header to each report's first page
+      currentY = addBulkPDFHeader(reportIndex, reports.length);
       
-      // Report header section
+      const serviceDate = format(new Date(report.service_date), 'EEEE, dd MMMM yyyy');
+      const carerName = report.staff 
+        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'Unknown Carer'
+        : 'Unknown Carer';
+      
+      // Report card header with blue background
       doc.setFillColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
-      doc.rect(leftMargin, currentY, contentWidth, 15, 'F');
+      doc.roundedRect(leftMargin, currentY, contentWidth, 18, 2, 2, 'F');
       
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Service Report #${report.id?.slice(0, 8) || reportIndex + 1}`, leftMargin + 3, currentY + 6);
+      doc.text(`Service Report #${report.id?.slice(0, 8) || reportIndex + 1}`, leftMargin + 5, currentY + 7);
       
-      doc.setFontSize(10);
-      const serviceDate = format(new Date(report.service_date), 'EEEE, dd MMMM yyyy');
-      doc.text(serviceDate, leftMargin + 3, currentY + 11);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${serviceDate} | Carer: ${carerName}`, leftMargin + 5, currentY + 13);
       
       // Status badge
       const status = (report.status || 'pending').toLowerCase();
@@ -377,12 +482,12 @@ export class ReportExporter {
       else if (status === 'rejected') statusColor = { r: 185, g: 28, b: 28 };
       
       doc.setFillColor(statusColor.r, statusColor.g, statusColor.b);
-      doc.roundedRect(pageWidth - rightMargin - 30, currentY + 3, 25, 8, 2, 2, 'F');
+      doc.roundedRect(pageWidth - rightMargin - 30, currentY + 5, 25, 8, 2, 2, 'F');
       doc.setFontSize(8);
       doc.setTextColor(255, 255, 255);
-      doc.text(status.charAt(0).toUpperCase() + status.slice(1), pageWidth - rightMargin - 27, currentY + 8.5);
+      doc.text(status.charAt(0).toUpperCase() + status.slice(1), pageWidth - rightMargin - 27, currentY + 10.5);
       
-      currentY += 20;
+      currentY += 23;
       
       // Service Details Section (2-column layout)
       currentY = addSectionHeader(doc, 'Service Details', currentY);
@@ -403,9 +508,6 @@ export class ReportExporter {
       doc.text('Carer Name:', leftMargin + 2, leftY);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
-      const carerName = report.staff 
-        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'Unknown Carer'
-        : 'Unknown Carer';
       doc.text(carerName, leftMargin + 30, leftY);
       leftY += rowHeight;
       
@@ -481,10 +583,7 @@ export class ReportExporter {
       
       // Tasks Section
       if (report.tasks && report.tasks.length > 0) {
-        if (currentY > pageHeight - 50) {
-          doc.addPage();
-          currentY = 20;
-        }
+        currentY = checkBulkPageBreak(currentY, 50, reportIndex);
         
         currentY = addSectionHeader(doc, 'Tasks Completed During Visit', currentY);
         
@@ -536,7 +635,12 @@ export class ReportExporter {
               }
             }
           },
-          margin: { left: leftMargin, right: rightMargin },
+          didDrawPage: function(data) {
+            if (data.pageNumber > 1) {
+              addBulkPDFHeader(reportIndex, reports.length);
+            }
+          },
+          margin: { left: leftMargin, right: rightMargin, bottom: BULK_FOOTER_SPACE + 5, top: BULK_HEADER_HEIGHT },
         });
         
         currentY = (doc as any).lastAutoTable.finalY + 8;
@@ -550,18 +654,12 @@ export class ReportExporter {
       
       // Medication Details Section
       if (report.medications && report.medications.length > 0) {
-        if (currentY > pageHeight - 50) {
-          doc.addPage();
-          currentY = 20;
-        }
+        currentY = checkBulkPageBreak(currentY, 50, reportIndex);
         
         currentY = addSectionHeader(doc, 'Medication Details', currentY);
         
         report.medications.forEach((med: any, medIndex: number) => {
-          if (currentY > pageHeight - 40) {
-            doc.addPage();
-            currentY = 20;
-          }
+          currentY = checkBulkPageBreak(currentY, 40, reportIndex);
           
           // Medication card background
           const cardHeight = med.is_administered ? 22 : 20;
@@ -637,10 +735,7 @@ export class ReportExporter {
       }
       
       // Activities & Observations Section
-      if (currentY > pageHeight - 40) {
-        doc.addPage();
-        currentY = 20;
-      }
+      currentY = checkBulkPageBreak(currentY, 40, reportIndex);
       
       currentY = addSectionHeader(doc, 'Activities & Observations', currentY);
       
@@ -664,10 +759,7 @@ export class ReportExporter {
       currentY += activitiesHeight + 5;
       
       // Carer Observations
-      if (currentY > pageHeight - 30) {
-        doc.addPage();
-        currentY = 20;
-      }
+      currentY = checkBulkPageBreak(currentY, 30, reportIndex);
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
@@ -689,10 +781,7 @@ export class ReportExporter {
       
       // Additional Notes
       if (report.review_notes || report.client_feedback) {
-        if (currentY > pageHeight - 25) {
-          doc.addPage();
-          currentY = 20;
-        }
+        currentY = checkBulkPageBreak(currentY, 25, reportIndex);
         
         currentY = addSectionHeader(doc, 'Additional Notes', currentY);
         
@@ -712,10 +801,7 @@ export class ReportExporter {
       
       // Incident Details (if applicable)
       if (report.incident_occurred && report.incident_details) {
-        if (currentY > pageHeight - 25) {
-          doc.addPage();
-          currentY = 20;
-        }
+        currentY = checkBulkPageBreak(currentY, 25, reportIndex);
         
         doc.setDrawColor(220, 38, 38);
         doc.setLineWidth(0.5);
@@ -734,9 +820,23 @@ export class ReportExporter {
         doc.text(incidentLines, leftMargin + 3, currentY);
       }
       
-      // Add footer to each report page
-      addPDFFooter(doc, orgSettings, pageNum, reports.length + 1);
+      // Visual separator at end of each report
+      currentY += 10;
+      if (reportIndex < reports.length - 1) {
+        doc.setDrawColor(PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b);
+        doc.setLineWidth(0.5);
+        doc.setLineDashPattern([3, 3], 0);
+        doc.line(leftMargin + 20, currentY, pageWidth - rightMargin - 20, currentY);
+        doc.setLineDashPattern([], 0);
+      }
     });
+    
+    // Add footers to all pages at the end
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      addPDFFooter(doc, orgSettings, i, totalPages);
+    }
     
     // Save the PDF
     doc.save(fileName);

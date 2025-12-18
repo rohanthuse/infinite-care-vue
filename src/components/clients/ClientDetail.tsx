@@ -273,6 +273,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                     <AdminServiceReportsTab 
                       clientId={client.id} 
                       branchId={branchId} 
+                      branchName={decodeURIComponent(branchName)}
                       clientName={client.name}
                     />
                   </ServiceReportsErrorBoundary>

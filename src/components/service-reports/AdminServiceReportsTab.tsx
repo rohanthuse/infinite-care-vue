@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 interface AdminServiceReportsTabProps {
   clientId: string;
   branchId: string;
+  branchName?: string;
   clientName?: string;
   clients?: Array<{
     id: string;
@@ -32,6 +33,7 @@ interface AdminServiceReportsTabProps {
 export function AdminServiceReportsTab({
   clientId,
   branchId,
+  branchName,
   clientName = "Client",
   clients = [],
   staff = []
@@ -238,6 +240,7 @@ export function AdminServiceReportsTab({
         onOpenChange={setExportDialogOpen}
         clientId={clientId}
         branchId={branchId}
+        branchName={branchName}
         clientName={clientName}
       />
     </div>
