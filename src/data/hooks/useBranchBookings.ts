@@ -15,6 +15,7 @@ export interface BookingDB {
   created_at: string | null;
   status: string | null;
   notes: string | null;
+  location_address: string | null;
   cancellation_request_status: 'pending' | 'approved' | 'rejected' | null;
   reschedule_request_status: 'pending' | 'approved' | 'rejected' | null;
   booking_unavailability_requests?: Array<{
@@ -50,7 +51,7 @@ export async function fetchBranchBookings(branchId?: string) {
     .from("bookings")
     .select(`
       id, client_id, staff_id, branch_id, start_time, end_time, 
-      revenue, service_id, created_at, status, notes,
+      revenue, service_id, created_at, status, notes, location_address,
       cancellation_request_status,
       reschedule_request_status,
       booking_unavailability_requests!booking_id (

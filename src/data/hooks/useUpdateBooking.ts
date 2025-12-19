@@ -20,6 +20,7 @@ interface UpdateBookingPayload {
     status: string;
     service_id: string;
     notes: string;
+    location_address: string;
   }>;
 }
 
