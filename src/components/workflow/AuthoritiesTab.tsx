@@ -224,10 +224,19 @@ export const AuthoritiesTab = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this authority?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the authority
-              "{authorityToDelete?.organization}" from your records.
+            <AlertDialogTitle>Delete Authority and Associated Rates?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  This action cannot be undone. Deleting the authority 
+                  "<strong>{authorityToDelete?.organization}</strong>" will also:
+                </p>
+                <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+                  <li>Delete all rates linked to this authority from Rate Management</li>
+                  <li>Remove all client rate assignments for this authority</li>
+                </ul>
+                <p className="mt-2 font-medium">Do you want to continue?</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -243,7 +252,7 @@ export const AuthoritiesTab = () => {
                   Deleting...
                 </>
               ) : (
-                'Delete'
+                'Delete Authority & Rates'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

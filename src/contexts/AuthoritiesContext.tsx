@@ -187,9 +187,32 @@ export const AuthoritiesProvider: React.FC<{ children: ReactNode }> = ({ childre
     },
   });
 
-  // Remove authority mutation (soft delete)
+  // Remove authority mutation (soft delete with cascade)
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Step 1: Delete client rate assignments linked to this authority
+      const { error: assignmentError } = await supabase
+        .from('client_rate_assignments')
+        .delete()
+        .eq('authority_id', id);
+
+      if (assignmentError) {
+        console.error('Error deleting client rate assignments:', assignmentError);
+        throw assignmentError;
+      }
+
+      // Step 2: Delete service rates where funding_source matches authority ID
+      const { error: ratesError } = await supabase
+        .from('service_rates')
+        .delete()
+        .eq('funding_source', id);
+
+      if (ratesError) {
+        console.error('Error deleting service rates:', ratesError);
+        throw ratesError;
+      }
+
+      // Step 3: Soft delete the authority
       const { error } = await supabase
         .from('authorities')
         .update({ status: 'deleted' })
@@ -198,7 +221,10 @@ export const AuthoritiesProvider: React.FC<{ children: ReactNode }> = ({ childre
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['authorities'] });
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
+      queryClient.invalidateQueries({ queryKey: ['client-rate-assignments'] });
     },
     onError: (error) => {
       console.error('Error removing authority:', error);
