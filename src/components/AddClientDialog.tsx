@@ -325,10 +325,38 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
 
         console.log("Client added successfully:", data);
         
+        // Sync address to client_addresses table after successful client creation
+        if (data && (formData.house_no || formData.street || formData.city)) {
+          const addressLine1 = [formData.house_no, formData.street].filter(Boolean).join(', ');
+          
+          if (addressLine1 || formData.city) {
+            const { error: addressError } = await supabase
+              .from('client_addresses')
+              .insert({
+                client_id: data.id,
+                address_label: 'Home',
+                address_line_1: addressLine1 || formData.city || '',
+                address_line_2: '',
+                city: formData.city || '',
+                state_county: formData.county || '',
+                postcode: formData.pin_code || '',
+                country: 'United Kingdom',
+                is_default: true,
+              });
+            
+            if (addressError) {
+              console.error("Error syncing address to client_addresses:", addressError);
+            } else {
+              console.log("Address synced to client_addresses table successfully");
+            }
+          }
+        }
+        
         // Invalidate subscription limits and client queries immediately
         queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
         queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
         queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+        queryClient.invalidateQueries({ queryKey: ['client-addresses'] });
         
         toast({
           title: "Success",
