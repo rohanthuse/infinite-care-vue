@@ -10,7 +10,7 @@ export interface ClientAddress {
   city: string;
   state_county?: string;
   postcode: string;
-  country: string;
+  country?: string;
   is_default: boolean;
   created_at: string;
   updated_at: string;

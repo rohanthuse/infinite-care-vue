@@ -38,7 +38,7 @@ interface ClientAddressSectionProps {
 }
 
 const ADDRESS_LABELS = ['Home', 'Work', 'Respite', 'Holiday', 'Other'];
-const COUNTRIES = ['United Kingdom', 'Ireland', 'United States', 'Canada', 'Australia'];
+
 
 const emptyFormData = {
   address_label: 'Home',
@@ -47,7 +47,6 @@ const emptyFormData = {
   city: '',
   state_county: '',
   postcode: '',
-  country: 'United Kingdom',
   is_default: false,
 };
 
@@ -90,7 +89,6 @@ export const ClientAddressSection: React.FC<ClientAddressSectionProps> = ({
       city: address.city || '',
       state_county: address.state_county || '',
       postcode: address.postcode || '',
-      country: address.country || 'United Kingdom',
       is_default: address.is_default || false,
     });
     setEditingId(address.id);
@@ -164,7 +162,6 @@ export const ClientAddressSection: React.FC<ClientAddressSectionProps> = ({
       addr.city,
       addr.state_county,
       addr.postcode,
-      addr.country,
     ].filter(Boolean);
     return parts.join(', ');
   };
@@ -182,34 +179,18 @@ export const ClientAddressSection: React.FC<ClientAddressSectionProps> = ({
   const renderAddressForm = () => (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div className="md:col-span-2">
           <Label htmlFor="address_label">Address Label</Label>
           <Select 
             value={formData.address_label} 
             onValueChange={(value) => setFormData(prev => ({ ...prev, address_label: value }))}
           >
-            <SelectTrigger>
+            <SelectTrigger className="md:w-1/2">
               <SelectValue placeholder="Select label" />
             </SelectTrigger>
             <SelectContent>
               {ADDRESS_LABELS.map(label => (
                 <SelectItem key={label} value={label}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="country">Country</Label>
-          <Select 
-            value={formData.country} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select country" />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map(country => (
-                <SelectItem key={country} value={country}>{country}</SelectItem>
               ))}
             </SelectContent>
           </Select>
