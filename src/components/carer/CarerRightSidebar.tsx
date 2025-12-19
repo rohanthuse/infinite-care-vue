@@ -68,7 +68,7 @@ import { ChevronDown } from "lucide-react";
   ];
 
 export const CarerRightSidebar: React.FC = () => {
-  const { open: sidebarOpen, isMobile } = useSidebar();
+  const { open: sidebarOpen, isMobile, setOpenMobile } = useSidebar();
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,6 +85,11 @@ export const CarerRightSidebar: React.FC = () => {
   const handleNavClick = (value: string) => {
     const path = createCarerPath(value ? `/${value}` : '');
     navigate(path);
+    
+    // Auto-close sidebar on mobile after navigation
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
 
   const isActive = (value: string) => {
