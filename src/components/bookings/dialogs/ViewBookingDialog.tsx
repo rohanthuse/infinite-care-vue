@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw, ClipboardList, AlertTriangle } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw, ClipboardList, AlertTriangle, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppointmentApprovalDialog from "@/components/bookings/AppointmentApprovalDialog";
 import { toast } from "sonner";
@@ -815,6 +815,23 @@ export function ViewBookingDialog({
           </div>
 
           <Separator />
+
+          {/* Location Information */}
+          {booking?.location_address && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </div>
+                <div className="pl-6">
+                  <p className="text-sm text-gray-600">{booking.location_address}</p>
+                </div>
+              </div>
+
+              <Separator />
+            </>
+          )}
 
           {/* Late Arrival Information */}
           {(booking?.is_late_start || visitRecord?.arrival_delay_minutes > 0) && (

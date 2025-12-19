@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff, Repeat } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff, Repeat, MapPin } from "lucide-react";
 import { findDatesForDayOfWeek } from "../utils/dateUtils";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useClientRateAssignments } from "@/hooks/useClientRateAssignments";
+import { useClientAddresses, ClientAddress } from "@/hooks/useClientAddresses";
 import { 
   useStaffLeaveAvailability, 
   validateCarersLeaveConflict,
@@ -105,6 +106,7 @@ const formSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID required" }),
   carerIds: z.array(z.string()).optional(), // Made optional to support unassigned bookings
   assignLater: z.boolean().optional(), // New field for "assign carer later" option
+  locationAddress: z.string().optional(), // Booking location address
   fromDate: z.date({
     required_error: "Date is required.",
   }).refine((date) => {
@@ -330,11 +332,38 @@ export function NewBookingDialog({
   // Fetch client's rate assignments to get authority
   const { data: clientRateAssignments = [], isLoading: isLoadingAuthority } = useClientRateAssignments(selectedClientId || "");
 
+  // Fetch client addresses for location field
+  const { data: clientAddresses = [], isLoading: isLoadingAddresses } = useClientAddresses(selectedClientId || "");
+
   // Get the primary active authority from client's rate assignments
   const clientAuthority = useMemo(() => {
     const activeAssignment = clientRateAssignments.find(a => a.is_active && a.authority);
     return activeAssignment?.authority?.organization_name || null;
   }, [clientRateAssignments]);
+
+  // Format address for display and storage
+  const formatAddress = (addr: ClientAddress): string => {
+    const parts = [
+      addr.address_line_1,
+      addr.address_line_2,
+      addr.city,
+      addr.state_county,
+      addr.postcode,
+    ].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  // Auto-select default address when client changes
+  useEffect(() => {
+    if (clientAddresses.length > 0) {
+      const defaultAddr = clientAddresses.find(a => a.is_default) || clientAddresses[0];
+      if (defaultAddr) {
+        form.setValue('locationAddress', formatAddress(defaultAddr));
+      }
+    } else {
+      form.setValue('locationAddress', '');
+    }
+  }, [clientAddresses, form]);
 
   // Watch additional dates explicitly for reactivity (watchedFromDate already declared above)
   const watchedUntilDate = form.watch("untilDate");
@@ -534,6 +563,7 @@ export function NewBookingDialog({
       ...data,
       untilDate: data.bookingMode === "single" ? data.fromDate : data.untilDate,
       recurrenceFrequency: data.bookingMode === "single" ? "1" : data.recurrenceFrequency,
+      locationAddress: data.locationAddress, // Include location address
     };
 
     if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
@@ -797,6 +827,70 @@ export function NewBookingDialog({
                       Authority assigned in Client Details → Rates tab
                     </p>
                   </div>
+                )}
+
+                {/* Location Field */}
+                {selectedClientId && (
+                  <FormField
+                    control={form.control}
+                    name="locationAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Location
+                        </FormLabel>
+                        {isLoadingAddresses ? (
+                          <div className="w-full p-2 border rounded-md bg-muted text-sm text-muted-foreground">
+                            Loading addresses...
+                          </div>
+                        ) : clientAddresses.length === 0 ? (
+                          <div className="w-full p-2 border rounded-md bg-muted text-sm text-muted-foreground italic">
+                            No addresses saved for this client
+                          </div>
+                        ) : (
+                          <Select
+                            value={field.value || ''}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location">
+                                {field.value ? (
+                                  <span className="truncate">{field.value}</span>
+                                ) : (
+                                  "Select location"
+                                )}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {clientAddresses.map((addr) => (
+                                <SelectItem 
+                                  key={addr.id} 
+                                  value={formatAddress(addr)}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {addr.address_label || 'Address'}
+                                      {addr.is_default && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Default)</span>
+                                      )}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground truncate max-w-[280px]">
+                                      {formatAddress(addr)}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Where the appointment will take place
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
 
                 <FormField
