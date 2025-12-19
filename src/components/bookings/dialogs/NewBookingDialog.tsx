@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff } from "lucide-react";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+import { useClientRateAssignments } from "@/hooks/useClientRateAssignments";
 import { 
   useStaffLeaveAvailability, 
   validateCarersLeaveConflict,
@@ -321,6 +322,30 @@ export function NewBookingDialog({
 
   // Watch booking mode to update form behavior
   const bookingMode = form.watch("bookingMode");
+
+  // Watch selected client ID to fetch their authority
+  const selectedClientId = form.watch("clientId");
+
+  // Fetch client's rate assignments to get authority
+  const { data: clientRateAssignments = [], isLoading: isLoadingAuthority } = useClientRateAssignments(selectedClientId || "");
+
+  // Get the primary active authority from client's rate assignments
+  const clientAuthority = useMemo(() => {
+    const activeAssignment = clientRateAssignments.find(a => a.is_active && a.authority);
+    return activeAssignment?.authority?.organization_name || null;
+  }, [clientRateAssignments]);
+
+  // Calculate total days for recurring bookings
+  const totalDays = useMemo(() => {
+    const fromDate = form.watch("fromDate");
+    const untilDate = form.watch("untilDate");
+    
+    if (bookingMode !== "recurring" || !fromDate || !untilDate) return 0;
+    
+    const diffTime = Math.abs(untilDate.getTime() - fromDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both dates
+    return diffDays;
+  }, [form, bookingMode]);
 
   useEffect(() => {
     if (open && preSelectedClientId) {
@@ -717,6 +742,26 @@ export function NewBookingDialog({
                     </FormItem>
                   )}
                 />
+
+                {/* Selected Authority - Read Only */}
+                {selectedClientId && (
+                  <div className="space-y-2">
+                    <FormLabel className="text-sm font-medium">Selected Authority</FormLabel>
+                    <div className="w-full p-2 border rounded-md bg-muted text-sm">
+                      {isLoadingAuthority ? (
+                        <span className="text-muted-foreground">Loading authority...</span>
+                      ) : clientAuthority ? (
+                        <span className="font-medium">{clientAuthority}</span>
+                      ) : (
+                        <span className="text-muted-foreground italic">No authority assigned</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Authority assigned in Client Details → Rates tab
+                    </p>
+                  </div>
+                )}
+
                 <FormField
                   control={form.control}
                   name="carerIds"
@@ -1036,6 +1081,20 @@ export function NewBookingDialog({
                   )}
                 />
 
+                {/* Single Booking - Duration Indicator */}
+                {bookingMode === "single" && (
+                  <div className="space-y-2">
+                    <FormLabel className="text-sm font-medium">Duration</FormLabel>
+                    <div className="w-full p-2 border rounded-md bg-muted flex items-center">
+                      <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm font-medium">One Day</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Single bookings are scheduled for one day only
+                    </p>
+                  </div>
+                )}
+
                 {bookingMode === "recurring" && (
                   <FormField
                     control={form.control}
@@ -1064,6 +1123,21 @@ export function NewBookingDialog({
                   />
                 )}
               </div>
+
+              {/* Recurring Booking - Total Days Calculation */}
+              {bookingMode === "recurring" && form.watch("fromDate") && form.watch("untilDate") && (
+                <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Total Duration: {totalDays} day{totalDays !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    From {format(form.watch("fromDate"), "dd MMM yyyy")} to {format(form.watch("untilDate"), "dd MMM yyyy")}
+                  </p>
+                </div>
+              )}
 
               {/* Recurrence Frequency */}
               {bookingMode === "recurring" && (
