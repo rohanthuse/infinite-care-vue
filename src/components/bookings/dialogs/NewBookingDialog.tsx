@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff, Repeat } from "lucide-react";
+import { findDatesForDayOfWeek } from "../utils/dateUtils";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useClientRateAssignments } from "@/hooks/useClientRateAssignments";
@@ -335,17 +336,53 @@ export function NewBookingDialog({
     return activeAssignment?.authority?.organization_name || null;
   }, [clientRateAssignments]);
 
+  // Watch additional dates explicitly for reactivity (watchedFromDate already declared above)
+  const watchedUntilDate = form.watch("untilDate");
+  const watchedRecurrenceFrequency = form.watch("recurrenceFrequency");
+  const watchedSchedules = form.watch("schedules");
+
   // Calculate total days for recurring bookings
   const totalDays = useMemo(() => {
-    const fromDate = form.watch("fromDate");
-    const untilDate = form.watch("untilDate");
+    if (bookingMode !== "recurring" || !watchedFromDate || !watchedUntilDate) return 0;
     
-    if (bookingMode !== "recurring" || !fromDate || !untilDate) return 0;
-    
-    const diffTime = Math.abs(untilDate.getTime() - fromDate.getTime());
+    const diffTime = Math.abs(watchedUntilDate.getTime() - watchedFromDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both dates
     return diffDays;
-  }, [form, bookingMode]);
+  }, [watchedFromDate, watchedUntilDate, bookingMode]);
+
+  // Calculate total booking count for recurring bookings
+  const totalBookingCount = useMemo(() => {
+    if (bookingMode !== "recurring" || !watchedFromDate || !watchedUntilDate) return 0;
+    
+    try {
+      const fromDateStr = format(watchedFromDate, "yyyy-MM-dd");
+      const untilDateStr = format(watchedUntilDate, "yyyy-MM-dd");
+      const intervalWeeks = parseInt(watchedRecurrenceFrequency || "1");
+      
+      let totalCount = 0;
+      
+      for (const schedule of (watchedSchedules || [])) {
+        const selectedDays: number[] = [];
+        if (schedule.sun) selectedDays.push(0);
+        if (schedule.mon) selectedDays.push(1);
+        if (schedule.tue) selectedDays.push(2);
+        if (schedule.wed) selectedDays.push(3);
+        if (schedule.thu) selectedDays.push(4);
+        if (schedule.fri) selectedDays.push(5);
+        if (schedule.sat) selectedDays.push(6);
+        
+        for (const dayOfWeek of selectedDays) {
+          const dates = findDatesForDayOfWeek(fromDateStr, untilDateStr, dayOfWeek, intervalWeeks);
+          totalCount += dates.length;
+        }
+      }
+      
+      return totalCount;
+    } catch (error) {
+      console.error('Error calculating booking count:', error);
+      return 0;
+    }
+  }, [watchedFromDate, watchedUntilDate, watchedRecurrenceFrequency, watchedSchedules, bookingMode]);
 
   useEffect(() => {
     if (open && preSelectedClientId) {
@@ -1124,8 +1161,8 @@ export function NewBookingDialog({
                 )}
               </div>
 
-              {/* Recurring Booking - Total Days Calculation */}
-              {bookingMode === "recurring" && form.watch("fromDate") && form.watch("untilDate") && (
+              {/* Recurring Booking - Total Duration & Booking Count */}
+              {bookingMode === "recurring" && watchedFromDate && watchedUntilDate && (
                 <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1134,8 +1171,25 @@ export function NewBookingDialog({
                     </span>
                   </div>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    From {format(form.watch("fromDate"), "dd MMM yyyy")} to {format(form.watch("untilDate"), "dd MMM yyyy")}
+                    From {format(watchedFromDate, "dd MMM yyyy")} to {format(watchedUntilDate, "dd MMM yyyy")}
                   </p>
+                  
+                  {/* Total Booking Count */}
+                  {totalBookingCount > 0 && (
+                    <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
+                      <div className="flex items-center gap-2">
+                        <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Total Bookings: {totalBookingCount}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Based on selected days and {watchedRecurrenceFrequency === "1" ? "weekly" : 
+                          watchedRecurrenceFrequency === "2" ? "bi-weekly" :
+                          watchedRecurrenceFrequency === "3" ? "every 3 weeks" : "monthly"} recurrence
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
