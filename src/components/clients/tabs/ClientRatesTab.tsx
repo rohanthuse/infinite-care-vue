@@ -60,6 +60,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const [showRateDetails, setShowRateDetails] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<ClientRateAssignment | null>(null);
+  const [viewingFromSelection, setViewingFromSelection] = useState(false); // Track source of rate view
 
   // Data fetching
   const { authorities, isLoading: authoritiesLoading } = useAuthorities();
@@ -412,10 +413,11 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     }
   };
 
-  // View rate details from assignment
+  // View rate details from assignment (table)
   const handleViewAssignmentRate = (assignment: ClientRateAssignment) => {
     if (assignment.service_rate) {
       setSelectedAssignment(assignment);
+      setViewingFromSelection(false); // Viewing from table, not selection
       setShowRateDetails(true);
     }
   };
@@ -435,12 +437,17 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     );
   }
 
-  // Prepare rate details for dialog
+  // Prepare rate details for dialog - respect the source context
   const getRateDetailsForDialog = () => {
+    // If viewing from "Use a Defined Rate" selection, use selectedRateDetails
+    if (viewingFromSelection) {
+      return selectedRateDetails;
+    }
+    // Otherwise, use the selected assignment from the table
     if (selectedAssignment?.service_rate) {
       return selectedAssignment.service_rate;
     }
-    return selectedRateDetails;
+    return null;
   };
 
   return (
@@ -530,7 +537,10 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                   {/* View Button */}
                   <Button 
                     variant="outline" 
-                    onClick={() => setShowRateDetails(true)}
+                    onClick={() => {
+                      setViewingFromSelection(true); // Mark viewing from selection flow
+                      setShowRateDetails(true);
+                    }}
                     disabled={!selectedRate}
                     className="shrink-0"
                   >
@@ -789,9 +799,18 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
       {/* View Rate Details Dialog */}
       <ViewRateDetailsDialog
         open={showRateDetails}
-        onOpenChange={setShowRateDetails}
+        onOpenChange={(open) => {
+          setShowRateDetails(open);
+          if (!open) {
+            setViewingFromSelection(false); // Reset when dialog closes
+          }
+        }}
         rate={getRateDetailsForDialog()}
-        authorityName={selectedAssignment?.authority?.organization_name || getAuthorityName(selectedAuthority)}
+        authorityName={
+          viewingFromSelection 
+            ? getAuthorityName(selectedAuthority) 
+            : (selectedAssignment?.authority?.organization_name || '')
+        }
       />
 
       {/* Delete Confirmation Dialog */}
