@@ -375,19 +375,6 @@ export const ClientAddressSection: React.FC<ClientAddressSectionProps> = ({
               <MapPin className="h-10 w-10 mx-auto mb-2 opacity-40" />
               <p>No addresses added yet</p>
               <p className="text-sm">Click "Add Address" to add the client's address</p>
-              {legacyAddress && (
-                <div className="mt-4 p-3 bg-muted rounded-lg text-left">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500" />
-                    <div>
-                      <p className="text-sm font-medium">Legacy Address Found</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {legacyAddress}{legacyPinCode ? `, ${legacyPinCode}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             addresses.map((address) => (
