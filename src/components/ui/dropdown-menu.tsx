@@ -97,14 +97,31 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item>
->(({ className, onClick, ...props }, ref) => {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Force cleanup before calling the original onClick to prevent UI freeze
+>(({ className, onClick, onSelect, ...props }, ref) => {
+  
+  // Cleanup function to ensure no lingering state that causes UI freeze
+  const performCleanup = React.useCallback(() => {
     requestAnimationFrame(() => {
       document.body.style.removeProperty('pointer-events');
       document.documentElement.style.removeProperty('pointer-events');
+      
+      const root = document.getElementById('root');
+      if (root) {
+        root.removeAttribute('inert');
+        root.removeAttribute('aria-hidden');
+      }
     });
+  }, []);
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    performCleanup();
     onClick?.(e as unknown as React.MouseEvent<HTMLDivElement, MouseEvent>);
+  };
+
+  // Handle onSelect with cleanup - this is what Radix uses for keyboard/click selection
+  const handleSelect = (e: Event) => {
+    performCleanup();
+    onSelect?.(e);
   };
 
   return (
@@ -115,6 +132,7 @@ const DropdownMenuItem = React.forwardRef<
         className
       )}
       onClick={handleClick}
+      onSelect={handleSelect}
       {...props}
     />
   );
