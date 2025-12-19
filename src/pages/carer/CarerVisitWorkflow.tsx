@@ -1256,140 +1256,143 @@ const CarerVisitWorkflow = () => {
       {/* Main Content */}
       <div className="w-full max-w-full mx-auto p-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-11">
-            <TabsTrigger 
-              value="check-in"
-              className={`${isTabCompleted("check-in") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <UserCheck className="w-4 h-4" />
-                  {isTabCompleted("check-in") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex h-auto w-max min-w-full gap-1 p-1 md:grid md:w-full md:grid-cols-11">
+              <TabsTrigger 
+                value="check-in"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("check-in") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <UserCheck className="w-4 h-4" />
+                    {isTabCompleted("check-in") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Check-in</span>
                 </div>
-                <span className="text-xs">Check-in</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tasks"
-              className={`${isTabCompleted("tasks") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Clipboard className="w-4 h-4" />
-                  {isTabCompleted("tasks") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="tasks"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("tasks") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Clipboard className="w-4 h-4" />
+                    {isTabCompleted("tasks") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Tasks</span>
                 </div>
-                <span className="text-xs">Tasks</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="medication"
-              className={`${isTabCompleted("medication") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Pill className="w-4 h-4" />
-                  {isTabCompleted("medication") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="medication"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("medication") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Pill className="w-4 h-4" />
+                    {isTabCompleted("medication") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Medication</span>
                 </div>
-                <span className="text-xs">Medication</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="news2"
-              className={`${isTabCompleted("news2") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Activity className="w-4 h-4" />
-                  {isTabCompleted("news2") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="news2"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("news2") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Activity className="w-4 h-4" />
+                    {isTabCompleted("news2") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">NEWS2</span>
                 </div>
-                <span className="text-xs">NEWS2</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="events"
-              className={`${isTabCompleted("events") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {isTabCompleted("events") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="events"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("events") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {isTabCompleted("events") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Events</span>
                 </div>
-                <span className="text-xs">Events</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="goals"
-              className={`${isTabCompleted("goals") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Target className="w-4 h-4" />
-                  {isTabCompleted("goals") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="goals"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("goals") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Target className="w-4 h-4" />
+                    {isTabCompleted("goals") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Goals</span>
                 </div>
-                <span className="text-xs">Goals</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="activities"
-              className={`${isTabCompleted("activities") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {isTabCompleted("activities") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="activities"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("activities") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {isTabCompleted("activities") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Activities</span>
                 </div>
-                <span className="text-xs">Activities</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="notes"
-              className={`${isTabCompleted("notes") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <FileText className="w-4 h-4" />
-                  {isTabCompleted("notes") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notes"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("notes") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <FileText className="w-4 h-4" />
+                    {isTabCompleted("notes") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Notes</span>
                 </div>
-              <span className="text-xs">Notes</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="care-plan"
-              className={`${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <FileBarChart2 className="w-4 h-4" />
-                  {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="care-plan"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <FileBarChart2 className="w-4 h-4" />
+                    {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Care Plan</span>
                 </div>
-                <span className="text-xs">Care Plan</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sign-off"
-              className={`${isTabCompleted("sign-off") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Edit className="w-4 h-4" />
-                  {isTabCompleted("sign-off") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="sign-off"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("sign-off") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Edit className="w-4 h-4" />
+                    {isTabCompleted("sign-off") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Sign-off</span>
                 </div>
-                <span className="text-xs">Sign-off</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="complete"
-              className={`${isTabCompleted("complete") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" />
-                  {isTabCompleted("complete") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="complete"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("complete") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    {isTabCompleted("complete") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Complete</span>
                 </div>
-                <span className="text-xs">Complete</span>
-              </div>
-            </TabsTrigger>
-          </TabsList>
+              </TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" className="md:hidden" />
+          </ScrollArea>
 
           {/* Check-in Tab */}
           <TabsContent value="check-in" className="w-full mt-6">
