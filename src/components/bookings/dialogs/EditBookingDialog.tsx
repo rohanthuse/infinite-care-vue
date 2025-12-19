@@ -747,6 +747,7 @@ export function EditBookingDialog({
           service_id: primaryServiceId,
           status: 'assigned',
           notes: data.notes,
+          location_address: data.location_address || null,
         });
         
         if (error) throw error;
@@ -773,6 +774,7 @@ export function EditBookingDialog({
           service_id: primaryServiceId,
           status: 'unassigned',
           notes: data.notes,
+          location_address: data.location_address || null,
         });
         
         if (error) throw error;
@@ -1199,6 +1201,12 @@ export function EditBookingDialog({
                             <SelectValue placeholder="Select location" />
                           </SelectTrigger>
                           <SelectContent>
+                            {/* Show current saved address if it doesn't match any client address */}
+                            {field.value && !clientAddresses.some(addr => formatAddress(addr) === field.value) && (
+                              <SelectItem value={field.value}>
+                                Current: {field.value}
+                              </SelectItem>
+                            )}
                             {clientAddresses.map((addr) => (
                               <SelectItem key={addr.id} value={formatAddress(addr)}>
                                 {addr.address_label || 'Address'}: {formatAddress(addr)}
