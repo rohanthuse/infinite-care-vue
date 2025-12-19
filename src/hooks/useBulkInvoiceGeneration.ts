@@ -195,7 +195,7 @@ export const useBulkInvoiceGeneration = () => {
         const clientExtraTime = clientExtraTimeMap.get(clientId) || [];
         console.log(`[BulkInvoiceGeneration] Client has ${clientExtraTime.length} extra time records`);
 
-        // 4b. Fetch client rate schedules
+        // 4b. Fetch client rate schedules (check both tables)
         const { data: rateSchedules, error: rateError } = await supabase
           .from('client_rate_schedules')
           .select('*')
@@ -204,12 +204,52 @@ export const useBulkInvoiceGeneration = () => {
 
         if (rateError) throw rateError;
         
-        if (!rateSchedules || rateSchedules.length === 0) {
-          console.warn(`[BulkInvoiceGeneration] No active rate schedule for client: ${clientData.clientName}`);
+        let typedRateSchedules: any[] = rateSchedules || [];
+
+        // If no rate schedules, check client_rate_assignments as fallback
+        if (typedRateSchedules.length === 0) {
+          console.log(`[BulkInvoiceGeneration] No client_rate_schedules found, checking client_rate_assignments for: ${clientData.clientName}`);
+          
+          const { data: rateAssignments, error: assignmentError } = await supabase
+            .from('client_rate_assignments')
+            .select(`
+              *,
+              service_rate:service_rates(*)
+            `)
+            .eq('client_id', clientId)
+            .eq('is_active', true);
+
+          if (assignmentError) {
+            console.error(`[BulkInvoiceGeneration] Error fetching rate assignments:`, assignmentError);
+          }
+
+          if (rateAssignments && rateAssignments.length > 0) {
+            console.log(`[BulkInvoiceGeneration] Found ${rateAssignments.length} rate assignments for: ${clientData.clientName}`);
+            
+            // Convert rate assignments to rate schedule format for the calculator
+            typedRateSchedules = rateAssignments.map((assignment: any) => ({
+              id: assignment.id,
+              client_id: assignment.client_id,
+              rate_type: assignment.service_rate?.rate_type || 'hourly',
+              hourly_rate: assignment.service_rate?.hourly_rate || assignment.service_rate?.rate_per_unit || 0,
+              rate_per_unit: assignment.service_rate?.rate_per_unit || assignment.service_rate?.hourly_rate || 0,
+              effective_from: assignment.start_date,
+              effective_to: assignment.end_date,
+              is_active: assignment.is_active,
+              bank_holiday_multiplier: assignment.service_rate?.bank_holiday_multiplier || 1.5,
+              service_id: assignment.service_rate_id,
+              description: assignment.service_rate?.name || assignment.service_rate?.description || 'Service Rate'
+            }));
+          }
+        }
+
+        // Still no rates found after checking both tables
+        if (typedRateSchedules.length === 0) {
+          console.warn(`[BulkInvoiceGeneration] No active rate schedule or assignment for client: ${clientData.clientName}`);
           results.errors.push({
             clientId,
             clientName: clientData.clientName,
-            reason: 'No active rate schedule found',
+            reason: 'No active rate schedule or rate assignment found',
             bookingCount: clientData.bookings.length
           });
           results.errorCount++;
@@ -217,8 +257,7 @@ export const useBulkInvoiceGeneration = () => {
           continue;
         }
 
-        // Cast rate schedules to the correct type
-        const typedRateSchedules = rateSchedules as any[];
+        console.log(`[BulkInvoiceGeneration] Using ${typedRateSchedules.length} rate schedule(s) for: ${clientData.clientName}`);
 
         // 4c. Convert bookings to Visit format for calculator
         const visits: Visit[] = await Promise.all(
