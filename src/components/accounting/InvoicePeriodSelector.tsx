@@ -28,6 +28,8 @@ interface InvoicePeriodSelectorProps {
   onBulkGenerate?: (periodDetails: PeriodDetails) => void;
   branchId?: string;
   organizationId?: string;
+  preSelectedClientId?: string;
+  preSelectedClientName?: string;
 }
 
 export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
@@ -36,7 +38,9 @@ export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
   onPeriodSelect,
   onBulkGenerate,
   branchId,
-  organizationId
+  organizationId,
+  preSelectedClientId,
+  preSelectedClientName
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<InvoicePeriod | null>(null);
   const [showActions, setShowActions] = useState(false);
@@ -199,14 +203,20 @@ export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            {showCustomDatePicker ? "Select Date Range" : showActions ? "Choose Action" : "Select Invoice Period"}
+            {showCustomDatePicker 
+              ? "Select Date Range" 
+              : showActions 
+                ? (preSelectedClientId ? `Invoice for ${preSelectedClientName || 'Selected Client'}` : "Choose Action")
+                : "Select Invoice Period"}
           </DialogTitle>
           <DialogDescription>
             {showCustomDatePicker
               ? "Select the specific date range for invoice generation"
               : showActions
-              ? "Generate invoices for all clients or create a manual invoice"
-              : "Choose the billing period for this invoice"}
+                ? (preSelectedClientId 
+                    ? `Generate invoice for ${preSelectedClientName || 'selected client'} based on completed bookings`
+                    : "Generate invoices for all clients or create a manual invoice")
+                : "Choose the billing period for this invoice"}
           </DialogDescription>
         </DialogHeader>
 
@@ -419,31 +429,40 @@ export const InvoicePeriodSelector: React.FC<InvoicePeriodSelectorProps> = ({
 
         {showActions && !showCustomDatePicker && (
           <div className="grid gap-4 py-6">
-            <Button
-              variant="default"
-              className="h-24 flex flex-col items-start justify-center gap-2"
-              onClick={handleBulkGenerate}
-            >
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span className="font-semibold">Generate for All Clients</span>
-              </div>
-              <span className="text-sm opacity-90">
-                Automatically generate invoices based on completed bookings
-              </span>
-            </Button>
+            {/* Only show "Generate for All Clients" when NO client is pre-selected */}
+            {!preSelectedClientId && (
+              <Button
+                variant="default"
+                className="h-24 flex flex-col items-start justify-center gap-2"
+                onClick={handleBulkGenerate}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <span className="font-semibold">Generate for All Clients</span>
+                </div>
+                <span className="text-sm opacity-90">
+                  Automatically generate invoices based on completed bookings
+                </span>
+              </Button>
+            )}
 
             <Button
-              variant="outline"
+              variant={preSelectedClientId ? "default" : "outline"}
               className="h-24 flex flex-col items-start justify-center gap-2"
               onClick={handleManualInvoice}
             >
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                <span className="font-semibold">Create Manual Invoice</span>
+                <span className="font-semibold">
+                  {preSelectedClientId 
+                    ? `Generate Invoice for ${preSelectedClientName || 'Selected Client'}`
+                    : 'Create Manual Invoice'}
+                </span>
               </div>
               <span className="text-sm text-muted-foreground">
-                Select a specific client and create a custom invoice
+                {preSelectedClientId
+                  ? 'Generate invoice based on completed bookings for this client'
+                  : 'Select a specific client and create a custom invoice'}
               </span>
             </Button>
           </div>

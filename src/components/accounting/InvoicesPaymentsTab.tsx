@@ -47,6 +47,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedClientName, setSelectedClientName] = useState<string>('');
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<EnhancedClientBilling | null>(null);
   const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<EnhancedClientBilling | null>(null);
   const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
@@ -550,6 +551,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               selectedClientId={selectedClientId}
               onClientSelect={(clientId, clientData) => {
                 setSelectedClientId(clientId);
+                setSelectedClientName(clientData?.full_name || '');
               }}
               placeholder="Search and select a client..."
               className="w-full lg:w-96"
@@ -652,6 +654,8 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         onBulkGenerate={handleBulkGenerate}
         branchId={branchId}
         organizationId={organizationId}
+        preSelectedClientId={selectedClientId || undefined}
+        preSelectedClientName={selectedClientName || undefined}
       />
 
       <BulkInvoicePreviewDialog
@@ -684,6 +688,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         onClose={() => {
           setIsCreateInvoiceOpen(false);
           setSelectedClientId('');
+          setSelectedClientName('');
           setSelectedInvoicePeriod(null);
         }}
         branchId={branchId!}
