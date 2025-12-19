@@ -78,21 +78,24 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
         .join('\n\n')
     : undefined;
 
-  // Compile observations from visit notes and events
-  const observations = [
-    data.visitRecord.visit_notes,
-    ...(data.events?.filter(e => e.event_type === 'observation').map(e => e.event_description) || [])
-  ].filter(Boolean).join('\n\n');
-
   // Process care plan goals
   const goalsProgress = data.goals
     ?.map(g => `${g.description} (${g.status}, ${g.progress || 0}% complete)${g.notes ? ` - Notes: ${g.notes}` : ''}`)
-    .join('\n\n') || undefined;
+    .join('\n\n') || '';
 
-  // Process care plan activities
+  // Process care plan activities - maps to activities_undertaken column
   const activitiesPerformed = data.activities
     ?.map(a => `${a.name} (${a.frequency}, ${a.status})${a.description ? ` - ${a.description}` : ''}`)
     .join('\n\n') || undefined;
+
+  // Compile observations from visit notes, events, and goals progress
+  const observationParts = [
+    data.visitRecord.visit_notes,
+    ...(data.events?.filter(e => e.event_type === 'observation').map(e => e.event_description) || []),
+    goalsProgress ? `\n**Care Plan Goals Progress:**\n${goalsProgress}` : ''
+  ].filter(Boolean);
+  
+  const observations = observationParts.join('\n\n');
 
   return {
     client_id: data.visitRecord.client_id,
@@ -110,8 +113,7 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     incident_occurred: hasIncidents,
     incident_details: incidentDetails,
     carer_observations: observations || undefined,
-    care_plan_goals: goalsProgress,
-    daily_activities: activitiesPerformed,
+    activities_undertaken: activitiesPerformed,
     status: 'approved' as const, // Auto-approved
     visible_to_client: true,
     reviewed_at: new Date().toISOString(),
