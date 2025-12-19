@@ -16,7 +16,7 @@ export const CarerMobileNav: React.FC = () => {
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { setOpenMobile } = useSidebar();
+  const { openMobile, setOpenMobile } = useSidebar();
 
   const handleNavClick = (value: string) => {
     const path = createCarerPath(value ? `/${value}` : '');
@@ -29,7 +29,7 @@ export const CarerMobileNav: React.FC = () => {
   };
 
   const handleMenuClick = () => {
-    setOpenMobile(true);
+    setOpenMobile(!openMobile);
   };
 
   return (
