@@ -749,8 +749,8 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                     <TableCell>
                       <Badge 
                         className={assignment.is_active 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-gray-100 text-gray-800"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" 
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                         }
                       >
                         {assignment.is_active ? 'Active' : 'Inactive'}

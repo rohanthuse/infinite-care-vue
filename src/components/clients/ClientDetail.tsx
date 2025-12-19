@@ -189,7 +189,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 )}
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <span>Client ID: {client.id}</span>
+                <span>{realClientData?.address || client.location || 'No address available'}</span>
                 <span>•</span>
                 <span>Registered: {realClientData?.registered_on || client.registeredOn}</span>
               </div>
