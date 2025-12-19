@@ -17,6 +17,7 @@ import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { VaccinationDialog } from "@/components/care/dialogs/VaccinationDialog";
 import { AddServiceActionV2Dialog } from "@/components/care/dialogs/AddServiceActionV2Dialog";
+import { ClientAddressSection } from "@/components/clients/address/ClientAddressSection";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 interface PersonalInfoTabProps {
@@ -628,133 +629,11 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </TabsContent>
 
         <TabsContent value="address" className="mt-6">
-          <Card className="p-4 border border-border shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">Address Information</h3>
-              {editingTab !== 'address' && (
-                <Button size="sm" variant="outline" onClick={handleEditAddress}>
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              )}
-            </div>
-            
-            {editingTab === 'address' ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="houseNo">House No/Name <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="houseNo"
-                      value={addressFormData.houseNo}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, houseNo: e.target.value }))}
-                      placeholder="e.g., 123 or Apartment 4B"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="street">Street <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="street"
-                      value={addressFormData.street}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, street: e.target.value }))}
-                      placeholder="e.g., Main Street"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="city"
-                      value={addressFormData.city}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="e.g., London"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="county">County <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="county"
-                      value={addressFormData.county}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, county: e.target.value }))}
-                      placeholder="e.g., Greater London"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="postcode">Postcode <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="postcode"
-                      value={addressFormData.postcode}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, postcode: e.target.value }))}
-                      placeholder="e.g., SW1A 1AA"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleCancelAddress}
-                    disabled={isSavingAddress}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSaveAddress}
-                    disabled={isSavingAddress}
-                    className={cn(
-                      "transition-all duration-150",
-                      isSavingAddress && "opacity-70"
-                    )}
-                  >
-                    {isSavingAddress ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-1" />
-                        Save
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    House No/Name <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.houseNo || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Street <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.street || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    City <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.city || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    County <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.county || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Postcode <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.postcode || client.pin_code || 'Not provided'}</p>
-                </div>
-              </div>
-            )}
-          </Card>
+          <ClientAddressSection 
+            clientId={client.id}
+            legacyAddress={client.address || client.location}
+            legacyPinCode={client.pin_code}
+          />
         </TabsContent>
 
         <TabsContent value="related-info" className="mt-6">

@@ -1783,6 +1783,66 @@ export type Database = {
           },
         ]
       }
+      client_addresses: {
+        Row: {
+          address_label: string | null
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          client_id: string
+          country: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          postcode: string
+          state_county: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address_label?: string | null
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          client_id: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          postcode: string
+          state_county?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address_label?: string | null
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          client_id?: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          postcode?: string
+          state_county?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_addresses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_addresses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_appointments: {
         Row: {
           appointment_date: string
