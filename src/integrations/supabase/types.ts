@@ -2301,7 +2301,7 @@ export type Database = {
             foreignKeyName: "client_billing_authority_id_fkey"
             columns: ["authority_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "authorities"
             referencedColumns: ["id"]
           },
           {
