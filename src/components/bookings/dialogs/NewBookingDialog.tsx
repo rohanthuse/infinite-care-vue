@@ -1161,37 +1161,6 @@ export function NewBookingDialog({
                 )}
               </div>
 
-              {/* Recurring Booking - Total Duration & Booking Count */}
-              {bookingMode === "recurring" && watchedFromDate && watchedUntilDate && (
-                <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Total Duration: {totalDays} day{totalDays !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    From {format(watchedFromDate, "dd MMM yyyy")} to {format(watchedUntilDate, "dd MMM yyyy")}
-                  </p>
-                  
-                  {/* Total Booking Count */}
-                  {totalBookingCount > 0 && (
-                    <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
-                      <div className="flex items-center gap-2">
-                        <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                          Total Bookings: {totalBookingCount}
-                        </span>
-                      </div>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                        Based on selected days and {watchedRecurrenceFrequency === "1" ? "weekly" : 
-                          watchedRecurrenceFrequency === "2" ? "bi-weekly" :
-                          watchedRecurrenceFrequency === "3" ? "every 3 weeks" : "monthly"} recurrence
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Recurrence Frequency */}
               {bookingMode === "recurring" && (
@@ -1450,6 +1419,50 @@ export function NewBookingDialog({
                   Add Schedule
                 </Button>
               </div>
+
+              {/* Recurring Booking - Total Duration & Booking Count Summary */}
+              {bookingMode === "recurring" && watchedFromDate && watchedUntilDate && (
+                <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Total Duration: {totalDays} day{totalDays !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    From {format(watchedFromDate, "dd MMM yyyy")} to {format(watchedUntilDate, "dd MMM yyyy")}
+                  </p>
+                  
+                  {/* Total Booking Count */}
+                  {totalBookingCount > 0 ? (
+                    <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
+                      <div className="flex items-center gap-2">
+                        <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Total Bookings: {totalBookingCount}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Based on selected days and {watchedRecurrenceFrequency === "1" ? "weekly" : 
+                          watchedRecurrenceFrequency === "2" ? "bi-weekly" :
+                          watchedRecurrenceFrequency === "3" ? "every 3 weeks" : "monthly"} recurrence
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                          Total Bookings: 0
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Please select at least one day in the schedule section above
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Additional Information Field */}
               <FormField
