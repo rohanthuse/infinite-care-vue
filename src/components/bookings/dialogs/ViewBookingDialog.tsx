@@ -825,7 +825,7 @@ export function ViewBookingDialog({
                   Location
                 </div>
                 <div className="pl-6">
-                  <p className="text-sm text-gray-600">{booking.location_address}</p>
+                  <p className="text-sm text-gray-600 break-words">{booking.location_address}</p>
                 </div>
               </div>
 

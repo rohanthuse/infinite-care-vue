@@ -853,14 +853,8 @@ export function NewBookingDialog({
                             value={field.value || ''}
                             onValueChange={field.onChange}
                           >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location">
-                                {field.value ? (
-                                  <span className="truncate">{field.value}</span>
-                                ) : (
-                                  "Select location"
-                                )}
-                              </SelectValue>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select location" />
                             </SelectTrigger>
                             <SelectContent>
                               {clientAddresses.map((addr) => (
