@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { VisitBillingCalculator } from "@/utils/visitBillingCalculator";
 import type { Visit } from "@/types/clientAccounting";
+import { fetchClientBillingConfig, type ClientBillingConfig } from "./useClientBillingConfig";
 
 export interface BulkGenerationProgress {
   current: number;
@@ -181,11 +182,20 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Processing client: ${clientData.clientName} (${clientData.bookings.length} bookings)`);
 
+        // 4a. Fetch client billing configuration (NEW: integrates accounting settings)
+        const billingConfig = await fetchClientBillingConfig(clientId);
+        console.log(`[BulkInvoiceGeneration] Client ${clientData.clientName} billing config:`, {
+          useActualTime: billingConfig.useActualTime,
+          creditPeriodDays: billingConfig.creditPeriodDays,
+          billToType: billingConfig.billToType,
+          extraTimeEnabled: billingConfig.extraTimeEnabled
+        });
+
         // Get extra time records for this client
         const clientExtraTime = clientExtraTimeMap.get(clientId) || [];
         console.log(`[BulkInvoiceGeneration] Client has ${clientExtraTime.length} extra time records`);
 
-        // 4a. Fetch client rate schedules
+        // 4b. Fetch client rate schedules
         const { data: rateSchedules, error: rateError } = await supabase
           .from('client_rate_schedules')
           .select('*')
@@ -210,7 +220,7 @@ export const useBulkInvoiceGeneration = () => {
         // Cast rate schedules to the correct type
         const typedRateSchedules = rateSchedules as any[];
 
-        // 4b. Convert bookings to Visit format for calculator
+        // 4c. Convert bookings to Visit format for calculator
         const visits: Visit[] = await Promise.all(
           clientData.bookings.map(async (booking) => ({
             id: booking.id,
@@ -228,11 +238,11 @@ export const useBulkInvoiceGeneration = () => {
           }))
         );
 
-        // 4c. Calculate using existing VisitBillingCalculator
-        const calculator = new VisitBillingCalculator(typedRateSchedules, false);
+        // 4d. Calculate using VisitBillingCalculator with correct time basis from config
+        const calculator = new VisitBillingCalculator(typedRateSchedules, billingConfig.useActualTime);
         const billingSummary = calculator.calculateVisitsBilling(visits);
 
-        // 4c-2. Calculate total booked time from all scheduled booking times
+        // 4e. Calculate total booked time from all scheduled booking times
         const totalBookedMinutes = clientData.bookings.reduce((sum, booking) => {
           const duration = Math.round(
             (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
@@ -240,8 +250,10 @@ export const useBulkInvoiceGeneration = () => {
           return sum + duration;
         }, 0);
 
-        // 4d. Add extra time costs to the billing
-        const extraTimeCost = clientExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0);
+        // 4f. Add extra time costs only if enabled in client settings
+        const extraTimeCost = billingConfig.extraTimeEnabled 
+          ? clientExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0)
+          : 0;
         const totalWithExtraTime = billingSummary.total_amount + extraTimeCost;
 
         console.log(`[BulkInvoiceGeneration] Calculated billing for ${clientData.clientName}:`, {
@@ -249,34 +261,45 @@ export const useBulkInvoiceGeneration = () => {
           vat: billingSummary.vat_amount,
           total: billingSummary.total_amount,
           extraTimeCost,
+          extraTimeEnabled: billingConfig.extraTimeEnabled,
           totalWithExtraTime,
           lineItems: billingSummary.line_items.length
         });
 
-        // 4e. Generate unique invoice number
+        // 4g. Generate unique invoice number
         const invoiceNumber = await generateUniqueInvoiceNumber(organizationId);
 
-        // 4f. Create invoice (including extra time in total)
+        // 4h. Calculate due date based on credit period from client settings
+        const dueDate = new Date(Date.now() + billingConfig.creditPeriodDays * 24 * 60 * 60 * 1000);
+
+        // 4i. Build description with authority reference if applicable
+        let description = `${periodDetails.type.charAt(0).toUpperCase() + periodDetails.type.slice(1)} Invoice (${periodDetails.startDate} to ${periodDetails.endDate})`;
+        if (billingConfig.billToType === 'authority' && billingConfig.authorityReferenceNumber) {
+          description = `${description} - Ref: ${billingConfig.authorityReferenceNumber}`;
+        }
+
+        // 4j. Create invoice with correct settings from client config
         const { data: invoice, error: invoiceError } = await supabase
           .from('client_billing')
           .insert({
             client_id: clientId,
             organization_id: organizationId,
             invoice_number: invoiceNumber,
-            description: `${periodDetails.type.charAt(0).toUpperCase() + periodDetails.type.slice(1)} Invoice (${periodDetails.startDate} to ${periodDetails.endDate})`,
+            description,
             amount: billingSummary.net_amount + extraTimeCost,
             net_amount: billingSummary.net_amount + extraTimeCost,
             vat_amount: billingSummary.vat_amount,
             total_amount: totalWithExtraTime + billingSummary.vat_amount,
             invoice_date: new Date().toISOString().split('T')[0],
-            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            due_date: dueDate.toISOString().split('T')[0],
             status: 'pending',
             start_date: periodDetails.startDate,
             end_date: periodDetails.endDate,
             invoice_type: 'automatic',
-            invoice_method: periodDetails.type,
-            bill_to_type: 'private',
-            booked_time_minutes: totalBookedMinutes, // Use sum of scheduled booking durations
+            invoice_method: billingConfig.invoiceMethod || periodDetails.type,
+            bill_to_type: billingConfig.billToType,
+            authority_id: billingConfig.billToType === 'authority' ? billingConfig.authorityId : null,
+            booked_time_minutes: totalBookedMinutes,
             generated_from_booking: true
           })
           .select()
@@ -284,9 +307,9 @@ export const useBulkInvoiceGeneration = () => {
 
         if (invoiceError) throw invoiceError;
 
-        console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName}`);
+        console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName} (bill_to: ${billingConfig.billToType}, due in ${billingConfig.creditPeriodDays} days)`);
 
-        // 4g. Create line items for bookings
+        // 4k. Create line items for bookings
         const lineItemsData = billingSummary.line_items.map(item => ({
           invoice_id: invoice.id,
           organization_id: organizationId,
@@ -309,8 +332,8 @@ export const useBulkInvoiceGeneration = () => {
 
         if (lineItemsError) throw lineItemsError;
 
-        // 4h. Add extra time as line items
-        if (clientExtraTime.length > 0) {
+        // 4l. Add extra time as line items (only if enabled)
+        if (billingConfig.extraTimeEnabled && clientExtraTime.length > 0) {
           const extraTimeLineItems = clientExtraTime.map(et => ({
             invoice_id: invoice.id,
             organization_id: organizationId,
@@ -358,7 +381,6 @@ export const useBulkInvoiceGeneration = () => {
 
           if (bookingUpdateError) {
             console.error(`[BulkInvoiceGeneration] Error marking bookings as invoiced:`, bookingUpdateError);
-            // Don't fail the whole process, just log the error
           }
         }
 
@@ -371,7 +393,7 @@ export const useBulkInvoiceGeneration = () => {
           invoiceNumber,
           amount: totalWithExtraTime + billingSummary.vat_amount,
           lineItemCount: lineItemsData.length,
-          extraTimeCount: clientExtraTime.length
+          extraTimeCount: billingConfig.extraTimeEnabled ? clientExtraTime.length : 0
         });
 
         console.log(`[BulkInvoiceGeneration] Successfully processed ${clientData.clientName}`);

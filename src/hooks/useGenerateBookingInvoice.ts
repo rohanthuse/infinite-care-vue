@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { VisitBillingCalculator } from "@/utils/visitBillingCalculator";
 import type { Visit } from "@/types/clientAccounting";
 import { toast } from "@/hooks/use-toast";
+import { fetchClientBillingConfig } from "./useClientBillingConfig";
 
 export interface GenerateBookingInvoiceInput {
   bookingId: string;
@@ -93,7 +94,16 @@ export const useGenerateBookingInvoice = () => {
         };
       }
 
-      // 3. Fetch client's active rate schedules
+      // 3. Fetch client billing configuration (NEW: integrates accounting settings)
+      const billingConfig = await fetchClientBillingConfig(typedBooking.client_id);
+      console.log('[generateInvoiceForBooking] Client billing config:', {
+        useActualTime: billingConfig.useActualTime,
+        creditPeriodDays: billingConfig.creditPeriodDays,
+        billToType: billingConfig.billToType,
+        servicePayer: billingConfig.servicePayer
+      });
+
+      // 4. Fetch client's active rate schedules
       const { data: rateSchedules, error: rateError } = await supabase
         .from('client_rate_schedules')
         .select('*')
@@ -118,123 +128,135 @@ export const useGenerateBookingInvoice = () => {
         };
       }
 
-    // 4. Convert booking to Visit format
-    const visit: Visit = {
-      id: typedBooking.id,
-      client_id: typedBooking.client_id,
-      date: format(new Date(typedBooking.start_time), 'yyyy-MM-dd'),
-      planned_start: format(new Date(typedBooking.start_time), 'HH:mm:ss'),
-      planned_end: format(new Date(typedBooking.end_time), 'HH:mm:ss'),
-      actual_start: typedBooking.actual_start_time 
-        ? format(new Date(typedBooking.actual_start_time), 'HH:mm:ss') 
-        : undefined,
-      actual_end: typedBooking.actual_end_time 
-        ? format(new Date(typedBooking.actual_end_time), 'HH:mm:ss') 
-        : undefined,
-      is_bank_holiday: await checkIfBankHoliday(typedBooking.start_time)
-    };
-
-    // 5. Calculate billing using VisitBillingCalculator
-    const calculator = new VisitBillingCalculator(rateSchedules as any[], false);
-    const billingSummary = calculator.calculateVisitsBilling([visit]);
-
-    // Calculate booked time directly from scheduled booking times (not billing duration)
-    const bookedTimeMinutes = Math.round(
-      (new Date(typedBooking.end_time).getTime() - new Date(typedBooking.start_time).getTime()) / 60000
-    );
-
-    console.log('[generateInvoiceForBooking] Calculated billing:', {
-      net: billingSummary.net_amount,
-      vat: billingSummary.vat_amount,
-      total: billingSummary.total_amount,
-      bookedTimeMinutes
-    });
-
-    // 6. Generate unique invoice number
-    const invoiceNumber = await generateUniqueInvoiceNumber(input.organizationId);
-
-    // 7. Create invoice with booking_id set (CRITICAL FIX)
-    const clientName = `${typedBooking.clients.first_name} ${typedBooking.clients.last_name}`;
-    const serviceTitle = typedBooking.services?.title || 'Service';
-    const bookingDate = format(new Date(typedBooking.start_time), 'dd/MM/yyyy HH:mm');
-
-    const { data: invoice, error: invoiceError } = await supabase
-      .from('client_billing')
-      .insert({
+      // 5. Convert booking to Visit format
+      const visit: Visit = {
+        id: typedBooking.id,
         client_id: typedBooking.client_id,
+        date: format(new Date(typedBooking.start_time), 'yyyy-MM-dd'),
+        planned_start: format(new Date(typedBooking.start_time), 'HH:mm:ss'),
+        planned_end: format(new Date(typedBooking.end_time), 'HH:mm:ss'),
+        actual_start: typedBooking.actual_start_time 
+          ? format(new Date(typedBooking.actual_start_time), 'HH:mm:ss') 
+          : undefined,
+        actual_end: typedBooking.actual_end_time 
+          ? format(new Date(typedBooking.actual_end_time), 'HH:mm:ss') 
+          : undefined,
+        is_bank_holiday: await checkIfBankHoliday(typedBooking.start_time)
+      };
+
+      // 6. Calculate billing using VisitBillingCalculator with correct time basis
+      const calculator = new VisitBillingCalculator(rateSchedules as any[], billingConfig.useActualTime);
+      const billingSummary = calculator.calculateVisitsBilling([visit]);
+
+      // Calculate booked time directly from scheduled booking times
+      const bookedTimeMinutes = Math.round(
+        (new Date(typedBooking.end_time).getTime() - new Date(typedBooking.start_time).getTime()) / 60000
+      );
+
+      console.log('[generateInvoiceForBooking] Calculated billing:', {
+        net: billingSummary.net_amount,
+        vat: billingSummary.vat_amount,
+        total: billingSummary.total_amount,
+        bookedTimeMinutes,
+        useActualTime: billingConfig.useActualTime
+      });
+
+      // 7. Generate unique invoice number
+      const invoiceNumber = await generateUniqueInvoiceNumber(input.organizationId);
+
+      // 8. Calculate due date based on credit period
+      const dueDate = new Date(Date.now() + billingConfig.creditPeriodDays * 24 * 60 * 60 * 1000);
+
+      // 9. Create invoice with correct bill_to_type based on service payer
+      const clientName = `${typedBooking.clients.first_name} ${typedBooking.clients.last_name}`;
+      const serviceTitle = typedBooking.services?.title || 'Service';
+      const bookingDate = format(new Date(typedBooking.start_time), 'dd/MM/yyyy HH:mm');
+
+      // Build description with authority reference if applicable
+      let description = `${serviceTitle} - ${bookingDate}`;
+      if (billingConfig.billToType === 'authority' && billingConfig.authorityReferenceNumber) {
+        description = `${description} (Ref: ${billingConfig.authorityReferenceNumber})`;
+      }
+
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('client_billing')
+        .insert({
+          client_id: typedBooking.client_id,
+          organization_id: input.organizationId,
+          booking_id: typedBooking.id,
+          invoice_number: invoiceNumber,
+          description,
+          amount: billingSummary.net_amount,
+          net_amount: billingSummary.net_amount,
+          vat_amount: billingSummary.vat_amount,
+          total_amount: billingSummary.total_amount,
+          invoice_date: new Date().toISOString().split('T')[0],
+          due_date: dueDate.toISOString().split('T')[0],
+          status: 'draft',
+          invoice_type: 'booking',
+          bill_to_type: billingConfig.billToType,
+          authority_id: billingConfig.billToType === 'authority' ? billingConfig.authorityId : null,
+          generated_from_booking: true,
+          service_provided_date: format(new Date(typedBooking.start_time), 'yyyy-MM-dd'),
+          booked_time_minutes: bookedTimeMinutes
+        })
+        .select()
+        .single();
+
+      if (invoiceError) {
+        console.error('[generateInvoiceForBooking] Error creating invoice:', invoiceError);
+        throw new Error(`Failed to create invoice: ${invoiceError.message}`);
+      }
+
+      console.log('[generateInvoiceForBooking] Invoice created:', invoiceNumber);
+
+      // 10. Create line items
+      const lineItemsData = billingSummary.line_items.map(item => ({
+        invoice_id: invoice.id,
         organization_id: input.organizationId,
-        booking_id: typedBooking.id, // CRITICAL: Link invoice to booking
-        invoice_number: invoiceNumber,
-        description: `${serviceTitle} - ${bookingDate}`,
-        amount: billingSummary.net_amount,
-        net_amount: billingSummary.net_amount,
-        vat_amount: billingSummary.vat_amount,
-        total_amount: billingSummary.total_amount,
-        invoice_date: new Date().toISOString().split('T')[0],
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'draft',
-        invoice_type: 'booking',
-        generated_from_booking: true,
-        service_provided_date: format(new Date(typedBooking.start_time), 'yyyy-MM-dd'),
-        booked_time_minutes: bookedTimeMinutes // Use scheduled booking duration
-      })
-      .select()
-      .single();
+        booking_id: typedBooking.id,
+        description: item.description,
+        visit_date: item.date,
+        duration_minutes: item.billing_duration_minutes,
+        rate_type_applied: item.rate_type,
+        rate_per_unit: item.unit_rate,
+        unit_price: item.unit_rate,
+        quantity: item.billing_duration_minutes / 60,
+        line_total: item.line_total,
+        bank_holiday_multiplier_applied: item.multiplier,
+        day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday'
+      }));
 
-    if (invoiceError) {
-      console.error('[generateInvoiceForBooking] Error creating invoice:', invoiceError);
-      throw new Error(`Failed to create invoice: ${invoiceError.message}`);
-    }
+      const { error: lineItemsError } = await supabase
+        .from('invoice_line_items')
+        .insert(lineItemsData);
 
-    console.log('[generateInvoiceForBooking] Invoice created:', invoiceNumber);
+      if (lineItemsError) {
+        console.error('[generateInvoiceForBooking] Error creating line items:', lineItemsError);
+        await supabase.from('client_billing').delete().eq('id', invoice.id);
+        throw new Error(`Failed to create invoice line items: ${lineItemsError.message}`);
+      }
 
-    // 8. Create line items
-    const lineItemsData = billingSummary.line_items.map(item => ({
-      invoice_id: invoice.id,
-      organization_id: input.organizationId,
-      booking_id: typedBooking.id,
-      description: item.description,
-      visit_date: item.date,
-      duration_minutes: item.billing_duration_minutes,
-      rate_type_applied: item.rate_type,
-      rate_per_unit: item.unit_rate,
-      unit_price: item.unit_rate,
-      quantity: item.billing_duration_minutes / 60,
-      line_total: item.line_total,
-      bank_holiday_multiplier_applied: item.multiplier,
-      day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday'
-    }));
+      // 11. Mark booking as invoiced
+      const { error: bookingUpdateError } = await supabase
+        .from('bookings')
+        .update({ 
+          is_invoiced: true, 
+          included_in_invoice_id: invoice.id 
+        })
+        .eq('id', typedBooking.id);
 
-    const { error: lineItemsError } = await supabase
-      .from('invoice_line_items')
-      .insert(lineItemsData);
-
-    if (lineItemsError) {
-      console.error('[generateInvoiceForBooking] Error creating line items:', lineItemsError);
-      // Try to clean up the invoice
-      await supabase.from('client_billing').delete().eq('id', invoice.id);
-      throw new Error(`Failed to create invoice line items: ${lineItemsError.message}`);
-    }
-
-    // 9. Mark booking as invoiced
-    const { error: bookingUpdateError } = await supabase
-      .from('bookings')
-      .update({ 
-        is_invoiced: true, 
-        included_in_invoice_id: invoice.id 
-      })
-      .eq('id', typedBooking.id);
-
-    if (bookingUpdateError) {
-      console.error('[generateInvoiceForBooking] Error marking booking as invoiced:', bookingUpdateError);
-      // Don't fail - invoice is already created
-    }
+      if (bookingUpdateError) {
+        console.error('[generateInvoiceForBooking] Error marking booking as invoiced:', bookingUpdateError);
+      }
 
       console.log('[generateInvoiceForBooking] Successfully generated invoice for booking:', {
         bookingId: typedBooking.id,
         invoiceId: invoice.id,
         invoiceNumber,
-        amount: billingSummary.total_amount
+        amount: billingSummary.total_amount,
+        billToType: billingConfig.billToType,
+        creditPeriodDays: billingConfig.creditPeriodDays
       });
 
       return {
