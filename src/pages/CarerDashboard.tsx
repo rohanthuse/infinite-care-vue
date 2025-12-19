@@ -76,7 +76,7 @@ const CarerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px] pb-16 lg:pb-0">
+    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px] pb-20 lg:pb-0">
       <CarerHeader />
       
       {/* Attendance Check-In Popup - shows only if not checked in today */}
