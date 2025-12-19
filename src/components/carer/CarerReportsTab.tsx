@@ -245,62 +245,62 @@ export function CarerReportsTab() {
       </div>
 
       {/* Status Overview */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">{pendingReports.length}</p>
-                <p className="text-xs text-muted-foreground">Pending Review</p>
+              <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl md:text-2xl font-bold">{pendingReports.length}</p>
+                <p className="text-xs text-muted-foreground truncate">Pending</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{approvedReports.length}</p>
-                <p className="text-xs text-muted-foreground">Approved</p>
+              <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl md:text-2xl font-bold">{approvedReports.length}</p>
+                <p className="text-xs text-muted-foreground truncate">Approved</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">{revisionReports.length}</p>
-                <p className="text-xs text-muted-foreground">Need Revision</p>
+              <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl md:text-2xl font-bold">{revisionReports.length}</p>
+                <p className="text-xs text-muted-foreground truncate">Revision</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center space-x-2">
-              <XCircle className="h-4 w-4 text-red-500" />
-              <div>
-                <p className="text-2xl font-bold">{rejectedReports.length}</p>
-                <p className="text-xs text-muted-foreground">Rejected</p>
+              <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl md:text-2xl font-bold">{rejectedReports.length}</p>
+                <p className="text-xs text-muted-foreground truncate">Rejected</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="col-span-2 sm:col-span-1">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center space-x-2">
-              <FileText className="h-4 w-4 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">{pastAppointments.length}</p>
-                <p className="text-xs text-muted-foreground">Past Appointments</p>
+              <FileText className="h-4 w-4 text-purple-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xl md:text-2xl font-bold">{pastAppointments.length}</p>
+                <p className="text-xs text-muted-foreground truncate">Past Appts</p>
               </div>
             </div>
           </CardContent>
@@ -308,28 +308,35 @@ export function CarerReportsTab() {
       </div>
 
       <Tabs defaultValue="past" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="past" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Past ({pastAppointments.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Pending ({pendingReports.length})
-          </TabsTrigger>
-          <TabsTrigger value="revision" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Revision ({revisionReports.length})
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Approved ({approvedReports.length})
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex items-center gap-2">
-            <XCircle className="h-4 w-4" />
-            Rejected ({rejectedReports.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="inline-flex w-max min-w-full gap-1 p-1">
+            <TabsTrigger value="past" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+              <FileText className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Past</span>
+              <span className="text-xs">({pastAppointments.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+              <Clock className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Pending</span>
+              <span className="text-xs">({pendingReports.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="revision" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Revision</span>
+              <span className="text-xs">({revisionReports.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+              <CheckCircle className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Approved</span>
+              <span className="text-xs">({approvedReports.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+              <XCircle className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Rejected</span>
+              <span className="text-xs">({rejectedReports.length})</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="past" className="space-y-4">
           <Card>

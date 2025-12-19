@@ -269,24 +269,25 @@ export function ViewServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-12 w-12">
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
                 <AvatarImage src={safeReport.clients.avatar_url} />
                 <AvatarFallback>
                   {safeReport.clients.first_name?.[0] || 'C'}{safeReport.clients.last_name?.[0] || 'L'}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <DialogTitle className="text-2xl">
-                  Service Report: {safeReport.clients.first_name} {safeReport.clients.last_name}
+              <div className="min-w-0">
+                <DialogTitle className="text-lg sm:text-2xl">
+                  <span className="hidden sm:inline">Service Report: </span>
+                  {safeReport.clients.first_name} {safeReport.clients.last_name}
                 </DialogTitle>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
                     <User className="h-3 w-3" />
-                    Carer: {safeReport.staff.first_name} {safeReport.staff.last_name}
+                    <span className="hidden sm:inline">Carer:</span> {safeReport.staff.first_name}
                   </Badge>
                   {getStatusBadge(safeReport.status)}
                 </div>
@@ -298,24 +299,24 @@ export function ViewServiceReportDialog({
               size="sm"
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {isGeneratingPDF ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  Generating...
+                  <span className="hidden sm:inline">Generating...</span>
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  Download PDF
+                  <span className="hidden sm:inline">Download</span> PDF
                 </>
               )}
             </Button>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 max-h-[calc(90vh-140px)] overflow-y-auto px-6 pb-6">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-140px)] overflow-y-auto px-4 sm:px-6 pb-6">
           <div className="space-y-6 mt-6">
             {/* Status Message Card */}
             {(isEditable || isAwaitingApproval || safeReport.status === 'approved' || safeReport.status === 'rejected') && (
@@ -391,33 +392,33 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Service Date</p>
-                    <p className="font-medium flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {formatSafeDate(safeReport.service_date, 'PPP')}
+                    <p className="text-xs sm:text-sm text-muted-foreground">Service Date</p>
+                    <p className="font-medium flex items-center gap-1 text-sm sm:text-base">
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                      <span className="truncate">{formatSafeDate(safeReport.service_date, 'PP')}</span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Duration</p>
-                    <p className="font-medium flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {safeReport.service_duration_minutes || 0} minutes
+                    <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+                    <p className="font-medium flex items-center gap-1 text-sm sm:text-base">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                      {safeReport.service_duration_minutes || 0} min
                     </p>
                   </div>
                   {visitRecord?.visit_start_time && formatSafeDate(visitRecord.visit_start_time, 'p') !== 'N/A' && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Start Time</p>
-                      <p className="font-medium">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Start Time</p>
+                      <p className="font-medium text-sm sm:text-base">
                         {formatSafeDate(visitRecord.visit_start_time, 'p')}
                       </p>
                     </div>
                   )}
                   {visitRecord?.visit_end_time && formatSafeDate(visitRecord.visit_end_time, 'p') !== 'N/A' && (
                     <div>
-                      <p className="text-sm text-muted-foreground">End Time</p>
-                      <p className="font-medium">
+                      <p className="text-xs sm:text-sm text-muted-foreground">End Time</p>
+                      <p className="font-medium text-sm sm:text-base">
                         {formatSafeDate(visitRecord.visit_end_time, 'p')}
                       </p>
                     </div>
