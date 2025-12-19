@@ -110,8 +110,10 @@ export const CarerRightSidebar: React.FC = () => {
       side="right" 
       collapsible="icon"
       className={cn(
-        "hidden lg:flex border-l bg-sidebar z-30",
-        sidebarOpen ? "w-64" : "w-14"
+        "border-l bg-sidebar z-30",
+        // On desktop show inline, on mobile the Sidebar component handles Sheet automatically
+        "max-lg:!w-0 max-lg:!min-w-0 max-lg:border-0",
+        sidebarOpen ? "lg:w-64" : "lg:w-14"
       )}
       style={{
         '--sidebar-width': '16rem',

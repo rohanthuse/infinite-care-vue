@@ -64,8 +64,8 @@ export const CarerSubHeader: React.FC = () => {
               )}
               <Button variant="outline" size="sm" className="shrink-0" asChild>
                 <Link to={createCarerPath('')}>
-                  <ArrowLeft className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Back to Dashboard</span>
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to Dashboard</span>
                 </Link>
               </Button>
             </div>
@@ -80,8 +80,8 @@ export const CarerSubHeader: React.FC = () => {
         {/* Right side - Messages button */}
         <Button variant="outline" size="sm" className="shrink-0" asChild>
           <Link to={createCarerPath('/messages')}>
-            <MessageCircle className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Messages</span>
+            <MessageCircle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Messages</span>
           </Link>
         </Button>
       </div>

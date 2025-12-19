@@ -31,6 +31,7 @@ interface CarerSearchDropdownProps {
   onClose: () => void;
   onResultClick: () => void;
   anchorRef: React.RefObject<HTMLInputElement>;
+  isMobile?: boolean;
 }
 
 interface ModuleShortcut {
@@ -101,6 +102,7 @@ export const CarerSearchDropdown: React.FC<CarerSearchDropdownProps> = ({
   onClose,
   onResultClick,
   anchorRef,
+  isMobile = false,
 }) => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
@@ -206,7 +208,10 @@ export const CarerSearchDropdown: React.FC<CarerSearchDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-[100] max-h-[400px] overflow-y-auto"
+      className={cn(
+        "bg-background border border-border rounded-lg shadow-lg z-[100] max-h-[400px] overflow-y-auto",
+        isMobile ? "relative w-full" : "absolute top-full left-0 right-0 mt-2"
+      )}
     >
       {/* Loading state */}
       {isSearching ? (
