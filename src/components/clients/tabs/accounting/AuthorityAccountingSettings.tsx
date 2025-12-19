@@ -79,20 +79,27 @@ const AuthorityEntryCard: React.FC<AuthorityEntryCardProps> = ({
   });
 
   const handleSubmit = (data: AuthorityAccountingFormData) => {
+    // Sanitize data: convert empty strings to undefined for optional fields
+    const sanitizedData = {
+      ...data,
+      reference_number: data.reference_number || undefined,
+      travel_rate_id: data.travel_rate_id || undefined,
+    };
+
     if (isNew) {
       onSave({
         client_id: clientId,
-        authority_id: data.authority_id,
-        reference_number: data.reference_number || undefined,
-        travel_rate_id: data.travel_rate_id || undefined,
-        charge_based_on: data.charge_based_on,
-        extra_time_calculation: data.extra_time_calculation,
-        client_contribution_required: data.client_contribution_required,
+        authority_id: sanitizedData.authority_id,
+        reference_number: sanitizedData.reference_number,
+        travel_rate_id: sanitizedData.travel_rate_id,
+        charge_based_on: sanitizedData.charge_based_on,
+        extra_time_calculation: sanitizedData.extra_time_calculation,
+        client_contribution_required: sanitizedData.client_contribution_required,
         branch_id: branchId || undefined,
         organization_id: organizationId || undefined,
       });
     } else if (entry) {
-      onUpdate(entry.id, data);
+      onUpdate(entry.id, sanitizedData);
     }
   };
 
