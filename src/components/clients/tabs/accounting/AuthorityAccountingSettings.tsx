@@ -178,8 +178,8 @@ const AuthorityEntryCard: React.FC<AuthorityEntryCardProps> = ({
                   <FormItem>
                     <FormLabel>Travel</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ''}
+                      onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                      value={field.value || 'none'}
                       disabled={travelRatesLoading}
                     >
                       <FormControl>
@@ -188,7 +188,7 @@ const AuthorityEntryCard: React.FC<AuthorityEntryCardProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {travelRates.map((rate) => (
                           <SelectItem key={rate.id} value={rate.id}>
                             {rate.title} - £{rate.rate_per_mile}/mile
