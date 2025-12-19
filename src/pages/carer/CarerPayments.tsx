@@ -243,98 +243,100 @@ const CarerPayments: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-5">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Month</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Current Month</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{paymentsData?.summary?.currentMonth?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">Earnings this month</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">£{paymentsData?.summary?.currentMonth?.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">Earnings this month</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Year to Date</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Year to Date</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{paymentsData?.summary?.yearToDate?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">Total earnings this year</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">£{paymentsData?.summary?.yearToDate?.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">Total this year</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reimbursements</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Reimbursements</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{paymentsData?.summary?.totalReimbursements?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">Expenses & travel claims paid</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">£{paymentsData?.summary?.totalReimbursements?.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">Claims paid</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Extra Time (This Month)</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Extra Time</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{paymentsData?.summary?.extraTimeThisMonth?.total?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">Approved: £{paymentsData?.summary?.extraTimeThisMonth?.approved?.toFixed(2) || '0.00'} | Pending: £{paymentsData?.summary?.extraTimeThisMonth?.pending?.toFixed(2) || '0.00'}</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">£{paymentsData?.summary?.extraTimeThisMonth?.total?.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground hidden lg:block">A: £{paymentsData?.summary?.extraTimeThisMonth?.approved?.toFixed(2) || '0.00'} | P: £{paymentsData?.summary?.extraTimeThisMonth?.pending?.toFixed(2) || '0.00'}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenses (This Month)</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-2 sm:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium truncate">Expenses</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{paymentsData?.summary?.expenseThisMonth?.total?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">Approved: £{paymentsData?.summary?.expenseThisMonth?.approved?.toFixed(2) || '0.00'} | Pending: £{paymentsData?.summary?.expenseThisMonth?.pending?.toFixed(2) || '0.00'}</p>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">£{paymentsData?.summary?.expenseThisMonth?.total?.toFixed(2) || '0.00'}</div>
+            <p className="text-xs text-muted-foreground hidden lg:block">A: £{paymentsData?.summary?.expenseThisMonth?.approved?.toFixed(2) || '0.00'} | P: £{paymentsData?.summary?.expenseThisMonth?.pending?.toFixed(2) || '0.00'}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1 rounded-lg h-auto flex-wrap gap-1">
-          <TabsTrigger 
-            value="history" 
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
-          >
-            <Wallet className="h-4 w-4 mr-2" />
-            Payment History
-          </TabsTrigger>
-          <TabsTrigger 
-            value="payslips" 
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Payslips
-          </TabsTrigger>
-          <TabsTrigger 
-            value="expenses" 
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
-          >
-            <Receipt className="h-4 w-4 mr-2" />
-            My Expense Claims
-          </TabsTrigger>
-          <TabsTrigger 
-            value="travel" 
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
-          >
-            <Car className="h-4 w-4 mr-2" />
-            Travel & Mileage
-          </TabsTrigger>
-          <TabsTrigger 
-            value="extratime" 
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-md font-medium transition-all"
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            Extra Time
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="inline-flex w-max min-w-full bg-muted/50 p-1 rounded-lg h-auto gap-1">
+            <TabsTrigger 
+              value="history" 
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-2 sm:px-4 py-2 sm:py-2.5 rounded-md font-medium transition-all min-w-[44px]"
+            >
+              <Wallet className="h-4 w-4 sm:mr-2 shrink-0" />
+              <span className="hidden sm:inline">History</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payslips" 
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-2 sm:px-4 py-2 sm:py-2.5 rounded-md font-medium transition-all min-w-[44px]"
+            >
+              <FileText className="h-4 w-4 sm:mr-2 shrink-0" />
+              <span className="hidden sm:inline">Payslips</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="expenses" 
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-2 sm:px-4 py-2 sm:py-2.5 rounded-md font-medium transition-all min-w-[44px]"
+            >
+              <Receipt className="h-4 w-4 sm:mr-2 shrink-0" />
+              <span className="hidden sm:inline">Expenses</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="travel" 
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-2 sm:px-4 py-2 sm:py-2.5 rounded-md font-medium transition-all min-w-[44px]"
+            >
+              <Car className="h-4 w-4 sm:mr-2 shrink-0" />
+              <span className="hidden sm:inline">Travel</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="extratime" 
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm px-2 sm:px-4 py-2 sm:py-2.5 rounded-md font-medium transition-all min-w-[44px]"
+            >
+              <Clock className="h-4 w-4 sm:mr-2 shrink-0" />
+              <span className="hidden sm:inline">Extra Time</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Payment History Tab */}
         <TabsContent value="history">

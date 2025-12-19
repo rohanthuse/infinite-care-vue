@@ -97,9 +97,9 @@ export const CarerAppointmentDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span>Appointment Details</span>
             <Badge variant="custom" className={getStatusColor(appointment.status)}>
               {normalizeStatus(appointment.status)}
@@ -107,23 +107,23 @@ export const CarerAppointmentDetailDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Date & Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(appointment.start_time), 'EEEE, MMMM d, yyyy')}
+              <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base">Date</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  {format(new Date(appointment.start_time), 'EEE, MMM d, yyyy')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Time</p>
-                <p className="text-sm text-muted-foreground">
+              <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base">Time</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
                 </p>
               </div>
@@ -275,40 +275,37 @@ export const CarerAppointmentDetailDialog = ({
 
           {/* Action Buttons */}
           <Separator />
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2 sm:gap-3">
             {appointment.status === 'completed' && (
               <Button onClick={() => {
                 if (onViewSummary) {
                   onViewSummary(appointment);
                 } else {
-                  // Fallback to direct navigation
                   window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=view`;
                 }
                 onOpenChange(false);
-              }} className="flex-1 bg-green-600 hover:bg-green-700">
+              }} className="w-full bg-green-600 hover:bg-green-700">
                 View Summary
               </Button>
             )}
             {(appointment.status === 'in-progress' || appointment.status === 'in_progress') && (
-              <Button onClick={handleContinueVisit} className="flex-1">
+              <Button onClick={handleContinueVisit} className="w-full">
                 Continue Visit
               </Button>
             )}
             {canStartAppointment(appointment) && appointment.status === 'assigned' && (
-              <Button onClick={handleStartVisit} className="flex-1">
+              <Button onClick={handleStartVisit} className="w-full">
                 Start Visit
               </Button>
             )}
             
-            {/* Info message when request is pending */}
             {appointment.unavailability_request?.status === 'pending' && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>Your unavailability request is pending admin review. You will be notified once it's processed.</span>
+              <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs sm:text-sm text-yellow-800">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>Your unavailability request is pending admin review.</span>
               </div>
             )}
 
-            {/* Not Available Button - Only show for future assigned bookings WITHOUT existing request */}
             {appointment.status === 'assigned' && 
              new Date(appointment.start_time) > new Date() && 
              !appointment.unavailability_request && (
@@ -318,7 +315,7 @@ export const CarerAppointmentDetailDialog = ({
                   onRequestUnavailability?.(appointment);
                   onOpenChange(false);
                 }}
-                className="flex items-center gap-2"
+                className="w-full flex items-center justify-center gap-2"
               >
                 <AlertCircle className="h-4 w-4" />
                 I'm Not Available

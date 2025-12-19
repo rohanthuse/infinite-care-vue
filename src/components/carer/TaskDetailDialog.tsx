@@ -177,13 +177,13 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-[550px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl">
+          <DialogTitle className="text-lg sm:text-xl">
             {editMode ? "Edit Task" : task?.title}
           </DialogTitle>
           {!editMode && task?.description && (
-            <DialogDescription className="text-sm text-gray-500">
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
               {task.description}
             </DialogDescription>
           )}
@@ -377,43 +377,43 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           </div>
         )}
         
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           {editMode ? (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditMode(false)}>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={() => setEditMode(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button onClick={handleSave}>Save Changes</Button>
+              <Button onClick={handleSave} className="w-full sm:w-auto">Save Changes</Button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {!task?.completed && (
                 <Button 
                   onClick={() => onComplete(task.id)}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 >
                   Mark Complete
                 </Button>
               )}
               {(allowEditCompleted || !task?.completed) && (
-                <Button variant="outline" onClick={() => setEditMode(true)}>
-                  Edit Task
+                <Button variant="outline" onClick={() => setEditMode(true)} className="w-full sm:w-auto">
+                  Edit
                 </Button>
               )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive">Delete</Button>
+                  <Button variant="destructive" className="w-full sm:w-auto">Delete</Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="w-[95vw] max-w-md">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Task</AlertDialogTitle>
                     <AlertDialogDescription>
                       Are you sure you want to delete this task? This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="w-full sm:w-auto">
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
