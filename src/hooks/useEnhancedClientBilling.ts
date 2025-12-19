@@ -179,7 +179,8 @@ export const useUninvoicedBookings = (clientId: string) => {
           clients(first_name, last_name)
         `)
         .eq('client_id', clientId)
-        .is('invoice_id', null);
+        .eq('is_invoiced', false)
+        .in('status', ['done', 'completed']);
       
       if (error) throw error;
       
