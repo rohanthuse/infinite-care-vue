@@ -180,8 +180,8 @@ export const CarerHeader: React.FC = () => {
 
       {/* Mobile Search Overlay */}
       {mobileSearchOpen && (
-        <div className="md:hidden fixed inset-0 z-[60] bg-background">
-          <div className="flex items-center gap-2 p-3 border-b">
+        <div className="md:hidden fixed inset-0 z-[70] bg-background pt-safe">
+          <div className="flex items-center gap-2 p-3 border-b bg-background">
             <Button
               variant="ghost"
               size="icon"

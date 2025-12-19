@@ -290,7 +290,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] sm:w-80 max-h-[70vh] overflow-y-auto" sideOffset={8}>
           <DropdownMenuLabel className="flex items-center justify-between">
             <span>Notifications</span>
             {stats && stats.unread_count > 0 && (
