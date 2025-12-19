@@ -103,7 +103,7 @@ export const useGenerateBookingInvoice = () => {
         servicePayer: billingConfig.servicePayer
       });
 
-      // 4. Fetch client's active rate schedules
+      // 4. Fetch client's active rate schedules (check both tables)
       const { data: rateSchedules, error: rateError } = await supabase
         .from('client_rate_schedules')
         .select('*')
@@ -115,18 +115,60 @@ export const useGenerateBookingInvoice = () => {
         throw new Error(`Failed to fetch rate schedules`);
       }
 
-      if (!rateSchedules || rateSchedules.length === 0) {
-        console.log('[generateInvoiceForBooking] Skipping - No active rate schedule for client');
+      let typedRateSchedules: any[] = rateSchedules || [];
+
+      // If no rate schedules, check client_rate_assignments as fallback
+      if (typedRateSchedules.length === 0) {
+        console.log('[generateInvoiceForBooking] No client_rate_schedules found, checking client_rate_assignments');
+        
+        const { data: rateAssignments, error: assignmentError } = await supabase
+          .from('client_rate_assignments')
+          .select(`
+            *,
+            service_rate:service_rates(*)
+          `)
+          .eq('client_id', typedBooking.client_id)
+          .eq('is_active', true);
+
+        if (assignmentError) {
+          console.error('[generateInvoiceForBooking] Error fetching rate assignments:', assignmentError);
+        }
+
+        if (rateAssignments && rateAssignments.length > 0) {
+          console.log(`[generateInvoiceForBooking] Found ${rateAssignments.length} rate assignments`);
+          
+          // Convert rate assignments to rate schedule format for the calculator
+          typedRateSchedules = rateAssignments.map((assignment: any) => ({
+            id: assignment.id,
+            client_id: assignment.client_id,
+            rate_type: assignment.service_rate?.rate_type || 'hourly',
+            hourly_rate: assignment.service_rate?.hourly_rate || assignment.service_rate?.rate_per_unit || 0,
+            rate_per_unit: assignment.service_rate?.rate_per_unit || assignment.service_rate?.hourly_rate || 0,
+            effective_from: assignment.start_date,
+            effective_to: assignment.end_date,
+            is_active: assignment.is_active,
+            bank_holiday_multiplier: assignment.service_rate?.bank_holiday_multiplier || 1.5,
+            service_id: assignment.service_rate_id,
+            description: assignment.service_rate?.name || assignment.service_rate?.description || 'Service Rate'
+          }));
+        }
+      }
+
+      // Still no rates found after checking both tables
+      if (typedRateSchedules.length === 0) {
+        console.log('[generateInvoiceForBooking] Skipping - No active rate schedule or assignment for client');
         return {
           success: false,
           skipped: true,
-          message: 'No active rate schedule found for this client',
+          message: 'No active rate schedule or rate assignment found for this client',
           invoice: null,
           invoiceNumber: null,
           amount: null,
           lineItemCount: null
         };
       }
+
+      console.log(`[generateInvoiceForBooking] Using ${typedRateSchedules.length} rate schedule(s)`);
 
       // 5. Convert booking to Visit format
       const visit: Visit = {
@@ -145,7 +187,7 @@ export const useGenerateBookingInvoice = () => {
       };
 
       // 6. Calculate billing using VisitBillingCalculator with correct time basis
-      const calculator = new VisitBillingCalculator(rateSchedules as any[], billingConfig.useActualTime);
+      const calculator = new VisitBillingCalculator(typedRateSchedules, billingConfig.useActualTime);
       const billingSummary = calculator.calculateVisitsBilling([visit]);
 
       // Calculate booked time directly from scheduled booking times

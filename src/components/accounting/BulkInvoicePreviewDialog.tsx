@@ -83,15 +83,28 @@ export const BulkInvoicePreviewDialog: React.FC<BulkInvoicePreviewDialogProps> =
 
       setTotalBookings(bookings?.length || 0);
 
-      // Check rate schedules for each client
+      // Check rate schedules for each client (check BOTH tables)
       const clientIds = Array.from(clientMap.keys());
+      
+      // Check client_rate_schedules (ad-hoc rates)
       const { data: rateSchedules } = await supabase
         .from('client_rate_schedules')
         .select('client_id')
         .in('client_id', clientIds)
         .eq('is_active', true);
 
-      const clientsWithRates = new Set(rateSchedules?.map(rs => rs.client_id) || []);
+      // Also check client_rate_assignments (assigned service rates)
+      const { data: rateAssignments } = await supabase
+        .from('client_rate_assignments')
+        .select('client_id')
+        .in('client_id', clientIds)
+        .eq('is_active', true);
+
+      // Combine both sources - client has rate if in either table
+      const clientsWithRates = new Set([
+        ...(rateSchedules?.map(rs => rs.client_id) || []),
+        ...(rateAssignments?.map(ra => ra.client_id) || [])
+      ]);
 
       const previews: ClientPreview[] = Array.from(clientMap.entries()).map(([clientId, data]) => ({
         clientId,
