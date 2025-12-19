@@ -138,16 +138,35 @@ export const useGenerateBookingInvoice = () => {
           console.log(`[generateInvoiceForBooking] Found ${rateAssignments.length} rate assignments`);
           
           // Convert rate assignments to rate schedule format for the calculator
+          // Convert rate assignments to rate schedule format with ALL required fields for VisitBillingCalculator
           typedRateSchedules = rateAssignments.map((assignment: any) => ({
             id: assignment.id,
             client_id: assignment.client_id,
-            rate_type: assignment.service_rate?.rate_type || 'hourly',
-            hourly_rate: assignment.service_rate?.hourly_rate || assignment.service_rate?.rate_per_unit || 0,
-            rate_per_unit: assignment.service_rate?.rate_per_unit || assignment.service_rate?.hourly_rate || 0,
-            effective_from: assignment.start_date,
-            effective_to: assignment.end_date,
-            is_active: assignment.is_active,
+            // Required date range fields
+            start_date: assignment.start_date || assignment.service_rate?.effective_from || '2000-01-01',
+            end_date: assignment.end_date || assignment.service_rate?.effective_to || null,
+            // Required days_covered - default to all days if not specified
+            days_covered: assignment.service_rate?.applicable_days || 
+                          ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'bank_holiday'],
+            // Required time range - default to full day if not specified
+            time_from: assignment.service_rate?.time_from || '00:00:00',
+            time_until: assignment.service_rate?.time_until || '23:59:59',
+            // Required base_rate for billing calculation
+            base_rate: assignment.service_rate?.amount || 
+                       assignment.service_rate?.hourly_rate || 
+                       assignment.service_rate?.rate_per_unit || 0,
+            // Required charge_type for rate calculation logic
+            charge_type: assignment.service_rate?.charge_type || 'rate_per_minutes_pro_rata',
+            // Flat rate tiers (optional)
+            rate_15_minutes: assignment.service_rate?.rate_15_minutes,
+            rate_30_minutes: assignment.service_rate?.rate_30_minutes,
+            rate_45_minutes: assignment.service_rate?.rate_45_minutes,
+            rate_60_minutes: assignment.service_rate?.rate_60_minutes,
+            // Status and multipliers
+            is_active: assignment.is_active ?? true,
+            is_vatable: assignment.service_rate?.is_vatable || false,
             bank_holiday_multiplier: assignment.service_rate?.bank_holiday_multiplier || 1.5,
+            // Legacy fields for compatibility
             service_id: assignment.service_rate_id,
             description: assignment.service_rate?.name || assignment.service_rate?.description || 'Service Rate'
           }));
@@ -199,9 +218,24 @@ export const useGenerateBookingInvoice = () => {
         net: billingSummary.net_amount,
         vat: billingSummary.vat_amount,
         total: billingSummary.total_amount,
+        lineItems: billingSummary.line_items.length,
         bookedTimeMinutes,
         useActualTime: billingConfig.useActualTime
       });
+
+      // Validation: Prevent £0.00 invoice if no line items were generated
+      if (billingSummary.line_items.length === 0) {
+        console.error('[generateInvoiceForBooking] No billable line items generated - rate matching may have failed');
+        return {
+          success: false,
+          skipped: true,
+          message: 'Could not calculate billing - no matching rate found for this booking. Check that the client has an active rate covering the booking date, time, and day of week.',
+          invoice: null,
+          invoiceNumber: null,
+          amount: null,
+          lineItemCount: null
+        };
+      }
 
       // 7. Generate unique invoice number
       const invoiceNumber = await generateUniqueInvoiceNumber(input.organizationId);
