@@ -76,11 +76,27 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
       setDoubleHanded(false);
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('[AddServiceDialog] Service creation failed:', error);
+      
+      // Parse the error for user-friendly messages
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      
+      // Check for duplicate key violation (PostgreSQL error code 23505)
+      if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
+        if (error.message?.includes('services_title')) {
+          errorMessage = `A service with the title "${title.trim()}" already exists in your organisation. Please choose a different title.`;
+        } else {
+          errorMessage = "This service already exists. Please check your input.";
+        }
+      } else if (error.message) {
+        // Clean up technical error messages
+        errorMessage = error.message.replace(/^(.*?):\s*/, '');
+      }
+      
       toast({
         title: "Failed to add service",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -89,10 +105,30 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !category.trim()) {
+    const trimmedTitle = title.trim();
+    
+    if (!trimmedTitle) {
       toast({
-        title: "Required fields missing",
-        description: "Please provide a title and category.",
+        title: "Title required",
+        description: "Please enter a service title.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trimmedTitle.length < 2) {
+      toast({
+        title: "Title too short",
+        description: "Service title must be at least 2 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!category) {
+      toast({
+        title: "Category required",
+        description: "Please select a service category.",
         variant: "destructive",
       });
       return;
@@ -108,9 +144,9 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
     }
     
     const serviceData = {
-      title,
+      title: trimmedTitle,
       category,
-      description,
+      description: description.trim(),
       double_handed: doubleHanded,
       organization_id: organization.id
     };
