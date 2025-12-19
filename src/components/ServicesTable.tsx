@@ -169,8 +169,11 @@ export function ServicesTable({
   });
 
   const handleDeleteClick = (service: Service) => {
-    setServiceToDelete(service);
-    setIsDeleteDialogOpen(true);
+    // Small delay to ensure dropdown fully closes before opening dialog
+    requestAnimationFrame(() => {
+      setServiceToDelete(service);
+      setIsDeleteDialogOpen(true);
+    });
   };
 
   const confirmDelete = () => {
@@ -231,6 +234,20 @@ export function ServicesTable({
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, filterDoubleHanded, itemsPerPage]);
+
+  // Force cleanup of any lingering dropdown state when delete dialog opens
+  useEffect(() => {
+    if (isDeleteDialogOpen) {
+      document.body.style.removeProperty('pointer-events');
+      document.documentElement.style.removeProperty('pointer-events');
+      
+      const root = document.getElementById('root');
+      if (root) {
+        root.removeAttribute('inert');
+        root.removeAttribute('aria-hidden');
+      }
+    }
+  }, [isDeleteDialogOpen]);
   
   const totalPages = Math.ceil(filteredAndSortedServices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
