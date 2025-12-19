@@ -18,6 +18,7 @@ export interface CreateBookingInput {
   revenue?: number;
   status?: string; // <-- ADDED
   notes?: string;
+  location_address?: string; // Address where the booking takes place (snapshot)
 }
 
 export async function createBooking(input: CreateBookingInput) {
@@ -76,6 +77,7 @@ export async function createBooking(input: CreateBookingInput) {
         revenue: input.revenue || null,
         status: input.status || (input.staff_id ? "assigned" : "unassigned"), // Auto-set status based on staff assignment
         notes: input.notes || null,
+        location_address: input.location_address || null, // Store booking location as snapshot
       },
     ])
     .select()

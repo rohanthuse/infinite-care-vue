@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format, parse } from "date-fns";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
-import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle, CalendarOff } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle, CalendarOff, MapPin } from "lucide-react";
 import { getBookingStatusColor, getBookingStatusLabel, BOOKING_STATUS_COLORS, BookingStatusType } from "../utils/bookingColors";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { useStaffLeaveAvailability, validateCarersLeaveConflict } from "@/hooks/useStaffLeaveAvailability";
 import { BookingValidationAlert } from "../BookingValidationAlert";
 import { BookingOverlapAlert } from "../BookingOverlapAlert";
+import { useClientAddresses, ClientAddress } from "@/hooks/useClientAddresses";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -86,6 +87,7 @@ const editBookingSchema = z.object({
   assign_later: z.boolean().optional(),
   notes: z.string().optional(),
   status: z.string().optional(),
+  location_address: z.string().optional(), // Booking location
 }).refine((data) => {
   // Validate end time is after start time
   const [startHour, startMin] = data.start_time.split(':').map(Number);
@@ -157,6 +159,7 @@ export function EditBookingDialog({
       assign_later: false,
       notes: "",
       status: "",
+      location_address: "",
     },
   });
   
@@ -169,6 +172,16 @@ export function EditBookingDialog({
     getLeaveInfo, 
     approvedLeaves,
   } = useStaffLeaveAvailability(branchId, watchedBookingDate);
+
+  // Fetch client addresses for location field
+  const clientId = booking?.clientId || booking?.client_id;
+  const { data: clientAddresses = [] } = useClientAddresses(clientId || "");
+
+  // Format address for display
+  const formatAddress = (addr: ClientAddress): string => {
+    const parts = [addr.address_line_1, addr.address_line_2, addr.city, addr.state_county, addr.postcode].filter(Boolean);
+    return parts.join(', ');
+  };
   
   // Build carer names map for validation
   const carerNamesMap = useMemo(() => {
@@ -491,6 +504,7 @@ export function EditBookingDialog({
       form.setValue("service_ids", serviceIdsToSet);
       form.setValue("notes", booking.notes || "");
       form.setValue("status", booking.status || "assigned");
+      form.setValue("location_address", booking.location_address || "");
       
       console.log('[EditBookingDialog] Form initialized:', {
         bookingId: booking.id,
@@ -645,6 +659,7 @@ export function EditBookingDialog({
         service_id: primaryServiceId,
         notes: data.notes,
         status: finalStatus,
+        location_address: data.location_address || null,
         reschedule_request_status: null,
         cancellation_request_status: null,
       };
@@ -1161,6 +1176,41 @@ export function EditBookingDialog({
                     />
                   </div>
                 </div>
+
+                {/* Location Field */}
+                <FormField
+                  control={form.control}
+                  name="location_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Location
+                      </FormLabel>
+                      {clientAddresses.length === 0 ? (
+                        <Input
+                          placeholder="No addresses available"
+                          disabled
+                          value={field.value || ''}
+                        />
+                      ) : (
+                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clientAddresses.map((addr) => (
+                              <SelectItem key={addr.id} value={formatAddress(addr)}>
+                                {addr.address_label || 'Address'}: {formatAddress(addr)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

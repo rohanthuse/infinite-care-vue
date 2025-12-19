@@ -1212,6 +1212,7 @@ export type Database = {
           is_missed: boolean | null
           late_start_minutes: number | null
           late_start_notified_at: string | null
+          location_address: string | null
           missed_notified_at: string | null
           notes: string | null
           organization_id: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
           is_missed?: boolean | null
           late_start_minutes?: number | null
           late_start_notified_at?: string | null
+          location_address?: string | null
           missed_notified_at?: string | null
           notes?: string | null
           organization_id?: string | null
@@ -1270,6 +1272,7 @@ export type Database = {
           is_missed?: boolean | null
           late_start_minutes?: number | null
           late_start_notified_at?: string | null
+          location_address?: string | null
           missed_notified_at?: string | null
           notes?: string | null
           organization_id?: string | null
