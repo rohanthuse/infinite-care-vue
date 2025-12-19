@@ -68,7 +68,7 @@ import { ChevronDown } from "lucide-react";
   ];
 
 export const CarerRightSidebar: React.FC = () => {
-  const { open: sidebarOpen } = useSidebar();
+  const { open: sidebarOpen, isMobile } = useSidebar();
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,6 +78,9 @@ export const CarerRightSidebar: React.FC = () => {
     "Reports & Documents": true,
     "Personal": true
   });
+
+  // On mobile (inside Sheet), always show full content; on desktop, respect sidebarOpen
+  const showContent = isMobile || sidebarOpen;
 
   const handleNavClick = (value: string) => {
     const path = createCarerPath(value ? `/${value}` : '');
@@ -122,11 +125,11 @@ export const CarerRightSidebar: React.FC = () => {
     >
       <SidebarHeader className="border-b p-3 lg:p-4 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between">
-          {sidebarOpen && <h2 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">Navigation</h2>}
-          <SidebarTrigger className={cn(!sidebarOpen && "mx-auto", "text-gray-700 dark:text-gray-300")} />
+          {showContent && <h2 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">Navigation</h2>}
+          <SidebarTrigger className={cn(!showContent && "mx-auto", "text-gray-700 dark:text-gray-300")} />
         </div>
         
-        {sidebarOpen && (
+        {showContent && (
           <div className="mt-3 lg:mt-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
             <Input
@@ -142,7 +145,7 @@ export const CarerRightSidebar: React.FC = () => {
       <SidebarContent className="bg-white dark:bg-gray-900">
         {/* Primary Items */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel className="text-gray-600 dark:text-gray-400">Main</SidebarGroupLabel>}
+          {showContent && <SidebarGroupLabel className="text-gray-600 dark:text-gray-400">Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredPrimaryItems.map((item) => (
@@ -150,14 +153,14 @@ export const CarerRightSidebar: React.FC = () => {
                   <SidebarMenuButton
                     onClick={() => handleNavClick(item.value)}
                     isActive={isActive(item.value)}
-                    tooltip={!sidebarOpen ? item.label : undefined}
+                    tooltip={!showContent ? item.label : undefined}
                     className={cn(
                       "w-full justify-start text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800",
                       isActive(item.value) && "bg-primary/10 text-primary font-medium"
                     )}
                   >
                     <item.icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    {sidebarOpen && <span className="ml-2 text-gray-800 dark:text-gray-100">{item.label}</span>}
+                    {showContent && <span className="ml-2 text-gray-800 dark:text-gray-100">{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -173,7 +176,7 @@ export const CarerRightSidebar: React.FC = () => {
             onOpenChange={() => toggleGroup(group.label)}
           >
             <SidebarGroup>
-              {sidebarOpen && (
+              {showContent && (
                 <CollapsibleTrigger asChild>
                   <SidebarGroupLabel className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between text-gray-600 dark:text-gray-400">
                     <span>{group.label}</span>
@@ -192,14 +195,14 @@ export const CarerRightSidebar: React.FC = () => {
                         <SidebarMenuButton
                           onClick={() => handleNavClick(item.value)}
                           isActive={isActive(item.value)}
-                          tooltip={!sidebarOpen ? item.label : undefined}
+                          tooltip={!showContent ? item.label : undefined}
                           className={cn(
                             "w-full justify-start text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800",
                             isActive(item.value) && "bg-primary/10 text-primary font-medium"
                           )}
                         >
                           <item.icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                          {sidebarOpen && <span className="ml-2 text-gray-800 dark:text-gray-100">{item.label}</span>}
+                          {showContent && <span className="ml-2 text-gray-800 dark:text-gray-100">{item.label}</span>}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
@@ -212,7 +215,7 @@ export const CarerRightSidebar: React.FC = () => {
       </SidebarContent>
 
       <SidebarFooter className="border-t p-2 bg-white dark:bg-gray-900">
-        {sidebarOpen && (
+        {showContent && (
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             Med-Infinite v1.0
           </p>
