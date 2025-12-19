@@ -76,9 +76,21 @@ export const useUpdateClientAuthorityAccounting = () => {
 
   return useMutation({
     mutationFn: async ({ id, clientId, updates }: { id: string; clientId: string; updates: ClientAuthorityAccountingUpdate }) => {
+      // Sanitize updates: convert empty strings to null for optional UUID and text fields
+      const sanitizedUpdates: Record<string, any> = {};
+      
+      for (const [key, value] of Object.entries(updates)) {
+        if (key === 'travel_rate_id' || key === 'reference_number') {
+          // Convert empty strings to null for optional fields
+          sanitizedUpdates[key] = value === '' || value === undefined ? null : value;
+        } else if (value !== undefined) {
+          sanitizedUpdates[key] = value;
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('client_authority_accounting')
-        .update(updates as any)
+        .update(sanitizedUpdates)
         .eq('id', id)
         .select()
         .single();
