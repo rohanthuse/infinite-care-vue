@@ -121,6 +121,18 @@ export interface ServiceRate {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Extended rate fields
+  pay_based_on?: string;
+  charge_type?: string;
+  rate_15_minutes?: number;
+  rate_30_minutes?: number;
+  rate_45_minutes?: number;
+  rate_60_minutes?: number;
+  consecutive_hours?: number;
+  service_type?: string;
+  time_from?: string;
+  time_until?: string;
+  rate_category?: string;
 }
 
 export interface ExtraTimeRecord {

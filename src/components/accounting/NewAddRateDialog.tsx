@@ -137,24 +137,50 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
         setStatus(rateData.status);
       }
 
-      // Create a rate block from existing data
+      // Map database pay_based_on to UI chargeBasedOn
+      const mapPayBasedOnToChargeBasedOn = (payBasedOn?: string): string => {
+        switch (payBasedOn) {
+          case 'service': return 'services';
+          case 'hours_minutes': return 'hours_minutes';
+          case 'fixed': return 'fix_flat_rate';
+          default: return 'services';
+        }
+      };
+
+      // Map database charge_type to UI rateChargingMethod and rateCalculationType
+      const mapChargeType = (chargeType?: string): { rateChargingMethod: string; rateCalculationType: string } => {
+        switch (chargeType) {
+          case 'flat_rate': return { rateChargingMethod: 'flat', rateCalculationType: '' };
+          case 'pro_rata': return { rateChargingMethod: 'pro', rateCalculationType: '' };
+          case 'hourly_rate': return { rateChargingMethod: 'hourly', rateCalculationType: '' };
+          case 'rate_per_hour': return { rateChargingMethod: '', rateCalculationType: 'rate_per_hour' };
+          case 'rate_per_minutes_pro_rata': return { rateChargingMethod: '', rateCalculationType: 'rate_per_minutes_pro' };
+          case 'rate_per_minutes_flat_rate': return { rateChargingMethod: '', rateCalculationType: 'rate_per_minutes_flat' };
+          default: return { rateChargingMethod: 'flat', rateCalculationType: '' };
+        }
+      };
+
+      const chargeBasedOn = mapPayBasedOnToChargeBasedOn(rateData.pay_based_on);
+      const { rateChargingMethod, rateCalculationType } = mapChargeType(rateData.charge_type);
+
+      // Create a rate block from existing data with proper mapping
       const existingBlock: RateBlock = {
         id: crypto.randomUUID(),
         applicableDays: rateData.applicable_days || [],
-        rateType: rateData.rate_type || "",
-        effectiveFrom: "",
-        effectiveUntil: "",
-        chargeBasedOn: "services",
-        rateChargingMethod: rateData.rate_type === "hourly" ? "hourly" : "flat",
-        rateCalculationType: "",
+        rateType: rateData.rate_category || rateData.rate_type || "",
+        effectiveFrom: rateData.time_from || "",
+        effectiveUntil: rateData.time_until || "",
+        chargeBasedOn: chargeBasedOn,
+        rateChargingMethod: rateChargingMethod,
+        rateCalculationType: rateCalculationType,
         services: rateData.service_id ? [rateData.service_id] : [],
         rate: rateData.amount?.toString() || "",
-        rateAt15Minutes: "",
-        rateAt30Minutes: "",
-        rateAt45Minutes: "",
-        rateAt60Minutes: "",
-        consecutiveHours: "",
-        isVatable: false,
+        rateAt15Minutes: rateData.rate_15_minutes?.toString() || "",
+        rateAt30Minutes: rateData.rate_30_minutes?.toString() || "",
+        rateAt45Minutes: rateData.rate_45_minutes?.toString() || "",
+        rateAt60Minutes: rateData.rate_60_minutes?.toString() || "",
+        consecutiveHours: rateData.consecutive_hours?.toString() || "",
+        isVatable: rateData.service_type === 'vatable',
       };
       setRateBlocks([existingBlock]);
     }
