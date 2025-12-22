@@ -901,6 +901,7 @@ export type Database = {
           id: string
           letter: string
           organization_id: string | null
+          source_system_id: string | null
           status: string
           title: string
           updated_at: string
@@ -911,6 +912,7 @@ export type Database = {
           id?: string
           letter: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -921,6 +923,7 @@ export type Database = {
           id?: string
           letter?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -931,6 +934,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "body_map_points_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_body_map_points"
             referencedColumns: ["id"]
           },
         ]
@@ -6101,6 +6111,7 @@ export type Database = {
           created_at: string
           id: string
           organization_id: string | null
+          source_system_id: string | null
           status: string
           title: string
           updated_at: string
@@ -6109,6 +6120,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -6117,6 +6129,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -6127,6 +6140,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hobbies_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_hobbies"
             referencedColumns: ["id"]
           },
         ]
@@ -8210,6 +8230,7 @@ export type Database = {
           double_handed: boolean
           id: string
           organization_id: string | null
+          source_system_id: string | null
           status: string | null
           title: string
           updated_at: string
@@ -8222,6 +8243,7 @@ export type Database = {
           double_handed?: boolean
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string | null
           title: string
           updated_at?: string
@@ -8234,6 +8256,7 @@ export type Database = {
           double_handed?: boolean
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string | null
           title?: string
           updated_at?: string
@@ -8246,6 +8269,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "services_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_services"
+            referencedColumns: ["id"]
+          },
         ]
       }
       skills: {
@@ -8255,6 +8285,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string | null
+          source_system_id: string | null
           status: string
           updated_at: string
         }
@@ -8264,6 +8295,7 @@ export type Database = {
           id?: string
           name: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -8273,6 +8305,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -8282,6 +8315,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skills_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_skills"
             referencedColumns: ["id"]
           },
         ]
@@ -12100,6 +12140,7 @@ export type Database = {
           created_at: string
           id: string
           organization_id: string | null
+          source_system_id: string | null
           status: string
           title: string
           updated_at: string
@@ -12108,6 +12149,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -12116,6 +12158,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -12126,6 +12169,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_types_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_work_types"
             referencedColumns: ["id"]
           },
         ]
