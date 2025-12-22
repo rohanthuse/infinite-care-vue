@@ -160,7 +160,7 @@ export function CreateServiceReportDialog({
         .from('client_care_plans')
         .select('id')
         .eq('client_id', preSelectedClient.id)
-        .in('status', ['draft', 'pending', 'confirmed', 'active'])
+        .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -349,10 +349,10 @@ export function CreateServiceReportDialog({
     ensureVisitRecordExists();
   }, [mode, open, actualVisitRecordId, existingReport, preSelectedClient?.id]);
 
-  // Auto-load care plan medications when in edit mode with no existing medications
+  // Auto-load care plan medications when dialog opens with no existing medications
   useEffect(() => {
     const loadCarePlanMedications = async () => {
-      if (mode !== 'edit' || !effectiveVisitRecordId || !preSelectedClient?.id) return;
+      if (!effectiveVisitRecordId || !preSelectedClient?.id) return;
       if (visitMedications && visitMedications.length > 0) return;
       
       console.log('[CreateServiceReportDialog] Loading care plan medications for visit:', effectiveVisitRecordId);
@@ -366,7 +366,7 @@ export function CreateServiceReportDialog({
             client_care_plans!inner (client_id, status)
           `)
           .eq('client_care_plans.client_id', preSelectedClient.id)
-          .in('client_care_plans.status', ['draft', 'pending_approval', 'active', 'approved', 'confirmed'])
+          .in('client_care_plans.status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'])
           .eq('status', 'active');
         
         console.log('[CreateServiceReportDialog] Found care plan medications:', clientMedications?.length || 0);
@@ -390,15 +390,15 @@ export function CreateServiceReportDialog({
       }
     };
     
-    if (open && mode === 'edit' && effectiveVisitRecordId) {
+    if (open && effectiveVisitRecordId) {
       loadCarePlanMedications();
     }
-  }, [open, mode, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
+  }, [open, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
 
-  // Auto-load care plan tasks when in edit mode with no existing tasks
+  // Auto-load care plan tasks when dialog opens with no existing tasks
   useEffect(() => {
     const loadCarePlanTasks = async () => {
-      if (mode !== 'edit' || !effectiveVisitRecordId || !preSelectedClient?.id) return;
+      if (!effectiveVisitRecordId || !preSelectedClient?.id) return;
       if (visitTasks && visitTasks.length > 0) return;
       
       console.log('[CreateServiceReportDialog] Loading care plan tasks for visit:', effectiveVisitRecordId);
@@ -409,7 +409,7 @@ export function CreateServiceReportDialog({
           .from('client_care_plans')
           .select('id, auto_save_data')
           .eq('client_id', preSelectedClient.id)
-          .in('status', ['draft', 'pending_approval', 'active', 'approved', 'confirmed'])
+          .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -471,10 +471,69 @@ export function CreateServiceReportDialog({
       }
     };
     
-    if (open && mode === 'edit' && effectiveVisitRecordId) {
+    if (open && effectiveVisitRecordId) {
       loadCarePlanTasks();
     }
-  }, [open, mode, effectiveVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
+  }, [open, effectiveVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
+
+  // Create visit record when dialog opens in create mode to enable data loading
+  useEffect(() => {
+    const initializeVisitRecordForCreate = async () => {
+      // Only run in create mode when we have booking but no visit record yet
+      if (mode !== 'create' || !open || !bookingId || !preSelectedClient?.id) return;
+      if (actualVisitRecordId || localVisitRecordId) return; // Already have a visit record
+      
+      console.log('[CreateServiceReportDialog] Initializing visit record for create mode, booking:', bookingId);
+      
+      try {
+        // Check if one already exists for this booking
+        const { data: existingVR } = await supabase
+          .from('visit_records')
+          .select('id')
+          .eq('booking_id', bookingId)
+          .maybeSingle();
+        
+        if (existingVR) {
+          console.log('[CreateServiceReportDialog] Found existing visit record for create mode:', existingVR.id);
+          setLocalVisitRecordId(existingVR.id);
+          return;
+        }
+        
+        // Create new visit record
+        if (!carerContext?.staffProfile?.id || !carerContext?.staffProfile?.branch_id) {
+          console.log('[CreateServiceReportDialog] No carer context, skipping visit record creation');
+          return;
+        }
+        
+        const { data: newVR, error } = await supabase
+          .from('visit_records')
+          .insert({
+            booking_id: bookingId,
+            client_id: preSelectedClient.id,
+            staff_id: carerContext.staffProfile.id,
+            branch_id: carerContext.staffProfile.branch_id,
+            status: 'in-progress',
+            visit_start_time: preSelectedBooking?.start_time || new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+        
+        if (error) {
+          console.error('[CreateServiceReportDialog] Error creating visit record for create mode:', error);
+          return;
+        }
+        
+        if (newVR) {
+          console.log('[CreateServiceReportDialog] Created visit record for create mode:', newVR.id);
+          setLocalVisitRecordId(newVR.id);
+        }
+      } catch (error) {
+        console.error('[CreateServiceReportDialog] Error initializing visit record:', error);
+      }
+    };
+    
+    initializeVisitRecordForCreate();
+  }, [mode, open, bookingId, preSelectedClient?.id, actualVisitRecordId, localVisitRecordId, carerContext, preSelectedBooking]);
 
   const onSubmit = async (data: FormData) => {
     // For admin edit mode, don't require carer context - use existing report data
