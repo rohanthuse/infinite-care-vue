@@ -151,6 +151,10 @@ export function CreateServiceReportDialog({
     ? existingReport.visit_record_id 
     : visitRecordId;
 
+  // State to track the visit record ID we're working with (may be created as fallback)
+  const [localVisitRecordId, setLocalVisitRecordId] = useState<string | null>(null);
+  const effectiveVisitRecordId = actualVisitRecordId || localVisitRecordId;
+
   // Fetch client's care plan ID
   const { data: clientCarePlan } = useQuery({
     queryKey: ['client-care-plan', preSelectedClient?.id],
@@ -172,42 +176,42 @@ export function CreateServiceReportDialog({
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedications = [] } = useQuery({
-    queryKey: ['visit-medications', actualVisitRecordId],
+    queryKey: ['visit-medications', effectiveVisitRecordId],
     queryFn: async () => {
-      if (!actualVisitRecordId) return [];
+      if (!effectiveVisitRecordId) return [];
       
       const { data, error } = await supabase
         .from('visit_medications')
         .select('*')
-        .eq('visit_record_id', actualVisitRecordId)
+        .eq('visit_record_id', effectiveVisitRecordId)
         .order('prescribed_time', { ascending: true });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!actualVisitRecordId && open,
+    enabled: !!effectiveVisitRecordId && open,
   });
 
   // Fetch visit record details when visitRecordId is provided
   const { data: visitRecord } = useQuery({
-    queryKey: ['visit-record-details', actualVisitRecordId],
+    queryKey: ['visit-record-details', effectiveVisitRecordId],
     queryFn: async () => {
-      if (!actualVisitRecordId) return null;
+      if (!effectiveVisitRecordId) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
-        .eq('id', actualVisitRecordId)
+        .eq('id', effectiveVisitRecordId)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!actualVisitRecordId && open,
+    enabled: !!effectiveVisitRecordId && open,
   });
 
   // Fetch visit tasks
-  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(actualVisitRecordId);
+  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(effectiveVisitRecordId);
 
   // Fetch visit events (incidents, accidents, observations)
   const { 
@@ -216,7 +220,7 @@ export function CreateServiceReportDialog({
     accidents = [], 
     observations = [],
     updateEvent
-  } = useVisitEvents(actualVisitRecordId);
+  } = useVisitEvents(effectiveVisitRecordId);
 
   // Fetch visit vitals (NEWS2 readings)
   const { 
@@ -225,24 +229,24 @@ export function CreateServiceReportDialog({
     otherVitals = [],
     isLoading: isLoadingVitals,
     updateVital
-  } = useVisitVitals(actualVisitRecordId);
+  } = useVisitVitals(effectiveVisitRecordId);
 
   // Fetch full visit record with signatures
   const { data: fullVisitRecord } = useQuery({
-    queryKey: ['full-visit-record', actualVisitRecordId],
+    queryKey: ['full-visit-record', effectiveVisitRecordId],
     queryFn: async () => {
-      if (!actualVisitRecordId) return null;
+      if (!effectiveVisitRecordId) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
-        .eq('id', actualVisitRecordId)
+        .eq('id', effectiveVisitRecordId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!actualVisitRecordId && open,
+    enabled: !!effectiveVisitRecordId && open,
   });
 
   const form = useForm<FormData>({
@@ -275,10 +279,6 @@ export function CreateServiceReportDialog({
       });
     }
   }, [mode, existingReport, open, form]);
-
-  // State to track the visit record ID we're working with (may be created as fallback)
-  const [localVisitRecordId, setLocalVisitRecordId] = useState<string | null>(null);
-  const effectiveVisitRecordId = actualVisitRecordId || localVisitRecordId;
 
   // Fallback: Create visit record if missing when dialog opens in edit mode
   useEffect(() => {
