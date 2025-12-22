@@ -276,6 +276,123 @@ export function CreateServiceReportDialog({
     }
   }, [mode, existingReport, open, form]);
 
+  // Auto-load care plan medications when in edit mode with no existing medications
+  useEffect(() => {
+    const loadCarePlanMedications = async () => {
+      if (mode !== 'edit' || !actualVisitRecordId || !preSelectedClient?.id) return;
+      if (visitMedications && visitMedications.length > 0) return;
+      
+      try {
+        // Fetch medications from care plan
+        const { data: clientMedications } = await supabase
+          .from('client_medications')
+          .select(`
+            id, name, dosage, frequency,
+            client_care_plans!inner (client_id, status)
+          `)
+          .eq('client_care_plans.client_id', preSelectedClient.id)
+          .in('client_care_plans.status', ['draft', 'pending_approval', 'active', 'approved', 'confirmed'])
+          .eq('status', 'active');
+        
+        if (clientMedications && clientMedications.length > 0) {
+          const visitMeds = clientMedications.map(med => ({
+            visit_record_id: actualVisitRecordId,
+            medication_id: med.id,
+            medication_name: med.name,
+            dosage: med.dosage,
+            prescribed_time: '08:00',
+            administration_method: 'oral',
+            is_administered: false,
+          }));
+          
+          await supabase.from('visit_medications').insert(visitMeds);
+          queryClient.invalidateQueries({ queryKey: ['visit-medications', actualVisitRecordId] });
+        }
+      } catch (error) {
+        console.error('Error loading care plan medications:', error);
+      }
+    };
+    
+    if (open && mode === 'edit') {
+      loadCarePlanMedications();
+    }
+  }, [open, mode, actualVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
+
+  // Auto-load care plan tasks when in edit mode with no existing tasks
+  useEffect(() => {
+    const loadCarePlanTasks = async () => {
+      if (mode !== 'edit' || !actualVisitRecordId || !preSelectedClient?.id) return;
+      if (visitTasks && visitTasks.length > 0) return;
+      
+      try {
+        // Fetch care plan with auto_save_data
+        const { data: carePlan } = await supabase
+          .from('client_care_plans')
+          .select('id, auto_save_data')
+          .eq('client_id', preSelectedClient.id)
+          .in('status', ['draft', 'pending_approval', 'active', 'approved', 'confirmed'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (carePlan) {
+          const autoSave = carePlan.auto_save_data as any;
+          const tasks: Array<{ task_category: string; task_name: string }> = [];
+          
+          // Extract tasks from personal_care section
+          if (autoSave?.personal_care?.items) {
+            autoSave.personal_care.items.forEach((item: any) => {
+              if (item.description || item.name) {
+                tasks.push({ task_category: 'Personal Care', task_name: item.description || item.name });
+              }
+            });
+          }
+          
+          // Extract tasks from activities section
+          if (autoSave?.activities) {
+            autoSave.activities.forEach((act: any) => {
+              if (act.name || act.description) {
+                tasks.push({ task_category: 'Activity', task_name: act.name || act.description });
+              }
+            });
+          }
+          
+          // Also fetch client_activities for the care plan
+          const { data: activities } = await supabase
+            .from('client_activities')
+            .select('name, description')
+            .eq('care_plan_id', carePlan.id)
+            .eq('status', 'active');
+          
+          activities?.forEach(act => {
+            if (act.name || act.description) {
+              tasks.push({ task_category: 'Activity', task_name: act.name || act.description || '' });
+            }
+          });
+          
+          if (tasks.length > 0) {
+            const visitTasksToInsert = tasks.map(t => ({
+              visit_record_id: actualVisitRecordId,
+              task_category: t.task_category,
+              task_name: t.task_name,
+              is_completed: false,
+              priority: 'medium' as const,
+            }));
+            
+            await supabase.from('visit_tasks').insert(visitTasksToInsert);
+            queryClient.invalidateQueries({ queryKey: ['visit-tasks', actualVisitRecordId] });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading care plan tasks:', error);
+      }
+    };
+    
+    if (open && mode === 'edit') {
+      loadCarePlanTasks();
+    }
+  }, [open, mode, actualVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
+
   const onSubmit = async (data: FormData) => {
     // For admin edit mode, don't require carer context - use existing report data
     const isAdminEdit = mode === 'edit' && adminMode && existingReport;
