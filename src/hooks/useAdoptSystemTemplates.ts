@@ -75,11 +75,11 @@ export const useAvailableSystemHobbies = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('system_hobbies')
-        .select('*')
+        .select('id, title, status')
         .eq('status', 'active')
         .order('title');
       if (error) throw error;
-      return data as SystemHobby[];
+      return data as unknown as SystemHobby[];
     },
   });
 };
@@ -105,11 +105,11 @@ export const useAvailableSystemWorkTypes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('system_work_types')
-        .select('*')
+        .select('id, title, status')
         .eq('status', 'active')
         .order('title');
       if (error) throw error;
-      return data as SystemWorkType[];
+      return data as unknown as SystemWorkType[];
     },
   });
 };
@@ -135,11 +135,11 @@ export const useAvailableSystemMedicalCategories = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('system_medical_categories')
-        .select('*')
+        .select('id, name, status')
         .eq('status', 'active')
         .order('name');
       if (error) throw error;
-      return data as SystemMedicalCategory[];
+      return data as unknown as SystemMedicalCategory[];
     },
   });
 };
@@ -150,11 +150,11 @@ export const useAvailableSystemMedicalConditions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('system_medical_conditions')
-        .select('*')
+        .select('id, title, category_id, field_caption, status')
         .eq('status', 'active')
         .order('title');
       if (error) throw error;
-      return data as SystemMedicalCondition[];
+      return data as unknown as SystemMedicalCondition[];
     },
   });
 };
@@ -168,14 +168,15 @@ export const useAdoptedTemplates = (type: 'services' | 'hobbies' | 'skills' | 'w
     queryFn: async () => {
       if (!organization?.id) return [];
       
+      // Use type assertion to handle TypeScript sync issues with source_system_id column
       const { data, error } = await supabase
         .from(type)
         .select('source_system_id')
         .eq('organization_id', organization.id)
-        .not('source_system_id', 'is', null);
+        .not('source_system_id', 'is', null) as unknown as { data: { source_system_id: string }[] | null; error: Error | null };
       
       if (error) throw error;
-      return (data as { source_system_id: string | null }[]).map(item => item.source_system_id).filter(Boolean) as string[];
+      return (data || []).map(item => item.source_system_id).filter(Boolean);
     },
     enabled: !!organization?.id,
   });
@@ -398,7 +399,8 @@ export const useAdoptSystemMedicalCategories = () => {
         source_system_id: category.id,
       }));
       
-      const { error } = await supabase.from('medical_categories').insert(inserts);
+      // Use type assertion for insert since types may not be synced yet
+      const { error } = await (supabase.from('medical_categories') as unknown as { insert: (data: typeof inserts) => Promise<{ error: Error | null }> }).insert(inserts);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
@@ -429,7 +431,8 @@ export const useAdoptSystemMedicalConditions = () => {
         source_system_id: condition.id,
       }));
       
-      const { error } = await supabase.from('medical_conditions').insert(inserts);
+      // Use type assertion for insert since types may not be synced yet
+      const { error } = await (supabase.from('medical_conditions') as unknown as { insert: (data: typeof inserts) => Promise<{ error: Error | null }> }).insert(inserts);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
