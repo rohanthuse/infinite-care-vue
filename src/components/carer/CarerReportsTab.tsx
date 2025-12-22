@@ -228,8 +228,65 @@ export function CarerReportsTab() {
         return <FileText className="h-3 w-3" />;
     }
   };
-  const handleEditReport = (report: any) => {
-    setSelectedReport(report);
+  const handleEditReport = async (report: any) => {
+    // If report already has visit_record_id, just open dialog
+    if (report.visit_record_id) {
+      setSelectedReport(report);
+      setEditDialogOpen(true);
+      return;
+    }
+    
+    // Try to find existing visit_record by booking_id or create one
+    if (report.booking_id) {
+      try {
+        const { data: existingVR } = await supabase
+          .from('visit_records')
+          .select('id')
+          .eq('booking_id', report.booking_id)
+          .maybeSingle();
+        
+        if (existingVR) {
+          // Update the service report with the found visit_record_id
+          await supabase
+            .from('client_service_reports')
+            .update({ visit_record_id: existingVR.id })
+            .eq('id', report.id);
+          
+          setSelectedReport({ ...report, visit_record_id: existingVR.id });
+        } else {
+          // Create a new visit record
+          const { data: newVR } = await supabase
+            .from('visit_records')
+            .insert({
+              booking_id: report.booking_id,
+              client_id: report.client_id,
+              staff_id: report.staff_id,
+              branch_id: report.branch_id,
+              status: 'completed',
+            })
+            .select('id')
+            .single();
+          
+          if (newVR) {
+            // Update service report with new visit_record_id
+            await supabase
+              .from('client_service_reports')
+              .update({ visit_record_id: newVR.id })
+              .eq('id', report.id);
+            
+            setSelectedReport({ ...report, visit_record_id: newVR.id });
+          } else {
+            setSelectedReport(report);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling visit record:', error);
+        setSelectedReport(report);
+      }
+    } else {
+      setSelectedReport(report);
+    }
+    
     setEditDialogOpen(true);
   };
   return <div className="space-y-6">
@@ -594,7 +651,7 @@ export function CarerReportsTab() {
     }} preSelectedClient={{
       id: selectedReport.client_id,
       name: `${selectedReport.clients?.first_name} ${selectedReport.clients?.last_name}`
-    }} preSelectedDate={selectedReport.service_date} bookingId={selectedReport.booking_id} existingReport={selectedReport} mode="edit" />}
+    }} preSelectedDate={selectedReport.service_date} bookingId={selectedReport.booking_id} visitRecordId={selectedReport.visit_record_id || undefined} existingReport={selectedReport} mode="edit" />}
 
       {/* Create Report from Booking Dialog */}
       {selectedBookingForReport && <CreateServiceReportDialog open={bookingReportDialogOpen} onOpenChange={open => {
