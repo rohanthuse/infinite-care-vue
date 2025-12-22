@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/contexts/TenantContext';
 
-// Types for system templates
+// Types for system templates - matching actual database schema
 export interface SystemService {
   id: string;
   title: string;
@@ -15,7 +15,6 @@ export interface SystemService {
 export interface SystemHobby {
   id: string;
   title: string;
-  description: string | null;
   status: string;
 }
 
@@ -29,7 +28,6 @@ export interface SystemSkill {
 export interface SystemWorkType {
   id: string;
   title: string;
-  description: string | null;
   status: string;
 }
 
@@ -44,15 +42,14 @@ export interface SystemBodyMapPoint {
 export interface SystemMedicalCategory {
   id: string;
   name: string;
-  description: string | null;
   status: string;
 }
 
 export interface SystemMedicalCondition {
   id: string;
-  name: string;
-  description: string | null;
+  title: string;
   category_id: string | null;
+  field_caption: string | null;
   status: string;
 }
 
@@ -155,7 +152,7 @@ export const useAvailableSystemMedicalConditions = () => {
         .from('system_medical_conditions')
         .select('*')
         .eq('status', 'active')
-        .order('name');
+        .order('title');
       if (error) throw error;
       return data as SystemMedicalCondition[];
     },
@@ -163,7 +160,7 @@ export const useAvailableSystemMedicalConditions = () => {
 };
 
 // Hook to check which system templates are already adopted
-export const useAdoptedTemplates = (type: 'services' | 'hobbies' | 'skills' | 'work_types' | 'body_map_points' | 'medical_categories' | 'medical_conditions') => {
+export const useAdoptedTemplates = (type: 'services' | 'hobbies' | 'skills' | 'work_types' | 'body_map_points') => {
   const { organization } = useTenant();
   
   return useQuery({
@@ -178,7 +175,52 @@ export const useAdoptedTemplates = (type: 'services' | 'hobbies' | 'skills' | 'w
         .not('source_system_id', 'is', null);
       
       if (error) throw error;
-      return data.map(item => item.source_system_id).filter(Boolean) as string[];
+      return (data as { source_system_id: string | null }[]).map(item => item.source_system_id).filter(Boolean) as string[];
+    },
+    enabled: !!organization?.id,
+  });
+};
+
+// Separate hook for medical tables that may have different column names
+export const useAdoptedMedicalCategories = () => {
+  const { organization } = useTenant();
+  
+  return useQuery({
+    queryKey: ['adopted_templates', 'medical_categories', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      
+      // Using raw query to avoid TypeScript sync issues with new columns
+      const { data, error } = await supabase
+        .from('medical_categories')
+        .select('source_system_id')
+        .eq('organization_id', organization.id)
+        .not('source_system_id', 'is', null) as unknown as { data: { source_system_id: string }[] | null; error: Error | null };
+      
+      if (error) throw error;
+      return (data || []).map(item => item.source_system_id).filter(Boolean);
+    },
+    enabled: !!organization?.id,
+  });
+};
+
+export const useAdoptedMedicalConditions = () => {
+  const { organization } = useTenant();
+  
+  return useQuery({
+    queryKey: ['adopted_templates', 'medical_conditions', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      
+      // Using raw query to avoid TypeScript sync issues with new columns
+      const { data, error } = await supabase
+        .from('medical_conditions')
+        .select('source_system_id')
+        .eq('organization_id', organization.id)
+        .not('source_system_id', 'is', null) as unknown as { data: { source_system_id: string }[] | null; error: Error | null };
+      
+      if (error) throw error;
+      return (data || []).map(item => item.source_system_id).filter(Boolean);
     },
     enabled: !!organization?.id,
   });
@@ -351,7 +393,6 @@ export const useAdoptSystemMedicalCategories = () => {
       
       const inserts = systemCategories.map(category => ({
         name: category.name,
-        description: category.description,
         status: 'active',
         organization_id: organization.id,
         source_system_id: category.id,
@@ -381,8 +422,8 @@ export const useAdoptSystemMedicalConditions = () => {
       if (!organization?.id) throw new Error('No organization selected');
       
       const inserts = systemConditions.map(condition => ({
-        name: condition.name,
-        description: condition.description,
+        title: condition.title,
+        field_caption: condition.field_caption,
         status: 'active',
         organization_id: organization.id,
         source_system_id: condition.id,

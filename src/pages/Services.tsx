@@ -3,15 +3,22 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ServicesTable } from "@/components/ServicesTable";
 import { motion } from "framer-motion";
-import { Briefcase, Plus, Search, Filter, Download } from "lucide-react";
+import { Briefcase, Plus, Search, Filter, Download, Library } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { AddServiceDialog } from "@/components/AddServiceDialog";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { useAvailableSystemServices, useAdoptedTemplates, useAdoptSystemServices } from "@/hooks/useAdoptSystemTemplates";
 
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
+  const [showAdoptDialog, setShowAdoptDialog] = useState(false);
+  
+  const { data: systemServices = [], isLoading: isLoadingSystem } = useAvailableSystemServices();
+  const { data: adoptedIds = [] } = useAdoptedTemplates('services');
+  const { mutate: adoptServices, isPending: isAdopting } = useAdoptSystemServices();
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   
   useEffect(() => {
@@ -59,6 +66,15 @@ const Services = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              
+              
+              <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => setShowAdoptDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
               
               <CustomButton 
                 variant="pill" 
@@ -122,6 +138,22 @@ const Services = () => {
         <AddServiceDialog 
           isOpen={showAddServiceDialog}
           onClose={() => setShowAddServiceDialog(false)}
+        />
+        
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptDialog}
+          onClose={() => setShowAdoptDialog(false)}
+          title="Import Services from System Templates"
+          description="Select system services to add to your organization. These will be copied as your own services that you can customize."
+          templates={systemServices}
+          adoptedIds={adoptedIds}
+          isLoading={isLoadingSystem}
+          isAdopting={isAdopting}
+          onAdopt={(templates) => {
+            adoptServices(templates as any);
+            setShowAdoptDialog(false);
+          }}
+          displayField="title"
         />
       </motion.main>
     </div>

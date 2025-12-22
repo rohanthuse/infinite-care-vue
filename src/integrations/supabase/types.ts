@@ -6731,6 +6731,7 @@ export type Database = {
           field_caption: string | null
           id: string
           organization_id: string | null
+          source_system_id: string | null
           status: string
           title: string
           updated_at: string
@@ -6741,6 +6742,7 @@ export type Database = {
           field_caption?: string | null
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -6751,6 +6753,7 @@ export type Database = {
           field_caption?: string | null
           id?: string
           organization_id?: string | null
+          source_system_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -6768,6 +6771,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_conditions_source_system_id_fkey"
+            columns: ["source_system_id"]
+            isOneToOne: false
+            referencedRelation: "system_medical_conditions"
             referencedColumns: ["id"]
           },
         ]

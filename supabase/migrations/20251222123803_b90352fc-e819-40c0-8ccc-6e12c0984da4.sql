@@ -1,0 +1,2 @@
+-- Add source_system_id to existing medical_conditions table if missing
+ALTER TABLE medical_conditions ADD COLUMN IF NOT EXISTS source_system_id UUID REFERENCES system_medical_conditions(id) ON DELETE SET NULL;

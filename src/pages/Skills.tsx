@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
-import { Brain, Loader2 } from "lucide-react";
+import { Brain, Loader2, Library } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { EditSkillDialog } from "@/components/EditSkillDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/contexts/TenantContext";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { useAvailableSystemSkills, useAdoptedTemplates, useAdoptSystemSkills } from "@/hooks/useAdoptSystemTemplates";
+import { CustomButton } from "@/components/ui/CustomButton";
 import {
   AlertDialog,
   AlertDialogAction,

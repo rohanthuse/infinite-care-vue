@@ -3,12 +3,15 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
-import { ActivitySquare, Loader2 } from "lucide-react";
+import { ActivitySquare, Loader2, Library } from "lucide-react";
 import { motion } from "framer-motion";
 import { AddBodyMapPointDialog } from "@/components/AddBodyMapPointDialog";
 import { EditBodyMapPointDialog } from "@/components/EditBodyMapPointDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { useAvailableSystemBodyMapPoints, useAdoptedTemplates, useAdoptSystemBodyMapPoints } from "@/hooks/useAdoptSystemTemplates";
+import { CustomButton } from "@/components/ui/CustomButton";
 import {
   AlertDialog,
   AlertDialogAction,

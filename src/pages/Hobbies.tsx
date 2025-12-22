@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Library } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddHobbyDialog } from "@/components/AddHobbyDialog";
@@ -12,6 +12,9 @@ import { EditHobbyDialog } from "@/components/EditHobbyDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/contexts/TenantContext";
 import { useHobbies } from "@/data/hooks/useHobbies";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { useAvailableSystemHobbies, useAdoptedTemplates, useAdoptSystemHobbies } from "@/hooks/useAdoptSystemTemplates";
+import { CustomButton } from "@/components/ui/CustomButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,11 +29,15 @@ import {
 const Hobbies = () => {
   const [editingHobby, setEditingHobby] = useState<any>(null);
   const [deletingHobby, setDeletingHobby] = useState<any>(null);
+  const [showAdoptDialog, setShowAdoptDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { organization } = useTenant();
 
   const { data: hobbies, isLoading, error } = useHobbies();
+  const { data: systemHobbies = [], isLoading: isLoadingSystem } = useAvailableSystemHobbies();
+  const { data: adoptedIds = [] } = useAdoptedTemplates('hobbies');
+  const { mutate: adoptHobbies, isPending: isAdopting } = useAdoptSystemHobbies();
 
   const { mutate: deleteHobby, isPending: isDeleting } = useMutation({
     mutationFn: async (hobbyId: string) => {
