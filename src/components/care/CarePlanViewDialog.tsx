@@ -173,7 +173,7 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       ...safeObject(carePlan.medical_info),
       ...safeObject(autoSaveData.medical_info),
       medication_manager: {
-        medications: safeArray(carePlan.medical_info?.medication_manager?.medications || autoSaveData.medical_info?.medication_manager?.medications),
+        medications: safeArray(carePlan.medications || carePlan.medical_info?.medication_manager?.medications || autoSaveData.medical_info?.medication_manager?.medications),
         ...safeObject(carePlan.medical_info?.medication_manager || autoSaveData.medical_info?.medication_manager),
       },
       admin_medication: {
@@ -461,7 +461,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     if (!carePlanWithDetails) return null;
 
     const wizardData = mapCarePlanToWizardDefaults(carePlanWithDetails);
-    const medications = wizardData.medical_info?.medication_manager?.medications || [];
+    const medications = wizardData.medications || carePlanWithDetails.medications || [];
 
     // QA Logging: Track what data is available for current step
     if (context === 'client') {
