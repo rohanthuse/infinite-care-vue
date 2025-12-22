@@ -1464,6 +1464,12 @@ const UnifiedLogin = () => {
               localStorage.setItem('carerName', `${staffProfile.first_name} ${staffProfile.last_name}`);
               sessionStorage.setItem('freshLogin', 'true');
               
+              // Set theme to light mode for carers on login
+              localStorage.setItem('theme', 'light');
+              document.documentElement.classList.remove('dark');
+              document.documentElement.classList.add('light');
+              console.log('[CARER_LOGIN] Theme set to light mode');
+              
               // Set dev-tenant for development environments
               const isDev = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' || 

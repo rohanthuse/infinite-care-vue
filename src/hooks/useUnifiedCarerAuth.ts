@@ -145,6 +145,12 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
         sessionStorage.removeItem(key);
       });
 
+      // Reset theme to light mode on logout
+      localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      console.log('[useUnifiedCarerAuth] Theme reset to light mode on logout');
+
       // Clear state immediately
       setCarerProfile(null);
       setIsCarerRole(false);
