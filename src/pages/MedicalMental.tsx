@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
-import { Stethoscope, Plus, Loader2 } from "lucide-react";
+import { Stethoscope, Plus, Loader2, Library } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/contexts/TenantContext";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { 
+  useAvailableSystemMedicalCategories, 
+  useAvailableSystemMedicalConditions,
+  useAdoptedMedicalCategories,
+  useAdoptedMedicalConditions,
+  useAdoptSystemMedicalCategories,
+  useAdoptSystemMedicalConditions
+} from "@/hooks/useAdoptSystemTemplates";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,8 +79,18 @@ const MedicalMental = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [deletingCondition, setDeletingCondition] = useState<any>(null);
   const [deletingCategory, setDeletingCategory] = useState<any>(null);
+  const [showAdoptConditionsDialog, setShowAdoptConditionsDialog] = useState(false);
+  const [showAdoptCategoriesDialog, setShowAdoptCategoriesDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // System templates hooks
+  const { data: systemCategories = [], isLoading: isLoadingSystemCategories } = useAvailableSystemMedicalCategories();
+  const { data: systemConditions = [], isLoading: isLoadingSystemConditions } = useAvailableSystemMedicalConditions();
+  const { data: adoptedCategoryIds = [] } = useAdoptedMedicalCategories();
+  const { data: adoptedConditionIds = [] } = useAdoptedMedicalConditions();
+  const { mutate: adoptCategories, isPending: isAdoptingCategories } = useAdoptSystemMedicalCategories();
+  const { mutate: adoptConditions, isPending: isAdoptingConditions } = useAdoptSystemMedicalConditions();
 
   const { data: conditions, isLoading: isLoadingConditions, error: errorConditions } = useQuery({
     queryKey: ['medical_conditions', organization?.id],
@@ -258,6 +277,13 @@ const MedicalMental = () => {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => activeTab === "conditions" ? setShowAdoptConditionsDialog(true) : setShowAdoptCategoriesDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
+              <CustomButton 
                 variant="pill" 
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
                 onClick={() => activeTab === "conditions" ? setShowConditionDialog(true) : setShowCategoryDialog(true)}
@@ -382,6 +408,38 @@ const MedicalMental = () => {
             </AlertDialogContent>
           </AlertDialog>
         )}
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptConditionsDialog}
+          onClose={() => setShowAdoptConditionsDialog(false)}
+          title="Import System Medical Conditions"
+          description="Select medical conditions from the system library to add to your organization."
+          templates={systemConditions.map(c => ({ id: c.id, title: c.title, field_caption: c.field_caption, status: c.status }))}
+          adoptedIds={adoptedConditionIds}
+          isLoading={isLoadingSystemConditions}
+          isAdopting={isAdoptingConditions}
+          onAdopt={(selected) => {
+            adoptConditions(selected as any);
+            setShowAdoptConditionsDialog(false);
+          }}
+          displayField="title"
+        />
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptCategoriesDialog}
+          onClose={() => setShowAdoptCategoriesDialog(false)}
+          title="Import System Medical Categories"
+          description="Select medical categories from the system library to add to your organization."
+          templates={systemCategories.map(c => ({ id: c.id, name: c.name, status: c.status }))}
+          adoptedIds={adoptedCategoryIds}
+          isLoading={isLoadingSystemCategories}
+          isAdopting={isAdoptingCategories}
+          onAdopt={(selected) => {
+            adoptCategories(selected as any);
+            setShowAdoptCategoriesDialog(false);
+          }}
+          displayField="name"
+        />
 
       </motion.main>
     </div>

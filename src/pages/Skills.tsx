@@ -29,9 +29,14 @@ import { useQuery } from "@tanstack/react-query";
 const Skills = () => {
   const [editingSkill, setEditingSkill] = useState<any>(null);
   const [deletingSkill, setDeletingSkill] = useState<any>(null);
+  const [showAdoptDialog, setShowAdoptDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { organization } = useTenant();
+  
+  const { data: systemSkills = [], isLoading: isLoadingSystem } = useAvailableSystemSkills();
+  const { data: adoptedIds = [] } = useAdoptedTemplates('skills');
+  const { mutate: adoptSkills, isPending: isAdopting } = useAdoptSystemSkills();
 
   const { data: skills, isLoading, error } = useQuery({
     queryKey: ['skills', organization?.id],
@@ -156,9 +161,36 @@ const Skills = () => {
           data={skills || []}
           onSearch={() => {}}
           searchPlaceholder="Search skills..."
-          addButton={<AddSkillDialog />}
+          addButton={
+            <div className="flex gap-2">
+              <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => setShowAdoptDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
+              <AddSkillDialog />
+            </div>
+          }
           onEdit={handleEdit}
           onDelete={handleDelete}
+        />
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptDialog}
+          onClose={() => setShowAdoptDialog(false)}
+          title="Import System Skills"
+          description="Select skills from the system library to add to your organization."
+          templates={systemSkills.map(s => ({ id: s.id, name: s.name, explanation: s.explanation, status: s.status }))}
+          adoptedIds={adoptedIds}
+          isLoading={isLoadingSystem}
+          isAdopting={isAdopting}
+          onAdopt={(selected) => {
+            adoptSkills(selected as any);
+            setShowAdoptDialog(false);
+          }}
+          displayField="name"
         />
       </motion.main>
 

@@ -141,9 +141,36 @@ const Hobbies = () => {
           data={hobbies || []}
           onSearch={() => {}} // Pass an empty function to enable the search input
           searchPlaceholder="Search hobbies..."
-          addButton={<AddHobbyDialog />}
+          addButton={
+            <div className="flex gap-2">
+              <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => setShowAdoptDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
+              <AddHobbyDialog />
+            </div>
+          }
           onEdit={handleEdit}
           onDelete={handleDelete}
+        />
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptDialog}
+          onClose={() => setShowAdoptDialog(false)}
+          title="Import System Hobbies"
+          description="Select hobbies from the system library to add to your organization."
+          templates={systemHobbies.map(h => ({ ...h, status: h.status }))}
+          adoptedIds={adoptedIds}
+          isLoading={isLoadingSystem}
+          isAdopting={isAdopting}
+          onAdopt={(selected) => {
+            adoptHobbies(selected as any);
+            setShowAdoptDialog(false);
+          }}
+          displayField="title"
         />
       </motion.main>
       

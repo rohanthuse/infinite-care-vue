@@ -30,6 +30,11 @@ const TypeOfWork = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { organization } = useTenant();
+  const [showAdoptDialog, setShowAdoptDialog] = useState(false);
+  
+  const { data: systemWorkTypes = [], isLoading: isLoadingSystem } = useAvailableSystemWorkTypes();
+  const { data: adoptedIds = [] } = useAdoptedTemplates('work_types');
+  const { mutate: adoptWorkTypes, isPending: isAdopting } = useAdoptSystemWorkTypes();
   
   const { data: workTypes, isLoading, error } = useQuery({
     queryKey: ['work_types', organization?.id],
@@ -169,9 +174,36 @@ const TypeOfWork = () => {
           columns={columns}
           data={workTypes || []}
           searchPlaceholder="Search work types..."
-          addButton={<AddWorkTypeDialog />}
+          addButton={
+            <div className="flex gap-2">
+              <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => setShowAdoptDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
+              <AddWorkTypeDialog />
+            </div>
+          }
           onEdit={handleEdit}
           onDelete={handleDeleteRequest}
+        />
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptDialog}
+          onClose={() => setShowAdoptDialog(false)}
+          title="Import System Work Types"
+          description="Select work types from the system library to add to your organization."
+          templates={systemWorkTypes.map(w => ({ id: w.id, title: w.title, status: w.status }))}
+          adoptedIds={adoptedIds}
+          isLoading={isLoadingSystem}
+          isAdopting={isAdopting}
+          onAdopt={(selected) => {
+            adoptWorkTypes(selected as any);
+            setShowAdoptDialog(false);
+          }}
+          displayField="title"
         />
       </motion.main>
 
