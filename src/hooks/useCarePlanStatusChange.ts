@@ -8,12 +8,37 @@ interface StatusChangeData {
   reason?: string;
 }
 
+const statusLabels: Record<string, string> = {
+  'draft': 'Draft',
+  'pending_client_approval': 'Pending Client Approval',
+  'active': 'Active',
+  'approved': 'Client Approved',
+  'rejected': 'Changes Requested',
+  'on_hold': 'On Hold',
+  'completed': 'Completed',
+  'archived': 'Archived',
+};
+
 export function useCarePlanStatusChange() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const statusChangeMutation = useMutation({
     mutationFn: async ({ carePlanId, newStatus, reason }: StatusChangeData) => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Get the current status before updating
+      const { data: currentPlan, error: fetchError } = await supabase
+        .from('client_care_plans')
+        .select('status')
+        .eq('id', carePlanId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const previousStatus = currentPlan?.status;
+
       // Update the care plan status
       const { error: updateError } = await supabase
         .from('client_care_plans')
@@ -25,30 +50,35 @@ export function useCarePlanStatusChange() {
 
       if (updateError) throw updateError;
 
-      // Insert status change history
+      // Insert status change history with proper previous_status
       const { error: historyError } = await supabase
         .from('care_plan_status_history')
         .insert({
           care_plan_id: carePlanId,
           new_status: newStatus,
-          previous_status: null, // Will be handled by trigger
+          previous_status: previousStatus,
           reason: reason || null,
-          changed_by: null, // Will be set by auth context in RLS
+          changed_by: user?.id || null,
           changed_by_type: 'admin'
         });
 
-      if (historyError) throw historyError;
+      if (historyError) {
+        console.error('Error inserting status history:', historyError);
+        // Don't throw - status was updated successfully
+      }
 
       return { carePlanId, newStatus };
     },
-    onSuccess: ({ carePlanId, newStatus }) => {
+    onSuccess: ({ newStatus }) => {
       // Invalidate care plan queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-care-plans'] });
       
+      const statusLabel = statusLabels[newStatus] || newStatus;
       toast({
         title: "Status Updated",
-        description: `Care plan status changed to ${newStatus}`,
+        description: `Care plan status changed to ${statusLabel}`,
         variant: "default",
       });
     },

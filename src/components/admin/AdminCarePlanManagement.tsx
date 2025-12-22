@@ -23,12 +23,14 @@ import {
 import { 
   Search, Filter, Eye, Edit, Trash2, 
   MoreHorizontal, Users, CheckCircle,
-  Clock, AlertCircle, FileX, UserCheck, MessageSquare
+  Clock, AlertCircle, FileX, UserCheck, MessageSquare,
+  RefreshCw, PauseCircle, Archive
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { AdminChangeRequestViewDialog } from './AdminChangeRequestViewDialog';
 import { AssignCarePlanDialog } from './AssignCarePlanDialog';
+import { CarePlanStatusChangeDialog } from './CarePlanStatusChangeDialog';
 
 interface CarePlan {
   id: string;
@@ -96,6 +98,24 @@ const statusConfig = {
     variant: 'destructive' as const, 
     color: 'text-red-600 bg-red-50', 
     icon: AlertCircle 
+  },
+  'on_hold': { 
+    label: 'On Hold', 
+    variant: 'outline' as const, 
+    color: 'text-orange-600 bg-orange-50', 
+    icon: PauseCircle 
+  },
+  'completed': { 
+    label: 'Completed', 
+    variant: 'default' as const, 
+    color: 'text-purple-600 bg-purple-50', 
+    icon: CheckCircle 
+  },
+  'archived': { 
+    label: 'Archived', 
+    variant: 'secondary' as const, 
+    color: 'text-gray-600 bg-gray-50', 
+    icon: Archive 
   }
 };
 
@@ -115,6 +135,8 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   const [selectedCarePlan, setSelectedCarePlan] = useState<CarePlan | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [carePlanToAssign, setCarePlanToAssign] = useState<CarePlan | null>(null);
+  const [statusChangeDialogOpen, setStatusChangeDialogOpen] = useState(false);
+  const [carePlanToChangeStatus, setCarePlanToChangeStatus] = useState<CarePlan | null>(null);
   const navigate = useNavigate();
 
   // Filter care plans based on search and status
@@ -165,6 +187,11 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   const handleAssignCarer = (plan: CarePlan) => {
     setCarePlanToAssign(plan);
     setAssignDialogOpen(true);
+  };
+
+  const handleChangeStatus = (plan: CarePlan) => {
+    setCarePlanToChangeStatus(plan);
+    setStatusChangeDialogOpen(true);
   };
 
   const renderCarePlanRow = (plan: CarePlan) => {
@@ -277,6 +304,10 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
               )}
               
               
+              <DropdownMenuItem onClick={() => handleChangeStatus(plan)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Change Status
+              </DropdownMenuItem>
               
               {plan.status === 'draft' && (
                 <DropdownMenuItem 
@@ -396,6 +427,13 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
         onOpenChange={setAssignDialogOpen}
         carePlan={carePlanToAssign}
         branchId={branchId}
+      />
+
+      {/* Status Change Dialog */}
+      <CarePlanStatusChangeDialog
+        open={statusChangeDialogOpen}
+        onOpenChange={setStatusChangeDialogOpen}
+        carePlan={carePlanToChangeStatus}
       />
     </div>
   );
