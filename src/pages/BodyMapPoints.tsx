@@ -43,6 +43,11 @@ const BodyMapPoints = () => {
   const { organization } = useTenant();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [showAdoptDialog, setShowAdoptDialog] = useState(false);
+  
+  const { data: systemBodyMapPoints = [], isLoading: isLoadingSystem } = useAvailableSystemBodyMapPoints();
+  const { data: adoptedIds = [] } = useAdoptedTemplates('body_map_points');
+  const { mutate: adoptBodyMapPoints, isPending: isAdopting } = useAdoptSystemBodyMapPoints();
   const { data: bodyMapPoints, isLoading, error } = useQuery({
       queryKey: ['body_map_points', organization?.id],
       queryFn: () => fetchBodyMapPoints(organization?.id),
@@ -191,9 +196,37 @@ const BodyMapPoints = () => {
           data={bodyMapPoints || []}
           searchPlaceholder="Search body map points..."
           hasColorColumn={true}
-          addButton={<AddBodyMapPointDialog />}
+          addButton={
+            <div className="flex gap-2">
+              <CustomButton 
+                variant="outline" 
+                className="border-border hover:bg-accent"
+                onClick={() => setShowAdoptDialog(true)}
+              >
+                <Library className="mr-1.5 h-4 w-4" /> Import from System
+              </CustomButton>
+              <AddBodyMapPointDialog />
+            </div>
+          }
           onEdit={handleEdit}
           onDelete={handleDeleteRequest}
+        />
+
+        <AdoptSystemTemplatesDialog
+          isOpen={showAdoptDialog}
+          onClose={() => setShowAdoptDialog(false)}
+          title="Import System Body Map Points"
+          description="Select body map points from the system library to add to your organization."
+          templates={systemBodyMapPoints.map(p => ({ id: p.id, letter: p.letter, title: p.title, color: p.color, status: p.status }))}
+          adoptedIds={adoptedIds}
+          isLoading={isLoadingSystem}
+          isAdopting={isAdopting}
+          onAdopt={(selected) => {
+            adoptBodyMapPoints(selected as any);
+            setShowAdoptDialog(false);
+          }}
+          displayField="letter"
+          showColor={true}
         />
       </motion.main>
       
