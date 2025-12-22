@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { AddAdminForm } from "./AddAdminForm";
 import { EditAdminPermissionsDialog } from "./EditAdminPermissionsDialog";
 import { BranchSelectionDialog } from "./BranchSelectionDialog";
@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToggleOrganizationMemberStatus } from "@/hooks/useToggleOrganizationMemberStatus";
 
 interface AdminBranch {
   branch_id: string;
@@ -46,6 +47,7 @@ interface AdminData {
   branches: AdminBranch[];
   created_at: string;
   has_permissions: boolean;
+  status: 'active' | 'inactive';
 }
 
 export const AdminsTable = () => {
@@ -56,6 +58,9 @@ export const AdminsTable = () => {
   const [selectedBranchName, setSelectedBranchName] = useState<string>("");
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [isBranchSelectionOpen, setIsBranchSelectionOpen] = useState(false);
+
+  // Hook for toggling member status
+  const toggleStatus = useToggleOrganizationMemberStatus();
 
   // Get current user authentication state with enhanced error handling
   const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
@@ -141,12 +146,22 @@ export const AdminsTable = () => {
 
       console.log('Admin permissions data:', permissions);
 
+      // Fetch organization member status for each admin
+      const { data: memberStatuses } = await supabase
+        .from('organization_members')
+        .select('user_id, status')
+        .eq('organization_id', organization.id)
+        .in('user_id', adminIds);
+
+      console.log('Member statuses:', memberStatuses);
+
       // Group admins by their ID to avoid duplicates
       const adminMap = new Map<string, AdminData>();
 
       adminBranches.forEach((item: any) => {
         const profile = profiles?.find(p => p.id === item.admin_id);
         const adminId = item.admin_id;
+        const memberStatus = memberStatuses?.find(m => m.user_id === adminId);
         
         if (adminMap.has(adminId)) {
           // Add branch to existing admin
@@ -169,6 +184,7 @@ export const AdminsTable = () => {
             }],
             created_at: new Date().toISOString(),
             has_permissions: permissions?.some(p => p.admin_id === adminId) || false,
+            status: (memberStatus?.status as 'active' | 'inactive') || 'active',
           });
         }
       });
@@ -333,13 +349,14 @@ export const AdminsTable = () => {
               <TableHead>Branch</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Permissions</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoadingData ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin mr-2" />
                     {authLoading ? "Authenticating..." : "Loading admins..."}
@@ -348,7 +365,7 @@ export const AdminsTable = () => {
               </TableRow>
             ) : filteredAdmins.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? "No admins match your search." : 
                    organization?.name ? `No branch admins found for ${organization.name}.` : 
                    "No branch admins found."}
@@ -389,6 +406,28 @@ export const AdminsTable = () => {
                     >
                       {admin.has_permissions ? "Configured" : "Not Set"}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={admin.status === 'active'}
+                        onCheckedChange={() => {
+                          toggleStatus.mutate({
+                            userId: admin.id,
+                            currentStatus: admin.status,
+                          }, {
+                            onSuccess: () => refetch()
+                          });
+                        }}
+                        disabled={toggleStatus.isPending}
+                      />
+                      <Badge 
+                        variant={admin.status === 'active' ? "success" : "destructive"}
+                        className="text-xs"
+                      >
+                        {admin.status === 'active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
