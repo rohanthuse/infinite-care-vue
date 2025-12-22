@@ -276,11 +276,86 @@ export function CreateServiceReportDialog({
     }
   }, [mode, existingReport, open, form]);
 
+  // State to track the visit record ID we're working with (may be created as fallback)
+  const [localVisitRecordId, setLocalVisitRecordId] = useState<string | null>(null);
+  const effectiveVisitRecordId = actualVisitRecordId || localVisitRecordId;
+
+  // Fallback: Create visit record if missing when dialog opens in edit mode
+  useEffect(() => {
+    const ensureVisitRecordExists = async () => {
+      if (mode !== 'edit' || !open || !preSelectedClient?.id) return;
+      if (actualVisitRecordId) {
+        setLocalVisitRecordId(null);
+        return;
+      }
+      
+      // If we're in edit mode but have no visit record, create one
+      if (existingReport?.booking_id && !existingReport?.visit_record_id) {
+        console.log('[CreateServiceReportDialog] Creating fallback visit record for booking:', existingReport.booking_id);
+        
+        try {
+          // First check if one exists
+          const { data: existingVR } = await supabase
+            .from('visit_records')
+            .select('id')
+            .eq('booking_id', existingReport.booking_id)
+            .maybeSingle();
+          
+          if (existingVR) {
+            console.log('[CreateServiceReportDialog] Found existing visit record:', existingVR.id);
+            setLocalVisitRecordId(existingVR.id);
+            
+            // Update service report
+            await supabase
+              .from('client_service_reports')
+              .update({ visit_record_id: existingVR.id })
+              .eq('id', existingReport.id);
+            return;
+          }
+          
+          // Create new visit record
+          const { data: newVR, error } = await supabase
+            .from('visit_records')
+            .insert({
+              booking_id: existingReport.booking_id,
+              client_id: existingReport.client_id,
+              staff_id: existingReport.staff_id,
+              branch_id: existingReport.branch_id,
+              status: 'completed',
+            })
+            .select('id')
+            .single();
+          
+          if (error) {
+            console.error('[CreateServiceReportDialog] Error creating visit record:', error);
+            return;
+          }
+          
+          if (newVR) {
+            console.log('[CreateServiceReportDialog] Created fallback visit record:', newVR.id);
+            setLocalVisitRecordId(newVR.id);
+            
+            await supabase
+              .from('client_service_reports')
+              .update({ visit_record_id: newVR.id })
+              .eq('id', existingReport.id);
+          }
+        } catch (error) {
+          console.error('[CreateServiceReportDialog] Error in fallback visit record creation:', error);
+        }
+      }
+    };
+    
+    ensureVisitRecordExists();
+  }, [mode, open, actualVisitRecordId, existingReport, preSelectedClient?.id]);
+
   // Auto-load care plan medications when in edit mode with no existing medications
   useEffect(() => {
     const loadCarePlanMedications = async () => {
-      if (mode !== 'edit' || !actualVisitRecordId || !preSelectedClient?.id) return;
+      if (mode !== 'edit' || !effectiveVisitRecordId || !preSelectedClient?.id) return;
       if (visitMedications && visitMedications.length > 0) return;
+      
+      console.log('[CreateServiceReportDialog] Loading care plan medications for visit:', effectiveVisitRecordId);
       
       try {
         // Fetch medications from care plan
@@ -294,9 +369,11 @@ export function CreateServiceReportDialog({
           .in('client_care_plans.status', ['draft', 'pending_approval', 'active', 'approved', 'confirmed'])
           .eq('status', 'active');
         
+        console.log('[CreateServiceReportDialog] Found care plan medications:', clientMedications?.length || 0);
+        
         if (clientMedications && clientMedications.length > 0) {
           const visitMeds = clientMedications.map(med => ({
-            visit_record_id: actualVisitRecordId,
+            visit_record_id: effectiveVisitRecordId,
             medication_id: med.id,
             medication_name: med.name,
             dosage: med.dosage,
@@ -306,23 +383,25 @@ export function CreateServiceReportDialog({
           }));
           
           await supabase.from('visit_medications').insert(visitMeds);
-          queryClient.invalidateQueries({ queryKey: ['visit-medications', actualVisitRecordId] });
+          queryClient.invalidateQueries({ queryKey: ['visit-medications', effectiveVisitRecordId] });
         }
       } catch (error) {
         console.error('Error loading care plan medications:', error);
       }
     };
     
-    if (open && mode === 'edit') {
+    if (open && mode === 'edit' && effectiveVisitRecordId) {
       loadCarePlanMedications();
     }
-  }, [open, mode, actualVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
+  }, [open, mode, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
 
   // Auto-load care plan tasks when in edit mode with no existing tasks
   useEffect(() => {
     const loadCarePlanTasks = async () => {
-      if (mode !== 'edit' || !actualVisitRecordId || !preSelectedClient?.id) return;
+      if (mode !== 'edit' || !effectiveVisitRecordId || !preSelectedClient?.id) return;
       if (visitTasks && visitTasks.length > 0) return;
+      
+      console.log('[CreateServiceReportDialog] Loading care plan tasks for visit:', effectiveVisitRecordId);
       
       try {
         // Fetch care plan with auto_save_data
@@ -334,6 +413,8 @@ export function CreateServiceReportDialog({
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+        
+        console.log('[CreateServiceReportDialog] Found care plan:', carePlan?.id);
         
         if (carePlan) {
           const autoSave = carePlan.auto_save_data as any;
@@ -370,9 +451,11 @@ export function CreateServiceReportDialog({
             }
           });
           
+          console.log('[CreateServiceReportDialog] Found tasks to load:', tasks.length);
+          
           if (tasks.length > 0) {
             const visitTasksToInsert = tasks.map(t => ({
-              visit_record_id: actualVisitRecordId,
+              visit_record_id: effectiveVisitRecordId,
               task_category: t.task_category,
               task_name: t.task_name,
               is_completed: false,
@@ -380,7 +463,7 @@ export function CreateServiceReportDialog({
             }));
             
             await supabase.from('visit_tasks').insert(visitTasksToInsert);
-            queryClient.invalidateQueries({ queryKey: ['visit-tasks', actualVisitRecordId] });
+            queryClient.invalidateQueries({ queryKey: ['visit-tasks', effectiveVisitRecordId] });
           }
         }
       } catch (error) {
@@ -388,10 +471,10 @@ export function CreateServiceReportDialog({
       }
     };
     
-    if (open && mode === 'edit') {
+    if (open && mode === 'edit' && effectiveVisitRecordId) {
       loadCarePlanTasks();
     }
-  }, [open, mode, actualVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
+  }, [open, mode, effectiveVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
 
   const onSubmit = async (data: FormData) => {
     // For admin edit mode, don't require carer context - use existing report data

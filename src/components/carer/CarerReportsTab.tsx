@@ -229,10 +229,14 @@ export function CarerReportsTab() {
     }
   };
   const handleEditReport = async (report: any) => {
+    console.log('[handleEditReport] Starting for report:', report.id, 'visit_record_id:', report.visit_record_id);
+    
+    let updatedReport = report;
+    
     // If report already has visit_record_id, just open dialog
     if (report.visit_record_id) {
       setSelectedReport(report);
-      setEditDialogOpen(true);
+      setTimeout(() => setEditDialogOpen(true), 0);
       return;
     }
     
@@ -246,16 +250,18 @@ export function CarerReportsTab() {
           .maybeSingle();
         
         if (existingVR) {
+          console.log('[handleEditReport] Found existing visit record:', existingVR.id);
           // Update the service report with the found visit_record_id
           await supabase
             .from('client_service_reports')
             .update({ visit_record_id: existingVR.id })
             .eq('id', report.id);
           
-          setSelectedReport({ ...report, visit_record_id: existingVR.id });
+          updatedReport = { ...report, visit_record_id: existingVR.id };
         } else {
           // Create a new visit record
-          const { data: newVR } = await supabase
+          console.log('[handleEditReport] Creating new visit record');
+          const { data: newVR, error } = await supabase
             .from('visit_records')
             .insert({
               booking_id: report.booking_id,
@@ -267,27 +273,30 @@ export function CarerReportsTab() {
             .select('id')
             .single();
           
+          if (error) {
+            console.error('[handleEditReport] Error creating visit record:', error);
+          }
+          
           if (newVR) {
+            console.log('[handleEditReport] Created new visit record:', newVR.id);
             // Update service report with new visit_record_id
             await supabase
               .from('client_service_reports')
               .update({ visit_record_id: newVR.id })
               .eq('id', report.id);
             
-            setSelectedReport({ ...report, visit_record_id: newVR.id });
-          } else {
-            setSelectedReport(report);
+            updatedReport = { ...report, visit_record_id: newVR.id };
           }
         }
       } catch (error) {
-        console.error('Error handling visit record:', error);
-        setSelectedReport(report);
+        console.error('[handleEditReport] Error handling visit record:', error);
       }
-    } else {
-      setSelectedReport(report);
     }
     
-    setEditDialogOpen(true);
+    console.log('[handleEditReport] Opening dialog with visit_record_id:', updatedReport.visit_record_id);
+    setSelectedReport(updatedReport);
+    // Use setTimeout to ensure React has processed the state update
+    setTimeout(() => setEditDialogOpen(true), 0);
   };
   return <div className="space-y-6">
       {/* Header */}
@@ -601,8 +610,7 @@ export function CarerReportsTab() {
                                       onClick={() => {
                                         const report = reports.find(r => r.booking_id === booking.id);
                                         if (report) {
-                                          setSelectedReport(report);
-                                          setEditDialogOpen(true);
+                                          handleEditReport(report);
                                         }
                                       }} 
                                       className="flex items-center gap-1 text-xs"
