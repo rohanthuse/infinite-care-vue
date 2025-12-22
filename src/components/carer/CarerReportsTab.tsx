@@ -65,11 +65,16 @@ export function CarerReportsTab() {
     }
   }, [selectedBookingForReport]);
 
-  // STEP 1: Check if context is loading (highest priority)
-  if (contextLoading || !carerContext) {
+  // STEP 1: Check if context is still initializing (highest priority)
+  // Wait for both context loading to complete AND staffProfile.id to be available
+  const isInitializing = contextLoading || !carerContext?.staffProfile?.id;
+  
+  if (isInitializing) {
     return <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="ml-3 text-sm text-muted-foreground">Loading your profile...</p>
+        <p className="ml-3 text-sm text-muted-foreground">
+          {contextLoading ? 'Loading your profile...' : 'Initializing service reports...'}
+        </p>
       </div>;
   }
 
