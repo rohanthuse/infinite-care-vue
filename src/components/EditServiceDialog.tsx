@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { X, Loader2 } from "lucide-react";
@@ -25,7 +25,6 @@ interface Service {
   title: string;
   category: string;
   description: string | null;
-  double_handed: boolean;
 }
 
 interface EditServiceDialogProps {
@@ -51,7 +50,6 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [doubleHanded, setDoubleHanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { organization } = useTenant();
@@ -61,7 +59,6 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
       setTitle(service.title);
       setCategory(service.category);
       setDescription(service.description || "");
-      setDoubleHanded(service.double_handed);
     }
   }, [service]);
 
@@ -122,7 +119,7 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
       return;
     }
     
-    updateService({ title, category, description, double_handed: doubleHanded });
+    updateService({ title, category, description });
   };
 
   if (!service) return null;
@@ -190,21 +187,6 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
               />
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="doubleHanded" className="text-right text-gray-700">
-                Double Handed
-              </Label>
-              <div className="flex items-center space-x-2 col-span-3">
-                <Switch
-                  id="doubleHanded"
-                  checked={doubleHanded}
-                  onCheckedChange={setDoubleHanded}
-                />
-                <Label htmlFor="doubleHanded" className="text-sm text-gray-500 cursor-pointer">
-                  {doubleHanded ? "Yes" : "No"}
-                </Label>
-              </div>
-            </div>
           </div>
           
           <DialogFooter className="py-4 border-t mt-4 bg-gray-50/50 -mx-6 px-6">

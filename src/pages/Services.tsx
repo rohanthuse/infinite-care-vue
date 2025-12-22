@@ -11,7 +11,6 @@ import { AddServiceDialog } from "@/components/AddServiceDialog";
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [filterDoubleHanded, setFilterDoubleHanded] = useState<boolean | null>(null);
   const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   
@@ -23,9 +22,8 @@ const Services = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
   
-  const handleFilterChange = (category: string | null, doubleHanded: boolean | null) => {
+  const handleFilterChange = (category: string | null) => {
     setFilterCategory(category);
-    setFilterDoubleHanded(doubleHanded);
   };
   
   return (
@@ -81,7 +79,7 @@ const Services = () => {
                 <select 
                   className="px-3 py-1.5 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={filterCategory || ""}
-                  onChange={(e) => handleFilterChange(e.target.value || null, filterDoubleHanded)}
+                  onChange={(e) => handleFilterChange(e.target.value || null)}
                 >
                   <option value="">All Categories</option>
                   <option value="Daily Support">Daily Support</option>
@@ -95,25 +93,10 @@ const Services = () => {
                   <option value="Physical Support">Physical Support</option>
                   <option value="Long-term Support">Long-term Support</option>
                 </select>
-                <select 
-                  className="px-3 py-1.5 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={filterDoubleHanded === null ? "" : filterDoubleHanded ? "yes" : "no"}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    let doubleHandedValue: boolean | null = null;
-                    if (value === "yes") doubleHandedValue = true;
-                    if (value === "no") doubleHandedValue = false;
-                    handleFilterChange(filterCategory, doubleHandedValue);
-                  }}
-                >
-                  <option value="">Double Handed (All)</option>
-                  <option value="yes">Double Handed (Yes)</option>
-                  <option value="no">Double Handed (No)</option>
-                </select>
-                {(filterCategory !== null || filterDoubleHanded !== null) && (
+                {filterCategory !== null && (
                   <button 
                     className="px-3 py-1.5 bg-card border border-border rounded-md text-sm hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
-                    onClick={() => handleFilterChange(null, null)}
+                    onClick={() => handleFilterChange(null)}
                   >
                     Clear Filters
                   </button>
@@ -133,7 +116,6 @@ const Services = () => {
           <ServicesTable 
             searchQuery={debouncedSearchQuery} 
             filterCategory={filterCategory} 
-            filterDoubleHanded={filterDoubleHanded} 
           />
         </div>
         

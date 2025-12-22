@@ -51,16 +51,14 @@ interface Service {
 interface ServicesTableProps {
   searchQuery?: string;
   filterCategory?: string | null;
-  filterDoubleHanded?: boolean | null;
 }
 
 export function ServicesTable({ 
   searchQuery = "", 
-  filterCategory = null, 
-  filterDoubleHanded = null 
+  filterCategory = null 
 }: ServicesTableProps) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [sortColumn, setSortColumn] = useState<'title' | 'double_handed' | 'category'>('title');
+  const [sortColumn, setSortColumn] = useState<'title' | 'category'>('title');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -205,11 +203,7 @@ export function ServicesTable({
         ? service.category === filterCategory 
         : true;
       
-      const matchesDoubleHanded = filterDoubleHanded !== null 
-        ? service.double_handed === filterDoubleHanded 
-        : true;
-      
-      return matchesSearch && matchesCategory && matchesDoubleHanded;
+      return matchesSearch && matchesCategory;
     });
     
     return filtered.sort((a, b) => {
@@ -217,23 +211,19 @@ export function ServicesTable({
         return sortOrder === 'asc' 
           ? a.title.localeCompare(b.title) 
           : b.title.localeCompare(a.title);
-      } else if (sortColumn === 'category') {
+      } else {
         const catA = a.category || '';
         const catB = b.category || '';
         return sortOrder === 'asc'
           ? catA.localeCompare(catB)
           : catB.localeCompare(catA);
-      } else {
-        return sortOrder === 'asc' 
-          ? Number(a.double_handed) - Number(b.double_handed)
-          : Number(b.double_handed) - Number(a.double_handed);
       }
     });
-  }, [services, searchQuery, filterCategory, filterDoubleHanded, sortColumn, sortOrder]);
+  }, [services, searchQuery, filterCategory, sortColumn, sortOrder]);
   
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, filterDoubleHanded, itemsPerPage]);
+  }, [searchQuery, filterCategory, itemsPerPage]);
 
   // Force cleanup of any lingering dropdown state when delete dialog opens
   useEffect(() => {
@@ -253,7 +243,7 @@ export function ServicesTable({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedServices = filteredAndSortedServices.slice(startIndex, startIndex + itemsPerPage);
   
-  const handleSort = (column: 'title' | 'double_handed' | 'category') => {
+  const handleSort = (column: 'title' | 'category') => {
     if (sortColumn === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -279,7 +269,7 @@ export function ServicesTable({
                   <ArrowUpDown className="h-4 w-4 ml-1" />
                 </Button>
               </TableHead>
-              <TableHead className="w-[30%] font-semibold">
+              <TableHead className="w-[40%] font-semibold">
                 <Button
                   variant="ghost"
                   className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
@@ -289,23 +279,13 @@ export function ServicesTable({
                   <ArrowUpDown className="h-4 w-4 ml-1" />
                 </Button>
               </TableHead>
-              <TableHead className="w-[10%] font-semibold">
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
-                  onClick={() => handleSort('double_handed')}
-                >
-                  Double Handed
-                  <ArrowUpDown className="h-4 w-4 ml-1" />
-                </Button>
-              </TableHead>
               <TableHead className="w-[10%] text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={4} className="text-center py-8">
                   <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Loading services...</span>
@@ -314,7 +294,7 @@ export function ServicesTable({
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-destructive">
+                <TableCell colSpan={4} className="text-center py-8 text-destructive">
                   Error loading services: {error.message}
                 </TableCell>
               </TableRow>
@@ -327,17 +307,6 @@ export function ServicesTable({
                     <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                       {service.category || 'General'}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    {service.double_handed ? (
-                      <div className="flex items-center">
-                        <span className="bg-green-500/10 text-green-500 rounded-full p-1">
-                          <Check className="w-4 h-4" />
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
