@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
-import { Briefcase, Loader2 } from "lucide-react";
+import { Briefcase, Loader2, Library } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddWorkTypeDialog } from "@/components/AddWorkTypeDialog";
 import { EditWorkTypeDialog } from "@/components/EditWorkTypeDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
+import { useAvailableSystemWorkTypes, useAdoptedTemplates, useAdoptSystemWorkTypes } from "@/hooks/useAdoptSystemTemplates";
+import { CustomButton } from "@/components/ui/CustomButton";
 import {
   AlertDialog,
   AlertDialogAction,
