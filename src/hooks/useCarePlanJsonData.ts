@@ -16,6 +16,20 @@ interface JsonActivity {
   time_of_day?: string;
 }
 
+interface JsonMedication {
+  name?: string;
+  dosage?: string;
+  frequency?: string;
+  instructions?: string;
+  prescriber?: string;
+}
+
+interface JsonTask {
+  category?: string;
+  name?: string;
+  description?: string;
+}
+
 interface TransformedGoal {
   id: string;
   care_plan_id: string;
@@ -43,12 +57,29 @@ interface TransformedActivity {
   time_of_day?: string;
 }
 
+interface TransformedMedication {
+  id: string;
+  care_plan_id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  instructions?: string;
+  status: string;
+}
+
+interface TransformedTask {
+  id: string;
+  care_plan_id: string;
+  task_category: string;
+  task_name: string;
+}
+
 export const useCarePlanJsonData = (carePlanId: string) => {
   return useQuery({
     queryKey: ['care-plan-json-data', carePlanId],
     queryFn: async () => {
       if (!carePlanId) {
-        return { goals: [], activities: [] };
+        return { goals: [], activities: [], medications: [], tasks: [] };
       }
 
       const { data, error } = await supabase
@@ -63,7 +94,7 @@ export const useCarePlanJsonData = (carePlanId: string) => {
       }
 
       if (!data || !data.auto_save_data) {
-        return { goals: [], activities: [] };
+        return { goals: [], activities: [], medications: [], tasks: [] };
       }
 
       const autoSaveData = data.auto_save_data as any;
@@ -97,10 +128,57 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         time_of_day: activity.time_of_day || null,
       }));
 
+      // Transform medications from JSON (check multiple possible locations)
+      const medicationsSource = autoSaveData.medications || 
+        autoSaveData.medical_info?.medications || 
+        [];
+      const medications: TransformedMedication[] = medicationsSource.map((med: JsonMedication, index: number) => ({
+        id: `json-medication-${index}`,
+        care_plan_id: data.id,
+        name: med.name || '',
+        dosage: med.dosage || '',
+        frequency: med.frequency || 'daily',
+        instructions: med.instructions || null,
+        status: 'active',
+      }));
+
+      // Transform tasks from personal_care and activities
+      const tasks: TransformedTask[] = [];
+      
+      // Extract from personal_care.items
+      if (autoSaveData.personal_care?.items) {
+        autoSaveData.personal_care.items.forEach((item: any, index: number) => {
+          if (item.description || item.name) {
+            tasks.push({
+              id: `json-task-pc-${index}`,
+              care_plan_id: data.id,
+              task_category: 'Personal Care',
+              task_name: item.description || item.name,
+            });
+          }
+        });
+      }
+
+      // Extract from activities
+      if (autoSaveData.activities) {
+        autoSaveData.activities.forEach((act: any, index: number) => {
+          if (act.name || act.description) {
+            tasks.push({
+              id: `json-task-act-${index}`,
+              care_plan_id: data.id,
+              task_category: 'Activity',
+              task_name: act.name || act.description,
+            });
+          }
+        });
+      }
+
       console.log('[useCarePlanJsonData] Transformed goals:', goals.length);
       console.log('[useCarePlanJsonData] Transformed activities:', activities.length);
+      console.log('[useCarePlanJsonData] Transformed medications:', medications.length);
+      console.log('[useCarePlanJsonData] Transformed tasks:', tasks.length);
 
-      return { goals, activities };
+      return { goals, activities, medications, tasks };
     },
     enabled: Boolean(carePlanId),
     staleTime: 0, // Always refetch when invalidated

@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import { format, differenceInMinutes } from 'date-fns';
 import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -174,8 +175,40 @@ export function CreateServiceReportDialog({
     enabled: !!preSelectedClient?.id && open,
   });
 
+  // Fetch care plan JSON data for fallback (when no visit record exists)
+  const { data: carePlanJsonData } = useCarePlanJsonData(clientCarePlan?.id || '');
+
+  // Fetch client medications directly from care plan for fallback
+  const { data: carePlanMedications = [] } = useQuery({
+    queryKey: ['care-plan-medications-fallback', clientCarePlan?.id],
+    queryFn: async () => {
+      if (!clientCarePlan?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('client_medications')
+        .select('id, name, dosage, frequency')
+        .eq('care_plan_id', clientCarePlan.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+      
+      // Transform to match visit medication format for display
+      return (data || []).map(med => ({
+        id: `cp-med-${med.id}`,
+        medication_name: med.name,
+        dosage: med.dosage,
+        prescribed_time: '08:00',
+        is_administered: false,
+        administration_time: null,
+        administration_notes: null,
+        missed_reason: null,
+      }));
+    },
+    enabled: !!clientCarePlan?.id && open,
+  });
+
   // Fetch visit medications when visitRecordId is provided
-  const { data: visitMedications = [] } = useQuery({
+  const { data: visitMedicationsRaw = [] } = useQuery({
     queryKey: ['visit-medications', effectiveVisitRecordId],
     queryFn: async () => {
       if (!effectiveVisitRecordId) return [];
@@ -191,6 +224,9 @@ export function CreateServiceReportDialog({
     },
     enabled: !!effectiveVisitRecordId && open,
   });
+
+  // Use visit medications if available, otherwise fallback to care plan medications
+  const visitMedications = visitMedicationsRaw.length > 0 ? visitMedicationsRaw : carePlanMedications;
 
   // Fetch visit record details when visitRecordId is provided
   const { data: visitRecord } = useQuery({
@@ -211,7 +247,24 @@ export function CreateServiceReportDialog({
   });
 
   // Fetch visit tasks
-  const { tasks: visitTasks = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(effectiveVisitRecordId);
+  const { tasks: visitTasksRaw = [], isLoading: isLoadingTasks, updateTask } = useVisitTasks(effectiveVisitRecordId);
+  
+  // Transform care plan tasks from JSON for fallback
+  const carePlanTasksFallback = React.useMemo(() => {
+    if (!carePlanJsonData?.tasks || carePlanJsonData.tasks.length === 0) return [];
+    return carePlanJsonData.tasks.map(task => ({
+      id: task.id,
+      task_category: task.task_category,
+      task_name: task.task_name,
+      is_completed: false,
+      completed_at: null,
+      completion_notes: null,
+      priority: 'medium',
+    }));
+  }, [carePlanJsonData?.tasks]);
+
+  // Use visit tasks if available, otherwise fallback to care plan tasks
+  const visitTasks = visitTasksRaw.length > 0 ? visitTasksRaw : carePlanTasksFallback;
 
   // Fetch visit events (incidents, accidents, observations)
   const { 

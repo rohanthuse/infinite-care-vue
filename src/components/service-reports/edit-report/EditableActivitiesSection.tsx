@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Activity, Plus, X, Loader2, Clock } from 'lucide-react';
 import { useClientActivities } from '@/hooks/useClientActivities';
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 
 interface ActivityChange {
   performed: boolean;
@@ -34,7 +35,15 @@ export function EditableActivitiesSection({
   onAddActivity,
   allowManualAdd = true 
 }: EditableActivitiesSectionProps) {
-  const { data: activities = [], isLoading } = useClientActivities(carePlanId || '');
+  // Fetch from dedicated table first
+  const { data: tableActivities = [], isLoading: isLoadingTable } = useClientActivities(carePlanId || '');
+  // Fallback: fetch from auto_save_data JSON
+  const { data: jsonData, isLoading: isLoadingJson } = useCarePlanJsonData(carePlanId || '');
+  
+  // Use table activities if available, otherwise use JSON activities
+  const activities = tableActivities.length > 0 ? tableActivities : (jsonData?.activities || []);
+  const isLoading = isLoadingTable || (tableActivities.length === 0 && isLoadingJson);
+
   const [activityChanges, setActivityChanges] = useState<Map<string, ActivityChange>>(new Map());
   const [showAddForm, setShowAddForm] = useState(false);
   const [newActivity, setNewActivity] = useState<NewActivity>({
