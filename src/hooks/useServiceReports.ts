@@ -44,7 +44,12 @@ export const useCarerServiceReports = (staffId?: string) => {
   return useQuery({
     queryKey: ['carer-service-reports', staffId],
     queryFn: async () => {
-      if (!staffId) throw new Error('Staff ID is required');
+      // Return empty array instead of throwing when staffId is missing
+      // This prevents errors during initialization when context is still loading
+      if (!staffId) {
+        console.log('[useCarerServiceReports] No staff ID provided, returning empty array');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('client_service_reports')
@@ -65,9 +70,11 @@ export const useCarerServiceReports = (staffId?: string) => {
         .order('service_date', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: Boolean(staffId),
+    retry: 2,
+    staleTime: 30000, // 30 seconds
   });
 };
 

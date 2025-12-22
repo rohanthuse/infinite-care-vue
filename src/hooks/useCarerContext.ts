@@ -135,5 +135,6 @@ export const useCarerContext = () => {
     refetchOnWindowFocus: false,
     refetchOnMount: false, // Don't refetch on every navigation
     retry: 2,
+    throwOnError: false, // Prevent throwing during render - handle errors gracefully
   });
 };
