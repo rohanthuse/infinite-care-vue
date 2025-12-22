@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Target, Plus, X, Loader2 } from 'lucide-react';
 import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
-
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 interface GoalChange {
   status: string;
   progress: number;
@@ -56,7 +56,15 @@ export function EditableGoalsSection({
   onAddGoal,
   allowManualAdd = true 
 }: EditableGoalsSectionProps) {
-  const { data: goals = [], isLoading } = useCarePlanGoals(carePlanId || '');
+  // Fetch from dedicated table first
+  const { data: tableGoals = [], isLoading: isLoadingTable } = useCarePlanGoals(carePlanId || '');
+  // Fallback: fetch from auto_save_data JSON
+  const { data: jsonData, isLoading: isLoadingJson } = useCarePlanJsonData(carePlanId || '');
+  
+  // Use table goals if available, otherwise use JSON goals
+  const goals = tableGoals.length > 0 ? tableGoals : (jsonData?.goals || []);
+  const isLoading = isLoadingTable || (tableGoals.length === 0 && isLoadingJson);
+
   const [goalChanges, setGoalChanges] = useState<Map<string, GoalChange>>(new Map());
   const [showAddForm, setShowAddForm] = useState(false);
   const [newGoal, setNewGoal] = useState<NewGoal>({
