@@ -2942,12 +2942,12 @@ export const exportClientProfileToPDF = async (
 
     // Section 19: Medications (if selected)
     if (sections.medications) {
-      const { data: medications } = await supabase
-        .from('client_medications')
+      const { data: medications } = await (supabase
+        .from('client_medications' as any)
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(20) as any);
 
       if (medications && medications.length > 0) {
         await addSectionHeader('Medications');
