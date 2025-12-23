@@ -264,8 +264,8 @@ const ClientAppointments = () => {
       <ReviewPrompt completedAppointments={pendingReviewAppointments || []} />
 
       {/* Upcoming Appointments */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">Upcoming Appointments</h2>
+      <div className="bg-white dark:bg-card p-6 rounded-xl border border-gray-200 dark:border-border">
+        <h2 className="text-xl font-bold mb-6 text-foreground">Upcoming Appointments</h2>
         
         {upcomingAppointments.length > 0 ? (
           <div className="grid gap-4">

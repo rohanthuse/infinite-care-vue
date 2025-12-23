@@ -29,7 +29,7 @@ const ClientDashboard = () => {
   }, [navigate]);
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px] pb-20 lg:pb-0">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-background w-full pt-[72px] pb-20 lg:pb-0">
       <ClientHeader title={pageTitle} />
       
       <div className="flex flex-1 w-full">

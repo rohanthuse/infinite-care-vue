@@ -47,13 +47,13 @@ export const ClientContactSidebar = ({
   const getContactTypeBadge = (type: "admin" | "carer") => {
     if (type === 'admin') {
       return (
-        <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
           Care Coordinator
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
           Carer
         </Badge>
       );
@@ -70,17 +70,17 @@ export const ClientContactSidebar = ({
   
   return (
     <>
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold mb-2">Your Care Team</h3>
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="p-4 border-b border-gray-200 dark:border-border">
+        <h3 className="text-lg font-semibold mb-2 text-foreground">Your Care Team</h3>
+        <p className="text-sm text-gray-600 dark:text-muted-foreground mb-4">
           Message your care coordinators and carers who provide your support
         </p>
         
         <div className="relative mb-4">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
           <Input
             placeholder="Search your care team..."
-            className="pl-9 bg-gray-50"
+            className="pl-9 bg-gray-50 dark:bg-muted"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -88,21 +88,21 @@ export const ClientContactSidebar = ({
 
         {/* Contact type filter */}
         <div className="flex items-center justify-between mb-2">
-          <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
+          <div className="w-full flex overflow-hidden bg-gray-100 dark:bg-muted rounded-md">
             <button 
-              className={`flex-1 text-sm py-2 px-3 ${contactType === 'all' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              className={`flex-1 text-sm py-2 px-3 transition-colors ${contactType === 'all' ? 'bg-white dark:bg-card rounded-md shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => onContactTypeChange('all')}
             >
               All ({totalCount})
             </button>
             <button 
-              className={`flex-1 text-sm py-2 px-3 ${contactType === 'admins' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              className={`flex-1 text-sm py-2 px-3 transition-colors ${contactType === 'admins' ? 'bg-white dark:bg-card rounded-md shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => onContactTypeChange('admins')}
             >
               Coordinators ({adminCount})
             </button>
             <button 
-              className={`flex-1 text-sm py-2 px-3 ${contactType === 'carers' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              className={`flex-1 text-sm py-2 px-3 transition-colors ${contactType === 'carers' ? 'bg-white dark:bg-card rounded-md shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => onContactTypeChange('carers')}
             >
               Carers ({carerCount})
@@ -111,7 +111,7 @@ export const ClientContactSidebar = ({
         </div>
 
         {error && (
-          <div className="mt-2 p-2 bg-red-50 rounded-md text-xs text-red-700">
+          <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/30 rounded-md text-xs text-red-700 dark:text-red-300">
             Error loading care team: {error.message}
           </div>
         )}
@@ -119,25 +119,25 @@ export const ClientContactSidebar = ({
       
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="p-4 text-center text-gray-500">
+          <div className="p-4 text-center text-gray-500 dark:text-muted-foreground">
             Loading your care team...
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-border">
             {filteredContacts.map((contact) => (
               <div
                 key={contact.id}
-                className="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => {
                   console.log('[ClientContactSidebar] Selected contact:', contact);
                   onContactSelect(contact.id);
                 }}
               >
                 <div className="relative">
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                  <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-muted flex items-center justify-center text-sm font-medium text-foreground">
                     {contact.avatar}
                   </div>
-                  <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                  <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-card ${
                     contact.status === "online" ? "bg-green-500" :
                     contact.status === "away" ? "bg-amber-500" : "bg-gray-400"
                   }`}></div>
@@ -145,7 +145,7 @@ export const ClientContactSidebar = ({
                 
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium text-sm">{contact.name}</div>
+                    <div className="font-medium text-sm text-foreground">{contact.name}</div>
                     {contact.unread > 0 && (
                       <div className="bg-blue-600 text-white text-xs rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
                         {contact.unread}
@@ -160,7 +160,7 @@ export const ClientContactSidebar = ({
             ))}
             
             {filteredContacts.length === 0 && !isLoading && (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-gray-500 dark:text-muted-foreground">
                 {error ? 'Failed to load care team' : 
                  careTeam.length === 0 ? 'No care team members found' :
                  'No team members match your search'}
