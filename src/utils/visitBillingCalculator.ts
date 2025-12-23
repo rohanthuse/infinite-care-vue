@@ -108,9 +108,19 @@ export class VisitBillingCalculator {
       : 1;
 
     const unitRate = this.calculateUnitRate(rate, adjustedBillingMinutes);
-    const lineTotal = (unitRate * adjustedBillingMinutes / 60) * bankHolidayMultiplier;
+    const chargeType = rate.charge_type || 'rate_per_minutes_pro_rata';
+    
+    // Calculate line total based on charge type
+    let lineTotal: number;
+    if (chargeType === 'flat_rate' || chargeType === 'daily_flat_rate') {
+      // Flat rate is per service/visit, not time-based
+      lineTotal = unitRate * bankHolidayMultiplier;
+    } else {
+      // Pro-rata and hourly rates are time-based
+      lineTotal = (unitRate * adjustedBillingMinutes / 60) * bankHolidayMultiplier;
+    }
 
-    // Calculate VAT
+    // Calculate VAT - use database is_vatable column value
     const vatAmount = rate.is_vatable ? lineTotal * 0.2 : 0;
 
     return {

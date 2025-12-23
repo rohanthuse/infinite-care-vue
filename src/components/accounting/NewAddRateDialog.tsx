@@ -373,6 +373,8 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       rate_60_minutes: rateBlock?.rateAt60Minutes ? parseFloat(rateBlock.rateAt60Minutes) : null,
       consecutive_hours: rateBlock?.consecutiveHours ? parseFloat(rateBlock.consecutiveHours) : null,
       service_type: rateBlock?.isVatable ? 'vatable' : 'standard',
+      // NEW: Store is_vatable as a proper boolean column for VAT calculation
+      is_vatable: rateBlock?.isVatable ?? false,
       charge_type: mapToChargeType(
         rateBlock?.chargeBasedOn || 'services',
         rateBlock?.rateChargingMethod || 'flat',

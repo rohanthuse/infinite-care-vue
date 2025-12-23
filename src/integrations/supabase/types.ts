@@ -8092,6 +8092,7 @@ export type Database = {
           funding_source: string
           id: string
           is_default: boolean
+          is_vatable: boolean | null
           mileage_excluded: boolean | null
           pay_based_on: string | null
           rate_15_minutes: number | null
@@ -8126,6 +8127,7 @@ export type Database = {
           funding_source?: string
           id?: string
           is_default?: boolean
+          is_vatable?: boolean | null
           mileage_excluded?: boolean | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null
@@ -8160,6 +8162,7 @@ export type Database = {
           funding_source?: string
           id?: string
           is_default?: boolean
+          is_vatable?: boolean | null
           mileage_excluded?: boolean | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null
