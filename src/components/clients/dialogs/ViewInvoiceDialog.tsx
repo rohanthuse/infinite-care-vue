@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, Download, Loader2, FileText, Receipt, Timer, Pencil } from "lucide-react";
+import { Eye, Download, Loader2, FileText, Receipt, Timer, Pencil, Info, AlertTriangle, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,8 @@ import { useInvoiceExpenseEntries } from "@/hooks/useInvoiceExpenses";
 import { useInvoiceExtraTimeEntries, calculateExtraTimeTotals } from "@/hooks/useInvoiceExtraTimeEntries";
 import { useInvoiceCancelledBookings } from "@/hooks/useInvoiceCancelledBookings";
 import { Calculator } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -48,7 +50,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
   const [isDownloading, setIsDownloading] = useState(false);
   const [showLedgerView, setShowLedgerView] = useState(false);
+  const [isCorrectingVat, setIsCorrectingVat] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch expense, extra time, and cancelled booking entries for this invoice
   const { data: expenseEntries = [] } = useInvoiceExpenseEntries(invoice?.id);
@@ -66,6 +70,48 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
     }
     return sum;
   }, 0);
+
+  // Check if VAT is applied to this invoice
+  const hasVat = (invoice?.vat_amount || 0) > 0;
+
+  // Function to correct VAT on an invoice (set to 0)
+  const handleCorrectVat = async () => {
+    if (!invoice) return;
+    
+    setIsCorrectingVat(true);
+    try {
+      // Update invoice to remove VAT
+      const newNetAmount = invoice.net_amount || invoice.amount || 0;
+      const { error } = await supabase
+        .from('client_billing')
+        .update({
+          vat_amount: 0,
+          total_amount: newNetAmount,
+        })
+        .eq('id', invoice.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "VAT Corrected",
+        description: `VAT has been removed from invoice ${invoice.invoice_number}. The invoice total is now ${formatCurrency(newNetAmount)}.`,
+      });
+
+      // Refresh invoice data
+      queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      
+    } catch (error) {
+      console.error('Error correcting VAT:', error);
+      toast({
+        title: "Error",
+        description: "Failed to correct VAT. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCorrectingVat(false);
+    }
+  };
 
   const handleDownload = async () => {
     if (!invoice) {
@@ -401,7 +447,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
                     <TableHead>Data</TableHead>
                     <TableHead>Services</TableHead>
                     <TableHead>Price/Rate(£)</TableHead>
-                    <TableHead>VAT(£)</TableHead>
+                    {/* Only show VAT column if invoice has VAT */}
+                    {hasVat && <TableHead>VAT(£)</TableHead>}
                     <TableHead>Total</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -417,7 +464,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
                         <TableCell>{item.description}</TableCell>
                         <TableCell>{item.quantity || 1}</TableCell>
                         <TableCell>{formatCurrency(item.unit_price)}</TableCell>
-                        <TableCell>{formatCurrency(lineVat)}</TableCell>
+                        {/* Only show VAT cell if invoice has VAT */}
+                        {hasVat && <TableCell>{formatCurrency(lineVat)}</TableCell>}
                         <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
                       </TableRow>
                     );
@@ -567,11 +615,28 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
                 </span>
               </div>
               
-              {/* VAT */}
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">VAT (20%):</span>
-                <span className="font-medium">{formatCurrency(totalVatAmount)}</span>
-              </div>
+              {/* VAT - Only show if invoice has VAT */}
+              {hasVat && (
+                <div className="flex justify-between text-sm items-center">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    VAT (20%):
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-sm">
+                            VAT was applied based on the rate configuration marked as "VATable" at the time of invoice generation.
+                            VAT Rate: 20%
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </span>
+                  <span className="font-medium">{formatCurrency(totalVatAmount)}</span>
+                </div>
+              )}
               
               {/* Grand Total */}
               <div className="flex justify-between text-lg font-bold border-t-2 border-primary/30 pt-3 mt-2">
@@ -581,6 +646,37 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
                 </span>
               </div>
             </div>
+            
+            {/* VAT Correction Option - Show if invoice has VAT and is not locked/paid */}
+            {hasVat && !invoice.is_locked && invoice.status !== 'paid' && (
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                      VAT Applied: {formatCurrency(totalVatAmount)}
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      If this invoice should not include VAT (e.g., the rate is not VATable), you can correct it below.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 text-amber-700 border-amber-300 hover:bg-amber-100"
+                      onClick={handleCorrectVat}
+                      disabled={isCorrectingVat}
+                    >
+                      {isCorrectingVat ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      {isCorrectingVat ? 'Correcting...' : 'Remove VAT from Invoice'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment History */}

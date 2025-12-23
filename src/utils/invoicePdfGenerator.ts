@@ -245,20 +245,28 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
     yPosition = colYStart + 20;
 
-    // ===== LINE ITEMS TABLE (With proper VAT calculation) =====
-    const VAT_RATE = 0.20; // 20% VAT
+    // ===== LINE ITEMS TABLE (Using stored VAT, not recalculating) =====
     
-    // Process line items with proper VAT calculation
-    // Determine if invoice has VAT at the invoice level
+    // Determine if invoice has VAT at the invoice level - use stored value
     const invoiceHasVat = invoice.vat_amount != null && invoice.vat_amount > 0;
+    const storedVatAmount = invoice.vat_amount || 0;
+    
+    // Calculate net subtotal first to determine VAT proportion per line
+    const rawNetSubtotal = invoice.line_items?.reduce((sum, item) => {
+      const unitPrice = item.unit_price || 0;
+      const quantity = item.quantity || 1;
+      return sum + (unitPrice * quantity);
+    }, 0) || 0;
     
     const processedItems = invoice.line_items?.map(item => {
       const unitPrice = item.unit_price || 0;
       const quantity = item.quantity || 1;
       const netAmount = unitPrice * quantity;
       
-      // Apply VAT if the invoice has VAT
-      const vatAmount = invoiceHasVat ? netAmount * VAT_RATE : 0;
+      // Calculate proportional VAT from stored invoice-level VAT (don't recalculate!)
+      const vatAmount = invoiceHasVat && rawNetSubtotal > 0
+        ? (netAmount / rawNetSubtotal) * storedVatAmount
+        : 0;
       const lineTotal = netAmount + vatAmount;
 
       // Format the date with day name
@@ -277,25 +285,53 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
       };
     }) || [];
 
-    // Calculate totals
-    const netSubtotal = processedItems.reduce((sum, item) => sum + item.netAmount, 0);
-    const vatTotal = processedItems.reduce((sum, item) => sum + item.vatAmount, 0);
-    const servicesGrossTotal = netSubtotal + vatTotal;
+    // Use stored invoice values for totals
+    const netSubtotal = invoice.net_amount || rawNetSubtotal;
+    const vatTotal = storedVatAmount;
+    const servicesGrossTotal = invoice.total_amount || (netSubtotal + vatTotal);
 
     // Prepare table data with proper columns - format duration properly
-    const tableData = processedItems.map(item => [
-      item.formattedDate,
-      item.description,
-      item.unitPrice.toFixed(2),
-      formatDurationFromHours(item.quantity), // Format duration instead of raw decimal
-      item.netAmount.toFixed(2),
-      invoiceHasVat ? item.vatAmount.toFixed(2) : '-',
-      item.lineTotal.toFixed(2)
-    ]);
+    // Only include VAT column if invoice has VAT
+    const tableData = processedItems.map(item => {
+      const row = [
+        item.formattedDate,
+        item.description,
+        item.unitPrice.toFixed(2),
+        formatDurationFromHours(item.quantity), // Format duration instead of raw decimal
+        item.netAmount.toFixed(2),
+      ];
+      if (invoiceHasVat) {
+        row.push(item.vatAmount.toFixed(2));
+      }
+      row.push((item.netAmount + item.vatAmount).toFixed(2));
+      return row;
+    });
+
+    // Build dynamic headers and column styles based on whether VAT applies
+    const tableHeaders = invoiceHasVat 
+      ? [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'VAT (£)', 'Total (£)']]
+      : [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'Total (£)']];
+    
+    const columnStyles = invoiceHasVat ? {
+      0: { cellWidth: 30 }, // Date
+      1: { cellWidth: 50 }, // Description
+      2: { halign: 'right' as const, cellWidth: 22 }, // Rate
+      3: { halign: 'center' as const, cellWidth: 15 }, // Duration
+      4: { halign: 'right' as const, cellWidth: 22 }, // Net
+      5: { halign: 'right' as const, cellWidth: 22 }, // VAT
+      6: { halign: 'right' as const, cellWidth: 24, fontStyle: 'bold' as const } // Total
+    } : {
+      0: { cellWidth: 30 }, // Date
+      1: { cellWidth: 60 }, // Description (wider when no VAT column)
+      2: { halign: 'right' as const, cellWidth: 25 }, // Rate
+      3: { halign: 'center' as const, cellWidth: 20 }, // Duration
+      4: { halign: 'right' as const, cellWidth: 25 }, // Net
+      5: { halign: 'right' as const, cellWidth: 25, fontStyle: 'bold' as const } // Total
+    };
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'VAT (£)', 'Total (£)']],
+      head: tableHeaders,
       body: tableData,
       theme: 'plain',
       headStyles: {
@@ -311,15 +347,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
         textColor: [55, 65, 81],
         cellPadding: 3
       },
-      columnStyles: {
-        0: { cellWidth: 30 }, // Date
-        1: { cellWidth: 50 }, // Description
-        2: { halign: 'right', cellWidth: 22 }, // Rate
-        3: { halign: 'center', cellWidth: 15 }, // Qty
-        4: { halign: 'right', cellWidth: 22 }, // Net
-        5: { halign: 'right', cellWidth: 22 }, // VAT
-        6: { halign: 'right', cellWidth: 24, fontStyle: 'bold' } // Total
-      },
+      columnStyles,
       margin: { left: margin, right: margin },
       didDrawCell: (data) => {
         if (data.section === 'body') {
@@ -340,13 +368,15 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     doc.setFont(undefined, 'normal');
     doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
     doc.text('Subtotal (Net):', summaryBoxX, yPosition);
-    doc.text(`£${(invoice.net_amount || netSubtotal).toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+    doc.text(`£${netSubtotal.toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
     yPosition += 5;
 
-    // VAT (20%)
-    doc.text('VAT (20%):', summaryBoxX, yPosition);
-    doc.text(`£${(invoice.vat_amount || vatTotal).toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
-    yPosition += 5;
+    // VAT (20%) - Only show if invoice has VAT
+    if (invoiceHasVat) {
+      doc.text('VAT (20%):', summaryBoxX, yPosition);
+      doc.text(`£${vatTotal.toFixed(2)}`, pageWidth - margin, yPosition, { align: 'right' });
+      yPosition += 5;
+    }
 
     // Divider line
     doc.setDrawColor(200, 200, 200);
