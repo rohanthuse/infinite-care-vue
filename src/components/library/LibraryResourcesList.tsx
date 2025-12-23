@@ -333,7 +333,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
             
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-muted-foreground" />
                 <Input
                   placeholder="Search resources..."
                   className="pl-9 w-full sm:w-64"
@@ -352,7 +352,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="p-2 space-y-2">
                     <div>
-                      <label className="text-xs font-medium text-gray-500">Category</label>
+                      <label className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Category</label>
                       <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="h-8">
                           <SelectValue />
@@ -369,7 +369,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                     </div>
                     
                     <div>
-                      <label className="text-xs font-medium text-gray-500">Type</label>
+                      <label className="text-xs font-medium text-gray-500 dark:text-muted-foreground">Type</label>
                       <Select value={resourceTypeFilter} onValueChange={setResourceTypeFilter}>
                         <SelectTrigger className="h-8">
                           <SelectValue />
@@ -428,9 +428,9 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
             <CardContent className="p-0">
               {filteredResources.length === 0 ? (
                 <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500 text-lg">No resources found</p>
-                  <p className="text-gray-400 text-sm">Try adjusting your search criteria or add new resources</p>
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300 dark:text-muted-foreground" />
+                  <p className="text-gray-500 dark:text-muted-foreground text-lg">No resources found</p>
+                  <p className="text-gray-400 dark:text-muted-foreground text-sm">Try adjusting your search criteria or add new resources</p>
                   {onAddNew && (
                     <Button onClick={onAddNew} className="mt-4">
                       Add First Resource
@@ -455,7 +455,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                       <TableRow key={resource.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-gray-100 rounded-md">
+                            <div className="p-2 bg-gray-100 dark:bg-muted rounded-md">
                               {getResourceIcon(resource.resource_type)}
                             </div>
                             <div className="min-w-0">
@@ -472,7 +472,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                                 )}
                               </div>
                               {resource.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1 line-clamp-2">
                                   {resource.description}
                                 </p>
                               )}
@@ -503,16 +503,16 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
+                            <User className="h-4 w-4 text-gray-400 dark:text-muted-foreground" />
                             <span className="text-sm">{resource.author || resource.uploaded_by_name || 'Unknown'}</span>
                           </div>
                           {resource.version && (
-                            <p className="text-xs text-gray-500">v{resource.version}</p>
+                            <p className="text-xs text-gray-500 dark:text-muted-foreground">v{resource.version}</p>
                           )}
                         </TableCell>
                         {showEngagementMetrics && (
                           <TableCell>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Eye className="h-3 w-3" />
                                 <span>{resource.views_count}</span>
@@ -525,7 +525,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                           </TableCell>
                         )}
                         <TableCell>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground">
                             <Calendar className="h-3 w-3 mr-1" />
                             {format(new Date(resource.created_at), 'MMM dd, yyyy')}
                           </div>
@@ -557,7 +557,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteResource(resource.id)}
-                                className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-8 px-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
                                 title="Delete"
                               >
                                 <Trash2 className="h-4 w-4" />

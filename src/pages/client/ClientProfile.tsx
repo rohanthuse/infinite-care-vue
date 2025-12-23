@@ -298,20 +298,20 @@ const ClientProfile = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
+      <div className="bg-white dark:bg-card p-6 rounded-xl border border-gray-200 dark:border-border">
         <div className="flex flex-col md:flex-row gap-6 items-start">
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
               {photoPreview || profile?.profile_photo_url ? (
                 <AvatarImage src={photoPreview || profile?.profile_photo_url} alt={fullName} />
               ) : (
-                <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
+                <AvatarFallback className="bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 text-3xl">
                   {avatarInitials}
                 </AvatarFallback>
               )}
             </Avatar>
-            <h3 className="font-bold mt-4 text-lg">{fullName}</h3>
-            <div className="text-gray-600 text-sm space-y-1 mt-2">
+            <h3 className="font-bold mt-4 text-lg text-foreground">{fullName}</h3>
+            <div className="text-gray-600 dark:text-muted-foreground text-sm space-y-1 mt-2">
               {profileData.email && (
                 <p className="flex items-center justify-center gap-1">
                   <span>📧</span> {profileData.email}
@@ -534,7 +534,7 @@ const ClientProfile = () => {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+                      <h3 className="text-lg font-medium mb-4 text-foreground">Emergency Contact</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label htmlFor="emergency_contact_name">Name</Label>
@@ -564,7 +564,7 @@ const ClientProfile = () => {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Next of Kin</h3>
+                      <h3 className="text-lg font-medium mb-4 text-foreground">Next of Kin</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label htmlFor="next_of_kin_name">Name</Label>
@@ -594,7 +594,7 @@ const ClientProfile = () => {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-medium mb-4">GP Information</h3>
+                      <h3 className="text-lg font-medium mb-4 text-foreground">GP Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label htmlFor="gp_name">GP Name</Label>
@@ -624,7 +624,7 @@ const ClientProfile = () => {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Personal Preferences</h3>
+                      <h3 className="text-lg font-medium mb-4 text-foreground">Personal Preferences</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="preferred_communication">Preferred Communication</Label>
@@ -792,7 +792,7 @@ const ClientProfile = () => {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Change Password</h3>
+                      <h3 className="text-lg font-medium mb-4 text-foreground">Change Password</h3>
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="currentPassword">Current Password</Label>

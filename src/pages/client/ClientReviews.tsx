@@ -102,7 +102,7 @@ const ClientReviews = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your reviews...</p>
+          <p className="text-gray-600 dark:text-muted-foreground">Loading your reviews...</p>
         </div>
       </div>
     );
@@ -113,9 +113,9 @@ const ClientReviews = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your reviews.</p>
+          <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">Authentication Required</h3>
+          <p className="text-gray-500 dark:text-muted-foreground">Please log in to view your reviews.</p>
         </div>
       </div>
     );
@@ -124,9 +124,9 @@ const ClientReviews = () => {
   if (reviewsError) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading reviews</h3>
-        <p className="text-gray-600">Unable to load your reviews. Please try refreshing the page.</p>
+        <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">Error loading reviews</h3>
+        <p className="text-gray-600 dark:text-muted-foreground">Unable to load your reviews. Please try refreshing the page.</p>
       </div>
     );
   }
@@ -136,9 +136,9 @@ const ClientReviews = () => {
   if (!hasContent) {
     return (
       <div className="text-center py-12">
-        <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
-        <p className="text-gray-600">You haven't submitted any reviews yet. After completing appointments, you'll be able to leave feedback about your care experience.</p>
+        <Star className="h-12 w-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No reviews yet</h3>
+        <p className="text-gray-600 dark:text-muted-foreground">You haven't submitted any reviews yet. After completing appointments, you'll be able to leave feedback about your care experience.</p>
       </div>
     );
   }
@@ -147,20 +147,20 @@ const ClientReviews = () => {
     <div className="space-y-6">
       {/* Pending Feedback Section */}
       {pendingReviews && pendingReviews.length > 0 && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h2 className="text-xl font-bold mb-6 text-blue-600">Pending Feedback</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-white dark:bg-card p-6 rounded-xl border border-gray-200 dark:border-border">
+          <h2 className="text-xl font-bold mb-6 text-blue-600 dark:text-blue-400">Pending Feedback</h2>
+          <p className="text-gray-600 dark:text-muted-foreground mb-6">
             You have recent appointments waiting for your review. Share your experience to help us improve our services.
           </p>
 
           <div className="space-y-4">
             {pendingReviews.map((appointment) => (
-              <Card key={appointment.id} className="border-blue-100">
+              <Card key={appointment.id} className="border-blue-100 dark:border-blue-900/30">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{appointment.type}</CardTitle>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                      <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground mt-1">
                         <User className="h-4 w-4 mr-1" />
                         {appointment.provider}
                       </div>
@@ -176,7 +176,7 @@ const ClientReviews = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground">
                     <Calendar className="h-4 w-4 mr-1" />
                     {format(new Date(appointment.date), 'MMM d, yyyy')} at {appointment.time}
                   </div>
@@ -189,9 +189,9 @@ const ClientReviews = () => {
 
       {/* Submitted Reviews Section */}
       {reviews && reviews.length > 0 && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h2 className="text-xl font-bold mb-6">Your Submitted Reviews</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-white dark:bg-card p-6 rounded-xl border border-gray-200 dark:border-border">
+          <h2 className="text-xl font-bold mb-6 text-foreground">Your Submitted Reviews</h2>
+          <p className="text-gray-600 dark:text-muted-foreground mb-6">
             Here are all the reviews you've submitted for your care services. You can edit recent reviews if needed.
           </p>
 
@@ -206,7 +206,7 @@ const ClientReviews = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{review.service_type || 'Care Service'}</CardTitle>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                      <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground mt-1">
                         <Calendar className="h-4 w-4 mr-1" />
                         Service Date: {format(new Date(review.service_date), 'MMM d, yyyy')}
                       </div>
@@ -232,14 +232,14 @@ const ClientReviews = () => {
 
                 <CardContent className="space-y-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-500 mb-2">Your Rating</div>
+                    <div className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Your Rating</div>
                     <div className="flex items-center">
                       {renderStars(
                         isEditing ? editRating : review.rating, 
                         isEditing, 
                         setEditRating
                       )}
-                      <span className="ml-2 text-sm text-gray-600">
+                      <span className="ml-2 text-sm text-gray-600 dark:text-muted-foreground">
                         ({isEditing ? editRating : review.rating}/5 stars)
                       </span>
                     </div>
@@ -247,17 +247,17 @@ const ClientReviews = () => {
 
                   {(review.comment || isEditing) && (
                     <div>
-                      <div className="text-sm font-medium text-gray-500 mb-2">Your Comments</div>
+                      <div className="text-sm font-medium text-gray-500 dark:text-muted-foreground mb-2">Your Comments</div>
                       {isEditing ? (
                         <textarea
                           value={editComment}
                           onChange={(e) => setEditComment(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full p-3 border border-gray-300 dark:border-border dark:bg-muted dark:text-foreground rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           rows={3}
                           placeholder="Share your experience..."
                         />
                       ) : (
-                        <div className="text-sm text-gray-700 p-3 bg-gray-50 rounded border border-gray-100">
+                        <div className="text-sm text-gray-700 dark:text-foreground p-3 bg-gray-50 dark:bg-muted rounded border border-gray-100 dark:border-border">
                           {review.comment}
                         </div>
                       )}
@@ -265,7 +265,7 @@ const ClientReviews = () => {
                   )}
 
                   {canEdit && (
-                    <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 p-2 rounded">
                       You can edit this review until {format(new Date(review.can_edit_until), 'MMM d, yyyy \'at\' h:mm a')}
                     </div>
                   )}
