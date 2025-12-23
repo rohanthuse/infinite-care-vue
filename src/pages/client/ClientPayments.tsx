@@ -492,12 +492,31 @@ const ClientPayments = () => {
       if (invoice.organization_id) {
         const { data, error: orgError } = await supabase
           .from('organizations')
-          .select('name, address, contact_email, contact_phone')
+          .select('name, address, contact_email, contact_phone, logo_url')
           .eq('id', invoice.organization_id)
           .maybeSingle();
         
         if (!orgError) {
           orgData = data;
+        }
+      }
+
+      // Convert logo URL to base64 for PDF
+      let logoBase64: string | null = null;
+      if (orgData?.logo_url) {
+        try {
+          const response = await fetch(orgData.logo_url);
+          if (response.ok) {
+            const blob = await response.blob();
+            logoBase64 = await new Promise<string | null>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading organization logo:', error);
         }
       }
 
@@ -511,7 +530,8 @@ const ClientPayments = () => {
           name: orgData?.name || "Care Service Provider",
           address: orgData?.address || "Organization Address",
           email: orgData?.contact_email || "contact@organization.com",
-          phone: orgData?.contact_phone
+          phone: orgData?.contact_phone,
+          logoBase64: logoBase64
         }
       });
       toast({
