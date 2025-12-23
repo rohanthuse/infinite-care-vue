@@ -163,6 +163,20 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       const chargeBasedOn = mapPayBasedOnToChargeBasedOn(rateData.pay_based_on);
       const { rateChargingMethod, rateCalculationType } = mapChargeType(rateData.charge_type);
 
+      // Determine the correct rate value based on charge type
+      // For rate_per_hour or non-hours_minutes modes, the amount IS the rate
+      // For pro-rata minutes modes, the rate is in the individual minute fields
+      let rateValue = "";
+      if (chargeBasedOn === 'hours_minutes') {
+        if (rateCalculationType === 'rate_per_hour') {
+          rateValue = rateData.amount?.toString() || "";
+        }
+        // For rate_per_minutes_pro or rate_per_minutes_flat, rate stays empty as values are in minute fields
+      } else {
+        // For services or fix_flat_rate, the amount IS the rate
+        rateValue = rateData.amount?.toString() || "";
+      }
+
       // Create a rate block from existing data with proper mapping
       const existingBlock: RateBlock = {
         id: crypto.randomUUID(),
@@ -174,7 +188,7 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
         rateChargingMethod: rateChargingMethod,
         rateCalculationType: rateCalculationType,
         services: rateData.service_id ? [rateData.service_id] : [],
-        rate: rateData.amount?.toString() || "",
+        rate: rateValue,
         rateAt15Minutes: rateData.rate_15_minutes?.toString() || "",
         rateAt30Minutes: rateData.rate_30_minutes?.toString() || "",
         rateAt45Minutes: rateData.rate_45_minutes?.toString() || "",
@@ -305,13 +319,21 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
       }
     };
     
-    // Determine amount from rate block
+    // Determine amount from rate block based on chargeBasedOn mode
     let amount = 0;
     if (rateBlock) {
-      if (rateBlock.rateChargingMethod === "flat" || rateBlock.rateChargingMethod === "hourly") {
+      if (rateBlock.chargeBasedOn === 'hours_minutes') {
+        // Hours/Minutes mode
+        if (rateBlock.rateCalculationType === 'rate_per_hour') {
+          // Rate per hour uses the single rate field
+          amount = parseFloat(rateBlock.rate) || 0;
+        } else if (rateBlock.rateAt60Minutes) {
+          // Pro-rata or flat rate per minutes uses the 60 min field as the base
+          amount = parseFloat(rateBlock.rateAt60Minutes) || 0;
+        }
+      } else {
+        // Services or Fix Flat Rate mode - use the rate field
         amount = parseFloat(rateBlock.rate) || 0;
-      } else if (rateBlock.rateAt60Minutes) {
-        amount = parseFloat(rateBlock.rateAt60Minutes) || 0;
       }
     }
 
@@ -357,6 +379,10 @@ const NewAddRateDialog: React.FC<NewAddRateDialogProps> = ({
         rateBlock?.rateCalculationType || 'rate_per_hour'
       ),
       pay_based_on: mapToPayBasedOn(rateBlock?.chargeBasedOn || 'services'),
+      // Additional fields for complete data binding
+      time_from: rateBlock?.effectiveFrom || null,
+      time_until: rateBlock?.effectiveUntil || null,
+      rate_category: rateBlock?.rateType || null,
     };
 
     // If editing, include the rate ID
