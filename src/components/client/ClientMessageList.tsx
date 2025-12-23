@@ -70,19 +70,19 @@ export const ClientMessageList = ({
 
     if (hasAdmin && hasCarer) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
           Care Team
         </Badge>
       );
     } else if (hasAdmin) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
           Admin
         </Badge>
       );
     } else if (hasCarer) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
           Carer
         </Badge>
       );
@@ -92,8 +92,8 @@ export const ClientMessageList = ({
   
   return (
     <>
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Messages</h3>
+      <div className="p-4 border-b border-gray-200 dark:border-border flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground">Messages</h3>
         <Button
           size="sm"
           className="gap-1"
@@ -104,12 +104,12 @@ export const ClientMessageList = ({
         </Button>
       </div>
       
-      <div className="p-3 border-b border-gray-200">
+      <div className="p-3 border-b border-gray-200 dark:border-border">
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
           <Input
             placeholder="Search messages..."
-            className="pl-9 bg-gray-50"
+            className="pl-9 bg-gray-50 dark:bg-muted"
             value={searchTerm}
             readOnly
           />
@@ -118,11 +118,11 @@ export const ClientMessageList = ({
       
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-gray-500 dark:text-muted-foreground">
             Loading messages...
           </div>
         ) : error ? (
-          <div className="p-6 text-center text-red-500">
+          <div className="p-6 text-center text-red-500 dark:text-red-400">
             Error loading messages: {error.message}
           </div>
         ) : filteredThreads.length > 0 ? (
@@ -130,14 +130,14 @@ export const ClientMessageList = ({
             <div 
               key={thread.id}
               className={cn(
-                "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors",
-                selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50" : "",
-                thread.unreadCount > 0 ? "bg-gray-50" : ""
+                "p-3 hover:bg-gray-50 dark:hover:bg-muted/50 cursor-pointer border-b border-gray-100 dark:border-border transition-colors",
+                selectedMessageId === thread.id ? "bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-50 dark:hover:bg-blue-950/30" : "",
+                thread.unreadCount > 0 ? "bg-gray-50 dark:bg-muted/50" : ""
               )}
               onClick={() => onMessageSelect(thread.id)}
             >
               <div className="flex items-start">
-                <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
+                <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-muted flex items-center justify-center text-sm font-medium shrink-0 text-foreground">
                   {thread.participants[0]?.avatar || 'T'}
                 </div>
                 
@@ -160,27 +160,27 @@ export const ClientMessageList = ({
                       )}
                     </div>
                     
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-muted-foreground">
                       {thread.lastMessage ? formatMessageDate(thread.lastMessage.timestamp) : ''}
                     </span>
                   </div>
                   
                   <div className={cn(
                     "text-sm truncate",
-                    thread.unreadCount > 0 ? "font-medium" : "text-gray-700"
+                    thread.unreadCount > 0 ? "font-medium text-foreground" : "text-gray-700 dark:text-foreground"
                   )}>
                     {thread.subject}
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-500 truncate mt-1">
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground truncate mt-1">
                       {thread.lastMessage ? (
                         `${thread.lastMessage.senderName}: ${thread.lastMessage.content}`
                       ) : 'No messages yet'}
                     </p>
                     
                     {thread.lastMessage?.hasAttachments && (
-                      <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                      <FileText className="h-3 w-3 text-gray-400 dark:text-muted-foreground ml-1 shrink-0" />
                     )}
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export const ClientMessageList = ({
             </div>
           ))
         ) : (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-gray-500 dark:text-muted-foreground">
             {selectedContactId ? 
               "No messages with this contact" : 
               "No messages found"

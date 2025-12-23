@@ -34,10 +34,10 @@ const ClientLibrary = () => {
       </div>
 
       {/* Main Library Section */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-bold">Library Resources</h2>
-          <p className="text-gray-500 mt-1">Browse and access educational and reference materials</p>
+      <div className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-border shadow-sm flex flex-col">
+        <div className="p-6 border-b border-gray-100 dark:border-border">
+          <h2 className="text-2xl font-bold text-foreground">Library Resources</h2>
+          <p className="text-gray-500 dark:text-muted-foreground mt-1">Browse and access educational and reference materials</p>
         </div>
         
         <div className="p-4 md:p-6 max-w-full">

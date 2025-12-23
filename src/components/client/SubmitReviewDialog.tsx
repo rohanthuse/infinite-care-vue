@@ -105,7 +105,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
           </DialogHeader>
           <div className="py-4 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-sm text-gray-500">Authenticating...</p>
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">Authenticating...</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -121,7 +121,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
             <DialogTitle>Authentication Required</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-500">Please log in to submit a review.</p>
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">Please log in to submit a review.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>
@@ -142,7 +142,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
             <DialogTitle>No Appointment Selected</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-500">Please select an appointment to leave a review.</p>
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">Please select an appointment to leave a review.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>
@@ -206,14 +206,14 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
               disabled={!!existingReview}
             />
             {!existingReview && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">
                 Your feedback helps us improve our services. It will be shared with management but not directly with the carer.
               </p>
             )}
           </div>
 
           {existingReview && (
-            <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
+            <div className="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 p-3 rounded">
               <strong>Review submitted:</strong> {new Date(existingReview.created_at).toLocaleDateString()}
               {new Date(existingReview.can_edit_until) > new Date() && (
                 <div className="mt-1 text-xs">
