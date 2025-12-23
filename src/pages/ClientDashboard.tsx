@@ -6,6 +6,7 @@ import { ClientSubHeader } from "@/components/client/ClientSubHeader";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
+import { ClientMobileNav } from "@/components/client/ClientMobileNav";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const ClientDashboard = () => {
   }, [navigate]);
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px]">
+    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px] pb-20 lg:pb-0">
       <ClientHeader title={pageTitle} />
       
       <div className="flex flex-1 w-full">
@@ -41,6 +42,8 @@ const ClientDashboard = () => {
         
         <ClientSidebar />
       </div>
+      
+      <ClientMobileNav />
     </div>
   );
 };

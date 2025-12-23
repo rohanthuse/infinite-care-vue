@@ -11,6 +11,14 @@ import { useClientAuth } from "@/hooks/useClientAuth";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { ClientSearchDropdown } from "@/components/search/ClientSearchDropdown";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
@@ -25,7 +33,9 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     
   const [searchValue, setSearchValue] = useState("");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   const handleViewAllNotifications = () => {
     navigate(createClientPath('/notifications'));
@@ -75,7 +85,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
       <div className="w-full px-4 md:px-6 lg:px-8 flex justify-between items-center">
         {/* Logo and Sidebar Trigger */}
         <div className="flex items-center gap-2 lg:gap-4">
-          <SidebarTrigger className="h-8 w-8 lg:h-10 lg:w-10" />
+          <SidebarTrigger className="h-8 w-8 lg:h-10 lg:w-10 hidden lg:flex" />
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 lg:w-10 lg:h-10" />
           <div className="flex flex-col">
             <h2 className="text-sm lg:text-lg font-bold tracking-tight">
@@ -85,7 +95,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
           </div>
         </div>
         
-        {/* Search in center - responsive visibility */}
+        {/* Search in center - hidden on mobile, uses sheet instead */}
         <div className="hidden sm:flex items-center flex-1 mx-4 max-w-md lg:max-w-lg">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -124,9 +134,42 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
           </div>
         </div>
 
-        {/* Right side: Notifications and Profile */}
+        {/* Right side: Mobile Search, Notifications, Logout, and Profile */}
         <div className="flex items-center gap-2">
+          {/* Mobile search button */}
+          <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
+                <Search className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="top" className="h-auto">
+              <SheetHeader className="mb-4">
+                <SheetTitle>Search</SheetTitle>
+              </SheetHeader>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  ref={mobileSearchInputRef}
+                  placeholder="Search..." 
+                  className="pl-10 pr-4 py-2 w-full"
+                  autoFocus
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+          
           <NotificationDropdown onViewAll={handleViewAllNotifications} />
+          
+          {/* Mobile logout button - visible only on mobile */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden h-9 w-9" 
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5 text-muted-foreground" />
+          </Button>
           
           {/* User profile card - hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm ml-2">
