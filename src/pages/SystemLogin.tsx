@@ -30,6 +30,12 @@ export default function SystemLogin() {
     const result = await signIn(email, password);
     
     if (!result.error) {
+      // Always force Light Mode on login (regardless of previous preference)
+      localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      console.log('[SYSTEM_LOGIN] Forced Light Mode on login');
+      
       toast.success('Successfully signed in!');
       console.log('[SystemLogin] Login successful, navigating to dashboard');
       navigate('/system-dashboard', { replace: true });
