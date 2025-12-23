@@ -16,11 +16,15 @@ export const ClientMobileNav: React.FC = () => {
   const { createClientPath } = useClientNavigation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { openMobile, setOpenMobile } = useSidebar();
+  const { openMobile, toggleSidebar, setOpenMobile } = useSidebar();
 
   const handleNavClick = (value: string) => {
     const path = createClientPath(value ? `/${value}` : '');
     navigate(path);
+    // Close sidebar when navigating from bottom tabs
+    if (openMobile) {
+      setOpenMobile(false);
+    }
   };
 
   const isActive = (value: string) => {
@@ -33,7 +37,8 @@ export const ClientMobileNav: React.FC = () => {
   };
 
   const handleMenuClick = () => {
-    setOpenMobile(!openMobile);
+    // Use toggleSidebar which uses functional state update to avoid stale closure issues
+    toggleSidebar();
   };
 
   return (
