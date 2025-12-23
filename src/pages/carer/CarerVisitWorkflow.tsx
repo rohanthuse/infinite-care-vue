@@ -807,7 +807,7 @@ const CarerVisitWorkflow = () => {
       case "notes":
         return notes.trim().length >= 10; // Minimum note length
       case "sign-off":
-        return !!clientSignature && !!carerSignature;
+        return !!carerSignature; // Client signature is optional
       case "complete":
         return tabOrder.slice(0, -1).every(tab => isTabCompleted(tab));
       default:
@@ -2600,9 +2600,9 @@ const CarerVisitWorkflow = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Client Signature</Label>
+                        <Label className="text-sm font-medium text-gray-700">Client Signature (Optional)</Label>
                         <p className="text-sm text-gray-500 mb-3">
-                          Please ask the client to sign below to confirm the visit
+                          If available, ask the client to sign below to confirm the visit
                         </p>
                           <div className="border rounded-lg p-2">
                             <SignatureCanvas
@@ -2655,14 +2655,18 @@ const CarerVisitWorkflow = () => {
                     </div>
                   </div>
                   
-                  {clientSignature && carerSignature && (
+                  {carerSignature && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600" />
-                        <p className="text-green-800 font-medium">Signatures collected</p>
+                        <p className="text-green-800 font-medium">
+                          {clientSignature ? "Both signatures collected" : "Carer signature collected"}
+                        </p>
                       </div>
                       <p className="text-green-700 text-sm mt-1">
-                        Both client and carer signatures have been captured successfully.
+                        {clientSignature 
+                          ? "Both client and carer signatures have been captured successfully."
+                          : "Carer signature captured. Client signature is optional."}
                       </p>
                     </div>
                   )}
@@ -2752,12 +2756,6 @@ const CarerVisitWorkflow = () => {
                                <li className="flex items-center gap-2 text-red-600">
                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
                                  Add visit notes (minimum 10 characters)
-                               </li>
-                             )}
-                             {!clientSignature && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Obtain client signature
                                </li>
                              )}
                              {!carerSignature && (
