@@ -83,14 +83,14 @@ export function LeaveRequestForm({ branchId }: LeaveRequestFormProps) {
   const businessDays = calculateBusinessDays();
 
   return (
-    <Card className="border-gray-200 shadow-sm">
+    <Card className="border-gray-200 dark:border-border shadow-sm">
       <CardContent className="p-6">
         <div className="mb-6">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Send className="h-5 w-5 text-blue-600" />
             Submit Leave Request
           </h3>
-          <p className="text-gray-500 mt-1">Request time off for personal, medical, or other reasons</p>
+          <p className="text-gray-500 dark:text-muted-foreground mt-1">Request time off for personal, medical, or other reasons</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -114,11 +114,11 @@ export function LeaveRequestForm({ branchId }: LeaveRequestFormProps) {
             
             <div>
               <Label>Duration</Label>
-              <div className="mt-1 p-3 bg-gray-50 rounded-md border">
-                <p className="text-sm font-medium">
+              <div className="mt-1 p-3 bg-gray-50 dark:bg-muted rounded-md border border-gray-200 dark:border-border">
+                <p className="text-sm font-medium text-gray-900 dark:text-foreground">
                   {businessDays > 0 ? `${businessDays} business day${businessDays !== 1 ? 's' : ''}` : 'Select dates to calculate'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                   Excludes weekends and public holidays
                 </p>
               </div>
