@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, isValid } from "date-fns";
+import { groupLineItemsByWeek, formatVisitDate } from "@/utils/invoiceWeekGrouping";
 import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { generateInvoicePDF, InvoiceExpenseEntryForPdf, InvoiceExtraTimeEntryForPdf, InvoiceCancelledBookingForPdf } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
@@ -457,51 +458,110 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
             <p className="text-foreground">{invoice.description}</p>
           </div>
 
-          {/* Line Items */}
-          {invoice.line_items && invoice.line_items.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Line Items</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Services</TableHead>
-                    <TableHead>Price/Rate(£)</TableHead>
-                    {/* Only show VAT column if invoice has VAT */}
-                    {hasVat && <TableHead>VAT(£)</TableHead>}
-                    <TableHead>Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                {invoice.line_items.map((item) => {
-                    // Calculate proportional VAT per line item from invoice-level VAT
-                    const lineVat = totalVatAmount > 0 && subtotalBeforeVat > 0
-                      ? (item.line_total || 0) / subtotalBeforeVat * totalVatAmount
-                      : 0;
-                    
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell>{item.quantity || 1}</TableCell>
-                        <TableCell>{formatCurrency(item.unit_price)}</TableCell>
-                        {/* Only show VAT cell if invoice has VAT */}
-                        {hasVat && <TableCell>{formatCurrency(lineVat)}</TableCell>}
-                        <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              
-              {/* Line Items Subtotal */}
-              <div className="mt-3 flex justify-end">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Line Items Subtotal:</span>
-                  <span className="ml-2 font-semibold">{formatCurrency(subtotalBeforeVat)}</span>
+          {/* Line Items - Grouped by Week */}
+          {invoice.line_items && invoice.line_items.length > 0 && (() => {
+            const weekGroups = groupLineItemsByWeek(invoice.line_items);
+            
+            return (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Line Items</h3>
+                
+                {weekGroups.map((week, weekIndex) => {
+                  // Calculate week-level VAT
+                  const weekVat = totalVatAmount > 0 && subtotalBeforeVat > 0
+                    ? (week.weekSubtotal / subtotalBeforeVat) * totalVatAmount
+                    : 0;
+                  
+                  return (
+                    <div key={week.weekNumber} className="mb-6">
+                      {/* Week Header */}
+                      <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-t-md border border-blue-200 dark:border-blue-800">
+                        <h4 className="font-semibold text-blue-700 dark:text-blue-300">
+                          {week.weekLabel}
+                        </h4>
+                      </div>
+                      
+                      {/* Week Line Items Table */}
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Service</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead>Rate (£)</TableHead>
+                            {hasVat && <TableHead>VAT (£)</TableHead>}
+                            <TableHead>Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {week.items.map((item) => {
+                            // Calculate proportional VAT per line item
+                            const lineVat = totalVatAmount > 0 && subtotalBeforeVat > 0
+                              ? (item.line_total || 0) / subtotalBeforeVat * totalVatAmount
+                              : 0;
+                            
+                            // Format duration from quantity (hours)
+                            const totalMinutes = Math.round((item.quantity || 0) * 60);
+                            const hours = Math.floor(totalMinutes / 60);
+                            const mins = totalMinutes % 60;
+                            const durationStr = hours > 0 && mins > 0 
+                              ? `${hours}h ${mins}m` 
+                              : hours > 0 
+                                ? `${hours}h` 
+                                : `${mins}m`;
+                            
+                            return (
+                              <TableRow key={item.id}>
+                                <TableCell>{formatVisitDate(item.visit_date)}</TableCell>
+                                <TableCell>{item.description}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-xs">{durationStr}</Badge>
+                                </TableCell>
+                                <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                                {hasVat && <TableCell>{formatCurrency(lineVat)}</TableCell>}
+                                <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                      
+                      {/* Week Summary */}
+                      <div className="bg-muted/50 dark:bg-muted/30 px-4 py-3 rounded-b-md border border-t-0 border-border">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Total Visits: <strong className="text-foreground">{week.visitCount}</strong>
+                          </span>
+                          <span className="text-muted-foreground">
+                            Week {weekIndex + 1} Subtotal: <strong className="text-foreground">{formatCurrency(week.weekSubtotal)}</strong>
+                            {hasVat && (
+                              <span className="ml-2 text-xs">(+ {formatCurrency(weekVat)} VAT)</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Overall Line Items Subtotal */}
+                <div className="mt-3 flex justify-end">
+                  <div className="text-sm space-y-1 text-right">
+                    <div>
+                      <span className="text-muted-foreground">Line Items Subtotal (Net):</span>
+                      <span className="ml-2 font-semibold">{formatCurrency(subtotalBeforeVat)}</span>
+                    </div>
+                    {hasVat && (
+                      <div>
+                        <span className="text-muted-foreground">VAT (20%):</span>
+                        <span className="ml-2 font-semibold">{formatCurrency(totalVatAmount)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Additional Expenses Section */}
           {expenseEntries.length > 0 && (
