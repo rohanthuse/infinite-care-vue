@@ -1464,17 +1464,11 @@ const UnifiedLogin = () => {
               localStorage.setItem('carerName', `${staffProfile.first_name} ${staffProfile.last_name}`);
               sessionStorage.setItem('freshLogin', 'true');
               
-              // Set Light Mode as default for carers if no explicit theme preference exists
-              const savedTheme = localStorage.getItem('theme');
-              if (!savedTheme || savedTheme === 'system') {
-                // No explicit user choice - default carers to light mode
-                localStorage.setItem('theme', 'light');
-                document.documentElement.classList.remove('dark');
-                document.documentElement.classList.add('light');
-                console.log('[CARER_LOGIN] Set default theme to light mode (first login/no preference)');
-              } else {
-                console.log('[CARER_LOGIN] Respecting existing theme preference:', savedTheme);
-              }
+              // Always force Light Mode on login (regardless of previous preference)
+              localStorage.setItem('theme', 'light');
+              document.documentElement.classList.remove('dark');
+              document.documentElement.classList.add('light');
+              console.log('[CARER_LOGIN] Forced Light Mode on login');
               
               // Set dev-tenant for development environments
               const isDev = window.location.hostname === 'localhost' || 
@@ -1536,23 +1530,23 @@ const UnifiedLogin = () => {
             return;
           }
           
-          // Set Light Mode as default for clients if no explicit theme preference exists
-          const savedTheme = localStorage.getItem('theme');
-          if (!savedTheme || savedTheme === 'system') {
-            // No explicit user choice - default clients to light mode
-            localStorage.setItem('theme', 'light');
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-            console.log('[CLIENT_LOGIN] Set default theme to light mode (first login/no preference)');
-          } else {
-            console.log('[CLIENT_LOGIN] Respecting existing theme preference:', savedTheme);
-          }
+          // Always force Light Mode on login (regardless of previous preference)
+          localStorage.setItem('theme', 'light');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          console.log('[CLIENT_LOGIN] Forced Light Mode on login');
           
           dashboardPath += '/client-dashboard';
           toast.success("Welcome back!");
           break;
         default:
           // Fallback to admin dashboard
+          // Always force Light Mode on login (regardless of previous preference)
+          localStorage.setItem('theme', 'light');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          console.log('[ADMIN_LOGIN] Forced Light Mode on login');
+          
           dashboardPath += '/dashboard';
           toast.success("Login successful!");
           break;
