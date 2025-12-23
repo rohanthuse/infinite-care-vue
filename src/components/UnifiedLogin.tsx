@@ -1464,8 +1464,17 @@ const UnifiedLogin = () => {
               localStorage.setItem('carerName', `${staffProfile.first_name} ${staffProfile.last_name}`);
               sessionStorage.setItem('freshLogin', 'true');
               
-              // Theme is now user-controlled - don't force light mode
-              console.log('[CARER_LOGIN] Theme preserved from user preference');
+              // Set Light Mode as default for carers if no explicit theme preference exists
+              const savedTheme = localStorage.getItem('theme');
+              if (!savedTheme || savedTheme === 'system') {
+                // No explicit user choice - default carers to light mode
+                localStorage.setItem('theme', 'light');
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                console.log('[CARER_LOGIN] Set default theme to light mode (first login/no preference)');
+              } else {
+                console.log('[CARER_LOGIN] Respecting existing theme preference:', savedTheme);
+              }
               
               // Set dev-tenant for development environments
               const isDev = window.location.hostname === 'localhost' || 
