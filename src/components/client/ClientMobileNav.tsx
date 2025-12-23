@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Calendar, FileText, CreditCard, Menu } from "lucide-react";
+import { Home, Calendar, FileText, CreditCard, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -56,10 +56,15 @@ export const ClientMobileNav: React.FC = () => {
         ))}
         <button
           onClick={handleMenuClick}
-          className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground hover:text-foreground transition-colors"
+          className={cn(
+            "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+            openMobile
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
         >
-          <Menu className="h-5 w-5" />
-          <span className="text-xs font-medium">Menu</span>
+          {openMobile ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="text-xs font-medium">{openMobile ? "Close" : "Menu"}</span>
         </button>
       </div>
     </nav>

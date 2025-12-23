@@ -42,7 +42,7 @@ export const ClientSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { createClientPath, tenantSlug } = useClientNavigation();
   const { clientName: authClientName, user } = useClientAuth();
-  const { open: sidebarOpen } = useSidebar();
+  const { open: sidebarOpen, isMobile, setOpenMobile } = useSidebar();
 
   // Log tenant context availability
   useEffect(() => {
@@ -52,6 +52,18 @@ export const ClientSidebar: React.FC = () => {
   // Get the display name from auth or fallback to email prefix or "Client"
   const clientName = authClientName || 
     (user?.email ? user.email.split('@')[0] : "Client");
+
+  // Show text on mobile (Sheet is full-width) or when sidebar is expanded on desktop
+  const showText = sidebarOpen || isMobile;
+
+  // Handle navigation with auto-close on mobile
+  const handleNavigation = (path: string) => {
+    console.log('[ClientSidebar] Navigating to:', path, 'Current location:', location.pathname);
+    navigate(path);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const mainItems = [
     { name: "Overview", path: createClientPath(""), icon: Home },
@@ -97,14 +109,14 @@ export const ClientSidebar: React.FC = () => {
       )}
     >
       <SidebarHeader className="border-b p-4 bg-gradient-to-br from-indigo-50/50 via-transparent to-purple-50/30 dark:from-indigo-950/30 dark:to-purple-950/20">
-        {sidebarOpen ? (
+        {showText ? (
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-8 w-8 ring-2 ring-indigo-200 dark:ring-indigo-800">
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                 {clientName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="font-semibold">{clientName}</span>
+            <span className="font-semibold text-foreground">{clientName}</span>
           </div>
         ) : (
           <Avatar className="h-8 w-8 mx-auto mb-2 ring-2 ring-indigo-200 dark:ring-indigo-800">
@@ -113,27 +125,24 @@ export const ClientSidebar: React.FC = () => {
             </AvatarFallback>
           </Avatar>
         )}
-        <SidebarTrigger className={cn(!sidebarOpen && "mx-auto")} />
+        <SidebarTrigger className={cn(!showText && "mx-auto")} />
       </SidebarHeader>
 
       <SidebarContent>
         {/* Main Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel className="text-indigo-600 dark:text-indigo-400 font-semibold">Main</SidebarGroupLabel>}
+          {showText && <SidebarGroupLabel className="text-indigo-600 dark:text-indigo-400 font-semibold">Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => {
-                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
-                      navigate(item.path);
-                    }}
+                    onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={!sidebarOpen ? item.name : undefined}
+                    tooltip={!showText ? item.name : undefined}
                   >
                     <item.icon className="h-4 w-4" />
-                    {sidebarOpen && <span>{item.name}</span>}
+                    {showText && <span>{item.name}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -143,21 +152,18 @@ export const ClientSidebar: React.FC = () => {
 
         {/* Services Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel className="text-purple-600 dark:text-purple-400 font-semibold">Services</SidebarGroupLabel>}
+          {showText && <SidebarGroupLabel className="text-purple-600 dark:text-purple-400 font-semibold">Services</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {servicesItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => {
-                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
-                      navigate(item.path);
-                    }}
+                    onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={!sidebarOpen ? item.name : undefined}
+                    tooltip={!showText ? item.name : undefined}
                   >
                     <item.icon className="h-4 w-4" />
-                    {sidebarOpen && <span>{item.name}</span>}
+                    {showText && <span>{item.name}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -167,21 +173,18 @@ export const ClientSidebar: React.FC = () => {
 
         {/* Personal Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel className="text-blue-600 dark:text-blue-400 font-semibold">Personal</SidebarGroupLabel>}
+          {showText && <SidebarGroupLabel className="text-blue-600 dark:text-blue-400 font-semibold">Personal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {personalItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => {
-                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
-                      navigate(item.path);
-                    }}
+                    onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={!sidebarOpen ? item.name : undefined}
+                    tooltip={!showText ? item.name : undefined}
                   >
                     <item.icon className="h-4 w-4" />
-                    {sidebarOpen && <span>{item.name}</span>}
+                    {showText && <span>{item.name}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -190,7 +193,7 @@ export const ClientSidebar: React.FC = () => {
         </SidebarGroup>
       </SidebarContent>
 
-      {sidebarOpen && (
+      {showText && (
         <SidebarFooter className="border-t p-4 bg-gradient-to-r from-indigo-50/30 to-transparent dark:from-indigo-950/20">
           <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">Med-Infinite</div>
           <div className="text-xs text-muted-foreground">Version 1.0.0</div>
