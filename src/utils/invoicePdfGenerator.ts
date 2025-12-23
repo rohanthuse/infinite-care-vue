@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { formatCurrency } from './currencyFormatter';
+import { groupLineItemsByWeek, formatVisitDate } from './invoiceWeekGrouping';
 
 // Safe date formatting function
 const formatDateSafe = (date: string | Date, formatString: string = 'dd/MM/yyyy'): string => {
@@ -245,7 +246,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
     yPosition = colYStart + 20;
 
-    // ===== LINE ITEMS TABLE (Using stored VAT, not recalculating) =====
+    // ===== LINE ITEMS TABLE - GROUPED BY WEEK =====
     
     // Determine if invoice has VAT at the invoice level - use stored value
     const invoiceHasVat = invoice.vat_amount != null && invoice.vat_amount > 0;
@@ -258,106 +259,137 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
       return sum + (unitPrice * quantity);
     }, 0) || 0;
     
-    const processedItems = invoice.line_items?.map(item => {
-      const unitPrice = item.unit_price || 0;
-      const quantity = item.quantity || 1;
-      const netAmount = unitPrice * quantity;
-      
-      // Calculate proportional VAT from stored invoice-level VAT (don't recalculate!)
-      const vatAmount = invoiceHasVat && rawNetSubtotal > 0
-        ? (netAmount / rawNetSubtotal) * storedVatAmount
-        : 0;
-      const lineTotal = netAmount + vatAmount;
-
-      // Format the date with day name
-      const serviceDate = item.visit_date ? new Date(item.visit_date) : new Date();
-      const dayName = format(serviceDate, 'EEE');
-      const formattedDate = `${dayName} ${formatDateSafe(serviceDate)}`;
-
-      return {
-        formattedDate,
-        description: item.description || 'Service',
-        unitPrice,
-        quantity,
-        netAmount,
-        vatAmount,
-        lineTotal
-      };
-    }) || [];
-
     // Use stored invoice values for totals
     const netSubtotal = invoice.net_amount || rawNetSubtotal;
     const vatTotal = storedVatAmount;
     const servicesGrossTotal = invoice.total_amount || (netSubtotal + vatTotal);
 
-    // Prepare table data with proper columns - format duration properly
-    // Only include VAT column if invoice has VAT
-    const tableData = processedItems.map(item => {
-      const row = [
-        item.formattedDate,
-        item.description,
-        item.unitPrice.toFixed(2),
-        formatDurationFromHours(item.quantity), // Format duration instead of raw decimal
-        item.netAmount.toFixed(2),
-      ];
-      if (invoiceHasVat) {
-        row.push(item.vatAmount.toFixed(2));
-      }
-      row.push((item.netAmount + item.vatAmount).toFixed(2));
-      return row;
-    });
-
-    // Build dynamic headers and column styles based on whether VAT applies
+    // Group line items by week
+    const weekGroups = groupLineItemsByWeek(invoice.line_items || []);
+    
+    // Build dynamic headers based on whether VAT applies
     const tableHeaders = invoiceHasVat 
-      ? [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'VAT (£)', 'Total (£)']]
-      : [['Date', 'Description', 'Rate (£)', 'Duration', 'Net (£)', 'Total (£)']];
+      ? [['Date', 'Service', 'Rate (£)', 'Duration', 'Net (£)', 'VAT (£)', 'Total (£)']]
+      : [['Date', 'Service', 'Rate (£)', 'Duration', 'Net (£)', 'Total (£)']];
     
     const columnStyles = invoiceHasVat ? {
-      0: { cellWidth: 30 }, // Date
-      1: { cellWidth: 50 }, // Description
-      2: { halign: 'right' as const, cellWidth: 22 }, // Rate
-      3: { halign: 'center' as const, cellWidth: 15 }, // Duration
-      4: { halign: 'right' as const, cellWidth: 22 }, // Net
-      5: { halign: 'right' as const, cellWidth: 22 }, // VAT
-      6: { halign: 'right' as const, cellWidth: 24, fontStyle: 'bold' as const } // Total
+      0: { cellWidth: 28 }, // Date
+      1: { cellWidth: 48 }, // Service
+      2: { halign: 'right' as const, cellWidth: 20 }, // Rate
+      3: { halign: 'center' as const, cellWidth: 18 }, // Duration
+      4: { halign: 'right' as const, cellWidth: 20 }, // Net
+      5: { halign: 'right' as const, cellWidth: 20 }, // VAT
+      6: { halign: 'right' as const, cellWidth: 22, fontStyle: 'bold' as const } // Total
     } : {
       0: { cellWidth: 30 }, // Date
-      1: { cellWidth: 60 }, // Description (wider when no VAT column)
+      1: { cellWidth: 60 }, // Service (wider when no VAT column)
       2: { halign: 'right' as const, cellWidth: 25 }, // Rate
       3: { halign: 'center' as const, cellWidth: 20 }, // Duration
       4: { halign: 'right' as const, cellWidth: 25 }, // Net
       5: { halign: 'right' as const, cellWidth: 25, fontStyle: 'bold' as const } // Total
     };
 
-    autoTable(doc, {
-      startY: yPosition,
-      head: tableHeaders,
-      body: tableData,
-      theme: 'plain',
-      headStyles: {
-        fillColor: lightBlueRgb,
-        textColor: darkBlueRgb,
-        fontSize: 8,
-        fontStyle: 'bold',
-        halign: 'left',
-        cellPadding: 3
-      },
-      bodyStyles: {
-        fontSize: 8,
-        textColor: [55, 65, 81],
-        cellPadding: 3
-      },
-      columnStyles,
-      margin: { left: margin, right: margin },
-      didDrawCell: (data) => {
-        if (data.section === 'body') {
-          doc.setDrawColor(240, 240, 240);
-          doc.setLineWidth(0.1);
-        }
+    // Render each week as a separate section
+    weekGroups.forEach((week, weekIndex) => {
+      // Check if we need a new page
+      if (yPosition > pageHeight - 80) {
+        doc.addPage();
+        yPosition = margin;
       }
+
+      // Week Header (blue background)
+      doc.setFillColor(lightBlueRgb[0], lightBlueRgb[1], lightBlueRgb[2]);
+      doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 8, 1, 1, 'F');
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(darkBlueRgb[0], darkBlueRgb[1], darkBlueRgb[2]);
+      doc.text(week.weekLabel, margin + 4, yPosition + 5.5);
+      yPosition += 10;
+      
+      // Prepare week table data
+      const weekTableData = week.items.map(item => {
+        const unitPrice = item.unit_price || 0;
+        const quantity = item.quantity || 1;
+        const netAmount = unitPrice * quantity;
+        
+        // Calculate proportional VAT from stored invoice-level VAT
+        const vatAmount = invoiceHasVat && rawNetSubtotal > 0
+          ? (netAmount / rawNetSubtotal) * storedVatAmount
+          : 0;
+        
+        // Format duration from quantity (hours)
+        const totalMinutes = Math.round(quantity * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const durationStr = h > 0 && m > 0 ? `${h}h ${m}m` : h > 0 ? `${h}h` : `${m}m`;
+        
+        const row = [
+          formatVisitDate(item.visit_date),
+          item.description || 'Service',
+          unitPrice.toFixed(2),
+          durationStr,
+          netAmount.toFixed(2),
+        ];
+        if (invoiceHasVat) {
+          row.push(vatAmount.toFixed(2));
+        }
+        row.push((netAmount + vatAmount).toFixed(2));
+        return row;
+      });
+
+      // Week Line Items Table
+      autoTable(doc, {
+        startY: yPosition,
+        head: tableHeaders,
+        body: weekTableData,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [245, 245, 245],
+          textColor: darkGrayRgb,
+          fontSize: 7,
+          fontStyle: 'bold',
+          halign: 'left',
+          cellPadding: 2
+        },
+        bodyStyles: {
+          fontSize: 7,
+          textColor: [55, 65, 81],
+          cellPadding: 2
+        },
+        columnStyles,
+        margin: { left: margin, right: margin },
+        didDrawCell: (data) => {
+          if (data.section === 'body') {
+            doc.setDrawColor(240, 240, 240);
+            doc.setLineWidth(0.1);
+          }
+        }
+      });
+
+      yPosition = (doc as any).lastAutoTable?.finalY + 2 || yPosition + 30;
+      
+      // Week Summary Row
+      const weekVat = invoiceHasVat && rawNetSubtotal > 0
+        ? (week.weekSubtotal / rawNetSubtotal) * storedVatAmount
+        : 0;
+      
+      doc.setFillColor(248, 250, 252); // Slate-50
+      doc.rect(margin, yPosition, pageWidth - 2 * margin, 7, 'F');
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(grayRgb[0], grayRgb[1], grayRgb[2]);
+      doc.text(`Total Visits: ${week.visitCount}`, margin + 4, yPosition + 4.5);
+      
+      doc.setFont(undefined, 'bold');
+      const weekTotalText = invoiceHasVat 
+        ? `Week ${weekIndex + 1} Subtotal: £${week.weekSubtotal.toFixed(2)} (+ £${weekVat.toFixed(2)} VAT)`
+        : `Week ${weekIndex + 1} Subtotal: £${week.weekSubtotal.toFixed(2)}`;
+      doc.text(weekTotalText, pageWidth - margin - 4, yPosition + 4.5, { align: 'right' });
+      
+      yPosition += 12;
     });
 
-    yPosition = (doc as any).lastAutoTable?.finalY + 8 || yPosition + 50;
+    yPosition += 3;
 
     // ===== SERVICES SUMMARY (Subtotal, VAT, Total) =====
     const summaryBoxWidth = 85;
