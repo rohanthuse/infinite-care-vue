@@ -183,7 +183,9 @@ const addPDFHeader = async (
   orgSettings: any, 
   logoBase64: string | null,
   isFirstPage: boolean = false,
-  generatedBy?: string
+  generatedBy?: string,
+  reportTitle?: string,
+  clientInfo?: { name: string; id: string }
 ): Promise<number> => {
   const pageWidth = pdf.internal.pageSize.width;
   const leftMargin = 20;
@@ -265,7 +267,7 @@ const addPDFHeader = async (
     
     pdf.setFont(undefined, 'normal');
     pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
-    pdf.text('Event & Log Report', leftMargin + 30, headerY);
+    pdf.text(reportTitle || 'Event & Log Report', leftMargin + 30, headerY);
     
     headerY += 5;
     
@@ -289,23 +291,57 @@ const addPDFHeader = async (
       pdf.text(generatedBy, leftMargin + 30, headerY);
     }
     
+    // Add client information if provided
+    if (clientInfo) {
+      headerY += 5;
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+      pdf.text('Client Name:', leftMargin, headerY);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
+      pdf.text(clientInfo.name, leftMargin + 30, headerY);
+      
+      headerY += 5;
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+      pdf.text('Client ID:', leftMargin, headerY);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
+      pdf.text(clientInfo.id.substring(0, 12) + '...', leftMargin + 30, headerY);
+    }
+    
     headerY += 10;
     
-    // "Event Details Report" heading with blue underline
+    // Report heading with blue underline (use custom title or fallback)
+    const headingText = reportTitle || 'Event Details Report';
     pdf.setFontSize(14);
     pdf.setFont(undefined, 'bold');
     pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
-    pdf.text('Event Details Report', leftMargin, headerY);
+    pdf.text(headingText, leftMargin, headerY);
     
     // Blue underline
-    const headingWidth = pdf.getTextWidth('Event Details Report');
+    const headingWidth = pdf.getTextWidth(headingText);
     pdf.setDrawColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
     pdf.setLineWidth(1);
     pdf.line(leftMargin, headerY + 2, leftMargin + headingWidth, headerY + 2);
     
     headerY += 10;
   } else {
-    headerY = 52;
+    // On continuation pages, add a mini-header with client info
+    if (clientInfo) {
+      headerY = 50;
+      pdf.setFontSize(8);
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
+      pdf.text(`${reportTitle || 'Report'} - ${clientInfo.name}`, leftMargin, headerY);
+      headerY += 5;
+    } else {
+      headerY = 52;
+    }
   }
   
   // Reset colors
@@ -2005,16 +2041,32 @@ export const exportEventsListToPDF = (events: ExportableEvent[], filename: strin
   pdf.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 
-// Client share sections interface for PDF generation
+// Client share sections interface for PDF generation - 19 modules
 interface ClientPdfSections {
+  // Basic Information (3)
   personalInfo?: boolean;
   generalInfo?: boolean;
+  emergencyContacts?: boolean;
+  // Care & Medical (5)
   carePlans?: boolean;
+  medicalInfo?: boolean;
+  medications?: boolean;
+  news2Assessments?: boolean;
+  activities?: boolean;
+  // Appointments & Records (4)
+  appointments?: boolean;
+  visitRecords?: boolean;
+  serviceReports?: boolean;
+  documents?: boolean;
+  // Financial (3)
   rates?: boolean;
   invoices?: boolean;
+  reviews?: boolean;
+  // Notes & History (4)
   notes?: boolean;
-  medicalInfo?: boolean;
-  emergencyContacts?: boolean;
+  hobbies?: boolean;
+  compliance?: boolean;
+  eventsLogs?: boolean;
 }
 
 // Export Client Profile to PDF with comprehensive information
@@ -2029,12 +2081,23 @@ export const exportClientProfileToPDF = async (
   const sections = selectedSections || {
     personalInfo: true,
     generalInfo: true,
+    emergencyContacts: true,
     carePlans: true,
+    medicalInfo: true,
+    medications: true,
+    news2Assessments: true,
+    activities: true,
+    appointments: true,
+    visitRecords: true,
+    serviceReports: true,
+    documents: true,
     rates: true,
     invoices: true,
+    reviews: true,
     notes: true,
-    medicalInfo: true,
-    emergencyContacts: true,
+    hobbies: true,
+    compliance: true,
+    eventsLogs: true,
   };
   
   try {
@@ -2054,6 +2117,10 @@ export const exportClientProfileToPDF = async (
       });
       return;
     }
+    
+    // Build client full name
+    const clientFullName = `${clientData.title || ''} ${clientData.first_name || ''} ${clientData.middle_name || ''} ${clientData.last_name || ''}`.trim();
+    const clientInfo = { name: clientFullName, id: clientId };
     
     // Step 2: Fetch personal information
     const { data: personalInfo } = await supabase
@@ -2084,25 +2151,26 @@ export const exportClientProfileToPDF = async (
       }
     }
     
+    // Fetch staff map for resolving IDs to names
+    const staffMap = clientData.branch_id ? await fetchStaffNames(clientData.branch_id) : new Map();
+    
     const pageWidth = pdf.internal.pageSize.width;
     const leftMargin = 20;
     const rightMargin = pageWidth - 20;
     
-    // Step 6: Add header
-    let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    // Step 6: Add header with client info
+    let currentY = await addPDFHeader(
+      pdf, 
+      orgSettings, 
+      logoBase64, 
+      true, 
+      undefined, 
+      'Client Profile Report',
+      clientInfo
+    );
     
-    // Step 7: Add report title
-    pdf.setFontSize(18);
-    pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(30, 30, 30);
-    pdf.text('Client Profile Report', pageWidth / 2, currentY, { align: 'center' });
-    currentY += 7;
-    
-    pdf.setFontSize(9);
-    pdf.setFont(undefined, 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 12;
+    // Step 7: Add report title (removed duplicate since header now handles it)
+    currentY += 5;
     
     pdf.setTextColor(0, 0, 0);
     
@@ -2110,7 +2178,7 @@ export const exportClientProfileToPDF = async (
     const addSectionHeader = async (title: string) => {
       if (currentY > 240) {
         pdf.addPage();
-        currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+        currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false, undefined, 'Client Profile Report', clientInfo);
       }
       
       pdf.setFillColor(245, 247, 250);
@@ -2697,7 +2765,7 @@ export const exportClientProfileToPDF = async (
       currentY += boxHeight + 10;
     }
     
-    // Section 16: Care Plans (if selected)
+    // Section 16: Care Plans (if selected) - Enhanced
     if (sections.carePlans) {
       const { data: carePlans } = await supabase
         .from('client_care_plans')
@@ -2709,80 +2777,136 @@ export const exportClientProfileToPDF = async (
       if (carePlans && carePlans.length > 0) {
         await addSectionHeader('Care Plans');
         
-        const carePlanData = carePlans.map((plan: any) => [
-          plan.title || 'Untitled Plan',
-          plan.status || 'N/A',
-          plan.start_date ? format(new Date(plan.start_date), 'PP') : 'N/A',
-          plan.end_date ? format(new Date(plan.end_date), 'PP') : 'Ongoing',
-          plan.provider_name || 'N/A'
-        ]);
+        for (const plan of carePlans) {
+          const planData = [
+            ['Plan Title', plan.title || 'Untitled Plan'],
+            ['Status', plan.status || 'N/A'],
+            ['Start Date', plan.start_date ? format(new Date(plan.start_date), 'PP') : 'N/A'],
+            ['End Date', plan.end_date ? format(new Date(plan.end_date), 'PP') : 'Ongoing'],
+            ['Provider', plan.provider_name || 'N/A'],
+          ];
 
-        autoTable(pdf, {
-          head: [['Title', 'Status', 'Start Date', 'End Date', 'Provider']],
-          body: carePlanData,
-          startY: currentY,
-          theme: 'striped',
-          styles: { 
-            fontSize: 8,
-            cellPadding: 3
-          },
-          headStyles: {
-            fillColor: [240, 243, 246],
-            textColor: [40, 40, 40],
-            fontStyle: 'bold'
-          },
-          margin: { left: 20, right: 20 }
-        });
+          // Fetch assigned staff for this care plan
+          const { data: staffAssignments } = await supabase
+            .from('care_plan_staff_assignments')
+            .select('staff_id, is_primary')
+            .eq('care_plan_id', plan.id);
 
-        currentY = (pdf as any).lastAutoTable.finalY + 10;
+          if (staffAssignments && staffAssignments.length > 0) {
+            const staffNames = staffAssignments
+              .map((a: any) => {
+                const name = staffMap.get(a.staff_id) || a.staff_id;
+                return a.is_primary ? `${name} (Primary)` : name;
+              })
+              .join(', ');
+            planData.push(['Assigned Staff', staffNames]);
+          }
+
+          autoTable(pdf, {
+            body: planData,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 3 },
+            columnStyles: { 
+              0: { fontStyle: 'bold', fillColor: [240, 243, 246], cellWidth: 55, textColor: [40, 40, 40] },
+              1: { cellWidth: 115 }
+            },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 8;
+
+          if (currentY > 240) {
+            pdf.addPage();
+            currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false, undefined, 'Client Profile Report', clientInfo);
+          }
+        }
+        currentY += 5;
       }
     }
     
-    // Section 17: Service Rates (if selected)
+    // Section 17: Service Rates (if selected) - Enhanced with authority accounting
     if (sections.rates) {
       const { data: ratesData } = await supabase
         .from('client_accounting_settings')
-        .select('rate_type, pay_method, invoice_method, service_payer')
+        .select('*')
         .eq('client_id', clientId)
         .maybeSingle();
+
+      // Fetch authority accounting settings
+      const { data: authorityData } = await supabase
+        .from('client_authority_accounting')
+        .select('*, authorities(organization_name)')
+        .eq('client_id', clientId)
+        .limit(5);
       
-      if (ratesData) {
+      if (ratesData || (authorityData && authorityData.length > 0)) {
         await addSectionHeader('Service Rates & Billing');
         
-        const rateDetails = [
-          ['Rate Type', ratesData.rate_type || 'Not provided'],
-          ['Pay Method', ratesData.pay_method || 'Not provided'],
-          ['Invoice Method', ratesData.invoice_method || 'Not provided'],
-          ['Service Payer', ratesData.service_payer || 'Not provided']
-        ];
+        if (ratesData) {
+          const rateDetails = [
+            ['Rate Type', ratesData.rate_type || 'Not provided'],
+            ['Pay Method', ratesData.pay_method || 'Not provided'],
+            ['Invoice Method', ratesData.invoice_method || 'Not provided'],
+            ['Invoice Display Type', ratesData.invoice_display_type || 'Not provided'],
+            ['Service Payer', ratesData.service_payer || 'Not provided'],
+            ['Agreement Type', ratesData.agreement_type || 'Not provided'],
+            ['Authority Category', ratesData.authority_category || 'Not provided'],
+            ['Geo-fencing Enabled', ratesData.enable_geo_fencing ? 'Yes' : 'No'],
+            ['Expiry Date', ratesData.expiry_date ? format(new Date(ratesData.expiry_date), 'PP') : 'N/A']
+          ];
 
-        autoTable(pdf, {
-          body: rateDetails,
-          startY: currentY,
-          theme: 'striped',
-          styles: { 
-            fontSize: 9,
-            cellPadding: 3
-          },
-          columnStyles: { 
-            0: { 
-              fontStyle: 'bold', 
-              fillColor: [240, 243, 246],
-              cellWidth: 60,
-              textColor: [40, 40, 40]
+          autoTable(pdf, {
+            body: rateDetails,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: { 
+              0: { fontStyle: 'bold', fillColor: [240, 243, 246], cellWidth: 60, textColor: [40, 40, 40] },
+              1: { cellWidth: 110 }
             },
-            1: {
-              cellWidth: 110
-            }
-          },
-          margin: { left: 20, right: 20 }
-        });
+            margin: { left: 20, right: 20 }
+          });
 
-        currentY = (pdf as any).lastAutoTable.finalY + 10;
+          currentY = (pdf as any).lastAutoTable.finalY + 8;
+        }
+
+        // Authority Accounting Settings
+        if (authorityData && authorityData.length > 0) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Authority Accounting Settings', leftMargin, currentY);
+          currentY += 5;
+
+          for (const auth of authorityData) {
+            const authDetails = [
+              ['Authority', (auth.authorities as any)?.organization_name || 'Unknown'],
+              ['Reference Number', auth.reference_number || 'N/A'],
+              ['Charge Based On', auth.charge_based_on || 'N/A'],
+              ['Client Contribution Required', auth.client_contribution_required ? 'Yes' : 'No'],
+              ['Extra Time Calculation', auth.extra_time_calculation ? 'Yes' : 'No']
+            ];
+
+            autoTable(pdf, {
+              body: authDetails,
+              startY: currentY,
+              theme: 'striped',
+              styles: { fontSize: 8, cellPadding: 2 },
+              columnStyles: { 
+                0: { fontStyle: 'bold', fillColor: [245, 248, 250], cellWidth: 55, textColor: [50, 50, 50] },
+                1: { cellWidth: 115 }
+              },
+              margin: { left: 25, right: 25 }
+            });
+
+            currentY = (pdf as any).lastAutoTable.finalY + 5;
+          }
+        }
+        currentY += 5;
       }
     }
     
-    // Section 18: Invoices Summary (if selected - sensitive)
+    // Section 18: Invoices Summary (if selected)
     if (sections.invoices) {
       const { data: invoicesData } = await supabase
         .from('client_billing')
@@ -2807,15 +2931,198 @@ export const exportClientProfileToPDF = async (
           body: invoiceRows,
           startY: currentY,
           theme: 'striped',
-          styles: { 
-            fontSize: 8,
-            cellPadding: 3
-          },
-          headStyles: {
-            fillColor: [240, 243, 246],
-            textColor: [40, 40, 40],
-            fontStyle: 'bold'
-          },
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 19: Medications (if selected)
+    if (sections.medications) {
+      const { data: medications } = await supabase
+        .from('client_medications')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (medications && medications.length > 0) {
+        await addSectionHeader('Medications');
+
+        const medRows = medications.map((med: any) => [
+          med.medication_name || 'N/A',
+          med.dosage || 'N/A',
+          med.frequency || 'N/A',
+          med.route || 'N/A',
+          med.status || 'Active',
+          med.start_date ? format(new Date(med.start_date), 'PP') : 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Medication', 'Dosage', 'Frequency', 'Route', 'Status', 'Start Date']],
+          body: medRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 20: Appointments / Bookings (if selected)
+    if (sections.appointments) {
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('id, start_time, end_time, status, notes, staff_id')
+        .eq('client_id', clientId)
+        .order('start_time', { ascending: false })
+        .limit(15);
+
+      if (bookingsData && bookingsData.length > 0) {
+        await addSectionHeader('Appointments / Bookings');
+
+        const bookingRows = bookingsData.map((b: any) => [
+          b.start_time ? format(new Date(b.start_time), 'PP') : 'N/A',
+          b.start_time ? format(new Date(b.start_time), 'p') : 'N/A',
+          b.end_time ? format(new Date(b.end_time), 'p') : 'N/A',
+          staffMap.get(b.staff_id) || 'N/A',
+          b.status || 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Date', 'Start', 'End', 'Staff', 'Status']],
+          body: bookingRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 21: Visit Records (if selected)
+    if (sections.visitRecords) {
+      const { data: visitData } = await supabase
+        .from('bookings')
+        .select('id, start_time, end_time, status, staff_id')
+        .eq('client_id', clientId)
+        .in('status', ['completed', 'Completed'])
+        .order('start_time', { ascending: false })
+        .limit(15);
+
+      if (visitData && visitData.length > 0) {
+        await addSectionHeader('Visit Records');
+
+        const visitRows = visitData.map((v: any) => {
+          const duration = v.start_time && v.end_time 
+            ? Math.round((new Date(v.end_time).getTime() - new Date(v.start_time).getTime()) / 60000)
+            : 'N/A';
+          return [
+            v.start_time ? format(new Date(v.start_time), 'PP') : 'N/A',
+            v.start_time ? format(new Date(v.start_time), 'p') : 'N/A',
+            v.end_time ? format(new Date(v.end_time), 'p') : 'N/A',
+            typeof duration === 'number' ? `${duration} min` : duration,
+            staffMap.get(v.staff_id) || 'N/A'
+          ];
+        });
+
+        autoTable(pdf, {
+          head: [['Date', 'Check-in', 'Check-out', 'Duration', 'Carer']],
+          body: visitRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 22: Documents (if selected)
+    if (sections.documents) {
+      const { data: documentsData } = await supabase
+        .from('client_documents')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(15);
+
+      if (documentsData && documentsData.length > 0) {
+        await addSectionHeader('Documents');
+
+        const docRows = documentsData.map((d: any) => [
+          d.document_name || d.file_name || 'N/A',
+          d.document_type || d.category || 'N/A',
+          d.created_at ? format(new Date(d.created_at), 'PP') : 'N/A',
+          d.status || 'Active'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Document Name', 'Type', 'Upload Date', 'Status']],
+          body: docRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 23: Hobbies & Interests (if selected)
+    if (sections.hobbies && personalInfo) {
+      const hobbiesInfo = personalInfo.likes_preferences;
+      if (hobbiesInfo) {
+        await addSectionHeader('Hobbies & Interests');
+
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'normal');
+        const hobbiesText = typeof hobbiesInfo === 'string' ? hobbiesInfo : JSON.stringify(hobbiesInfo);
+        const hobbiesLines = pdf.splitTextToSize(hobbiesText, 160);
+        pdf.text(hobbiesLines, leftMargin, currentY);
+        currentY += (hobbiesLines.length * 5) + 10;
+      }
+    }
+
+    // Section 24: Compliance / Assessments (if selected)
+    if (sections.compliance) {
+      const { data: complianceData } = await supabase
+        .from('client_assessments')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('assessment_date', { ascending: false })
+        .limit(10);
+
+      if (complianceData && complianceData.length > 0) {
+        await addSectionHeader('Compliance & Assessments');
+
+        const compRows = complianceData.map((c: any) => [
+          c.assessment_name || c.assessment_type || 'N/A',
+          c.assessment_date ? format(new Date(c.assessment_date), 'PP') : 'N/A',
+          c.status || 'N/A',
+          c.next_review_date ? format(new Date(c.next_review_date), 'PP') : 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Assessment', 'Date', 'Status', 'Next Review']],
+          body: compRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
           margin: { left: 20, right: 20 }
         });
 
@@ -2831,7 +3138,8 @@ export const exportClientProfileToPDF = async (
     }
     
     // Save PDF
-    const pdfFilename = filename || `client-profile-${clientData.first_name}-${clientData.last_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    const clientFullNameForFile = clientFullName.replace(/\s+/g, '-');
+    const pdfFilename = filename || `client-profile-${clientFullNameForFile}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
     pdf.save(pdfFilename);
     
     toast({
