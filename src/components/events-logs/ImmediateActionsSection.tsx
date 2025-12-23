@@ -15,8 +15,8 @@ export function ImmediateActionsSection({ form, staffList }: ImmediateActionsSec
   const investigationRequired = form.watch('investigation_required');
 
   return (
-    <div className="space-y-4 bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">
+    <div className="space-y-4 bg-white dark:bg-card rounded-lg border border-gray-100 dark:border-border p-5 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-foreground border-b border-gray-100 dark:border-border pb-2">
         Immediate Actions & Investigation
       </h3>
       
@@ -54,7 +54,7 @@ export function ImmediateActionsSection({ form, staffList }: ImmediateActionsSec
                 <FormLabel className="text-sm font-medium">
                   Investigation Required
                 </FormLabel>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-muted-foreground">
                   Check if this event requires formal investigation
                 </p>
               </div>

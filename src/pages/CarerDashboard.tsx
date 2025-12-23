@@ -61,7 +61,7 @@ const CarerDashboard: React.FC = () => {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -76,7 +76,7 @@ const CarerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 w-full pt-[72px] pb-20 lg:pb-0">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-background w-full pt-[72px] pb-20 lg:pb-0">
       <CarerHeader />
       
       {/* Attendance Check-In Popup - shows only if not checked in today */}
