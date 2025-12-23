@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { PenLine, Save, X, Undo2 } from "lucide-react";
+import { PenLine, Save, X, Undo2, Check } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ interface SignatureCanvasProps {
   height?: number;
   initialSignature?: string;
   disabled?: boolean;
+  autoSave?: boolean;
 }
 
 export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
@@ -19,15 +20,34 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   height = 200,
   initialSignature,
   disabled = false,
+  autoSave = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasContent, setHasContent] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [strokes, setStrokes] = useState<any[]>([]);
   const [currentStroke, setCurrentStroke] = useState<any[]>([]);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const isTablet = useMediaQuery("(max-width: 1023px)");
   const isMobile = useMediaQuery("(max-width: 640px)");
+
+  // Auto-save function with debounce
+  const performAutoSave = useCallback(() => {
+    if (disabled || !autoSave) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      onSave(dataUrl);
+      setIsSaved(true);
+    } catch (error) {
+      console.error("Error auto-saving signature:", error);
+    }
+  }, [disabled, autoSave, onSave]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,10 +89,20 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
       img.onload = () => {
         ctx.drawImage(img, 0, 0, actualWidth, actualHeight);
         setHasContent(true);
+        setIsSaved(true);
       };
       img.src = initialSignature;
     }
   }, [width, height, initialSignature, isMobile, isTablet]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Redraw all strokes
   const redrawCanvas = () => {
@@ -143,11 +173,17 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     if (!ctx) return;
     
     setIsDrawing(true);
+    setIsSaved(false); // Reset saved state when new drawing starts
     const coords = getCoordinates(e);
     
     // Prevent scrolling on touch devices
     if ('touches' in e) {
       e.preventDefault();
+    }
+    
+    // Clear any pending auto-save
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
     }
     
     setCurrentStroke([coords]);
@@ -184,6 +220,18 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     if (currentStroke.length > 0) {
       setStrokes(prev => [...prev, currentStroke]);
       setCurrentStroke([]);
+      
+      // Auto-save after a short delay when user finishes drawing
+      if (autoSave && hasContent) {
+        // Clear any existing timeout
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        // Debounce auto-save by 500ms to allow for multiple strokes
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          performAutoSave();
+        }, 500);
+      }
     }
   };
 
@@ -204,8 +252,15 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     ctx.fillRect(0, 0, actualWidth, actualHeight);
     
     setHasContent(false);
+    setIsSaved(false);
     setStrokes([]);
     setCurrentStroke([]);
+    
+    // Clear any pending auto-save
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
     onSave("");
     toast.success("Signature cleared");
   };
@@ -213,11 +268,26 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   const undoStroke = () => {
     if (disabled || strokes.length === 0) return;
     
-    setStrokes(prev => prev.slice(0, -1));
-    setHasContent(strokes.length > 1);
+    const newStrokes = strokes.slice(0, -1);
+    setStrokes(newStrokes);
+    setHasContent(newStrokes.length > 0);
+    setIsSaved(false);
     
     // Redraw without the last stroke
-    setTimeout(redrawCanvas, 0);
+    setTimeout(() => {
+      redrawCanvas();
+      // Auto-save after undo if there's still content
+      if (autoSave && newStrokes.length > 0) {
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          performAutoSave();
+        }, 500);
+      } else if (newStrokes.length === 0) {
+        onSave("");
+      }
+    }, 0);
     toast.success("Last stroke undone");
   };
 
@@ -235,6 +305,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     try {
       const dataUrl = canvas.toDataURL("image/png");
       onSave(dataUrl);
+      setIsSaved(true);
       toast.success("Signature saved");
     } catch (error) {
       console.error("Error saving signature:", error);
@@ -266,6 +337,14 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
             <span className="text-sm">Sign here</span>
           </div>
         )}
+        
+        {/* Auto-saved indicator */}
+        {isSaved && hasContent && autoSave && (
+          <div className="absolute top-2 right-2 flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium">
+            <Check className="h-3 w-3" />
+            <span>Saved</span>
+          </div>
+        )}
       </div>
       
       <div className="flex justify-between gap-2 mt-4 pt-3 border-t border-border">
@@ -294,16 +373,39 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
           </Button>
         </div>
         
-        <Button 
-          type="button" 
-          size={isMobile ? "default" : "sm"}
-          onClick={saveSignature}
-          disabled={disabled || !hasContent}
-          className="flex items-center gap-2 min-h-[40px] bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all font-medium px-6"
-        >
-          <Save className="h-4 w-4" />
-          <span>Save</span>
-        </Button>
+        {/* Show save button only if autoSave is disabled, or show saved state */}
+        {!autoSave ? (
+          <Button 
+            type="button" 
+            size={isMobile ? "default" : "sm"}
+            onClick={saveSignature}
+            disabled={disabled || !hasContent}
+            className="flex items-center gap-2 min-h-[40px] bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all font-medium px-6"
+          >
+            <Save className="h-4 w-4" />
+            <span>Save</span>
+          </Button>
+        ) : (
+          <div className={cn(
+            "flex items-center gap-2 min-h-[40px] px-4 rounded-md font-medium text-sm",
+            isSaved && hasContent 
+              ? "bg-green-100 text-green-700" 
+              : hasContent 
+                ? "bg-muted text-muted-foreground" 
+                : "bg-muted/50 text-muted-foreground/50"
+          )}>
+            {isSaved && hasContent ? (
+              <>
+                <Check className="h-4 w-4" />
+                <span>Saved</span>
+              </>
+            ) : hasContent ? (
+              <span>Auto-saving...</span>
+            ) : (
+              <span>Draw to sign</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
