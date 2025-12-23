@@ -50,7 +50,7 @@ const ClientMessages = () => {
     <div className="flex flex-col h-[calc(100vh-12rem)]">
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
         {/* Sidebar - Contact list */}
-        <div className="w-full md:w-64 border-r border-gray-200 flex flex-col bg-white rounded-l-md shadow-sm">
+        <div className="w-full md:w-64 border-r border-gray-200 dark:border-border flex flex-col bg-white dark:bg-card rounded-l-md shadow-sm">
           <ClientContactSidebar 
             onContactSelect={handleContactSelect}
             contactType={contactType}
@@ -61,7 +61,7 @@ const ClientMessages = () => {
         </div>
         
         {/* Messages list column */}
-        <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-white md:flex min-h-0">
+        <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-border flex flex-col bg-white dark:bg-card md:flex min-h-0">
           <ClientMessageList 
             selectedContactId={selectedContactId}
             selectedMessageId={selectedMessageId}
@@ -73,7 +73,7 @@ const ClientMessages = () => {
         </div>
         
         {/* Message view or composer */}
-        <div className="flex-1 bg-white rounded-r-md shadow-sm flex flex-col min-h-0">
+        <div className="flex-1 bg-white dark:bg-card rounded-r-md shadow-sm flex flex-col min-h-0">
           {showComposer ? (
             <ClientMessageComposer
               selectedContactId={selectedContactId}
@@ -86,14 +86,14 @@ const ClientMessages = () => {
               messageId={selectedMessageId}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-              <div className="text-gray-400 text-lg mb-2">No message selected</div>
-              <p className="text-sm text-gray-500 max-w-md text-center">
+            <div className="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-muted/30">
+              <div className="text-gray-400 dark:text-muted-foreground text-lg mb-2">No message selected</div>
+              <p className="text-sm text-gray-500 dark:text-muted-foreground max-w-md text-center">
                 Select a message from the list to view it, or start a new conversation with your care coordinators.
               </p>
               <button 
                 onClick={handleComposeClick}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="mt-4 px-4 py-2 bg-blue-600 dark:bg-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-primary/90 transition-colors"
               >
                 Message Care Coordinator
               </button>

@@ -68,15 +68,15 @@ export default function ClientNotifications() {
   const getPriorityColor = (priority: Notification['priority']) => {
     switch (priority) {
       case 'urgent':
-        return 'border-l-red-500 bg-red-50/50';
+        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
       case 'high':
-        return 'border-l-orange-500 bg-orange-50/50';
+        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20';
       case 'medium':
-        return 'border-l-blue-500 bg-blue-50/50';
+        return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20';
       case 'low':
-        return 'border-l-gray-500 bg-gray-50/50';
+        return 'border-l-gray-500 bg-gray-50/50 dark:bg-gray-800/20';
       default:
-        return 'border-l-gray-300';
+        return 'border-l-gray-300 dark:border-l-gray-600';
     }
   };
 
@@ -140,7 +140,7 @@ export default function ClientNotifications() {
       <div className="p-6">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-red-600">Failed to load notifications. Please try again later.</p>
+            <p className="text-red-600 dark:text-red-400">Failed to load notifications. Please try again later.</p>
           </CardContent>
         </Card>
       </div>
@@ -148,11 +148,11 @@ export default function ClientNotifications() {
   }
 
   return (
-    <ErrorBoundary fallback={<div className="p-6 text-center text-red-600">Error loading notifications</div>}>
+    <ErrorBoundary fallback={<div className="p-6 text-center text-red-600 dark:text-red-400">Error loading notifications</div>}>
       <div className="w-full min-w-0 max-w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold">Notifications</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">Notifications</h1>
             <p className="text-muted-foreground">Stay up to date with your care updates</p>
           </div>
           {stats && stats.unread_count > 0 && (
@@ -173,8 +173,8 @@ export default function ClientNotifications() {
                 <div className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-blue-500" />
                   <div>
-                    <p className="text-sm font-medium">Total</p>
-                    <p className="text-2xl font-bold">{stats.total_count}</p>
+                    <p className="text-sm font-medium text-foreground">Total</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.total_count}</p>
                   </div>
                 </div>
               </CardContent>
@@ -185,8 +185,8 @@ export default function ClientNotifications() {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full" />
                   <div>
-                    <p className="text-sm font-medium">Unread</p>
-                    <p className="text-2xl font-bold">{stats.unread_count}</p>
+                    <p className="text-sm font-medium text-foreground">Unread</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.unread_count}</p>
                   </div>
                 </div>
               </CardContent>
@@ -197,8 +197,8 @@ export default function ClientNotifications() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-orange-500" />
                   <div>
-                    <p className="text-sm font-medium">High Priority</p>
-                    <p className="text-2xl font-bold">{stats.high_priority_count}</p>
+                    <p className="text-sm font-medium text-foreground">High Priority</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.high_priority_count}</p>
                   </div>
                 </div>
               </CardContent>
@@ -209,8 +209,8 @@ export default function ClientNotifications() {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
                   <div>
-                    <p className="text-sm font-medium">Care Plans</p>
-                    <p className="text-2xl font-bold">{stats.by_type?.care_plan?.total || 0}</p>
+                    <p className="text-sm font-medium text-foreground">Care Plans</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.by_type?.care_plan?.total || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -228,9 +228,9 @@ export default function ClientNotifications() {
           <CardContent>
             {!notifications || notifications.length === 0 ? (
               <div className="text-center py-8">
-                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No notifications yet</p>
-                <p className="text-sm text-gray-400">You'll see your care updates here</p>
+                <Bell className="h-12 w-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-muted-foreground">No notifications yet</p>
+                <p className="text-sm text-gray-400 dark:text-muted-foreground/70">You'll see your care updates here</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -238,7 +238,7 @@ export default function ClientNotifications() {
                   <div
                     key={notification.id}
                     className={cn(
-                      "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-gray-50 transition-colors",
+                      "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors",
                       getPriorityColor(notification.priority),
                       !notification.read_at && "bg-opacity-75"
                     )}
@@ -252,7 +252,7 @@ export default function ClientNotifications() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm">{notification.title}</p>
+                            <p className="font-medium text-sm text-foreground">{notification.title}</p>
                             {!notification.read_at && (
                               <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
                             )}
@@ -260,11 +260,11 @@ export default function ClientNotifications() {
                               {notification.priority}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                          <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">{notification.message}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}</span>
