@@ -244,8 +244,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
     0
   ) || 0;
 
+  // Use actual stored VAT amounts if available, otherwise calculate based on is_vatable flag
   const totalVatAmount = invoice.line_items?.reduce(
-    (sum, item) => sum + ((item.line_total || 0) * 0.20), 
+    (sum, item) => {
+      // Use stored vat_amount if available, otherwise calculate only if is_vatable
+      const itemVat = (item as any).vat_amount ?? 
+                      ((item as any).is_vatable ? (item.line_total || 0) * 0.20 : 0);
+      return sum + itemVat;
+    }, 
     0
   ) || invoice.vat_amount || 0;
 
@@ -408,9 +414,10 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice, onEditInvoice }
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoice.line_items.map((item) => {
-                    // Calculate VAT for this line item (20% of line total)
-                    const lineVat = (item.line_total || 0) * 0.20;
+                {invoice.line_items.map((item) => {
+                    // Use stored VAT if available, otherwise calculate based on is_vatable flag
+                    const lineVat = (item as any).vat_amount ?? 
+                                    ((item as any).is_vatable ? (item.line_total || 0) * 0.20 : 0);
                     
                     return (
                       <TableRow key={item.id}>

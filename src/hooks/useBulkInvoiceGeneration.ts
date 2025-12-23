@@ -380,7 +380,7 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName} (bill_to: ${billingConfig.billToType}, due in ${billingConfig.creditPeriodDays} days)`);
 
-        // 4k. Create line items for bookings
+        // 4k. Create line items for bookings with VAT data persisted
         const lineItemsData = billingSummary.line_items.map(item => ({
           invoice_id: invoice.id,
           organization_id: organizationId,
@@ -394,7 +394,10 @@ export const useBulkInvoiceGeneration = () => {
           quantity: item.billing_duration_minutes / 60,
           line_total: item.line_total,
           bank_holiday_multiplier_applied: item.multiplier,
-          day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday'
+          day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday',
+          // Persist VAT data for accurate display
+          is_vatable: item.is_vatable,
+          vat_amount: item.vat_amount
         }));
 
         const { error: lineItemsError } = await supabase

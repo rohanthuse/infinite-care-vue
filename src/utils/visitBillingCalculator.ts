@@ -137,8 +137,12 @@ export class VisitBillingCalculator {
    */
   private findApplicableRate(visit: Visit): ClientRateSchedule | null {
     const visitDate = new Date(visit.date);
-    const visitDay = visitDate.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
+    // Get both full and abbreviated day names for flexible matching
+    const visitDayFull = visitDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(); // 'monday'
+    const visitDayShort = visitDate.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase(); // 'mon'
     const visitTime = visit.planned_start;
+
+    console.log(`[RateMatcher] Checking visit ${visit.id} on ${visit.date} (${visitDayFull}/${visitDayShort})`);
 
     for (const rate of this.rateSchedules) {
       // Check if rate is active
@@ -149,22 +153,33 @@ export class VisitBillingCalculator {
       const endDate = rate.end_date ? new Date(rate.end_date) : null;
       
       if (visitDate < startDate || (endDate && visitDate > endDate)) {
+        console.log(`[RateMatcher] Rate ${rate.id} skipped - date out of range`);
         continue;
       }
 
-      // Check if day is covered
+      // Check if day is covered - support both full names ('monday') and abbreviated ('mon')
       const daysCovered = rate.days_covered || [];
-      const coversDay = daysCovered.includes(visitDay) || 
-        (visit.is_bank_holiday && daysCovered.includes('bank_holiday'));
+      console.log(`[RateMatcher] Rate days_covered:`, daysCovered);
       
-      if (!coversDay) continue;
+      const coversDay = daysCovered.includes(visitDayFull) || 
+                        daysCovered.includes(visitDayShort) ||
+                        (visit.is_bank_holiday && daysCovered.includes('bank_holiday'));
+      
+      if (!coversDay) {
+        console.log(`[RateMatcher] Rate ${rate.id} skipped - day not covered`);
+        continue;
+      }
 
       // Check time range
       if (this.isTimeInRange(visitTime, rate.time_from, rate.time_until)) {
+        console.log(`[RateMatcher] Found matching rate ${rate.id} for visit ${visit.id}`);
         return rate;
+      } else {
+        console.log(`[RateMatcher] Rate ${rate.id} skipped - time ${visitTime} not in range ${rate.time_from}-${rate.time_until}`);
       }
     }
 
+    console.warn(`[RateMatcher] No matching rate found for visit ${visit.id} on ${visit.date}`);
     return null;
   }
 
