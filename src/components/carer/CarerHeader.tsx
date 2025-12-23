@@ -112,7 +112,7 @@ export const CarerHeader: React.FC = () => {
             <Input 
               ref={searchInputRef}
               placeholder="Search clients, bookings, documents..." 
-              className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-full transition-all duration-300"
+              className="pl-10 pr-4 py-2 rounded-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 w-full transition-all duration-300"
               value={searchValue}
               onChange={(e) => {
                 setSearchValue(e.target.value);

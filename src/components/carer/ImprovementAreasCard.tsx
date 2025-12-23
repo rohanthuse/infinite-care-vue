@@ -70,7 +70,7 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
       <CardContent>
         <div className="space-y-4">
           {improvementAreas.map((area) => (
-            <div key={area.id} className="p-4 border rounded-lg bg-white hover:shadow-md transition-shadow">
+            <div key={area.id} className="p-4 border rounded-lg bg-white dark:bg-card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -86,11 +86,11 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
                       </Badge>
                     )}
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">
+                  <h4 className="font-semibold text-gray-900 dark:text-foreground mb-1">
                     {area.area_title}
                   </h4>
                   {area.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
                       {area.description}
                     </p>
                   )}
@@ -101,8 +101,8 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
               {area.progress_percentage !== null && area.progress_percentage !== undefined && area.progress_percentage > 0 && (
                 <div className="mt-3 space-y-1">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-gray-600 dark:text-muted-foreground">Progress</span>
+                    <span className="font-medium text-gray-900 dark:text-foreground">
                       {area.progress_percentage}%
                     </span>
                   </div>
@@ -112,7 +112,7 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
 
               {/* Target Date */}
               {area.target_completion_date && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>
                     Target: {format(new Date(area.target_completion_date), 'MMM dd, yyyy')}
@@ -123,7 +123,7 @@ export const ImprovementAreasCard: React.FC<ImprovementAreasCardProps> = ({ impr
               {/* Current Status */}
               {area.current_status && (
                 <div className="mt-2">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground">
                     {area.current_status}
                   </p>
                 </div>

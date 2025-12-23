@@ -15,8 +15,8 @@ export function FollowUpSection({ form, staffList }: FollowUpSectionProps) {
   const actionRequired = form.watch('action_required');
 
   return (
-    <div className="space-y-4 bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">
+    <div className="space-y-4 bg-white dark:bg-card rounded-lg border border-gray-100 dark:border-border p-5 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-foreground border-b border-gray-100 dark:border-border pb-2">
         Follow-up & Action Requirements
       </h3>
       
@@ -36,7 +36,7 @@ export function FollowUpSection({ form, staffList }: FollowUpSectionProps) {
                 <FormLabel className="text-sm font-medium">
                   Action Required
                 </FormLabel>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-muted-foreground">
                   Check if this event requires follow-up action
                 </p>
               </div>
