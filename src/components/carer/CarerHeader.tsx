@@ -5,8 +5,12 @@ import {
   Search,
   User,
   ChevronDown,
-  X
+  X,
+  Sun,
+  Moon,
+  Monitor
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
@@ -24,6 +28,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+
+// Theme options component for mobile dropdown
+const ThemeMobileOptions: React.FC = () => {
+  const { setTheme, theme } = useTheme();
+  
+  return (
+    <>
+      <DropdownMenuItem onClick={() => setTheme("light")} className={theme === "light" ? "bg-accent" : ""}>
+        <Sun className="mr-2 h-4 w-4" />
+        Light
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setTheme("dark")} className={theme === "dark" ? "bg-accent" : ""}>
+        <Moon className="mr-2 h-4 w-4" />
+        Dark
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setTheme("system")} className={theme === "system" ? "bg-accent" : ""}>
+        <Monitor className="mr-2 h-4 w-4" />
+        System
+      </DropdownMenuItem>
+    </>
+  );
+};
 
 export const CarerHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -131,14 +158,19 @@ export const CarerHeader: React.FC = () => {
 
           <NotificationDropdown onViewAll={handleViewAllNotifications} />
           
+          {/* Desktop Theme Switcher */}
+          <div className="hidden md:block">
+            <ThemeSwitcher />
+          </div>
+          
           {/* Desktop User profile card */}
-          <div className="hidden md:flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm ml-2">
+          <div className="hidden md:flex items-center gap-3 bg-white/80 dark:bg-card/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 dark:border-border/60 shadow-sm ml-2">
             <div>
-              <div className="text-gray-800 font-semibold">{carerName}</div>
-              <div className="text-gray-500 text-xs font-medium">Carer</div>
+              <div className="text-gray-800 dark:text-foreground font-semibold">{carerName}</div>
+              <div className="text-gray-500 dark:text-muted-foreground text-xs font-medium">Carer</div>
             </div>
-            <div className="h-8 border-r border-gray-200/80 mx-1"></div>
-            <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-gray-100/80 text-gray-700 rounded-full transition-all" onClick={handleLogout}>
+            <div className="h-8 border-r border-gray-200/80 dark:border-border/80 mx-1"></div>
+            <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-gray-100/80 dark:hover:bg-muted/80 text-gray-700 dark:text-foreground rounded-full transition-all" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </CustomButton>
           </div>
@@ -168,6 +200,9 @@ export const CarerHeader: React.FC = () => {
                 <User className="mr-2 h-4 w-4" />
                 My Profile
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Theme</DropdownMenuLabel>
+              <ThemeMobileOptions />
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
