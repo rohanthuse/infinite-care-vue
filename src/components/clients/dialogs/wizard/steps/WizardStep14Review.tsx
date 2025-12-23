@@ -5,7 +5,7 @@ import {
   CheckCircle, AlertCircle, FileText, User, Activity, Target, 
   Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle, 
   Pill, Syringe, ClipboardCheck, Heart, ListChecks, AlertTriangle, 
-  GraduationCap, ShieldAlert, HeartPulse, Users 
+  GraduationCap, ShieldAlert, HeartPulse, Users, ArrowRight 
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -34,6 +34,14 @@ interface Section {
   data: any;
   status?: string;
   childOnly?: boolean;
+}
+
+interface RequirementItem {
+  id: string;
+  label: string;
+  isComplete: boolean;
+  missingMessage?: string;
+  stepToFix?: string;
 }
 
 export function WizardStep14Review({ form, clientId, isChild = false }: WizardStep14ReviewProps) {
@@ -234,6 +242,55 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
   // Check if care plan has enough content to be finalized
   const hasMinimumContent = completedSections.length >= 3; // Require at least 3 sections to be complete
 
+  // Check provider requirements
+  const hasTitle = !!formData.title?.trim();
+  const hasProviderType = !!formData.provider_type;
+  const hasProviderAssignment = formData.provider_type === 'staff' 
+    ? !!formData.staff_id 
+    : formData.provider_type === 'external' 
+      ? !!formData.provider_name?.trim()
+      : false;
+  const hasProviderInfo = hasProviderType && hasProviderAssignment;
+
+  // All publication requirements
+  const publicationRequirements: RequirementItem[] = [
+    {
+      id: 'title',
+      label: 'Care Plan Title',
+      isComplete: hasTitle,
+      missingMessage: 'Enter a title for the care plan',
+      stepToFix: 'Step 1 (Basic Information)'
+    },
+    {
+      id: 'provider_type',
+      label: 'Provider Type Selected',
+      isComplete: hasProviderType,
+      missingMessage: 'Select whether the provider is Staff or External',
+      stepToFix: 'Step 1 (Basic Information)'
+    },
+    {
+      id: 'provider_assignment',
+      label: formData.provider_type === 'staff' ? 'Staff Member Assigned' : formData.provider_type === 'external' ? 'External Provider Name' : 'Provider Assignment',
+      isComplete: hasProviderAssignment,
+      missingMessage: formData.provider_type === 'staff' 
+        ? 'Select a staff member to assign to this care plan'
+        : formData.provider_type === 'external'
+          ? 'Enter the external provider name'
+          : 'First select a provider type, then assign a provider',
+      stepToFix: 'Step 1 (Basic Information)'
+    },
+    {
+      id: 'minimum_content',
+      label: `Minimum Content (${completedSections.length}/3 sections)`,
+      isComplete: hasMinimumContent,
+      missingMessage: `Complete at least 3 sections. Consider adding: Goals, Activities, Personal Care, or Medical Information`,
+      stepToFix: 'Any content section (Steps 2-17)'
+    }
+  ];
+
+  const canPublish = publicationRequirements.every(req => req.isComplete);
+  const incompleteRequirements = publicationRequirements.filter(req => !req.isComplete);
+
   return (
     <div className="space-y-6">
       <div>
@@ -242,6 +299,76 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
           Review all information and finalize the care plan. You can go back to any section to make changes.
         </p>
       </div>
+
+      {/* Publication Requirements Checklist - PROMINENT AT TOP */}
+      <Card className={canPublish ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}>
+        <CardHeader className="pb-3">
+          <CardTitle className={`flex items-center gap-2 ${canPublish ? "text-green-800" : "text-red-800"}`}>
+            {canPublish ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            )}
+            Publication Requirements
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Requirements List */}
+          <div className="space-y-2">
+            {publicationRequirements.map((req) => (
+              <div 
+                key={req.id} 
+                className={`flex items-start gap-3 p-3 rounded-lg ${
+                  req.isComplete ? 'bg-green-100/50' : 'bg-red-100/50'
+                }`}
+              >
+                {req.isComplete ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                )}
+                <div className="flex-1">
+                  <p className={`font-medium ${req.isComplete ? 'text-green-800' : 'text-red-800'}`}>
+                    {req.label}
+                  </p>
+                  {!req.isComplete && req.missingMessage && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {req.missingMessage}
+                    </p>
+                  )}
+                  {!req.isComplete && req.stepToFix && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <ArrowRight className="h-3 w-3" />
+                      Go to: <span className="font-medium">{req.stepToFix}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Summary Message */}
+          <Separator />
+          <div className={`p-3 rounded-lg ${canPublish ? 'bg-green-200/50' : 'bg-red-200/50'}`}>
+            {canPublish ? (
+              <p className="text-green-800 font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                All requirements met! You can now send this care plan for approval.
+              </p>
+            ) : (
+              <div>
+                <p className="text-red-800 font-medium flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  {incompleteRequirements.length} requirement{incompleteRequirements.length !== 1 ? 's' : ''} must be completed before publishing
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  Use the "Previous" button or step navigation to go back and complete the missing items.
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Completion Summary */}
       <Card>

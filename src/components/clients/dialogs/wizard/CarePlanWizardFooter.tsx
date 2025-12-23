@@ -38,8 +38,17 @@ export function CarePlanWizardFooter({
 }: CarePlanWizardFooterProps) {
   // Calculate first/last step based on filtered steps (handles adult vs child clients)
   const currentIndex = filteredSteps.findIndex(s => s.id === currentStep);
+  
+  // Defensive check: if currentIndex is -1, we're on an unknown step
+  // Assume not first step and check if we're on the review step (21)
   const isFirstStep = currentIndex === 0;
-  const isLastStep = currentIndex === filteredSteps.length - 1;
+  const isReviewStep = currentStep === 21;
+  const isLastStep = currentIndex >= 0 
+    ? currentIndex === filteredSteps.length - 1 
+    : isReviewStep; // If index not found but on step 21, treat as last step
+  
+  // Always show finalize button on review step OR last step
+  const shouldShowFinalizeButton = isLastStep || isReviewStep;
 
   // Check if care plan has minimum content for finalization
   const getSectionStatus = (sectionData: any) => {
@@ -174,7 +183,7 @@ export function CarePlanWizardFooter({
             <span>{isLoading ? "Saving..." : isDraft ? "Update Draft" : "Save as Draft"}</span>
           </Button>
 
-          {isLastStep ? (
+          {shouldShowFinalizeButton ? (
             <Button
               type="button"
               onClick={handleFinalize}
@@ -203,7 +212,7 @@ export function CarePlanWizardFooter({
         <p className="text-xs sm:text-sm text-gray-500">
           Step {currentStep} of {totalSteps}
           {isDraft && <span className="text-amber-600 ml-2 block sm:inline">(Draft Mode - All changes are automatically saved)</span>}
-          {isLastStep && !isDraft && (
+          {shouldShowFinalizeButton && !isDraft && (
             <span className={`ml-2 block sm:inline ${canFinalize ? "text-green-600" : "text-red-600"}`}>
               {canFinalize ? "Ready for approval" : getFinalizationMessage()}
             </span>
