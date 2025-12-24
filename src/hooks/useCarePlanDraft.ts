@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface DraftData {
   form_data: any;
@@ -116,6 +116,12 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
   const queryClient = useQueryClient();
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const isManualSavingRef = useRef(false);
+  
+  // Undo functionality state
+  const undoHistoryRef = useRef<any[]>([]);
+  const MAX_UNDO_HISTORY = 10;
+  const [canUndo, setCanUndo] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
 
   // ALWAYS check for existing draft for this client, regardless of forceNew
   // This prevents creating duplicate drafts
@@ -328,12 +334,50 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
           isAutoSave: false,
         },
         {
-          onSuccess: () => resolve(),
+          onSuccess: () => {
+            setLastSaveTime(new Date());
+            resolve();
+          },
           onError: (error) => reject(error),
         }
       );
     });
   }, [saveDraftMutation]);
+
+  // Save undo state before changes
+  const saveUndoState = useCallback((formData: any) => {
+    const history = undoHistoryRef.current;
+    // Deep clone the form data
+    const snapshot = JSON.parse(JSON.stringify(formData));
+    history.push(snapshot);
+    // Keep only last N snapshots
+    if (history.length > MAX_UNDO_HISTORY) {
+      history.shift();
+    }
+    undoHistoryRef.current = history;
+    setCanUndo(history.length > 1);
+  }, []);
+
+  // Undo last change
+  const undoLastChange = useCallback(() => {
+    const history = undoHistoryRef.current;
+    if (history.length > 1) {
+      // Remove current state
+      history.pop();
+      // Get previous state
+      const previousState = history[history.length - 1];
+      undoHistoryRef.current = history;
+      setCanUndo(history.length > 1);
+      return previousState;
+    }
+    return null;
+  }, []);
+
+  // Clear undo history
+  const clearUndoHistory = useCallback(() => {
+    undoHistoryRef.current = [];
+    setCanUndo(false);
+  }, []);
 
   return {
     draftData,
@@ -344,5 +388,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
     isSaving: saveDraftMutation.isPending,
     savedCarePlanId: saveDraftMutation.data?.id || effectiveCarePlanId,
     existingDraftId: existingDraft?.id,
+    // Undo functionality
+    saveUndoState,
+    undoLastChange,
+    clearUndoHistory,
+    canUndo,
+    lastSaveTime,
   };
 }
