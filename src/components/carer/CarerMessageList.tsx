@@ -70,19 +70,19 @@ export const CarerMessageList = ({
 
     if (hasClient && hasAdmin) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800">
           Team
         </Badge>
       );
     } else if (hasClient) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
           Client
         </Badge>
       );
     } else if (hasAdmin) {
       return (
-        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800">
           Admin
         </Badge>
       );
@@ -92,7 +92,7 @@ export const CarerMessageList = ({
   
   return (
     <>
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-4 border-b border-border flex items-center justify-between">
         <h3 className="text-lg font-semibold">Messages</h3>
         <Button
           size="sm"
@@ -104,12 +104,12 @@ export const CarerMessageList = ({
         </Button>
       </div>
       
-      <div className="p-3 border-b border-gray-200">
+      <div className="p-3 border-b border-border">
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search messages..."
-            className="pl-9 bg-gray-50"
+            className="pl-9 bg-muted"
             value={searchTerm}
             readOnly
           />
@@ -118,11 +118,11 @@ export const CarerMessageList = ({
       
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-muted-foreground">
             Loading messages...
           </div>
         ) : error ? (
-          <div className="p-6 text-center text-red-500">
+          <div className="p-6 text-center text-red-500 dark:text-red-400">
             Error loading messages: {error.message}
           </div>
         ) : filteredThreads.length > 0 ? (
@@ -130,14 +130,14 @@ export const CarerMessageList = ({
             <div 
               key={thread.id}
               className={cn(
-                "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors",
-                selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50" : "",
-                thread.unreadCount > 0 ? "bg-gray-50" : ""
+                "p-3 hover:bg-muted cursor-pointer border-b border-border transition-colors",
+                selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50 dark:bg-blue-950/50 dark:hover:bg-blue-950/50" : "",
+                thread.unreadCount > 0 ? "bg-muted/50" : ""
               )}
               onClick={() => onMessageSelect(thread.id)}
             >
               <div className="flex items-start">
-                <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
+                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0">
                   {thread.participants[0]?.name?.split(' ').map(n => n.charAt(0)).join('').slice(0, 2) || 'T'}
                 </div>
                 
@@ -160,27 +160,27 @@ export const CarerMessageList = ({
                       )}
                     </div>
                     
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {thread.lastMessage ? formatMessageDate(thread.lastMessage.timestamp) : ''}
                     </span>
                   </div>
                   
                   <div className={cn(
                     "text-sm truncate",
-                    thread.unreadCount > 0 ? "font-medium" : "text-gray-700"
+                    thread.unreadCount > 0 ? "font-medium" : "text-foreground"
                   )}>
                     {thread.subject}
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-500 truncate mt-1">
+                    <p className="text-xs text-muted-foreground truncate mt-1">
                       {thread.lastMessage ? (
                         `${thread.lastMessage.senderName}: ${thread.lastMessage.content}`
                       ) : 'No messages yet'}
                     </p>
                     
                     {thread.lastMessage?.hasAttachments && (
-                      <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                      <FileText className="h-3 w-3 text-muted-foreground ml-1 shrink-0" />
                     )}
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export const CarerMessageList = ({
             </div>
           ))
         ) : (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-muted-foreground">
             {selectedContactId ? 
               "No messages with this client" : 
               "No messages found"

@@ -282,7 +282,7 @@ const CarerTasks: React.FC = () => {
       
       <div className="flex flex-col gap-3 mb-6">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search tasks..." 
             className="pl-9 w-full"
@@ -336,10 +336,10 @@ const CarerTasks: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border mt-1 ${
                       task.priority === "high" || task.priority === "urgent"
-                        ? "border-red-300 bg-red-50" 
+                        ? "border-red-300 bg-red-50 dark:bg-red-950/50 dark:border-red-700" 
                         : task.priority === "medium"
-                        ? "border-amber-300 bg-amber-50" 
-                        : "border-green-300 bg-green-50"
+                        ? "border-amber-300 bg-amber-50 dark:bg-amber-950/50 dark:border-amber-700" 
+                        : "border-green-300 bg-green-50 dark:bg-green-950/50 dark:border-green-700"
                     }`}>
                       {(task.priority === "high" || task.priority === "urgent") && (
                         <AlertCircle className="h-5 w-5 text-red-500" />
@@ -351,27 +351,27 @@ const CarerTasks: React.FC = () => {
                         <h3 className="font-medium">{task.title}</h3>
                         <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           task.priority === "high" || task.priority === "urgent"
-                            ? "bg-red-100 text-red-700" 
+                            ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300" 
                             : task.priority === "medium"
-                            ? "bg-amber-100 text-amber-700" 
-                            : "bg-green-100 text-green-700"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300" 
+                            : "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
                         }`}>
                           {task.priority}
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
                         {task.due_date && (
-                          <div className="flex items-center text-xs text-gray-500">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <Clock className="h-3.5 w-3.5 mr-1" />
                             {formatDueDate(task.due_date)}
                           </div>
                         )}
                         
                         {task.client && (
-                          <div className="flex items-center text-xs text-gray-500">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <User className="h-3.5 w-3.5 mr-1" />
                             {typeof task.client === 'string' 
                               ? task.client 
@@ -380,7 +380,7 @@ const CarerTasks: React.FC = () => {
                         )}
                         
                         {task.category && (
-                          <div className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
+                          <div className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
                             {task.category}
                           </div>
                         )}
@@ -413,8 +413,8 @@ const CarerTasks: React.FC = () => {
               </Card>
             ))
           ) : (
-            <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
-              <p className="text-gray-500">No pending tasks found.</p>
+            <div className="py-12 text-center bg-card border border-border rounded-lg">
+              <p className="text-muted-foreground">No pending tasks found.</p>
             </div>
           )}
         </TabsContent>
@@ -422,33 +422,33 @@ const CarerTasks: React.FC = () => {
         <TabsContent value="completed" className="w-full mt-0 space-y-4">
           {completedTasks.length > 0 ? (
             completedTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-sm transition-shadow bg-gray-50 opacity-80 cursor-pointer" onClick={() => handleTaskClick(task)}>
+              <Card key={task.id} className="hover:shadow-sm transition-shadow bg-muted/50 opacity-80 cursor-pointer" onClick={() => handleTaskClick(task)}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full flex-shrink-0 border mt-1 border-green-300 bg-green-50">
+                    <div className="w-5 h-5 rounded-full flex-shrink-0 border mt-1 border-green-300 bg-green-50 dark:bg-green-950/50 dark:border-green-700">
                       <CheckCircle className="h-5 w-5 text-green-500" />
                     </div>
                     
                     <div className="flex-1">
                       <div className="flex justify-between">
-                        <h3 className="font-medium line-through text-gray-500">{task.title}</h3>
-                        <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <h3 className="font-medium line-through text-muted-foreground">{task.title}</h3>
+                        <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
                           Completed
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
                         {task.due_date && (
-                          <div className="flex items-center text-xs text-gray-500">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <Clock className="h-3.5 w-3.5 mr-1" />
                             {formatDueDate(task.due_date)}
                           </div>
                         )}
                         
                         {task.client && (
-                          <div className="flex items-center text-xs text-gray-500">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <User className="h-3.5 w-3.5 mr-1" />
                             {typeof task.client === 'string' 
                               ? task.client 

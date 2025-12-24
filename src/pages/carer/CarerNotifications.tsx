@@ -34,24 +34,24 @@ export default function CarerNotifications() {
       case 'message':
         return <MessageCircle className={cn(iconClass, 'text-blue-500')} />;
       case 'system':
-        return <AlertTriangle className={cn(iconClass, category === 'error' ? 'text-red-500' : 'text-gray-500')} />;
+        return <AlertTriangle className={cn(iconClass, category === 'error' ? 'text-red-500' : 'text-muted-foreground')} />;
       default:
-        return <Bell className={cn(iconClass, 'text-gray-500')} />;
+        return <Bell className={cn(iconClass, 'text-muted-foreground')} />;
     }
   };
 
   const getPriorityColor = (priority: Notification['priority']) => {
     switch (priority) {
       case 'urgent':
-        return 'border-l-red-500 bg-red-50/50';
+        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/30';
       case 'high':
-        return 'border-l-orange-500 bg-orange-50/50';
+        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/30';
       case 'medium':
-        return 'border-l-blue-500 bg-blue-50/50';
+        return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/30';
       case 'low':
-        return 'border-l-gray-500 bg-gray-50/50';
+        return 'border-l-gray-500 bg-gray-50/50 dark:bg-gray-800/30';
       default:
-        return 'border-l-gray-300';
+        return 'border-l-gray-300 dark:border-l-gray-600';
     }
   };
 
@@ -117,13 +117,13 @@ export default function CarerNotifications() {
     switch (severity.toLowerCase()) {
       case 'high':
       case 'critical':
-        return 'border-l-red-500 bg-red-50/50';
+        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/30';
       case 'medium':
-        return 'border-l-orange-500 bg-orange-50/50';
+        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/30';
       case 'low':
-        return 'border-l-blue-500 bg-blue-50/50';
+        return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/30';
       default:
-        return 'border-l-gray-300';
+        return 'border-l-gray-300 dark:border-l-gray-600';
     }
   };
 
@@ -132,7 +132,7 @@ export default function CarerNotifications() {
       <div className="p-6">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-red-600">Failed to load notifications. Please try again later.</p>
+            <p className="text-red-600 dark:text-red-400">Failed to load notifications. Please try again later.</p>
           </CardContent>
         </Card>
       </div>
@@ -220,13 +220,13 @@ export default function CarerNotifications() {
         <CardContent>
           {assignmentsLoading ? (
             <div className="text-center py-4">
-              <p className="text-gray-500">Loading assignments...</p>
+              <p className="text-muted-foreground">Loading assignments...</p>
             </div>
           ) : assignments.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No recent assignments</p>
-              <p className="text-sm text-gray-400">New client events will appear here</p>
+              <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">No recent assignments</p>
+              <p className="text-sm text-muted-foreground/70">New client events will appear here</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -234,7 +234,7 @@ export default function CarerNotifications() {
                 <div
                   key={assignment.id}
                   className={cn(
-                    "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-gray-50 transition-colors",
+                    "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-muted transition-colors",
                     getSeverityColor(assignment.severity)
                   )}
                   onClick={() => handleViewAssignment(assignment.id, assignment.client_id)}
@@ -263,11 +263,11 @@ export default function CarerNotifications() {
                             {assignment.severity}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Client: {assignment.client_name}
                         </p>
                         {assignment.description && (
-                          <p className="text-sm text-gray-500 mt-1 overflow-hidden text-ellipsis" style={{
+                          <p className="text-sm text-muted-foreground/80 mt-1 overflow-hidden text-ellipsis" style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical'
@@ -281,7 +281,7 @@ export default function CarerNotifications() {
                       </Button>
                     </div>
                     
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         <span>{formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })}</span>
@@ -318,9 +318,9 @@ export default function CarerNotifications() {
         <CardContent>
           {!notifications || notifications.length === 0 ? (
             <div className="text-center py-8">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No notifications yet</p>
-              <p className="text-sm text-gray-400">You'll see your assignments and updates here</p>
+              <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">No notifications yet</p>
+              <p className="text-sm text-muted-foreground/70">You'll see your assignments and updates here</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -328,7 +328,7 @@ export default function CarerNotifications() {
                 <div
                   key={notification.id}
                   className={cn(
-                    "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-gray-50 transition-colors",
+                    "flex items-start gap-4 p-4 rounded-lg border-l-4 cursor-pointer hover:bg-muted transition-colors",
                     getPriorityColor(notification.priority),
                     !notification.read_at && "bg-opacity-75"
                   )}
@@ -350,11 +350,11 @@ export default function CarerNotifications() {
                             {notification.priority}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}</span>
