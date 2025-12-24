@@ -92,10 +92,10 @@ const scheduleSchema = z.object({
     durationMinutes += 1440; // Add 24 hours
   }
   
-  // Minimum 30 minutes, maximum 24 hours
-  return durationMinutes >= 30 && durationMinutes <= 1440;
+  // Minimum 15 minutes, maximum 24 hours
+  return durationMinutes >= 15 && durationMinutes <= 1440;
 }, {
-  message: "Booking duration must be between 30 minutes and 24 hours",
+  message: "Booking duration must be between 15 minutes and 24 hours",
   path: ["endTime"]
 });
 

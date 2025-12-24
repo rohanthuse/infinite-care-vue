@@ -154,10 +154,10 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         durationMinutes += 1440; // Add 24 hours (1440 minutes)
       }
       
-      // Validate: Duration must be at least 30 minutes and max 24 hours
-      if (durationMinutes < 30) {
+      // Validate: Duration must be at least 15 minutes and max 24 hours
+      if (durationMinutes < 15) {
         setHasValidationErrors(true);
-        setValidationMessage("Booking duration must be at least 30 minutes");
+        setValidationMessage("Booking duration must be at least 15 minutes");
         return false;
       }
       
