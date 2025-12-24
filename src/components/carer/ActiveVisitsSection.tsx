@@ -34,7 +34,7 @@ export const ActiveVisitsSection: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500">Loading active visits...</p>
+          <p className="text-muted-foreground">Loading active visits...</p>
         </CardContent>
       </Card>
     );
@@ -56,24 +56,24 @@ export const ActiveVisitsSection: React.FC = () => {
               const durationMinutes = differenceInMinutes(new Date(), startTime);
               
               return (
-                <div key={visit.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg bg-blue-50/30">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 w-fit">
-                      In Progress
-                    </Badge>
-                    
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">{visit.client_name}</span>
+                <div key={visit.id} className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg bg-blue-50/30 dark:bg-blue-950/20 border-l-4 border-l-blue-500">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground truncate">{visit.client_name}</span>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0 text-xs">
+                          In Progress
+                        </Badge>
                       </div>
-                      
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
+                      <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
                           <span>{durationMinutes}m elapsed</span>
                         </div>
-                        <span>{visit.service_name}</span>
+                        <span className="truncate">{visit.service_name}</span>
                       </div>
                     </div>
                   </div>
@@ -81,10 +81,10 @@ export const ActiveVisitsSection: React.FC = () => {
                   <Button 
                     onClick={() => handleContinueVisit(visit.booking_id)} 
                     size="sm"
-                    className="flex items-center justify-center space-x-2 w-full sm:w-auto"
+                    className="shrink-0"
                   >
-                    <span>Continue</span>
-                    <ArrowRight className="h-4 w-4" />
+                    Continue
+                    <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               );
@@ -92,9 +92,9 @@ export const ActiveVisitsSection: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <Play className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">No active visits</p>
-            <p className="text-sm text-gray-400">Active visits will appear here when you start them</p>
+            <Play className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-muted-foreground">No active visits</p>
+            <p className="text-sm text-muted-foreground/70">Active visits will appear here when you start them</p>
           </div>
         )}
       </CardContent>
