@@ -383,17 +383,6 @@ export function WizardStep4MedicalInfo({
                   </FormItem>} />
           </div>
 
-          {/* Communication Needs */}
-          <FormField control={form.control} name="medical_info.communication_needs" render={({
-            field
-          }) => <FormItem>
-                  <FormLabel>Communication Needs</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe any special communication requirements..." className="min-h-[80px]" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>} />
-
           {/* Sensory Impairments */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
