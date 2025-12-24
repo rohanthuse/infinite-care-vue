@@ -12,6 +12,7 @@ import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTenant } from "@/contexts/TenantContext";
 import { getSubscriptionLimit } from "@/lib/subscriptionLimits";
+import { sanitizeText } from "@/utils/sanitizeText";
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -138,9 +139,11 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     }
   }, [open, mode]);
   const handleInputChange = (field: string, value: string) => {
+    // Sanitize text input to remove problematic Unicode characters
+    const sanitizedValue = sanitizeText(value);
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: sanitizedValue
     }));
   };
   const generateAvatarInitials = (firstName: string, lastName: string) => {
