@@ -158,7 +158,7 @@ export function WizardStep4MedicalInfo({
     
     currentMedications.forEach((med: string, index: number) => {
       // If medication has a value but doesn't match any active diagnosis option → custom mode
-      if (med && !diagnosisOptions.some(d => d.title === med && d.status === "Active")) {
+      if (med && !diagnosisOptions.some(d => d.title === med && d.status?.toLowerCase() === "active")) {
         customIndices.add(index);
       }
     });
@@ -191,7 +191,7 @@ export function WizardStep4MedicalInfo({
 
   // Map diagnosis data to MultiSelect format
   const diagnosisMultiSelectOptions = diagnosisOptions
-    .filter(d => d.status === "Active")
+    .filter(d => d.status?.toLowerCase() === "active")
     .map(d => ({
       value: d.id,
       label: d.title,
