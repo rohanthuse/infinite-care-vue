@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { syncCarePlanToClientProfile } from '@/utils/syncCarePlanToClientProfile';
 
 interface ClientApproveCarePlanData {
   carePlanId: string;
@@ -23,6 +24,18 @@ const clientApproveCarePlan = async ({ carePlanId, signatureData, comments }: Cl
 
   console.log(`[clientApproveCarePlan] Approving care plan ${carePlanId} by client ${user.id}`);
 
+  // First, get the care plan to retrieve client_id for syncing
+  const { data: carePlanData, error: fetchError } = await supabase
+    .from('client_care_plans')
+    .select('client_id')
+    .eq('id', carePlanId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching care plan:', fetchError);
+    throw fetchError;
+  }
+
   // Update care plan status to active (final approval) with client acknowledgment data
   const { error: updateError } = await supabase
     .from('client_care_plans')
@@ -39,6 +52,23 @@ const clientApproveCarePlan = async ({ carePlanId, signatureData, comments }: Cl
   if (updateError) {
     console.error('Error approving care plan:', updateError);
     throw updateError;
+  }
+
+  // Sync care plan data to client profile
+  if (carePlanData?.client_id) {
+    try {
+      console.log('[clientApproveCarePlan] Syncing care plan data to client profile');
+      const syncResult = await syncCarePlanToClientProfile(carePlanId, carePlanData.client_id);
+      if (!syncResult.success) {
+        console.error('[clientApproveCarePlan] Error syncing to client profile:', syncResult.error);
+        // Don't fail the approval for sync errors
+      } else {
+        console.log('[clientApproveCarePlan] Successfully synced care plan data to client profile');
+      }
+    } catch (syncError) {
+      console.error('[clientApproveCarePlan] Error during client profile sync:', syncError);
+      // Don't fail the approval for sync errors
+    }
   }
 
   // Database triggers will handle all notifications automatically
