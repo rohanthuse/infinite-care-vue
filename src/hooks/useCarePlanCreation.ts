@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { syncCarePlanStaffAssignments, sendStaffAssignmentNotifications } from "./useCarePlanStaffAssignments";
+import { syncCarePlanToClientProfile } from "@/utils/syncCarePlanToClientProfile";
 
 interface CarePlanCreationData {
   client_id: string;
@@ -342,6 +343,21 @@ export const useCarePlanCreation = () => {
           console.error('[useCarePlanCreation] Error syncing staff assignments:', staffError);
           // Don't fail the operation for staff assignment errors
         }
+      }
+
+      // Sync care plan data to client profile
+      try {
+        console.log('[useCarePlanCreation] Syncing care plan data to client profile');
+        const syncResult = await syncCarePlanToClientProfile(data.care_plan_id, data.client_id);
+        if (!syncResult.success) {
+          console.error('[useCarePlanCreation] Error syncing to client profile:', syncResult.error);
+          // Don't fail the operation for sync errors
+        } else {
+          console.log('[useCarePlanCreation] Successfully synced care plan data to client profile');
+        }
+      } catch (syncError) {
+        console.error('[useCarePlanCreation] Error during client profile sync:', syncError);
+        // Don't fail the operation for sync errors
       }
 
       return { success: true, data: updatedCarePlan };

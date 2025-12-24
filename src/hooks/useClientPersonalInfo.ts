@@ -35,6 +35,7 @@ export interface ClientPersonalInfo {
   key_safe_location?: string;
   parking_availability?: string;
   emergency_access?: string;
+  has_key_safe?: boolean;
   // My Accessibility and Communication fields
   sensory_impairment?: string;
   communication_aids?: string;
@@ -44,6 +45,11 @@ export interface ClientPersonalInfo {
   speech_difficulties?: boolean;
   cognitive_impairment?: boolean;
   mobility_aids?: string;
+  vision_description?: string;
+  hearing_description?: string;
+  how_i_communicate?: string;
+  how_to_communicate_with_me?: string;
+  communication_style?: string;
   // Do's & Don'ts fields
   likes_preferences?: string;
   dislikes_restrictions?: string;
@@ -74,6 +80,18 @@ export interface ClientPersonalInfo {
   warnings?: string[];
   instructions?: string[];
   important_occasions?: Array<{occasion?: string, date?: string}>;
+  // Legal directives fields
+  has_lpa?: boolean;
+  lpa_type?: string;
+  lpa_holder_name?: string;
+  lpa_holder_phone?: string;
+  lpa_holder_email?: string;
+  has_dnr?: boolean;
+  has_respect?: boolean;
+  has_dols?: boolean;
+  // Life & Personality fields
+  life_history?: string;
+  personality_traits?: string;
   created_at: string;
   updated_at: string;
 }

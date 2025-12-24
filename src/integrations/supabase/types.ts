@@ -3631,6 +3631,7 @@ export type Database = {
           client_id: string
           cognitive_impairment: boolean | null
           communication_aids: string | null
+          communication_style: string | null
           created_at: string
           cultural_preferences: string | null
           desired_outcomes: string | null
@@ -3652,16 +3653,29 @@ export type Database = {
           gp_surgery_ods_code: string | null
           gp_surgery_phone: string | null
           has_assistance_device: boolean | null
+          has_dnr: boolean | null
+          has_dols: boolean | null
+          has_key_safe: boolean | null
+          has_lpa: boolean | null
+          has_respect: boolean | null
+          hearing_description: string | null
           hearing_difficulties: boolean | null
           home_accessibility: string | null
+          how_i_communicate: string | null
+          how_to_communicate_with_me: string | null
           id: string
           important_occasions: Json | null
           instructions: string[] | null
           interpreter_required: boolean | null
           key_safe_location: string | null
           language_preferences: string | null
+          life_history: string | null
           likes_preferences: string | null
           living_arrangement: string | null
+          lpa_holder_email: string | null
+          lpa_holder_name: string | null
+          lpa_holder_phone: string | null
+          lpa_type: string | null
           main_reasons_for_care: string | null
           marital_status: string | null
           mobility_aids: string | null
@@ -3671,6 +3685,7 @@ export type Database = {
           next_of_kin_relationship: string | null
           parking_availability: string | null
           personal_goals: string | null
+          personality_traits: string | null
           pets: string | null
           pharmacy_address: string | null
           pharmacy_name: string | null
@@ -3689,6 +3704,7 @@ export type Database = {
           success_measures: string | null
           updated_at: string
           used_other_care_providers: boolean | null
+          vision_description: string | null
           vision_difficulties: boolean | null
           warnings: string[] | null
         }
@@ -3698,6 +3714,7 @@ export type Database = {
           client_id: string
           cognitive_impairment?: boolean | null
           communication_aids?: string | null
+          communication_style?: string | null
           created_at?: string
           cultural_preferences?: string | null
           desired_outcomes?: string | null
@@ -3719,16 +3736,29 @@ export type Database = {
           gp_surgery_ods_code?: string | null
           gp_surgery_phone?: string | null
           has_assistance_device?: boolean | null
+          has_dnr?: boolean | null
+          has_dols?: boolean | null
+          has_key_safe?: boolean | null
+          has_lpa?: boolean | null
+          has_respect?: boolean | null
+          hearing_description?: string | null
           hearing_difficulties?: boolean | null
           home_accessibility?: string | null
+          how_i_communicate?: string | null
+          how_to_communicate_with_me?: string | null
           id?: string
           important_occasions?: Json | null
           instructions?: string[] | null
           interpreter_required?: boolean | null
           key_safe_location?: string | null
           language_preferences?: string | null
+          life_history?: string | null
           likes_preferences?: string | null
           living_arrangement?: string | null
+          lpa_holder_email?: string | null
+          lpa_holder_name?: string | null
+          lpa_holder_phone?: string | null
+          lpa_type?: string | null
           main_reasons_for_care?: string | null
           marital_status?: string | null
           mobility_aids?: string | null
@@ -3738,6 +3768,7 @@ export type Database = {
           next_of_kin_relationship?: string | null
           parking_availability?: string | null
           personal_goals?: string | null
+          personality_traits?: string | null
           pets?: string | null
           pharmacy_address?: string | null
           pharmacy_name?: string | null
@@ -3756,6 +3787,7 @@ export type Database = {
           success_measures?: string | null
           updated_at?: string
           used_other_care_providers?: boolean | null
+          vision_description?: string | null
           vision_difficulties?: boolean | null
           warnings?: string[] | null
         }
@@ -3765,6 +3797,7 @@ export type Database = {
           client_id?: string
           cognitive_impairment?: boolean | null
           communication_aids?: string | null
+          communication_style?: string | null
           created_at?: string
           cultural_preferences?: string | null
           desired_outcomes?: string | null
@@ -3786,16 +3819,29 @@ export type Database = {
           gp_surgery_ods_code?: string | null
           gp_surgery_phone?: string | null
           has_assistance_device?: boolean | null
+          has_dnr?: boolean | null
+          has_dols?: boolean | null
+          has_key_safe?: boolean | null
+          has_lpa?: boolean | null
+          has_respect?: boolean | null
+          hearing_description?: string | null
           hearing_difficulties?: boolean | null
           home_accessibility?: string | null
+          how_i_communicate?: string | null
+          how_to_communicate_with_me?: string | null
           id?: string
           important_occasions?: Json | null
           instructions?: string[] | null
           interpreter_required?: boolean | null
           key_safe_location?: string | null
           language_preferences?: string | null
+          life_history?: string | null
           likes_preferences?: string | null
           living_arrangement?: string | null
+          lpa_holder_email?: string | null
+          lpa_holder_name?: string | null
+          lpa_holder_phone?: string | null
+          lpa_type?: string | null
           main_reasons_for_care?: string | null
           marital_status?: string | null
           mobility_aids?: string | null
@@ -3805,6 +3851,7 @@ export type Database = {
           next_of_kin_relationship?: string | null
           parking_availability?: string | null
           personal_goals?: string | null
+          personality_traits?: string | null
           pets?: string | null
           pharmacy_address?: string | null
           pharmacy_name?: string | null
@@ -3823,6 +3870,7 @@ export type Database = {
           success_measures?: string | null
           updated_at?: string
           used_other_care_providers?: boolean | null
+          vision_description?: string | null
           vision_difficulties?: boolean | null
           warnings?: string[] | null
         }
