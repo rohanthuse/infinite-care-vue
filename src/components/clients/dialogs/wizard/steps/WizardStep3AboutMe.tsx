@@ -89,6 +89,25 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                   )}
                 />
 
+                {form.watch("about_me.has_key_safe") === "yes" && (
+                  <FormField
+                    control={form.control}
+                    name="about_me.key_safe_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Key Safe Code/Location</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter key safe code and location..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
                   name="about_me.requires_heating_help"
@@ -501,6 +520,86 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                   )}
                 />
               </div>
+
+              {/* LPA Holder Details - shown when LPA is Yes */}
+              {form.watch("about_me.has_lpa") === "yes" && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium text-sm">LPA Holder Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="about_me.lpa_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>LPA Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select LPA type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="health_welfare">Health & Welfare</SelectItem>
+                              <SelectItem value="property_financial">Property & Financial</SelectItem>
+                              <SelectItem value="both">Both</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="about_me.lpa_holder_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>LPA Holder Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter LPA holder's name..."
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="about_me.lpa_holder_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>LPA Holder Phone</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter phone number..."
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="about_me.lpa_holder_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>LPA Holder Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email"
+                              placeholder="Enter email address..."
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
