@@ -94,9 +94,9 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
     if (!existingExtraTime) return null;
     
     const statusConfig: Record<string, { className: string; label: string }> = {
-      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: '🟡 Extra Time: Pending' },
-      approved: { className: 'bg-green-100 text-green-700 border-green-200', label: '✅ Extra Time: Approved' },
-      rejected: { className: 'bg-red-100 text-red-700 border-red-200', label: '❌ Extra Time: Rejected' },
+      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700', label: '🟡 Extra Time: Pending' },
+      approved: { className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700', label: '✅ Extra Time: Approved' },
+      rejected: { className: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700', label: '❌ Extra Time: Rejected' },
     };
     
     const config = statusConfig[existingExtraTime.status] || statusConfig.pending;
@@ -127,9 +127,9 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
               variant="secondary"
               className={
                 isCompleted 
-                  ? 'bg-green-100 text-green-700 border-green-200' 
+                  ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700' 
                   : isMissed 
-                    ? 'bg-destructive/10 text-destructive' 
+                    ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' 
                     : ''
               }
             >

@@ -134,26 +134,26 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
     <div>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-        <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
-        <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">{appointments.length}</Badge>
+        <h2 className="text-lg font-semibold text-green-700 dark:text-green-400">Ready to Start</h2>
+        <Badge variant="secondary" className="bg-muted text-muted-foreground border-0">{appointments.length}</Badge>
       </div>
       
       <div className="space-y-4">
         {appointments.map((appointment) => (
           <Card 
             key={appointment.id}
-            className="hover:shadow-md transition-all border-green-200 bg-green-50/50"
+            className="hover:shadow-md transition-all border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30"
           >
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Today</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       <span>
                         {format(new Date(appointment.start_time), 'HH:mm')} - 
                         {format(new Date(appointment.end_time), 'HH:mm')}
@@ -162,25 +162,25 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium truncate">
                       {appointment.clients?.first_name} {appointment.clients?.last_name}
                     </span>
                   </div>
                   
-                  <div className="text-sm text-gray-600 mb-2">
+                  <div className="text-sm text-muted-foreground mb-2">
                     <strong>Service:</strong> {appointment.services?.title || 'N/A'}
                   </div>
                   
                   {appointment.clients?.address && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
                       <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
                       <span className="break-words">{appointment.clients.address}</span>
                     </div>
                   )}
                   
                   {appointment.clients?.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <Phone className="h-4 w-4 flex-shrink-0" />
                       <span>{appointment.clients.phone}</span>
                     </div>
@@ -190,7 +190,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                 </div>
                 
                 <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto">
-                  <Badge className="bg-green-100 text-green-700">
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
                     Ready to Start
                   </Badge>
                   
@@ -209,7 +209,7 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
               
               {/* Care Plan Preview */}
               {(appointment.client_id || appointment.clients?.id) && (
-                <div className="mt-4 pt-4 border-t border-green-200">
+                <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
                   <Button
                     variant="outline"
                     size="sm"
