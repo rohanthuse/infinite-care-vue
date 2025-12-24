@@ -33,12 +33,12 @@ export const ActiveVisitBanner: React.FC = () => {
   };
 
   return (
-    <Card className="border-l-4 border-l-blue-500 bg-blue-50/50">
+    <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/30">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center space-x-2">
-              <Play className="h-4 w-4 text-blue-600" />
+              <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <Badge variant="secondary" className="bg-blue-600 text-white border-0">
                 Visit in Progress
               </Badge>
@@ -46,16 +46,16 @@ export const ActiveVisitBanner: React.FC = () => {
             
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
               <div className="flex items-center space-x-1">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">{activeVisit.client_name}</span>
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-foreground">{activeVisit.client_name}</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span>{durationMinutes}m elapsed</span>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-foreground">{durationMinutes}m elapsed</span>
               </div>
               
-              <span className="text-gray-500">{activeVisit.service_name}</span>
+              <span className="text-muted-foreground">{activeVisit.service_name}</span>
             </div>
           </div>
 
@@ -66,7 +66,7 @@ export const ActiveVisitBanner: React.FC = () => {
         </div>
 
         {activeVisits.length > 1 && (
-          <div className="mt-2 text-xs text-gray-600">
+          <div className="mt-2 text-xs text-muted-foreground">
             +{activeVisits.length - 1} more active visit{activeVisits.length > 2 ? 's' : ''}
           </div>
         )}
