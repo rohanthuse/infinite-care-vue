@@ -252,6 +252,10 @@ export function CarePlanCreationWizard({
     autoSave, 
     isSaving,
     savedCarePlanId,
+    saveUndoState,
+    undoLastChange,
+    canUndo,
+    lastSaveTime,
   } = useCarePlanDraft(clientId, carePlanId, forceNew);
 
   // Effective care plan ID for database operations
@@ -517,11 +521,15 @@ export function CarePlanCreationWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedCarePlanId, carePlanId, draftData?.auto_save_data, form]);
 
-  // Auto-save on form changes
+  // Auto-save on form changes - works for both new and existing care plans
   useEffect(() => {
     const subscription = form.watch((data) => {
-      if (isOpen && savedCarePlanId && clientDataLoaded) {
+      // Allow auto-save even for new care plans (without savedCarePlanId)
+      // The useCarePlanDraft hook will handle creating a new draft if needed
+      if (isOpen && clientDataLoaded && !isCheckingExistingDraft) {
         try {
+          // Save undo state before auto-save
+          saveUndoState(data);
           autoSave(data, currentStep);
         } catch (error) {
           console.error('Auto-save error:', error);
@@ -530,7 +538,18 @@ export function CarePlanCreationWizard({
     });
     
     return () => subscription.unsubscribe();
-  }, [form, autoSave, currentStep, isOpen, savedCarePlanId, clientDataLoaded]);
+  }, [form, autoSave, currentStep, isOpen, clientDataLoaded, isCheckingExistingDraft, saveUndoState]);
+
+  // Handle undo action
+  const handleUndo = () => {
+    const previousState = undoLastChange();
+    if (previousState) {
+      form.reset(previousState);
+      toast.success("Changes undone");
+    } else {
+      toast.info("Nothing to undo");
+    }
+  };
 
   // Helper functions for step completion validation
   const isNonEmptyString = (value: any): boolean => {
@@ -904,6 +923,9 @@ export function CarePlanCreationWizard({
                   isLoading={isSaving || isCreating}
                   isDraft={!!draftData}
                   formData={formData}
+                  onUndo={handleUndo}
+                  canUndo={canUndo}
+                  lastSaveTime={lastSaveTime}
                 />
               </div>
             </div>

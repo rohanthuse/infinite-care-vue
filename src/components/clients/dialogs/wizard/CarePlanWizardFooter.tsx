@@ -1,7 +1,7 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, CheckCircle, Loader2, Check, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface WizardStep {
@@ -22,6 +22,9 @@ interface CarePlanWizardFooterProps {
   isLoading: boolean;
   isDraft: boolean;
   formData?: any;
+  onUndo?: () => void;
+  canUndo?: boolean;
+  lastSaveTime?: Date | null;
 }
 
 export function CarePlanWizardFooter({
@@ -34,8 +37,16 @@ export function CarePlanWizardFooter({
   onFinalize,
   isLoading,
   isDraft,
-  formData
+  formData,
+  onUndo,
+  canUndo,
+  lastSaveTime
 }: CarePlanWizardFooterProps) {
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [localLastSave, setLocalLastSave] = useState<Date | null>(null);
+  
+  // Use prop lastSaveTime or local state
+  const effectiveLastSave = lastSaveTime || localLastSave;
   // Calculate first/last step based on filtered steps (handles adult vs child clients)
   const currentIndex = filteredSteps.findIndex(s => s.id === currentStep);
   
@@ -112,6 +123,10 @@ export function CarePlanWizardFooter({
   const handleSaveDraft = async () => {
     try {
       await onSaveDraft();
+      setShowSaveSuccess(true);
+      setLocalLastSave(new Date());
+      // Hide success indicator after 2 seconds
+      setTimeout(() => setShowSaveSuccess(false), 2000);
     } catch (error) {
       console.error('Failed to save draft:', error);
       // Error toast is handled by the hook
@@ -172,6 +187,21 @@ export function CarePlanWizardFooter({
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+          {/* Undo Button */}
+          {canUndo && onUndo && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onUndo}
+              disabled={isLoading}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 w-full sm:w-auto"
+            >
+              <Undo2 className="h-4 w-4" />
+              <span>Undo</span>
+            </Button>
+          )}
+          
+          {/* Save Draft Button */}
           <Button
             type="button"
             variant="outline"
@@ -179,8 +209,22 @@ export function CarePlanWizardFooter({
             disabled={isLoading}
             className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 w-full sm:w-auto"
           >
-            <Save className="h-4 w-4" />
-            <span>{isLoading ? "Saving..." : isDraft ? "Update Draft" : "Save as Draft"}</span>
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : showSaveSuccess ? (
+              <>
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>{isDraft ? "Update Draft" : "Save as Draft"}</span>
+              </>
+            )}
           </Button>
 
           {shouldShowFinalizeButton ? (
@@ -212,6 +256,11 @@ export function CarePlanWizardFooter({
         <p className="text-xs sm:text-sm text-gray-500">
           Step {currentStep} of {totalSteps}
           {isDraft && <span className="text-amber-600 ml-2 block sm:inline">(Draft Mode - All changes are automatically saved)</span>}
+          {effectiveLastSave && (
+            <span className="text-gray-400 ml-2 block sm:inline">
+              Last saved: {effectiveLastSave.toLocaleTimeString()}
+            </span>
+          )}
           {shouldShowFinalizeButton && !isDraft && (
             <span className={`ml-2 block sm:inline ${canFinalize ? "text-green-600" : "text-red-600"}`}>
               {canFinalize ? "Ready for approval" : getFinalizationMessage()}
