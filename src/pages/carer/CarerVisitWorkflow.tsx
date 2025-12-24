@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { useVisitVitals } from "@/hooks/useVisitVitals";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { useCreateServiceReport } from "@/hooks/useServiceReports";
 import { generateServiceReportFromVisit } from "@/utils/generateServiceReport";
+import { VisitCompletionModal } from "@/components/carer/VisitCompletionModal";
 import {
   Clock,
   MapPin,
@@ -61,6 +62,15 @@ import { useCarePlanJsonData } from "@/hooks/useCarePlanJsonData";
 import { GoalStatusButton } from "@/components/care/GoalStatusButton";
 import { ActivityStatusButton } from "@/components/care/ActivityStatusButton";
 import { InlineNotesEditor } from "@/components/care/InlineNotesEditor";
+
+interface NextBookingInfo {
+  id: string;
+  start_time: string;
+  clients?: {
+    first_name?: string;
+    last_name?: string;
+  };
+}
 
 interface Task {
   id: string;
@@ -335,6 +345,14 @@ const CarerVisitWorkflow = () => {
   const [notes, setNotes] = useState("");
   const [photoAdded, setPhotoAdded] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  
+  // Visit completion modal state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState<'completing' | 'success' | 'error'>('completing');
+  const [completionStep, setCompletionStep] = useState('');
+  const [completionProgress, setCompletionProgress] = useState(0);
+  const [completionError, setCompletionError] = useState<string | undefined>();
+  const [nextBooking, setNextBooking] = useState<NextBookingInfo | null>(null);
   
   const { uploadPhoto, deletePhoto, uploading } = usePhotoUpload();
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -950,6 +968,21 @@ const CarerVisitWorkflow = () => {
     }
   };
 
+  // Navigation callbacks for completion modal
+  const handleGoToNextClient = useCallback(() => {
+    if (nextBooking) {
+      setShowCompletionModal(false);
+      navigate(`/carer/visit/${nextBooking.id}`, {
+        state: { appointment: nextBooking }
+      });
+    }
+  }, [nextBooking, navigate]);
+
+  const handleGoToDashboard = useCallback(() => {
+    setShowCompletionModal(false);
+    navigateToCarerPage("");
+  }, [navigateToCarerPage]);
+
   const handleCompleteVisit = async (retryCount = 0) => {
     console.log('Starting visit completion process...');
     
@@ -978,30 +1011,46 @@ const CarerVisitWorkflow = () => {
       return;
     }
 
+    // Reset modal state and show it
     setIsCompletingVisit(true);
+    setShowCompletionModal(true);
+    setCompletionStatus('completing');
+    setCompletionStep('Saving visit record...');
+    setCompletionProgress(10);
+    setCompletionError(undefined);
+    setNextBooking(null);
     
     try {
+      // Step 1: Complete visit record
       console.log('Step 1: Completing visit record...');
-      // Complete the visit record with all final data
+      setCompletionStep('Saving signatures and visit data...');
+      setCompletionProgress(20);
+      
       const completedVisit = await completeVisit.mutateAsync({
         visitRecordId: visitRecord.id,
         visitNotes: notes,
         clientSignature: clientSignature || undefined,
         staffSignature: carerSignature || undefined,
-        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length} tasks completed, ${medications?.filter(m => m.is_administered).length} medications administered, and ${events?.length} events recorded.`,
+        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks completed, ${medications?.filter(m => m.is_administered).length || 0} medications administered, and ${events?.length || 0} events recorded.`,
         visitPhotos: uploadedPhotos,
       });
 
+      // Step 2: Fetch booking details for service report
       console.log('Step 2: Fetching organization ID for service report...');
-      // Fetch booking details for organization_id
+      setCompletionStep('Preparing service report...');
+      setCompletionProgress(40);
+      
       const { data: bookingData } = await supabase
         .from('bookings')
         .select('branch_id, branches(organization_id)')
         .eq('id', currentAppointment.id)
         .single();
 
+      // Step 3: Generate and create service report
       console.log('Step 3: Generating service report...');
-      // Generate and create service report
+      setCompletionStep('Generating service report...');
+      setCompletionProgress(55);
+      
       const serviceReportData = generateServiceReportFromVisit({
         visitRecord: {
           id: completedVisit.id,
@@ -1027,106 +1076,98 @@ const CarerVisitWorkflow = () => {
         createdBy: user.id,
       });
 
+      // Step 4: Save service report
       console.log('Step 4: Creating service report in database...');
+      setCompletionStep('Saving service report...');
+      setCompletionProgress(70);
+      
       await createServiceReport.mutateAsync(serviceReportData);
 
+      // Step 5: Update booking status
       console.log('Step 5: Updating booking status to completed...');
-      // Mark booking as completed
+      setCompletionStep('Marking booking as complete...');
+      setCompletionProgress(85);
+      
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
         staffId: user.id,
-        branchId: currentAppointment.clients?.branch_id || '',
+        branchId: currentAppointment.clients?.branch_id || currentAppointment.branch_id || '',
         action: 'end_visit',
         location: undefined
       };
 
       await bookingAttendance.mutateAsync(attendanceData);
       
-      console.log('Visit completion successful, checking for next booking...');
+      // Step 6: Check for next booking
+      console.log('Step 6: Checking for next scheduled booking...');
+      setCompletionStep('Checking for next client...');
+      setCompletionProgress(95);
       
-      // Query for next scheduled booking for this carer today
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
       const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
       
-      const { data: nextBookings } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          start_time,
-          end_time,
-          status,
-          clients(first_name, last_name)
-        `)
-        .eq('staff_id', user.id)
-        .gte('start_time', todayStart)
-        .lte('start_time', todayEnd)
-        .in('status', ['scheduled', 'confirmed'])
-        .order('start_time', { ascending: true })
-        .limit(1);
-      
-      const nextBooking = nextBookings?.[0];
-      
-      if (nextBooking) {
-        // Show success with option to go to next client
-        const clientName = `${nextBooking.clients?.first_name || ''} ${nextBooking.clients?.last_name || ''}`.trim() || 'Next Client';
-        const startTime = format(new Date(nextBooking.start_time), 'h:mm a');
+      try {
+        const { data: nextBookings } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            start_time,
+            end_time,
+            status,
+            clients(first_name, last_name)
+          `)
+          .eq('staff_id', user.id)
+          .gte('start_time', todayStart)
+          .lte('start_time', todayEnd)
+          .in('status', ['scheduled', 'confirmed'])
+          .order('start_time', { ascending: true })
+          .limit(1);
         
-        toast.success(
-          `Visit completed! Next: ${clientName} at ${startTime}`,
-          {
-            duration: 8000,
-            action: {
-              label: 'Go to Next Client',
-              onClick: () => {
-                navigate(`/carer/visit/${nextBooking.id}`, {
-                  state: { appointment: nextBooking }
-                });
-              }
-            }
-          }
-        );
-        
-        // Auto-navigate to next client after 5 seconds if user doesn't choose
-        setTimeout(() => {
-          navigate(`/carer/visit/${nextBooking.id}`, {
-            state: { appointment: nextBooking }
-          });
-        }, 5000);
-      } else {
-        // No more bookings today, go to dashboard
-        toast.success('Visit completed! No more visits scheduled for today.');
-        
-        setTimeout(() => {
-          navigateToCarerPage("");
-        }, 500);
+        const foundNextBooking = nextBookings?.[0] || null;
+        setNextBooking(foundNextBooking);
+      } catch (nextBookingError) {
+        // Don't fail completion if next booking query fails
+        console.warn('Failed to fetch next booking, continuing with success:', nextBookingError);
+        setNextBooking(null);
       }
+      
+      // Success!
+      console.log('Visit completion successful!');
+      setCompletionProgress(100);
+      setCompletionStep('Complete!');
+      setCompletionStatus('success');
       
     } catch (error: any) {
       console.error('Error completing visit:', error);
       
       // Retry logic for timeout errors
-      if (error?.message?.includes('timeout') && retryCount < 2) {
-        toast.info('Retrying...');
-        await new Promise(r => setTimeout(r, 1000));
+      if ((error?.message?.includes('timeout') || error?.code === '57014') && retryCount < 2) {
+        const delayMs = Math.pow(2, retryCount) * 1500;
+        setCompletionStep(`Database busy, retrying in ${delayMs / 1000}s...`);
+        await new Promise(r => setTimeout(r, delayMs));
+        setShowCompletionModal(false);
         return handleCompleteVisit(retryCount + 1);
       }
       
-      // More specific error handling
+      // Set error state in modal
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      
       if (error instanceof Error || error?.message) {
         const message = error.message || error?.message;
-        if (message.includes('policy')) {
-          toast.error('Permission denied. Please check your access rights.');
-        } else if (message.includes('network')) {
-          toast.error('Network error. Please check your connection and try again.');
+        if (message.includes('policy') || message.includes('permission')) {
+          errorMessage = 'Permission denied. Please check your access rights or contact your administrator.';
+        } else if (message.includes('network') || message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
         } else if (message.includes('timeout')) {
-          toast.error('Request timed out. Please try again.');
+          errorMessage = 'The request timed out. The server may be busy. Please try again.';
         } else {
-          toast.error(`Failed to complete visit: ${message}`);
+          errorMessage = message;
         }
-      } else {
-        toast.error('Failed to complete visit. Please try again.');
       }
+      
+      setCompletionError(errorMessage);
+      setCompletionStatus('error');
     } finally {
       setIsCompletingVisit(false);
     }
@@ -2921,6 +2962,28 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Visit Completion Modal */}
+      <VisitCompletionModal
+        isOpen={showCompletionModal}
+        status={completionStatus}
+        completionStep={completionStep}
+        completionProgress={completionProgress}
+        errorMessage={completionError}
+        nextBooking={nextBooking}
+        onGoToNextClient={handleGoToNextClient}
+        onGoToDashboard={handleGoToDashboard}
+        onRetry={() => {
+          setShowCompletionModal(false);
+          handleCompleteVisit(0);
+        }}
+        onClose={() => {
+          // Only allow closing if not in completing state
+          if (completionStatus !== 'completing') {
+            setShowCompletionModal(false);
+          }
+        }}
+      />
     </div>
   );
 };
