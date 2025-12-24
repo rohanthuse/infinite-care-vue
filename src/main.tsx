@@ -13,7 +13,7 @@ registerSW();
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <UnifiedAuthProvider>
-      <SessionTimeoutProvider timeoutMinutes={10}>
+      <SessionTimeoutProvider timeoutMinutes={30}>
         <App />
       </SessionTimeoutProvider>
     </UnifiedAuthProvider>

@@ -1042,13 +1042,65 @@ const CarerVisitWorkflow = () => {
 
       await bookingAttendance.mutateAsync(attendanceData);
       
-      console.log('Visit completion successful, navigating...');
-      toast.success('Visit and service report completed successfully!');
+      console.log('Visit completion successful, checking for next booking...');
       
-      // Delay navigation slightly to ensure all operations complete
-      setTimeout(() => {
-        navigateToCarerPage("");
-      }, 500);
+      // Query for next scheduled booking for this carer today
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
+      
+      const { data: nextBookings } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          status,
+          clients(first_name, last_name)
+        `)
+        .eq('staff_id', user.id)
+        .gte('start_time', todayStart)
+        .lte('start_time', todayEnd)
+        .in('status', ['scheduled', 'confirmed'])
+        .order('start_time', { ascending: true })
+        .limit(1);
+      
+      const nextBooking = nextBookings?.[0];
+      
+      if (nextBooking) {
+        // Show success with option to go to next client
+        const clientName = `${nextBooking.clients?.first_name || ''} ${nextBooking.clients?.last_name || ''}`.trim() || 'Next Client';
+        const startTime = format(new Date(nextBooking.start_time), 'h:mm a');
+        
+        toast.success(
+          `Visit completed! Next: ${clientName} at ${startTime}`,
+          {
+            duration: 8000,
+            action: {
+              label: 'Go to Next Client',
+              onClick: () => {
+                navigate(`/carer/visit/${nextBooking.id}`, {
+                  state: { appointment: nextBooking }
+                });
+              }
+            }
+          }
+        );
+        
+        // Auto-navigate to next client after 5 seconds if user doesn't choose
+        setTimeout(() => {
+          navigate(`/carer/visit/${nextBooking.id}`, {
+            state: { appointment: nextBooking }
+          });
+        }, 5000);
+      } else {
+        // No more bookings today, go to dashboard
+        toast.success('Visit completed! No more visits scheduled for today.');
+        
+        setTimeout(() => {
+          navigateToCarerPage("");
+        }, 500);
+      }
       
     } catch (error: any) {
       console.error('Error completing visit:', error);
@@ -2628,9 +2680,11 @@ const CarerVisitWorkflow = () => {
                     
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Carer Signature</Label>
+                        <Label className="text-sm font-medium text-gray-700">
+                          Carer Signature <span className="text-red-500 font-semibold">(Required)</span>
+                        </Label>
                         <p className="text-sm text-gray-500 mb-3">
-                          Sign below to confirm the completion of the visit
+                          Your signature is required to complete the visit
                         </p>
                           <div className="border rounded-lg p-2">
                             <SignatureCanvas
