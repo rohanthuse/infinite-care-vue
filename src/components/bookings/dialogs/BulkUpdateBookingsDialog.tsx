@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   CheckCircle2
 } from "lucide-react";
+import { StaffMultiSelect } from "@/components/ui/staff-multi-select";
+import type { EnhancedStaff } from "@/hooks/useSearchableStaff";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { 
@@ -94,7 +96,8 @@ export function BulkUpdateBookingsDialog({
 
   // Update options state
   const [updateCarer, setUpdateCarer] = useState(false);
-  const [selectedCarerId, setSelectedCarerId] = useState<string>("");
+  const [selectedCarerIds, setSelectedCarerIds] = useState<string[]>([]);
+  const [selectedCarerData, setSelectedCarerData] = useState<EnhancedStaff[]>([]);
   const [updateTime, setUpdateTime] = useState(false);
   const [newStartTime, setNewStartTime] = useState<string>("09:00");
   const [newEndTime, setNewEndTime] = useState<string>("10:00");
@@ -112,7 +115,8 @@ export function BulkUpdateBookingsDialog({
       setSelectedBookingIds([]);
       setHasFetched(false);
       setUpdateCarer(false);
-      setSelectedCarerId("");
+      setSelectedCarerIds([]);
+      setSelectedCarerData([]);
       setUpdateTime(false);
       setNewStartTime("09:00");
       setNewEndTime("10:00");
@@ -224,7 +228,7 @@ export function BulkUpdateBookingsDialog({
 
   const hasAnyUpdateOption = updateCarer || updateTime || updateStatus;
   const isValidUpdate = hasAnyUpdateOption && (
-    (!updateCarer || selectedCarerId) &&
+    (!updateCarer || selectedCarerIds.length > 0) &&
     (!updateTime || (newStartTime && newEndTime)) &&
     (!updateStatus || newStatus)
   );
@@ -233,9 +237,65 @@ export function BulkUpdateBookingsDialog({
     if (selectedBookingIds.length === 0 || !isValidUpdate) return;
 
     try {
-      // If updating time, we need to handle each booking individually to preserve dates
-      if (updateTime && newStartTime && newEndTime) {
-        // Update bookings one by one with their preserved dates
+      // Handle multi-carer assignments - need to create booking records for each carer
+      if (updateCarer && selectedCarerIds.length > 0) {
+        for (const booking of selectedBookings) {
+          const bookingDate = format(parseISO(booking.start_time), 'yyyy-MM-dd');
+          
+          // For the first carer, update the existing booking
+          const firstCarerId = selectedCarerIds[0];
+          const updateData: Record<string, string> = {};
+          
+          if (updateTime && newStartTime && newEndTime) {
+            updateData.start_time = `${bookingDate}T${newStartTime}:00`;
+            updateData.end_time = `${bookingDate}T${newEndTime}:00`;
+          }
+          
+          updateData.staff_id = firstCarerId;
+          
+          if (updateStatus && newStatus) {
+            updateData.status = newStatus;
+          }
+          
+          await supabase
+            .from('bookings')
+            .update(updateData)
+            .eq('id', booking.id);
+          
+          // For additional carers, create new booking records (duplicates with different staff_id)
+          if (selectedCarerIds.length > 1) {
+            const additionalCarerIds = selectedCarerIds.slice(1);
+            
+            for (const carerId of additionalCarerIds) {
+              const newBooking = {
+                branch_id: branchId,
+                client_id: booking.client_id,
+                staff_id: carerId,
+                start_time: updateTime && newStartTime 
+                  ? `${bookingDate}T${newStartTime}:00` 
+                  : booking.start_time,
+                end_time: updateTime && newEndTime 
+                  ? `${bookingDate}T${newEndTime}:00` 
+                  : booking.end_time,
+                status: updateStatus && newStatus ? newStatus : booking.status,
+                notes: null,
+              };
+              
+              await supabase.from('bookings').insert(newBooking);
+            }
+          }
+        }
+        
+        // Trigger refetch
+        await updateMultipleBookings.mutateAsync({
+          bookingIds: [],
+          bookings: [],
+          updatedData: {}
+        }).catch(() => {
+          // Empty call just to trigger refetch
+        });
+      } else if (updateTime && newStartTime && newEndTime) {
+        // Time-only updates (no carer change)
         for (const booking of selectedBookings) {
           const bookingDate = format(parseISO(booking.start_time), 'yyyy-MM-dd');
           
@@ -243,10 +303,6 @@ export function BulkUpdateBookingsDialog({
             start_time: `${bookingDate}T${newStartTime}:00`,
             end_time: `${bookingDate}T${newEndTime}:00`,
           };
-          
-          if (updateCarer && selectedCarerId) {
-            updateData.staff_id = selectedCarerId;
-          }
           
           if (updateStatus && newStatus) {
             updateData.status = newStatus;
@@ -258,7 +314,7 @@ export function BulkUpdateBookingsDialog({
             .eq('id', booking.id);
         }
         
-        // Manually trigger refetch since we bypassed the hook
+        // Trigger refetch
         await updateMultipleBookings.mutateAsync({
           bookingIds: [],
           bookings: [],
@@ -267,12 +323,8 @@ export function BulkUpdateBookingsDialog({
           // Empty call just to trigger refetch
         });
       } else {
-        // Use bulk update for carer/status only changes
-        const updatedData: { staff_id?: string; status?: string } = {};
-        
-        if (updateCarer && selectedCarerId) {
-          updatedData.staff_id = selectedCarerId;
-        }
+        // Status-only changes
+        const updatedData: { status?: string } = {};
         
         if (updateStatus && newStatus) {
           updatedData.status = newStatus;
@@ -529,19 +581,23 @@ export function BulkUpdateBookingsDialog({
                       Update Assigned Carer
                     </Label>
                   </div>
-                  {updateCarer && (
-                    <Select value={selectedCarerId} onValueChange={setSelectedCarerId}>
-                      <SelectTrigger className="ml-6">
-                        <SelectValue placeholder="Select a carer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {carerOptions.map((carer) => (
-                          <SelectItem key={carer.id} value={carer.id}>
-                            {carer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {updateCarer && (
+                    <div className="ml-6">
+                      <StaffMultiSelect
+                        branchId={branchId}
+                        selectedIds={selectedCarerIds}
+                        onChange={(ids, staffData) => {
+                          setSelectedCarerIds(ids);
+                          setSelectedCarerData(staffData);
+                        }}
+                        placeholder="Select carers..."
+                      />
+                      {selectedCarerIds.length > 1 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {selectedCarerIds.length} carers selected - a separate booking will be created for each carer
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
