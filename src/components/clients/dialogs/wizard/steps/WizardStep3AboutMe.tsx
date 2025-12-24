@@ -12,8 +12,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { YesNoToggle } from "@/components/care/forms/YesNoToggle";
 import { Home, Accessibility, FileText, Heart } from "lucide-react";
+
+const COMMUNICATION_METHOD_OPTIONS = [
+  { value: 'verbal', label: 'Verbal' },
+  { value: 'non_verbal', label: 'Non-Verbal' },
+  { value: 'sign_language', label: 'Sign Language' },
+  { value: 'picture_symbol', label: 'Picture/Symbol Communication' },
+  { value: 'written', label: 'Written Communication' },
+  { value: 'makaton', label: 'Makaton' },
+  { value: 'others', label: 'Others' },
+];
 
 interface WizardStep3AboutMeProps {
   form: UseFormReturn<any>;
@@ -38,8 +50,6 @@ const LIVING_ARRANGEMENT_OPTIONS = [
 ];
 
 export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
-  const watchVisuallyImpaired = form.watch("about_me.is_visually_impaired");
-  const watchHearingImpaired = form.watch("about_me.is_hearing_impaired");
 
   return (
     <div className="space-y-6">
@@ -151,86 +161,142 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                 My Accessibility and Communication
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="about_me.is_visually_impaired"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Are you blind or partially sighted?</FormLabel>
-                        <FormControl>
-                          <YesNoToggle
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {watchVisuallyImpaired && (
-                    <FormField
-                      control={form.control}
-                      name="about_me.vision_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Vision Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe vision condition and needs..."
-                              className="min-h-[80px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            <CardContent className="space-y-6">
+              {/* Vision Impairment - Yes/No/Unknown */}
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="about_me.is_visually_impaired"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Are you blind or partially sighted?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="vision-yes" />
+                            <Label htmlFor="vision-yes" className="cursor-pointer">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="vision-no" />
+                            <Label htmlFor="vision-no" className="cursor-pointer">No</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="unknown" id="vision-unknown" />
+                            <Label htmlFor="vision-unknown" className="cursor-pointer">Unknown</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="about_me.is_hearing_impaired"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Are you deaf or hard of hearing?</FormLabel>
-                        <FormControl>
-                          <YesNoToggle
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {watchHearingImpaired && (
-                    <FormField
-                      control={form.control}
-                      name="about_me.hearing_description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hearing Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe hearing condition and needs..."
-                              className="min-h-[80px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="about_me.vision_description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vision Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe vision condition and needs..."
+                          className="min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
               </div>
+
+              {/* Hearing Impairment - Yes/No/Unknown */}
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="about_me.is_hearing_impaired"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Are you deaf or hard of hearing?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="hearing-yes" />
+                            <Label htmlFor="hearing-yes" className="cursor-pointer">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="hearing-no" />
+                            <Label htmlFor="hearing-no" className="cursor-pointer">No</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="unknown" id="hearing-unknown" />
+                            <Label htmlFor="hearing-unknown" className="cursor-pointer">Unknown</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="about_me.hearing_description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hearing Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe hearing condition and needs..."
+                          className="min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Interpreter Requirement - Yes/No/Unknown */}
+              <FormField
+                control={form.control}
+                name="about_me.requires_interpreter"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you need an interpreter to communicate effectively?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value || ""}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="interpreter-yes" />
+                          <Label htmlFor="interpreter-yes" className="cursor-pointer">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="interpreter-no" />
+                          <Label htmlFor="interpreter-no" className="cursor-pointer">No</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="unknown" id="interpreter-unknown" />
+                          <Label htmlFor="interpreter-unknown" className="cursor-pointer">Unknown</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -249,19 +315,27 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                 )}
               />
 
+              {/* Communication Needs - Dropdown */}
               <FormField
                 control={form.control}
                 name="about_me.communication_needs"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Communication Needs</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Specific communication requirements..."
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select communication method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {COMMUNICATION_METHOD_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -275,7 +349,25 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                     <FormLabel>How I Communicate</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Preferred communication methods..."
+                        placeholder="Describe how you communicate..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.how_to_communicate_with_me"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How to Communicate with Me</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Guidance on how others should communicate with you..."
                         className="min-h-[80px]"
                         {...field} 
                       />

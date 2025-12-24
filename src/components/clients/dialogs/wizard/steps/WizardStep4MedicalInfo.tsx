@@ -175,18 +175,8 @@ export function WizardStep4MedicalInfo({
     const current = form.getValues("medical_info.allergies") || [];
     form.setValue("medical_info.allergies", current.filter((_, i) => i !== index));
   };
-  const addSensoryImpairment = () => {
-    const current = form.getValues("medical_info.sensory_impairments") || [];
-    form.setValue("medical_info.sensory_impairments", [...current, ""]);
-  };
-  const removeSensoryImpairment = (index: number) => {
-    const current = form.getValues("medical_info.sensory_impairments") || [];
-    form.setValue("medical_info.sensory_impairments", current.filter((_, i) => i !== index));
-  };
-
   const medications = form.watch("medical_info.current_medications") || [];
   const allergies = form.watch("medical_info.allergies") || [];
-  const sensoryImpairments = form.watch("medical_info.sensory_impairments") || [];
   const selectedDiagnoses = form.watch("medical_info.medical_conditions") || [];
 
   // Map diagnosis data to MultiSelect format
@@ -383,29 +373,6 @@ export function WizardStep4MedicalInfo({
                   </FormItem>} />
           </div>
 
-          {/* Sensory Impairments */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <FormLabel className="text-base font-medium">Sensory Impairments</FormLabel>
-              <Button type="button" onClick={addSensoryImpairment} size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Impairment
-              </Button>
-            </div>
-            {sensoryImpairments.map((_, index) => <div key={index} className="flex items-center gap-2">
-                <FormField control={form.control} name={`medical_info.sensory_impairments.${index}`} render={({
-              field
-            }) => <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="Enter sensory impairment" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                <Button type="button" onClick={() => removeSensoryImpairment(index)} size="sm" variant="outline">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>)}
-          </div>
 
           {/* Mental Health Status */}
           <FormField control={form.control} name="medical_info.mental_health_status" render={({
