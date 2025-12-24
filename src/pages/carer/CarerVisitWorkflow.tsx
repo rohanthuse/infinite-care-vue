@@ -1254,50 +1254,50 @@ const CarerVisitWorkflow = () => {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "urgent":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Urgent</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700">Urgent</Badge>;
       case "high":
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">High</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700">High</Badge>;
       case "medium":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Medium</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700">Medium</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Low</Badge>;
+        return <Badge className="bg-muted text-muted-foreground border-border">Low</Badge>;
     }
   };
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case "accident":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Accident</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700">Accident</Badge>;
       case "incident":
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Incident</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700">Incident</Badge>;
       case "near_miss":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Near Miss</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700">Near Miss</Badge>;
       case "medication_error":
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Medication Error</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700">Medication Error</Badge>;
       case "compliment":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Compliment</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700">Compliment</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Other</Badge>;
+        return <Badge className="bg-muted text-muted-foreground border-border">Other</Badge>;
     }
   };
 
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
+      <div className="bg-card border-b border-border px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => isViewOnly ? navigateToCarerPage("") : navigate(-1)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              className="p-2 hover:bg-muted rounded-lg"
             >
               <PanelLeftClose className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-foreground">
                 {isViewOnly ? "Visit Summary - " : "Visit with "}{currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {format(new Date(currentAppointment.start_time), "EEEE, MMMM d, yyyy 'at' h:mm a")}
               </p>
             </div>
@@ -1306,8 +1306,8 @@ const CarerVisitWorkflow = () => {
           {!isViewOnly ? (
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">{formatTime(visitTimer)}</div>
-                <div className="text-xs text-gray-500">Visit Duration</div>
+                <div className="text-sm font-medium text-foreground">{formatTime(visitTimer)}</div>
+                <div className="text-xs text-muted-foreground">Visit Duration</div>
               </div>
               <Button
                 onClick={handlePauseVisit}
@@ -1322,8 +1322,8 @@ const CarerVisitWorkflow = () => {
           ) : (
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-sm font-medium text-green-700">Visit Completed</div>
-                <div className="text-xs text-gray-500">
+                <div className="text-sm font-medium text-green-700 dark:text-green-400">Visit Completed</div>
+                <div className="text-xs text-muted-foreground">
                   Duration: {visitRecord?.actual_duration_minutes ? 
                     `${Math.floor(visitRecord.actual_duration_minutes / 60)}h ${visitRecord.actual_duration_minutes % 60}m` : 
                     formatTime(visitTimer)
@@ -1338,8 +1338,8 @@ const CarerVisitWorkflow = () => {
         {!isViewOnly && (
           <div className="max-w-4xl mx-auto mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Progress</span>
-              <span className="text-sm text-gray-500">{Math.round((currentStep / 11) * 100)}% complete</span>
+              <span className="text-sm font-medium text-foreground">Progress</span>
+              <span className="text-sm text-muted-foreground">{Math.round((currentStep / 11) * 100)}% complete</span>
             </div>
             <Progress value={(currentStep / 11) * 100} className="h-2" />
           </div>
@@ -1499,19 +1499,19 @@ const CarerVisitWorkflow = () => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Client Information</Label>
-                    <div className="p-3 bg-gray-50 rounded-lg space-y-1">
+                    <Label className="text-sm font-medium text-foreground">Client Information</Label>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
                       <p className="font-medium">{currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}</p>
-                      <p className="text-sm text-gray-600">{currentAppointment.clients?.phone}</p>
-                      <p className="text-sm text-gray-600">{currentAppointment.clients?.address}</p>
+                      <p className="text-sm text-muted-foreground">{currentAppointment.clients?.phone}</p>
+                      <p className="text-sm text-muted-foreground">{currentAppointment.clients?.address}</p>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Service Details</Label>
-                    <div className="p-3 bg-gray-50 rounded-lg space-y-1">
+                    <Label className="text-sm font-medium text-foreground">Service Details</Label>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
                       <p className="font-medium">{currentAppointment.services?.title}</p>
-                      <p className="text-sm text-gray-600">{currentAppointment.services?.description}</p>
+                      <p className="text-sm text-muted-foreground">{currentAppointment.services?.description}</p>
                     </div>
                   </div>
                 </div>
@@ -1519,12 +1519,12 @@ const CarerVisitWorkflow = () => {
                 {!visitStarted && !isViewOnly ? (
                   <div className="text-center py-8">
                     <div className="space-y-4">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                        <Clock className="w-8 h-8 text-blue-600" />
+                      <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto">
+                        <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">Ready to start your visit?</h3>
-                        <p className="text-gray-600 mt-1">Click the button below to begin the visit timer and workflow.</p>
+                        <h3 className="text-lg font-medium text-foreground">Ready to start your visit?</h3>
+                        <p className="text-muted-foreground mt-1">Click the button below to begin the visit timer and workflow.</p>
                       </div>
                       <Button onClick={handleStartVisit} size="lg" className="mt-4">
                         <UserCheck className="w-5 h-5 mr-2" />
@@ -1535,12 +1535,12 @@ const CarerVisitWorkflow = () => {
                 ) : isViewOnly ? (
                   <div className="text-center py-8">
                     <div className="space-y-4">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">Visit Completed</h3>
-                        <p className="text-gray-600 mt-1">This visit has been completed and archived.</p>
+                        <h3 className="text-lg font-medium text-foreground">Visit Completed</h3>
+                        <p className="text-muted-foreground mt-1">This visit has been completed and archived.</p>
                         {visitRecord?.actual_duration_minutes && (
                           <p className="text-lg font-mono text-blue-600 mt-2">
                             Duration: {Math.floor(visitRecord.actual_duration_minutes / 60)}h {visitRecord.actual_duration_minutes % 60}m
@@ -1552,13 +1552,13 @@ const CarerVisitWorkflow = () => {
                 ) : (
                   <div className="text-center py-8">
                     <div className="space-y-4">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">Visit in progress</h3>
-                        <p className="text-gray-600 mt-1">Visit started at {format(new Date(), "h:mm a")}</p>
-                        <p className="text-lg font-mono text-blue-600 mt-2">{formatTime(visitTimer)}</p>
+                        <h3 className="text-lg font-medium text-foreground">Visit in progress</h3>
+                        <p className="text-muted-foreground mt-1">Visit started at {format(new Date(), "h:mm a")}</p>
+                        <p className="text-lg font-mono text-blue-600 dark:text-blue-400 mt-2">{formatTime(visitTimer)}</p>
                       </div>
                     </div>
                   </div>
@@ -1591,7 +1591,7 @@ const CarerVisitWorkflow = () => {
                 <div className="space-y-6">
                   {/* Assigned Tasks from Admin/Staff */}
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Assigned Tasks (Admin/Staff)</h3>
+                    <h3 className="text-lg font-medium text-foreground mb-3">Assigned Tasks (Admin/Staff)</h3>
                     {carerTasksLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
