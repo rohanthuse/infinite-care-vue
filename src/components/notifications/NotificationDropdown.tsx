@@ -80,19 +80,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     try {
       switch (priority) {
         case 'urgent':
-          return 'border-l-red-500 bg-red-50 dark:bg-red-950/50';
+          return 'border-l-red-500 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/60';
         case 'high':
-          return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/50';
+          return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 dark:hover:bg-orange-900/60';
         case 'medium':
-          return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/50';
+          return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60';
         case 'low':
-          return 'border-l-gray-500 bg-gray-50 dark:bg-gray-800/50';
+          return 'border-l-gray-500 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/60';
         default:
-          return 'border-l-gray-300 dark:border-l-gray-600';
+          return 'border-l-gray-300 dark:border-l-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800/60';
       }
     } catch (error) {
       console.warn('Error getting priority color:', error);
-      return 'border-l-gray-300 dark:border-l-gray-600';
+      return 'border-l-gray-300 dark:border-l-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800/60';
     }
   };
 
@@ -316,7 +316,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-accent/50 dark:hover:bg-accent/30 transition-colors"
                   onClick={onViewAll}
                 >
                   View all notifications
@@ -328,7 +328,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   <DropdownMenuItem
                     key={notification.id}
                     className={cn(
-                      "flex items-start gap-3 p-3 cursor-pointer border-l-4",
+                      "flex items-start gap-3 p-3 cursor-pointer border-l-4 transition-colors",
                       getPriorityColor(notification.priority),
                       !notification.read_at && "bg-opacity-75"
                     )}
@@ -356,7 +356,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-accent/50 dark:hover:bg-accent/30 transition-colors"
                   onClick={onViewAll}
                 >
                   View all notifications
