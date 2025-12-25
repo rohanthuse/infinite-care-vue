@@ -145,16 +145,16 @@ const ClientAppointments = () => {
       case 'confirmed':
       case 'scheduled':
       case 'assigned':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
       case 'completed':
       case 'done':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -303,7 +303,7 @@ const ClientAppointments = () => {
                           }
                         />
                       </div>
-                      <div className="flex items-center text-gray-600 mt-1">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400 mt-1">
                         <User className="h-4 w-4 mr-1" />
                         <span className="text-sm">{appointment.provider_name}</span>
                       </div>
@@ -315,32 +315,32 @@ const ClientAppointments = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <Clock className="h-4 w-4 mr-2" />
                       <span>{appointment.appointment_time}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span>{appointment.location}</span>
                     </div>
                   </div>
                   
                   {appointment.notes && (
-                    <div className="mb-4 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
-                      <p className="text-sm text-gray-700">{appointment.notes}</p>
+                    <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded border-l-4 border-blue-200 dark:border-blue-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{appointment.notes}</p>
                     </div>
                   )}
 
                   {/* Request Status Alerts */}
                   {appointment.cancellation_request_status === 'pending' && (
                     <div className="mb-3">
-                      <Alert className="bg-orange-50 border-orange-200">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        <AlertDescription className="text-orange-800 text-sm">
+                      <Alert className="bg-orange-50 dark:bg-orange-950/50 border-orange-200 dark:border-orange-800">
+                        <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <AlertDescription className="text-orange-800 dark:text-orange-300 text-sm">
                           <strong>Cancellation request already submitted</strong> — awaiting admin approval.
                           You will be notified once the admin reviews your request.
                         </AlertDescription>
@@ -350,9 +350,9 @@ const ClientAppointments = () => {
 
                   {appointment.reschedule_request_status === 'pending' && (
                     <div className="mb-3">
-                      <Alert className="bg-blue-50 border-blue-200">
-                        <AlertCircle className="h-4 w-4 text-blue-600" />
-                        <AlertDescription className="text-blue-800 text-sm">
+                      <Alert className="bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
+                        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
                           <strong>Reschedule request already submitted</strong> — awaiting admin approval.
                           You will be notified once the admin reviews your request.
                         </AlertDescription>
@@ -362,9 +362,9 @@ const ClientAppointments = () => {
 
                   {appointment.cancellation_request_status === 'rejected' && (
                     <div className="mb-3">
-                      <Alert className="bg-red-50 border-red-200">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <AlertDescription className="text-red-800 text-sm">
+                      <Alert className="bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <AlertDescription className="text-red-800 dark:text-red-300 text-sm">
                           Your cancellation request was rejected by the admin. You can submit a new request if needed.
                         </AlertDescription>
                       </Alert>
@@ -373,9 +373,9 @@ const ClientAppointments = () => {
 
                   {appointment.reschedule_request_status === 'rejected' && (
                     <div className="mb-3">
-                      <Alert className="bg-red-50 border-red-200">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <AlertDescription className="text-red-800 text-sm">
+                      <Alert className="bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <AlertDescription className="text-red-800 dark:text-red-300 text-sm">
                           Your reschedule request was rejected by the admin. You can submit a new request if needed.
                         </AlertDescription>
                       </Alert>
@@ -383,7 +383,7 @@ const ClientAppointments = () => {
                   )}
 
                   {/* Action Buttons - Only show if no pending requests */}
-                  <div className="pt-3 border-t border-gray-100">
+                  <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
                     {!appointment.cancellation_request_status && 
                      !appointment.reschedule_request_status ? (
                       <div className="grid grid-cols-2 gap-2">
@@ -430,8 +430,8 @@ const ClientAppointments = () => {
       </div>
 
       {/* Past Appointments */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">Past Appointments</h2>
+      <div className="bg-white dark:bg-card p-6 rounded-xl border border-gray-200 dark:border-border">
+        <h2 className="text-xl font-bold mb-6 text-foreground">Past Appointments</h2>
         
         {completedAppointments.length > 0 ? (
           <div className="grid gap-4">
@@ -506,7 +506,7 @@ const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, for
                 <Badge variant="outline" className="text-xs">Care Service</Badge>
               )}
             </div>
-            <div className="flex items-center text-gray-600 mt-1">
+            <div className="flex items-center text-gray-600 dark:text-gray-400 mt-1">
               <User className="h-4 w-4 mr-1" />
               <span className="text-sm">{appointment.provider_name}</span>
             </div>
@@ -520,28 +520,28 @@ const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, for
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-gray-600 dark:text-gray-400">
             <Calendar className="h-4 w-4 mr-2" />
             <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
           </div>
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-gray-600 dark:text-gray-400">
             <Clock className="h-4 w-4 mr-2" />
             <span>{appointment.appointment_time}</span>
           </div>
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-gray-600 dark:text-gray-400">
             <MapPin className="h-4 w-4 mr-2" />
             <span>{appointment.location}</span>
           </div>
         </div>
         
         {appointment.notes && (
-          <div className="mb-4 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
-            <p className="text-sm text-gray-700">{appointment.notes}</p>
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded border-l-4 border-blue-200 dark:border-blue-700">
+            <p className="text-sm text-gray-700 dark:text-gray-300">{appointment.notes}</p>
           </div>
         )}
 
         {/* Review Section */}
-        <div className="pt-3 border-t border-gray-100">
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
           {existingReview ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center text-green-600">
