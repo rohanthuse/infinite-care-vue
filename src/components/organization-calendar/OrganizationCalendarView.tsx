@@ -37,7 +37,7 @@ import { ViewTrainingDialog } from './ViewTrainingDialog';
 import { EditTrainingDialog } from './EditTrainingDialog';
 import { useDeleteClientAppointment } from '@/hooks/useClientAppointments';
 import { useDeleteTraining } from '@/hooks/useTrainingCalendar';
-import { BranchCombobox } from './BranchCombobox';
+
 import { CalendarExportDialog } from './CalendarExportDialog';
 import { CalendarShareDialog } from './CalendarShareDialog';
 import { DeleteEventDialog } from './DeleteEventDialog';
@@ -803,12 +803,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search events..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
-
-              {/* Branch Filter */}
-              <BranchCombobox branches={branches?.map(branch => ({
-                value: branch.id,
-                label: branch.name
-              })) || []} value={selectedBranch} onValueChange={setSelectedBranch} placeholder="All Branches" />
 
               {/* Event Type Filter */}
               <Select value={selectedEventType} onValueChange={setSelectedEventType}>
