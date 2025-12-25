@@ -56,32 +56,30 @@ export const ActiveVisitsSection: React.FC = () => {
               const durationMinutes = differenceInMinutes(new Date(), startTime);
               
               return (
-                <div key={visit.id} className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg bg-blue-50/30 dark:bg-blue-950/20 border-l-4 border-l-blue-500">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <User className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-foreground truncate">{visit.client_name}</span>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0 text-xs">
-                          In Progress
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>{durationMinutes}m elapsed</span>
-                        </div>
-                        <span className="truncate">{visit.service_name}</span>
-                      </div>
-                    </div>
+              <div key={visit.id} className="flex flex-col gap-3 p-4 border border-border rounded-lg bg-blue-50/30 dark:bg-blue-950/20 border-l-4 border-l-blue-500">
+                  {/* Header: Icon + Name + Badge */}
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium text-foreground truncate flex-1">{visit.client_name}</span>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0 text-xs flex-shrink-0">
+                      In Progress
+                    </Badge>
                   </div>
-
+                  
+                  {/* Details: Time + Service */}
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{durationMinutes}m elapsed</span>
+                    </div>
+                    <span className="truncate">{visit.service_name}</span>
+                  </div>
+                  
+                  {/* Action: Continue Button */}
                   <Button 
                     onClick={() => handleContinueVisit(visit.booking_id)} 
                     size="sm"
-                    className="shrink-0"
+                    className="w-full"
                   >
                     Continue
                     <ArrowRight className="h-4 w-4 ml-1" />
