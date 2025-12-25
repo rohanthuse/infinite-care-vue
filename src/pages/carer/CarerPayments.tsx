@@ -221,12 +221,12 @@ const CarerPayments: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      paid: 'bg-success/10 text-success',
-      approved: 'bg-success/10 text-success',
-      pending: 'bg-warning/10 text-warning',
-      rejected: 'bg-destructive/10 text-destructive',
+      paid: 'bg-green-500 text-white dark:bg-green-600',
+      approved: 'bg-green-500 text-white dark:bg-green-600',
+      pending: 'bg-yellow-500 text-white dark:bg-yellow-600',
+      rejected: 'bg-red-500 text-white dark:bg-red-600',
     } as const;
-    return <Badge variant="secondary" className={variants[status as keyof typeof variants] || variants.pending}>{status}</Badge>;
+    return <Badge variant="custom" className={variants[status as keyof typeof variants] || variants.pending}>{status}</Badge>;
   };
 
   const statusOptions = [
