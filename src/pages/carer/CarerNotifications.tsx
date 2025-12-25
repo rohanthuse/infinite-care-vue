@@ -255,11 +255,17 @@ export default function CarerNotifications() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{assignment.title}</p>
-                          <Badge variant={
-                            assignment.severity === 'high' || assignment.severity === 'critical' 
-                              ? 'destructive' 
-                              : 'secondary'
-                          } className="text-xs">
+                          <Badge 
+                            variant="custom" 
+                            className={cn(
+                              "text-xs",
+                              (assignment.severity === 'high' || assignment.severity === 'critical') 
+                                ? "bg-red-500 text-white dark:bg-red-600"
+                                : assignment.severity === 'medium'
+                                ? "bg-orange-500 text-white dark:bg-orange-600"
+                                : "bg-blue-500 text-white dark:bg-blue-600"
+                            )}
+                          >
                             {assignment.severity}
                           </Badge>
                         </div>
@@ -346,7 +352,19 @@ export default function CarerNotifications() {
                           {!notification.read_at && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
                           )}
-                          <Badge variant={notification.priority === 'urgent' ? 'destructive' : 'secondary'} className="text-xs">
+                          <Badge 
+                            variant="custom" 
+                            className={cn(
+                              "text-xs",
+                              notification.priority === 'urgent' 
+                                ? "bg-red-500 text-white dark:bg-red-600"
+                                : notification.priority === 'high'
+                                ? "bg-orange-500 text-white dark:bg-orange-600"
+                                : notification.priority === 'medium'
+                                ? "bg-blue-500 text-white dark:bg-blue-600"
+                                : "bg-gray-500 text-white dark:bg-gray-600"
+                            )}
+                          >
                             {notification.priority}
                           </Badge>
                         </div>
