@@ -130,7 +130,9 @@ const PastAppointmentCard: React.FC<PastAppointmentCardProps> = ({
                   ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700' 
                   : isMissed 
                     ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' 
-                    : ''
+                    : appointment.status === 'in_progress'
+                      ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700'
+                      : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
               }
             >
               {isCompleted ? 'Completed' : isMissed ? 'Missed' : appointment.status || 'Unknown'}
