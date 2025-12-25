@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar, MessageCircle, FileText } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
@@ -65,13 +66,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         case 'message':
           return <MessageCircle className={cn(iconClass, 'text-blue-500')} />;
         case 'system':
-          return <AlertTriangle className={cn(iconClass, category === 'error' ? 'text-red-500' : 'text-gray-500')} />;
+          return <AlertTriangle className={cn(iconClass, category === 'error' ? 'text-red-500' : 'text-muted-foreground')} />;
         default:
-          return <Bell className={cn(iconClass, 'text-gray-500')} />;
+          return <Bell className={cn(iconClass, 'text-muted-foreground')} />;
       }
     } catch (error) {
       console.warn('Error rendering notification icon:', error);
-      return <Bell className={cn(iconClass, 'text-gray-500')} />;
+      return <Bell className={cn(iconClass, 'text-muted-foreground')} />;
     }
   };
 
@@ -79,19 +80,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     try {
       switch (priority) {
         case 'urgent':
-          return 'border-l-red-500 bg-red-50';
+          return 'border-l-red-500 bg-red-50 dark:bg-red-950/50';
         case 'high':
-          return 'border-l-orange-500 bg-orange-50';
+          return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/50';
         case 'medium':
-          return 'border-l-blue-500 bg-blue-50';
+          return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/50';
         case 'low':
-          return 'border-l-gray-500 bg-gray-50';
+          return 'border-l-gray-500 bg-gray-50 dark:bg-gray-800/50';
         default:
-          return 'border-l-gray-300';
+          return 'border-l-gray-300 dark:border-l-gray-600';
       }
     } catch (error) {
       console.warn('Error getting priority color:', error);
-      return 'border-l-gray-300';
+      return 'border-l-gray-300 dark:border-l-gray-600';
     }
   };
 
@@ -290,7 +291,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] sm:w-80 max-h-[70vh] overflow-y-auto" sideOffset={8}>
+        <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] sm:w-80" sideOffset={8}>
           <DropdownMenuLabel className="flex items-center justify-between">
             <span>Notifications</span>
             {stats && stats.unread_count > 0 && (
@@ -307,60 +308,62 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           
-          {recentNotifications.length === 0 ? (
-            <>
-              <div className="p-4 text-center text-gray-500 text-sm">
-                No notifications yet
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-center justify-center text-blue-600 hover:text-blue-700"
-                onClick={onViewAll}
-              >
-                View all notifications
-              </DropdownMenuItem>
-            </>
-          ) : (
-            <>
-              {recentNotifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className={cn(
-                    "flex items-start gap-3 p-3 cursor-pointer border-l-4",
-                    getPriorityColor(notification.priority),
-                    !notification.read_at && "bg-opacity-75"
-                  )}
-                  onClick={() => handleNotificationClick(notification)}
+          <ScrollArea className="max-h-[60vh]">
+            {recentNotifications.length === 0 ? (
+              <>
+                <div className="p-4 text-center text-muted-foreground text-sm">
+                  No notifications yet
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  onClick={onViewAll}
                 >
-                  <div className="flex-shrink-0 mt-0.5">
-                    {getIcon(notification.type, notification.category, notification)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm truncate">{notification.title}</p>
-                      {!notification.read_at && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2" />
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Clock className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-500">
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </div>
+                  View all notifications
                 </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-center justify-center text-blue-600 hover:text-blue-700"
-                onClick={onViewAll}
-              >
-                View all notifications
-              </DropdownMenuItem>
-            </>
-          )}
+              </>
+            ) : (
+              <>
+                {recentNotifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className={cn(
+                      "flex items-start gap-3 p-3 cursor-pointer border-l-4",
+                      getPriorityColor(notification.priority),
+                      !notification.read_at && "bg-opacity-75"
+                    )}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getIcon(notification.type, notification.category, notification)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-sm truncate">{notification.title}</p>
+                        {!notification.read_at && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notification.message}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Clock className="h-3 w-3 text-muted-foreground/70" />
+                        <span className="text-xs text-muted-foreground/80">
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  onClick={onViewAll}
+                >
+                  View all notifications
+                </DropdownMenuItem>
+              </>
+            )}
+          </ScrollArea>
         </DropdownMenuContent>
       </DropdownMenu>
     </ErrorBoundary>
