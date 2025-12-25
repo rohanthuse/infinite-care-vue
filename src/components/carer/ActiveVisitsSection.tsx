@@ -61,7 +61,7 @@ export const ActiveVisitsSection: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium text-foreground truncate flex-1">{visit.client_name}</span>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0 text-xs flex-shrink-0">
+                    <Badge variant="custom" className="bg-blue-100 text-blue-700 dark:bg-blue-500 dark:text-white text-xs flex-shrink-0">
                       In Progress
                     </Badge>
                   </div>

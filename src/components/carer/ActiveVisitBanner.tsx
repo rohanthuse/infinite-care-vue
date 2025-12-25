@@ -39,7 +39,7 @@ export const ActiveVisitBanner: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center space-x-2">
               <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <Badge variant="secondary" className="bg-blue-600 text-white border-0">
+              <Badge variant="custom" className="bg-blue-600 text-white dark:bg-blue-500 dark:text-white">
                 Visit in Progress
               </Badge>
             </div>
