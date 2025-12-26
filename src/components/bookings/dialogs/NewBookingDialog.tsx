@@ -640,7 +640,7 @@ export function NewBookingDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="relative max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
+      <DialogContent className="relative w-[calc(100vw-2rem)] max-w-[600px] lg:max-w-[700px] max-h-[85vh] flex flex-col overflow-visible">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
@@ -685,7 +685,7 @@ export function NewBookingDialog({
             </div>
           )}
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Booking Mode Selection */}
@@ -1585,7 +1585,7 @@ export function NewBookingDialog({
         </div>
         {/* Loading Overlay for Recurring Booking Creation */}
         {isCreating && bookingMode === "recurring" && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4 rounded-lg">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center gap-4 rounded-lg">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <div className="text-center space-y-2">
               <p className="text-lg font-medium">Creating Recurring Bookings</p>
@@ -1595,7 +1595,7 @@ export function NewBookingDialog({
             </div>
           </div>
         )}
-        <DialogFooter className="flex-shrink-0 mt-4">
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-auto">
           <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
