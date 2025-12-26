@@ -132,3 +132,6 @@ verify_jwt = false
 
 [functions.create-leave-request-notifications]
 verify_jwt = false
+
+[functions.sync-care-plan-data]
+verify_jwt = false
