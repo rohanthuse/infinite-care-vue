@@ -70,8 +70,8 @@ const ClientOverview = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your dashboard.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Authentication Required</h3>
+          <p className="text-muted-foreground">Please log in to view your dashboard.</p>
         </div>
       </div>
     );
@@ -141,8 +141,8 @@ const ClientOverview = () => {
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-blue-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Upcoming</p>
-                <p className="text-2xl font-bold">{upcomingAppointments.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
+                <p className="text-2xl font-bold text-foreground">{upcomingAppointments.length}</p>
               </div>
             </div>
           </CardContent>
@@ -153,8 +153,8 @@ const ClientOverview = () => {
             <div className="flex items-center">
               <CreditCard className="h-8 w-8 text-green-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Outstanding</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalOutstanding)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(totalOutstanding)}</p>
               </div>
             </div>
           </CardContent>
@@ -165,8 +165,8 @@ const ClientOverview = () => {
             <div className="flex items-center">
               <Star className="h-8 w-8 text-yellow-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Reviews</p>
-                <p className="text-2xl font-bold">{pendingReviewsCount}</p>
+                <p className="text-sm font-medium text-muted-foreground">Pending Reviews</p>
+                <p className="text-2xl font-bold text-foreground">{pendingReviewsCount}</p>
               </div>
             </div>
           </CardContent>
@@ -177,8 +177,8 @@ const ClientOverview = () => {
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-purple-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Invoices</p>
-                <p className="text-2xl font-bold">{invoices?.length || 0}</p>
+                <p className="text-sm font-medium text-muted-foreground">Invoices</p>
+                <p className="text-2xl font-bold text-foreground">{invoices?.length || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -197,12 +197,12 @@ const ClientOverview = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">{nextAppointment.appointment_type}</h3>
-                <div className="flex items-center text-gray-600 mt-1">
+                <h3 className="font-semibold text-foreground">{nextAppointment.appointment_type}</h3>
+                <div className="flex items-center text-muted-foreground mt-1">
                   <User className="h-4 w-4 mr-1" />
                   <span className="text-sm">{nextAppointment.provider_name}</span>
                 </div>
-                <div className="flex items-center text-gray-600 mt-1">
+                <div className="flex items-center text-muted-foreground mt-1">
                   <Clock className="h-4 w-4 mr-1" />
                   <span className="text-sm">
                     {format(parseISO(nextAppointment.appointment_date), 'MMM d, yyyy')} at {nextAppointment.appointment_time}
@@ -219,9 +219,9 @@ const ClientOverview = () => {
 
       {/* Outstanding Payments */}
       {pendingInvoices.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30">
           <CardHeader>
-            <CardTitle className="flex items-center text-orange-800">
+            <CardTitle className="flex items-center text-orange-800 dark:text-orange-300">
               <CreditCard className="h-5 w-5 mr-2" />
               Outstanding Payments
             </CardTitle>
@@ -229,8 +229,8 @@ const ClientOverview = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-orange-800">{formatCurrency(totalOutstanding)}</p>
-                <p className="text-orange-600 text-sm">
+                <p className="text-2xl font-bold text-orange-800 dark:text-orange-300">{formatCurrency(totalOutstanding)}</p>
+                <p className="text-orange-600 dark:text-orange-400 text-sm">
                   {pendingInvoices.length} pending {pendingInvoices.length === 1 ? 'invoice' : 'invoices'}
                 </p>
               </div>
@@ -254,15 +254,15 @@ const ClientOverview = () => {
           <CardContent>
             <div className="space-y-4">
               {carePlans.slice(0, 2).map((carePlan) => (
-                <div key={carePlan.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div key={carePlan.id} className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <FileText className="h-4 w-4 text-blue-600" />
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-full">
+                      <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{carePlan.title}</div>
-                      <div className="text-sm text-gray-600">{carePlan.provider_name}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="font-medium text-sm text-foreground">{carePlan.title}</div>
+                      <div className="text-sm text-muted-foreground">{carePlan.provider_name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
                         Started: {format(parseISO(carePlan.start_date), 'MMM d, yyyy')}
                         {carePlan.review_date && (
                           <span> • Review: {format(parseISO(carePlan.review_date), 'MMM d, yyyy')}</span>
@@ -273,10 +273,10 @@ const ClientOverview = () => {
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       carePlan.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
                         : carePlan.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
                     }`}>
                       {carePlan.status.charAt(0).toUpperCase() + carePlan.status.slice(1)}
                     </span>
@@ -319,23 +319,23 @@ const ClientOverview = () => {
           {pendingReviewsLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading pending reviews...</p>
+              <p className="text-muted-foreground">Loading pending reviews...</p>
             </div>
           ) : pendingReviews && pendingReviews.length > 0 ? (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Please share your feedback on these completed appointments:
               </p>
               {pendingReviews.slice(0, 3).map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div key={appointment.id} className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <User className="h-4 w-4 text-blue-600" />
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-full">
+                      <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{appointment.type}</div>
-                      <div className="text-sm text-gray-600">{appointment.provider}</div>
-                      <div className="text-xs text-gray-500 flex items-center mt-1">
+                      <div className="font-medium text-sm text-foreground">{appointment.type}</div>
+                      <div className="text-sm text-muted-foreground">{appointment.provider}</div>
+                      <div className="text-xs text-muted-foreground flex items-center mt-1">
                         <Calendar className="h-3 w-3 mr-1" />
                         {appointment.date} at {appointment.time}
                       </div>
@@ -344,7 +344,7 @@ const ClientOverview = () => {
                   <div className="flex items-center space-x-2">
                     <div className="flex">
                       {Array(5).fill(0).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-gray-300" />
+                        <Star key={i} className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                       ))}
                     </div>
                     <Button 
@@ -358,16 +358,16 @@ const ClientOverview = () => {
                 </div>
               ))}
               {pendingReviews.length > 3 && (
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-muted-foreground text-center">
                   +{pendingReviews.length - 3} more appointment{pendingReviews.length - 3 > 1 ? 's' : ''} awaiting review
                 </p>
               )}
             </div>
           ) : (
             <div className="text-center py-8">
-              <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
-              <p className="text-gray-600">You don't have any completed appointments that need reviews right now.</p>
+              <Star className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">All caught up!</h3>
+              <p className="text-muted-foreground">You don't have any completed appointments that need reviews right now.</p>
               <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/reviews` : "/client-dashboard/reviews"}>
                 <Button variant="outline" className="mt-3">View Your Reviews</Button>
               </Link>

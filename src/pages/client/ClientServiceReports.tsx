@@ -81,7 +81,7 @@ const ClientServiceReports = () => {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Loading your service reports...</span>
+        <span className="text-foreground">Loading your service reports...</span>
       </div>
     );
   }
@@ -111,7 +111,7 @@ const ClientServiceReports = () => {
   if (!reportData) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">No service data available</p>
+        <p className="text-muted-foreground">No service data available</p>
       </div>
     );
   }
@@ -121,8 +121,8 @@ const ClientServiceReports = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Service Reports</h1>
-            <p className="text-gray-500">Review your completed service history and outcomes</p>
+            <h1 className="text-2xl font-bold text-foreground">Service Reports</h1>
+            <p className="text-muted-foreground">Review your completed service history and outcomes</p>
           </div>
           <div className="flex gap-2">
             <Select value={timeFilter} onValueChange={setTimeFilter}>
@@ -224,7 +224,7 @@ const ClientServiceReports = () => {
                      timeFilter === 'quarter' ? 'Monthly' : 
                      timeFilter === 'year' ? 'Monthly' : 'Daily'} progress on your care plan goals
                     {!hasRealProgressData() && (
-                      <span className="text-amber-600 text-xs block mt-1">
+                      <span className="text-amber-600 dark:text-amber-400 text-xs block mt-1">
                         * Limited goal data - showing estimated progression
                       </span>
                     )}
@@ -305,27 +305,27 @@ const ClientServiceReports = () => {
               <CardContent>
                 <div className="space-y-6">
                   {reportData.serviceUtilization.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <BarChartIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChartIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                       <p className="text-sm">No service data available for the selected period</p>
                     </div>
                   ) : (
                     reportData.serviceUtilization.map((service, i) => (
-                      <div key={i} className="p-4 border rounded-lg hover:shadow-md transition-all">
+                      <div key={i} className="p-4 border border-border rounded-lg hover:shadow-md transition-all">
                         <div className="flex flex-col md:flex-row justify-between mb-4">
                           <div className="flex items-center">
-                            <div className="bg-blue-100 p-2 rounded-full mr-3">
+                            <div className="bg-blue-100 dark:bg-blue-950/30 p-2 rounded-full mr-3">
                               {service.type === "Therapy" ? (
-                                <Users className="h-5 w-5 text-blue-600" />
+                                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                               ) : service.type === "Check-in" ? (
-                                <Clock className="h-5 w-5 text-blue-600" />
+                                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                               ) : (
-                                <BarChartIcon className="h-5 w-5 text-blue-600" />
+                                <BarChartIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                               )}
                             </div>
                             <div>
-                              <h3 className="font-medium">{service.type} Session</h3>
-                              <p className="text-sm text-gray-500 flex items-center">
+                              <h3 className="font-medium text-foreground">{service.type} Session</h3>
+                              <p className="text-sm text-muted-foreground flex items-center">
                                 <Calendar className="inline h-3.5 w-3.5 mr-1.5" />
                                 {formatDate(service.date)}
                                 <Clock className="inline h-3.5 w-3.5 mx-1.5" />
@@ -334,35 +334,35 @@ const ClientServiceReports = () => {
                             </div>
                           </div>
                           <div className="mt-2 md:mt-0">
-                            <Badge className="bg-green-100 text-green-800 border-0">
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-0">
                               {service.completed}/{service.goals} Goals {service.goals === 1 ? 'Completed' : 'Completed'}
                             </Badge>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="font-medium text-gray-700">Progress</div>
-                            <div className="flex items-center mt-1">
-                              <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
+                          <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded-md">
+                            <div className="font-medium text-foreground">Progress</div>
+                            <div className="flex items-center mt-1 text-muted-foreground">
+                              <TrendingUp className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                               {service.goals > 0 ? Math.round((service.completed / service.goals) * 100) : 0}% of goals achieved
                             </div>
                           </div>
                           
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="font-medium text-gray-700">Focus Areas</div>
-                            <div className="flex items-center mt-1">
-                              <CheckSquare className="h-4 w-4 mr-2 text-blue-600" />
+                          <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded-md">
+                            <div className="font-medium text-foreground">Focus Areas</div>
+                            <div className="flex items-center mt-1 text-muted-foreground">
+                              <CheckSquare className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
                               {service.type === "Therapy" ? "Mobility & Strength" : 
                                service.type === "Check-in" ? "Vital Signs & Wellness" : 
                                "Specialized Assessment"}
                             </div>
                           </div>
                           
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="font-medium text-gray-700">Outcome</div>
-                            <div className="flex items-center mt-1">
-                              <CheckSquare className="h-4 w-4 mr-2 text-green-600" />
+                          <div className="bg-muted/50 dark:bg-muted/30 p-3 rounded-md">
+                            <div className="font-medium text-foreground">Outcome</div>
+                            <div className="flex items-center mt-1 text-muted-foreground">
+                              <CheckSquare className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                               {service.completed === service.goals ? "All goals met" : 
                                service.completed > (service.goals / 2) ? "Good progress" : 
                                "In progress"}

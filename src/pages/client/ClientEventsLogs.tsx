@@ -48,8 +48,8 @@ const ClientEventsLogs = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your events and logs.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Authentication Required</h3>
+          <p className="text-muted-foreground">Please log in to view your events and logs.</p>
         </div>
       </div>
     );
@@ -68,8 +68,8 @@ const ClientEventsLogs = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Events</h3>
-          <p className="text-gray-500">Unable to load your events. Please try again later.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Events</h3>
+          <p className="text-muted-foreground">Unable to load your events. Please try again later.</p>
         </div>
       </div>
     );
@@ -85,21 +85,21 @@ const ClientEventsLogs = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'critical': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700';
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in-progress': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'closed': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'open': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700';
+      case 'in-progress': return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700';
+      case 'resolved': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
+      case 'closed': return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
@@ -113,7 +113,7 @@ const ClientEventsLogs = () => {
       case 'medication':
         return <Calendar className="h-4 w-4 text-green-500" />;
       default:
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -127,8 +127,8 @@ const ClientEventsLogs = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Events & Logs</h1>
-          <p className="text-gray-600 mt-1">View your care events and incident logs</p>
+          <h1 className="text-2xl font-bold text-foreground">Events & Logs</h1>
+          <p className="text-muted-foreground mt-1">View your care events and incident logs</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ const ClientEventsLogs = () => {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search events..."
                 value={searchTerm}
@@ -145,7 +145,7 @@ const ClientEventsLogs = () => {
                 className="pl-10"
               />
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
               <span>Showing {filteredEvents.length} of {events?.length || 0} events</span>
             </div>
@@ -158,11 +158,11 @@ const ClientEventsLogs = () => {
         <Card>
           <CardContent className="p-8">
             <div className="text-center">
-              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 {events?.length === 0 ? "No Events Found" : "No Matching Events"}
               </h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 {events?.length === 0 
                   ? "You don't have any logged events yet."
                   : "Try adjusting your search terms to find what you're looking for."
@@ -180,7 +180,7 @@ const ClientEventsLogs = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       {getEventTypeIcon(event.event_type)}
-                      <h3 className="font-semibold text-lg">{event.title}</h3>
+                      <h3 className="font-semibold text-lg text-foreground">{event.title}</h3>
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -196,12 +196,12 @@ const ClientEventsLogs = () => {
                     </div>
 
                     {event.description && (
-                      <p className="text-gray-600 mb-4 line-clamp-2">
+                      <p className="text-muted-foreground mb-4 line-clamp-2">
                         {event.description}
                       </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
                         <span>Reported by: {event.reporter}</span>
@@ -228,7 +228,7 @@ const ClientEventsLogs = () => {
                     {/* Body Map Indicator */}
                     {event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0 && (
                       <div className="mt-2">
-                        <Badge variant="outline" className="text-blue-600 border-blue-200">
+                        <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700">
                           Has Body Map ({event.body_map_points.length} points)
                         </Badge>
                       </div>
