@@ -147,7 +147,7 @@ export const DiagnosisTab: React.FC<DiagnosisTabProps> = ({
             <CardHeader>
               <CardTitle className="text-base">Medical Conditions</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {diagnosisData.medical_conditions && diagnosisData.medical_conditions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {diagnosisData.medical_conditions.map((condition: string, index: number) => (
@@ -158,6 +158,20 @@ export const DiagnosisTab: React.FC<DiagnosisTabProps> = ({
                 </div>
               ) : (
                 <span className="text-muted-foreground text-sm">No medical conditions recorded</span>
+              )}
+
+              {/* Custom Diagnoses */}
+              {diagnosisData.custom_diagnoses && diagnosisData.custom_diagnoses.length > 0 && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm font-medium mb-2">Custom Diagnoses:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {diagnosisData.custom_diagnoses.map((diagnosis: string, index: number) => (
+                      <Badge key={index} variant="secondary" className="bg-purple-100 text-purple-800">
+                        {diagnosis}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
