@@ -640,52 +640,53 @@ export function NewBookingDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="relative w-[calc(100vw-2rem)] max-w-[600px] lg:max-w-[700px] max-h-[85vh] flex flex-col overflow-visible">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-blue-600">
-            <Clock className="h-5 w-5" />
-            {bookingMode === "single" ? "Create Single Booking" : "Schedule Recurring Booking"}
-          </DialogTitle>
-          <DialogDescription>
-            {bookingMode === "single" 
-              ? "Create a one-time booking for a specific date and time."
-              : "Schedule recurring bookings for a client with a carer. Choose from weekly, bi-weekly, tri-weekly, or monthly recurrence."
-            }
-          </DialogDescription>
-          
-          {/* Prefilled Data Banner */}
-          {prefilledData && (prefilledData.carerId || prefilledData.date || prefilledData.startTime) && (
-            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium mb-1">
-                <CalendarIcon className="h-4 w-4" />
-                Prefilled from Schedule
+      <DialogContent className="!w-[calc(100vw-1rem)] sm:!w-[calc(100vw-2rem)] md:!w-auto md:!max-w-[600px] lg:!max-w-[700px] !max-h-[calc(100vh-2rem)] sm:!max-h-[85vh] !overflow-hidden !p-0">
+        <div className="flex flex-col h-full max-h-[calc(100vh-2rem)] sm:max-h-[85vh] p-6">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
+              <Clock className="h-5 w-5" />
+              {bookingMode === "single" ? "Create Single Booking" : "Schedule Recurring Booking"}
+            </DialogTitle>
+            <DialogDescription>
+              {bookingMode === "single" 
+                ? "Create a one-time booking for a specific date and time."
+                : "Schedule recurring bookings for a client with a carer. Choose from weekly, bi-weekly, tri-weekly, or monthly recurrence."
+              }
+            </DialogDescription>
+            
+            {/* Prefilled Data Banner */}
+            {prefilledData && (prefilledData.carerId || prefilledData.date || prefilledData.startTime) && (
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium mb-1">
+                  <CalendarIcon className="h-4 w-4" />
+                  Prefilled from Schedule
+                </div>
+                <div className="space-y-1 text-xs text-blue-600 dark:text-blue-400">
+                  {prefilledData.carerId && (
+                    <div>
+                      <span className="font-medium">Carer:</span> {(() => {
+                        const selectedCarer = carers.find(c => c.id === prefilledData.carerId);
+                        return selectedCarer 
+                          ? (selectedCarer.name || `${selectedCarer.first_name} ${selectedCarer.last_name}`)
+                          : "Loading carer...";
+                      })()}
+                    </div>
+                  )}
+                  {prefilledData.date && (
+                    <div>
+                      <span className="font-medium">Date:</span> {format(prefilledData.date, "PPP")}
+                    </div>
+                  )}
+                  {prefilledData.startTime && prefilledData.endTime && (
+                    <div>
+                      <span className="font-medium">Time:</span> {prefilledData.startTime} - {prefilledData.endTime}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1 text-xs text-blue-600 dark:text-blue-400">
-                {prefilledData.carerId && (
-                  <div>
-                    <span className="font-medium">Carer:</span> {(() => {
-                      const selectedCarer = carers.find(c => c.id === prefilledData.carerId);
-                      return selectedCarer 
-                        ? (selectedCarer.name || `${selectedCarer.first_name} ${selectedCarer.last_name}`)
-                        : "Loading carer...";
-                    })()}
-                  </div>
-                )}
-                {prefilledData.date && (
-                  <div>
-                    <span className="font-medium">Date:</span> {format(prefilledData.date, "PPP")}
-                  </div>
-                )}
-                {prefilledData.startTime && prefilledData.endTime && (
-                  <div>
-                    <span className="font-medium">Time:</span> {prefilledData.startTime} - {prefilledData.endTime}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-y-auto px-1">
+            )}
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 py-2">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Booking Mode Selection */}
@@ -1582,34 +1583,35 @@ export function NewBookingDialog({
               />
             </form>
           </Form>
-        </div>
-        {/* Loading Overlay for Recurring Booking Creation */}
-        {isCreating && bookingMode === "recurring" && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center gap-4 rounded-lg">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <div className="text-center space-y-2">
-              <p className="text-lg font-medium">Creating Recurring Bookings</p>
-              <p className="text-sm text-muted-foreground">
-                Please wait while your bookings are being scheduled...
-              </p>
-            </div>
           </div>
-        )}
-        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-auto">
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isCreating}>
-            {isCreating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {bookingMode === "single" ? "Creating Booking..." : "Creating Bookings..."}
-              </>
-            ) : (
-              bookingMode === "single" ? "Create Single Booking" : "Create Recurring Bookings"
-            )}
-          </Button>
-        </DialogFooter>
+          {/* Loading Overlay for Recurring Booking Creation */}
+          {isCreating && bookingMode === "recurring" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center gap-4 rounded-lg">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="text-center space-y-2">
+                <p className="text-lg font-medium">Creating Recurring Bookings</p>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while your bookings are being scheduled...
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isCreating}>
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {bookingMode === "single" ? "Creating Booking..." : "Creating Bookings..."}
+                </>
+              ) : (
+                bookingMode === "single" ? "Create Single Booking" : "Create Recurring Bookings"
+              )}
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
 
