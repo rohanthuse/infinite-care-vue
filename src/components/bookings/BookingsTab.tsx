@@ -399,6 +399,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             variant="secondary"
             size="sm"
             onClick={forceRefresh}
+            className="dark:bg-secondary dark:text-secondary-foreground"
           >
             Force Refresh
           </Button>

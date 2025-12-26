@@ -723,7 +723,7 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
             <CalendarIcon className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Organisation Calendar</h1>
           </div>
-          <Badge variant="secondary" className="text-sm">
+          <Badge variant="secondary" className="text-sm dark:bg-secondary dark:text-secondary-foreground">
             {format(currentDate, 'MMMM yyyy')}
           </Badge>
         </div>
@@ -858,10 +858,10 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
             </Badge>
             {stats && (
               <>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs dark:bg-secondary dark:text-secondary-foreground">
                   👥 {stats.activeStaff} Active Staff
                 </Badge>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs dark:bg-secondary dark:text-secondary-foreground">
                   📊 {stats.capacityPercentage}% Capacity
                 </Badge>
               </>

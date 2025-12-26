@@ -349,14 +349,14 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   // Get background color for booking status
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'assigned': return 'bg-green-100 text-green-800 border-green-300';
-      case 'unassigned': return 'bg-amber-100 text-amber-800 border-amber-300';
-      case 'done': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'in-progress': return 'bg-purple-100 text-purple-800 border-purple-300';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
-      case 'departed': return 'bg-teal-100 text-teal-800 border-teal-300';
-      case 'suspended': return 'bg-gray-100 text-gray-800 border-gray-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'assigned': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
+      case 'unassigned': return 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700';
+      case 'done': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700';
+      case 'in-progress': return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
+      case 'departed': return 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700';
+      case 'suspended': return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
     }
   };
   
@@ -405,15 +405,15 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 </Alert>
               )}
 
-              <div className="rounded-md bg-slate-50 p-3 border border-slate-200">
-                <h3 className="text-sm font-medium text-slate-900 mb-2 flex items-center">
+              <div className="rounded-md bg-slate-50 dark:bg-slate-900/50 p-3 border border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
                   Schedule Information
                 </h3>
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Date:</span>
-                    <span className="font-medium">{formatDate(bookingDate)}</span>
+                    <span className="text-slate-600 dark:text-slate-400">Date:</span>
+                    <span className="font-medium text-foreground">{formatDate(bookingDate)}</span>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-2 items-center">
@@ -447,7 +447,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                     </div>
                     <div className="col-span-1">
                       <Label className="text-xs">Duration</Label>
-                      <div className="bg-white border border-slate-200 rounded p-1 text-xs h-7 flex items-center justify-center text-slate-700">
+                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-1 text-xs h-7 flex items-center justify-center text-slate-700 dark:text-slate-300">
                         {calculateDuration()}
                       </div>
                     </div>

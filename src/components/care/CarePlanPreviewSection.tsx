@@ -86,18 +86,18 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
           </div>
           
           {/* Medications Card */}
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Pill className="h-4 w-4 text-orange-600" />
+              <Pill className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               <span className="text-xs font-medium text-muted-foreground">Medications</span>
             </div>
             <p className="text-lg font-bold text-foreground">{medications.active}</p>
             <p className="text-xs text-muted-foreground">active</p>
             {medications.items.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-orange-200/50 space-y-1">
+              <div className="mt-2 pt-2 border-t border-orange-200/50 dark:border-orange-700/50 space-y-1">
                 {medications.items.slice(0, 3).map((med) => (
                   <p key={med.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
-                    <span className="w-1 h-1 bg-orange-500 rounded-full flex-shrink-0" />
+                    <span className="w-1 h-1 bg-orange-500 dark:bg-orange-400 rounded-full flex-shrink-0" />
                     {med.name}
                   </p>
                 ))}
@@ -109,18 +109,18 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
           </div>
           
           {/* Goals Card */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Target className="h-4 w-4 text-green-600" />
+              <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
               <span className="text-xs font-medium text-muted-foreground">Goals</span>
             </div>
             <p className="text-lg font-bold text-foreground">{goals.completed}/{goals.total}</p>
             <p className="text-xs text-muted-foreground">completed</p>
             {goals.items.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-green-200/50 space-y-1">
+              <div className="mt-2 pt-2 border-t border-green-200/50 dark:border-green-700/50 space-y-1">
                 {goals.items.slice(0, 3).map((goal) => (
                   <p key={goal.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
-                    <span className="w-1 h-1 bg-green-500 rounded-full flex-shrink-0" />
+                    <span className="w-1 h-1 bg-green-500 dark:bg-green-400 rounded-full flex-shrink-0" />
                     {goal.description}
                   </p>
                 ))}
@@ -132,18 +132,18 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
           </div>
           
           {/* Activities Card */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Activity className="h-4 w-4 text-blue-600" />
+              <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-xs font-medium text-muted-foreground">Activities</span>
             </div>
             <p className="text-lg font-bold text-foreground">{activities.active}</p>
             <p className="text-xs text-muted-foreground">scheduled</p>
             {activities.items.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-blue-200/50 space-y-1">
+              <div className="mt-2 pt-2 border-t border-blue-200/50 dark:border-blue-700/50 space-y-1">
                 {activities.items.slice(0, 3).map((activity) => (
                   <p key={activity.id} className="text-xs text-foreground truncate flex items-center gap-1.5">
-                    <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0" />
+                    <span className="w-1 h-1 bg-blue-500 dark:bg-blue-400 rounded-full flex-shrink-0" />
                     {activity.name}
                   </p>
                 ))}
@@ -215,7 +215,7 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
                   <p className="text-sm font-medium">{med.name}</p>
                   <p className="text-xs text-muted-foreground">{med.dosage} - {med.frequency}</p>
                 </div>
-                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300">
                   Active
                 </Badge>
               </div>
@@ -235,7 +235,7 @@ export const CarePlanPreviewSection: React.FC<CarePlanPreviewSectionProps> = ({
                     variant="outline" 
                     className={cn(
                       "text-xs capitalize",
-                      goal.status === 'completed' && "bg-green-100 text-green-700 border-green-200"
+                      goal.status === 'completed' && "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700"
                     )}
                   >
                     {goal.status}
