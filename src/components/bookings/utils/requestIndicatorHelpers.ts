@@ -13,12 +13,12 @@ export const getRequestStatusColors = (booking: Booking) => {
 
   if (hasPendingCancellation) {
     return {
-      background: "bg-red-50",
+      background: "bg-red-50 dark:bg-red-900/50",
       border: "border-l-4 border-red-500",
-      text: "text-red-900",
+      text: "text-red-900 dark:text-red-300",
       dotColor: "bg-red-500",
       icon: XCircle,
-      iconColor: "text-red-500",
+      iconColor: "text-red-500 dark:text-red-400",
       tooltip: "Client requested cancellation",
       hasRequest: true
     };
@@ -26,12 +26,12 @@ export const getRequestStatusColors = (booking: Booking) => {
 
   if (hasPendingReschedule) {
     return {
-      background: "bg-orange-50",
+      background: "bg-orange-50 dark:bg-orange-900/50",
       border: "border-l-4 border-orange-500",
-      text: "text-orange-900",
+      text: "text-orange-900 dark:text-orange-300",
       dotColor: "bg-orange-500",
       icon: RefreshCw,
-      iconColor: "text-orange-500",
+      iconColor: "text-orange-500 dark:text-orange-400",
       tooltip: "Client requested reschedule",
       hasRequest: true
     };
