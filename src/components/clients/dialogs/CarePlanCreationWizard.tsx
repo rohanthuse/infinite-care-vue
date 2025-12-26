@@ -190,6 +190,18 @@ export function CarePlanCreationWizard({
   
   const totalSteps = filteredSteps.length;
   
+  // Validate currentStep when filteredSteps changes (e.g., when client profile loads)
+  // This ensures we don't stay on a child-only step for adult clients
+  React.useEffect(() => {
+    if (filteredSteps.length > 0 && currentStep > 0) {
+      const stepExists = filteredSteps.some(s => s.id === currentStep);
+      if (!stepExists) {
+        console.log(`[CarePlanCreationWizard] Current step ${currentStep} not in filtered steps for this client type, resetting to step 1`);
+        setCurrentStep(1);
+      }
+    }
+  }, [filteredSteps, currentStep]);
+  
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
     defaultValues: {
@@ -448,6 +460,14 @@ export function CarePlanCreationWizard({
               !Array.isArray(savedData.medical_info) && !savedData.medical_info.admin_medication && 
               adjustedStep >= 7) {
             adjustedStep += 1; // Shift forward to account for new Admin Medication step
+          }
+          
+          // Validate that the adjusted step exists in filteredSteps for current client type
+          const stepExistsInFiltered = filteredSteps.some(s => s.id === adjustedStep);
+          if (!stepExistsInFiltered) {
+            // Reset to step 1 if saved step is not valid for current client type (e.g., child-only step for adult)
+            console.log(`[CarePlanCreationWizard] Step ${adjustedStep} not valid for this client type, resetting to step 1`);
+            adjustedStep = 1;
           }
           
           setCurrentStep(adjustedStep);

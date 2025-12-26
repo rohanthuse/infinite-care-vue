@@ -78,11 +78,14 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 17:
         return <WizardStepKeyContacts form={form} />;
       case 18:
-        return <BehaviorSupportTab clientId={clientId} clientName="" />;
+        // Only render Behavior Support for child/young person clients
+        return isChild ? <BehaviorSupportTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
       case 19:
-        return <EducationDevelopmentTab clientId={clientId} clientName="" />;
+        // Only render Education & Development for child/young person clients
+        return isChild ? <EducationDevelopmentTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
       case 20:
-        return <SafeguardingRisksTab clientId={clientId} clientName="" />;
+        // Only render Safeguarding & Risks for child/young person clients
+        return isChild ? <SafeguardingRisksTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
       case 21:
         return <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
       default:
