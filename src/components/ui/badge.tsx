@@ -11,7 +11,7 @@ const badgeVariants = cva(
         default:
           "border-transparent bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 shadow-sm shadow-primary/20",
         secondary:
-          "border-transparent bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80",
+          "border-transparent bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80 dark:from-slate-700 dark:to-slate-700/90 dark:text-slate-200",
         destructive:
           "border-transparent bg-gradient-to-r from-destructive to-red-600 text-destructive-foreground hover:from-destructive/90 hover:to-red-600/90 shadow-sm shadow-red-200/30",
         success:
