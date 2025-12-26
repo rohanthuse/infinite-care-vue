@@ -95,9 +95,9 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">Pending Change Requests</h2>
-          <p className="text-sm text-gray-500 mt-1">Review and manage appointment change requests</p>
+          <p className="text-sm text-muted-foreground mt-1">Review and manage appointment change requests</p>
         </div>
-        <Badge variant="outline" className="bg-purple-100 text-purple-800">
+        <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
           {totalPending} Pending
         </Badge>
       </div>
@@ -116,43 +116,43 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300 flex items-center justify-center font-medium">
                         {getClientInitials(client)}
                       </div>
                       
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{getClientFullName(client)}</h3>
-                          <Badge className={request.request_type === 'cancellation' ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}>
+                          <Badge className={request.request_type === 'cancellation' ? "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"}>
                             {request.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'} Requested
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           Service: {service?.title || "N/A"} | Assigned to: {staff ? `${staff.first_name} ${staff.last_name}` : "N/A"}
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                          <div className="flex items-center text-sm text-gray-600">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-3.5 w-3.5 mr-1.5" />
                             <span>{formatDate(booking?.start_time, "EEE, MMM d, yyyy")}</span>
                           </div>
-                          <div className="flex items-center text-sm text-gray-600">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Clock className="h-3.5 w-3.5 mr-1.5" />
                             <span>{formatDate(booking?.start_time, "HH:mm")}</span>
                           </div>
                         </div>
                         
-                        <div className="mt-3 p-2 bg-gray-50 rounded-md border">
+                        <div className="mt-3 p-2 bg-muted rounded-md border">
                           <div className="text-xs font-medium">
                             Reason: {getCancellationReasonDisplay(request.reason || "")}
                           </div>
                           {request.notes && <div className="text-xs mt-1">{request.notes}</div>}
                           {request.request_type === 'reschedule' && request.new_date && (
-                            <div className="text-xs mt-1 font-medium text-blue-600">
+                            <div className="text-xs mt-1 font-medium text-blue-600 dark:text-blue-400">
                               New Date/Time: {formatDate(request.new_date, "MMM d, yyyy")} at {request.new_time || "N/A"}
                             </div>
                           )}
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             Requested {formatDate(request.created_at, "MMM d, yyyy 'at' h:mm a")}
                           </div>
                         </div>
@@ -187,7 +187,7 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="border-red-200 text-red-600 hover:bg-red-50"
+                      className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50"
                       onClick={() => {
                         if (!booking?.id) {
                           toast.error("Cannot process request", {
@@ -218,11 +218,11 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
       ) : (
         <Card>
           <CardContent className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-              <Check className="h-6 w-6 text-gray-400" />
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <Check className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">No pending requests</h3>
-            <p className="text-gray-500 max-w-sm mt-1">
+            <h3 className="text-lg font-medium text-foreground">No pending requests</h3>
+            <p className="text-muted-foreground max-w-sm mt-1">
               There are currently no cancellation requests waiting for approval.
             </p>
           </CardContent>

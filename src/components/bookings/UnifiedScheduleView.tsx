@@ -294,7 +294,7 @@ export function UnifiedScheduleView({
     <DragDropContext key={dragDropKey} onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-4 w-full">
       {/* Left Panel - Client Schedule */}
-      <div className="border-2 border-blue-500 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
+      <div className="border-2 border-blue-500 dark:border-blue-600/70 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Client Schedule</h3>
           <p className="text-sm text-muted-foreground">View all client appointments</p>
@@ -325,7 +325,7 @@ export function UnifiedScheduleView({
       </div>
 
       {/* Right Panel - Staff Schedule */}
-      <div className="border-2 border-green-500 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
+      <div className="border-2 border-green-500 dark:border-green-600/70 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Staff Schedule</h3>
           <p className="text-sm text-muted-foreground">View all staff assignments</p>
