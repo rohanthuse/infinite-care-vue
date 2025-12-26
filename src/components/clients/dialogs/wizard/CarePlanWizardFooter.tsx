@@ -254,7 +254,7 @@ export function CarePlanWizardFooter({
 
       <div className="mt-3 text-center">
         <p className="text-xs sm:text-sm text-gray-500">
-          Step {currentStep} of {totalSteps}
+          Step {currentIndex >= 0 ? currentIndex + 1 : 1} of {totalSteps}
           {isDraft && <span className="text-amber-600 ml-2 block sm:inline">(Draft Mode - All changes are automatically saved)</span>}
           {effectiveLastSave && (
             <span className="text-gray-400 ml-2 block sm:inline">
