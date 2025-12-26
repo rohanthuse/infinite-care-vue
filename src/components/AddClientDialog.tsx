@@ -428,8 +428,8 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           
           {/* SECTION 1: Client Identification */}
           <div className="space-y-3">
-            <div className="border-b pb-2">
-              <h3 className="text-sm font-semibold text-gray-900">Client Identification</h3>
+            <div className="border-b border-border pb-2">
+              <h3 className="text-sm font-semibold text-foreground">Client Identification</h3>
             </div>
             
             <div>
@@ -454,8 +454,8 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
 
           {/* SECTION 2: Personal Information */}
           <div className="space-y-3">
-            <div className="border-b pb-2">
-              <h3 className="text-sm font-semibold text-gray-900">Personal Information</h3>
+            <div className="border-b border-border pb-2">
+              <h3 className="text-sm font-semibold text-foreground">Personal Information</h3>
             </div>
             
             <div className="grid grid-cols-3 gap-4">

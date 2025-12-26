@@ -93,8 +93,8 @@ export const SupportTicketList: React.FC<SupportTicketListProps> = ({
                   variant="outline" 
                   className={`text-xs ${
                     ticket.unreadCount > 0 
-                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200' 
-                      : 'bg-green-50 text-green-700 border-green-200'
+                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700' 
+                      : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700'
                   }`}
                 >
                   {ticket.unreadCount > 0 ? 'Unread' : 'Read'}

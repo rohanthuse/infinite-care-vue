@@ -241,7 +241,7 @@ export function ClientsManagementSection({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-gray-600">Branch ID is required</p>
+          <p className="text-muted-foreground">Branch ID is required</p>
         </div>
       </div>
     );
@@ -252,7 +252,7 @@ export function ClientsManagementSection({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading clients...</p>
+          <p className="text-muted-foreground">Loading clients...</p>
         </div>
       </div>
     );
@@ -273,8 +273,8 @@ export function ClientsManagementSection({
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Clients Management</h2>
-          <p className="text-gray-600">Manage your clients and their information</p>
+          <h2 className="text-2xl font-bold text-foreground">Clients Management</h2>
+          <p className="text-muted-foreground">Manage your clients and their information</p>
         </div>
         <Button onClick={onNewClient} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
@@ -337,7 +337,7 @@ export function ClientsManagementSection({
               </Select>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <div className="text-sm text-gray-600">Sort by:</div>
+              <div className="text-sm text-muted-foreground">Sort by:</div>
               <Select value={sortBy} onValueChange={(value: any) => { setSortBy(value); setCurrentPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Sort by" />
@@ -367,7 +367,7 @@ export function ClientsManagementSection({
 
       {/* Bulk Actions Bar */}
       {selectedClients.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -375,7 +375,7 @@ export function ClientsManagementSection({
                   checked={selectedClients.length === clients.length && clients.length > 0}
                   onCheckedChange={handleSelectAll}
                 />
-                <span className="font-medium text-blue-900">
+                <span className="font-medium text-blue-900 dark:text-blue-100">
                   {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''} selected
                 </span>
               </div>

@@ -15,25 +15,25 @@ export const ActionItem = ({
   priority: string;
 }) => {
   let priorityColor = 'bg-muted text-muted-foreground';
-  let borderColor = 'border-t-slate-300';
+  let borderColor = 'border-t-slate-300 dark:border-t-slate-600';
   let gradientBg = 'bg-card';
   let iconColor = 'text-muted-foreground';
   
   if (priority === 'High') {
-    priorityColor = 'bg-red-100 text-red-700 border border-red-200';
+    priorityColor = 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
     borderColor = 'border-t-red-500';
-    gradientBg = 'bg-gradient-to-br from-red-50/60 to-card';
-    iconColor = 'text-red-500';
+    gradientBg = 'bg-gradient-to-br from-red-50/60 to-card dark:from-red-950/40';
+    iconColor = 'text-red-500 dark:text-red-400';
   } else if (priority === 'Medium') {
-    priorityColor = 'bg-amber-100 text-amber-700 border border-amber-200';
+    priorityColor = 'bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700';
     borderColor = 'border-t-amber-500';
-    gradientBg = 'bg-gradient-to-br from-amber-50/60 to-card';
-    iconColor = 'text-amber-500';
+    gradientBg = 'bg-gradient-to-br from-amber-50/60 to-card dark:from-amber-950/40';
+    iconColor = 'text-amber-500 dark:text-amber-400';
   } else if (priority === 'Low') {
-    priorityColor = 'bg-green-100 text-green-700 border border-green-200';
+    priorityColor = 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
     borderColor = 'border-t-green-500';
-    gradientBg = 'bg-gradient-to-br from-green-50/60 to-card';
-    iconColor = 'text-green-500';
+    gradientBg = 'bg-gradient-to-br from-green-50/60 to-card dark:from-green-950/40';
+    iconColor = 'text-green-500 dark:text-green-400';
   }
 
   return (

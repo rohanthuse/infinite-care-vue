@@ -139,10 +139,10 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Reviews</h2>
-          <p className="text-red-600 mb-4">Failed to load reviews: {error.message}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Error Loading Reviews</h2>
+          <p className="text-red-600 dark:text-red-400 mb-4">Failed to load reviews: {error.message}</p>
           <Button onClick={handleRefresh} variant="outline" className="group active:scale-95 transition-transform">
             <RefreshCw className="h-4 w-4 mr-2 group-active:-rotate-6 transition-transform" />
             Try Again
@@ -153,12 +153,12 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100">
+    <div className="bg-card rounded-lg border border-border shadow-sm">
+      <div className="p-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Client Feedback</h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <h2 className="text-2xl font-bold text-foreground">Client Feedback</h2>
+            <p className="text-muted-foreground text-sm mt-1">
               View and analyze client feedback to improve services
             </p>
           </div>
@@ -220,20 +220,20 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-white hover:bg-gray-50/90">
-                <TableHead className="text-gray-600 font-medium w-[100px]">Feedback ID</TableHead>
-                <TableHead className="text-gray-600 font-medium">Client</TableHead>
-                <TableHead className="text-gray-600 font-medium">Carer</TableHead>
-                <TableHead className="text-gray-600 font-medium">Rating</TableHead>
-                <TableHead className="text-gray-600 font-medium">Comment</TableHead>
-                <TableHead className="text-gray-600 font-medium">Date</TableHead>
-                <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
+              <TableRow className="bg-card hover:bg-muted/50">
+                <TableHead className="text-muted-foreground font-medium w-[100px]">Feedback ID</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Client</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Carer</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Rating</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Comment</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Date</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {reviews.length > 0 ? (
                 reviews.map((review) => (
-                  <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
+                  <TableRow key={review.id} className="hover:bg-muted/30 border-t border-border">
                     <TableCell className="font-medium">
                       <Button variant="ghost" className="p-0 h-auto font-medium underline-offset-4 hover:underline" onClick={() => handleViewReview(review)}>
                         {review.id.slice(0, 8)}...
@@ -287,8 +287,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
       </div>
       
       {reviews.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between p-4 border-t border-gray-100">
-          <div className="text-sm text-gray-500">
+        <div className="flex items-center justify-between p-4 border-t border-border">
+          <div className="text-sm text-muted-foreground">
             Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} feedback entries
           </div>
           <div className="flex items-center gap-2">
@@ -350,18 +350,18 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500">Comment</p>
-                <div className="text-sm mt-1 p-3 bg-gray-50 rounded border border-gray-100">
+                <p className="text-sm font-medium text-muted-foreground">Comment</p>
+                <div className="text-sm mt-1 p-3 bg-muted rounded border border-border">
                   {selectedReview.comment || 'No comment provided'}
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-500">Date</p>
+                <p className="text-sm font-medium text-muted-foreground">Date</p>
                 <p className="text-sm">{selectedReview.date}</p>
               </div>
 
-              <div className="text-sm text-gray-500 mt-2 pt-2 border-t">
+              <div className="text-sm text-muted-foreground mt-2 pt-2 border-t border-border">
                 <p>Note: This feedback is for administrative purposes only and is not shared with the carer.</p>
               </div>
             </div>

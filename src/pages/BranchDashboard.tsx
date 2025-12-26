@@ -392,12 +392,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
         <div className="flex-1 min-w-0 px-4 md:px-8 mt-20 pb-20 md:mt-20 md:pb-6">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
             <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-3" />
               <div>
-                <h3 className="text-sm font-medium text-yellow-800">Limited Access Mode</h3>
-                <p className="text-sm text-yellow-700 mt-1">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Limited Access Mode</h3>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                   Some features may be unavailable due to authentication issues. Basic dashboard access is provided.
                 </p>
               </div>
