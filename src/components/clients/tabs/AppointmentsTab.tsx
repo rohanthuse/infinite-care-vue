@@ -405,6 +405,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         services={services}
         branchId={branchId}
         preSelectedClientId={clientId}
+        isCreating={createMultipleBookingsMutation.isPending}
       />
 
       <EditBookingDialog

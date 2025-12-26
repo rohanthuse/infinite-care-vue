@@ -538,6 +538,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         branchId={branchId}
         prefilledData={newBookingData}
         preSelectedClientId={selectedClientIds.length === 1 ? selectedClientIds[0] : undefined}
+        isCreating={createMultipleBookingsMutation.isPending}
       />
 
       <EditBookingDialog
