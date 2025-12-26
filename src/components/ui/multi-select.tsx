@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,7 @@ export interface MultiSelectOption {
   label: string;
   value: string;
   description?: string;
+  isCustom?: boolean;
 }
 
 interface MultiSelectProps {
@@ -33,6 +34,9 @@ interface MultiSelectProps {
   maxDisplay?: number;
   disabled?: boolean;
   showSelectAll?: boolean;
+  allowCustom?: boolean;
+  onCustomOptionAdd?: (value: string) => void;
+  customPrefix?: string;
 }
 
 export function MultiSelect({
@@ -45,8 +49,12 @@ export function MultiSelect({
   maxDisplay = 3,
   disabled = false,
   showSelectAll = false,
+  allowCustom = false,
+  onCustomOptionAdd,
+  customPrefix = "custom:",
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   const handleSelect = (value: string) => {
     const newSelection = selected.includes(value)
@@ -73,6 +81,22 @@ export function MultiSelect({
     onSelectionChange([]);
   };
 
+  const handleAddCustom = () => {
+    if (searchValue.trim() && onCustomOptionAdd) {
+      console.log('🔍 MultiSelect - Adding custom option:', searchValue.trim());
+      onCustomOptionAdd(searchValue.trim());
+      setSearchValue("");
+    }
+  };
+
+  // Check if search matches any existing option exactly
+  const searchMatchesExactly = options.some(opt => 
+    opt.label.toLowerCase() === searchValue.toLowerCase().trim()
+  );
+
+  // Show "Add" option when: allowCustom=true, has search text, doesn't match existing exactly
+  const showAddOption = allowCustom && searchValue.trim() && !searchMatchesExactly;
+
   const allSelected = selected.length === options.length && options.length > 0;
   const selectedOptions = options.filter(option => selected.includes(option.value));
 
@@ -95,9 +119,13 @@ export function MultiSelect({
                   <Badge
                     key={option.value}
                     variant="secondary"
-                    className="text-xs"
+                    className={cn(
+                      "text-xs",
+                      option.isCustom ? "bg-purple-100 text-purple-800" : ""
+                    )}
                   >
                     {option.label}
+                    {option.isCustom && " (Custom)"}
                     <button
                       className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       onKeyDown={(e) => {
@@ -128,7 +156,11 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 z-50 bg-white dark:bg-gray-800 shadow-md border" align="start">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput 
+            placeholder={searchPlaceholder} 
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           {showSelectAll && options.length > 0 && (
             <div className="border-b px-3 py-2">
               <button
@@ -141,8 +173,20 @@ export function MultiSelect({
             </div>
           )}
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandEmpty>
+              {showAddOption ? null : emptyText}
+            </CommandEmpty>
             <CommandGroup>
+              {/* Add custom option at the top when applicable */}
+              {showAddOption && (
+                <CommandItem
+                  onSelect={handleAddCustom}
+                  className="text-primary cursor-pointer"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add "{searchValue.trim()}"
+                </CommandItem>
+              )}
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
@@ -156,7 +200,15 @@ export function MultiSelect({
                     )}
                   />
                   <div className="flex-1">
-                    <div className="font-medium">{option.label}</div>
+                    <div className={cn(
+                      "font-medium",
+                      option.isCustom ? "text-purple-700" : ""
+                    )}>
+                      {option.label}
+                      {option.isCustom && (
+                        <span className="text-xs ml-1 text-purple-500">(Custom)</span>
+                      )}
+                    </div>
                     {option.description && (
                       <div className="text-xs text-muted-foreground">
                         {option.description}
