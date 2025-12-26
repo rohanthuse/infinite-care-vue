@@ -144,46 +144,46 @@ const ClientSupport = () => {
   return (
     <div className="space-y-6">
       {/* Contact Information Card */}
-      <Card className="border border-gray-200">
+      <Card className="border border-border">
         <CardHeader>
           <CardTitle className="text-xl font-bold flex items-center">
-            <HelpCircle className="mr-2 h-6 w-6 text-blue-600" />
+            <HelpCircle className="mr-2 h-6 w-6 text-blue-600 dark:text-blue-400" />
             Help & Support
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Contact Us</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium mb-2 text-foreground">Contact Us</h3>
+              <p className="text-muted-foreground mb-4">
                 Our support team is here to help you with any questions or issues you may have.
               </p>
               
               <div className="space-y-4">
                 <div className="flex items-center">
-                  <Mail className="h-5 w-5 mr-3 text-blue-600" />
+                  <Mail className="h-5 w-5 mr-3 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <p className="font-medium">Email Support</p>
-                    <a href="mailto:support@med-infinite.com" className="text-blue-600 hover:underline">
+                    <p className="font-medium text-foreground">Email Support</p>
+                    <a href="mailto:support@med-infinite.com" className="text-blue-600 dark:text-blue-400 hover:underline">
                       support@med-infinite.com
                     </a>
                   </div>
                 </div>
                 
                 <div className="flex items-center">
-                  <Phone className="h-5 w-5 mr-3 text-blue-600" />
+                  <Phone className="h-5 w-5 mr-3 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <p className="font-medium">Phone Support</p>
-                    <a href="tel:+18005551234" className="text-blue-600 hover:underline">+44 (800) 555-1234</a>
-                    <p className="text-sm text-gray-500">Mon-Fri: 9am - 5pm</p>
+                    <p className="font-medium text-foreground">Phone Support</p>
+                    <a href="tel:+18005551234" className="text-blue-600 dark:text-blue-400 hover:underline">+44 (800) 555-1234</a>
+                    <p className="text-sm text-muted-foreground">Mon-Fri: 9am - 5pm</p>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h3 className="text-lg font-medium mb-2">Support Hours</h3>
-              <ul className="space-y-2 text-gray-700">
+            <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+              <h3 className="text-lg font-medium mb-2 text-foreground">Support Hours</h3>
+              <ul className="space-y-2 text-foreground">
                 <li className="flex justify-between">
                   <span>Monday - Friday:</span>
                   <span>9:00 AM - 5:00 PM</span>
@@ -197,7 +197,7 @@ const ClientSupport = () => {
                   <span>Closed</span>
                 </li>
               </ul>
-              <div className="mt-4 text-sm text-gray-600">
+              <div className="mt-4 text-sm text-muted-foreground">
                 <p>Emergency support available 24/7 for urgent medical matters.</p>
               </div>
             </div>
@@ -206,10 +206,10 @@ const ClientSupport = () => {
       </Card>
 
       {/* Support Messages Tabs */}
-      <Card className="border border-gray-200">
+      <Card className="border border-border">
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="border-b border-gray-200 px-6 pt-6">
+            <div className="border-b border-border px-6 pt-6">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="send-message">Send Message</TabsTrigger>
                 <TabsTrigger value="responses">My Support Requests</TabsTrigger>
@@ -218,8 +218,8 @@ const ClientSupport = () => {
 
             <TabsContent value="send-message" className="p-6 space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Send Us a Message</h3>
-                <p className="text-gray-600 mb-6">
+                <h3 className="text-lg font-semibold mb-2 text-foreground">Send Us a Message</h3>
+                <p className="text-muted-foreground mb-6">
                   Submit a support request and we'll get back to you as soon as possible.
                 </p>
               </div>
@@ -315,10 +315,10 @@ const ClientSupport = () => {
             <TabsContent value="responses" className="p-0">
               <div className="h-[600px] flex">
                 {/* Message List */}
-                <div className="w-1/2 border-r border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold">Support Conversations</h3>
-                    <p className="text-sm text-gray-600">View and respond to your support requests</p>
+                <div className="w-1/2 border-r border-border">
+                  <div className="p-4 border-b border-border">
+                    <h3 className="font-semibold text-foreground">Support Conversations</h3>
+                    <p className="text-sm text-muted-foreground">View and respond to your support requests</p>
                   </div>
                   <ClientMessageList
                     selectedContactId={null}
@@ -343,9 +343,9 @@ const ClientSupport = () => {
                       messageId={selectedMessageId}
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-                      <div className="text-gray-400 text-lg mb-2">No conversation selected</div>
-                      <p className="text-sm text-gray-500 max-w-md text-center">
+                    <div className="flex flex-col items-center justify-center h-full bg-muted/30">
+                      <div className="text-muted-foreground text-lg mb-2">No conversation selected</div>
+                      <p className="text-sm text-muted-foreground max-w-md text-center">
                         Select a support conversation from the list to view messages and responses.
                       </p>
                       <Button
@@ -365,40 +365,40 @@ const ClientSupport = () => {
       </Card>
 
       {/* FAQ Section */}
-      <Card className="border border-gray-200">
+      <Card className="border border-border">
         <CardHeader>
           <CardTitle className="text-xl font-bold">Frequently Asked Questions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="border-b pb-3">
-              <h3 className="font-medium mb-2">How do I reschedule an appointment?</h3>
-              <p className="text-gray-600">
+            <div className="border-b border-border pb-3">
+              <h3 className="font-medium mb-2 text-foreground">How do I reschedule an appointment?</h3>
+              <p className="text-muted-foreground">
                 You can reschedule an appointment by going to the Appointments section, finding your scheduled 
                 appointment, and clicking the "Reschedule" button. Appointments can be rescheduled up to 24 hours before
                 the scheduled time.
               </p>
             </div>
             
-            <div className="border-b pb-3">
-              <h3 className="font-medium mb-2">How do I update my personal information?</h3>
-              <p className="text-gray-600">
+            <div className="border-b border-border pb-3">
+              <h3 className="font-medium mb-2 text-foreground">How do I update my personal information?</h3>
+              <p className="text-muted-foreground">
                 To update your personal information, navigate to the Profile section in your dashboard. 
                 There you can edit your contact details, address, and other personal information.
               </p>
             </div>
             
-            <div className="border-b pb-3">
-              <h3 className="font-medium mb-2">Where can I find my care plan documents?</h3>
-              <p className="text-gray-600">
+            <div className="border-b border-border pb-3">
+              <h3 className="font-medium mb-2 text-foreground">Where can I find my care plan documents?</h3>
+              <p className="text-muted-foreground">
                 Your care plan documents can be found in the "Care Plans" section of your dashboard. 
                 You can view, download, and print these documents as needed.
               </p>
             </div>
             
             <div>
-              <h3 className="font-medium mb-2">How do I pay my bill online?</h3>
-              <p className="text-gray-600">
+              <h3 className="font-medium mb-2 text-foreground">How do I pay my bill online?</h3>
+              <p className="text-muted-foreground">
                 You can pay your bills by going to the Payments section of your dashboard. 
                 We accept all major credit cards and provide secure payment processing.
               </p>

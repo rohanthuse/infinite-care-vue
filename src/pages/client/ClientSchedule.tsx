@@ -201,8 +201,8 @@ const ClientSchedule: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/appointments'))}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-emerald-600" />
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-950/30 rounded-lg">
+              <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">View Appointments</h3>
@@ -213,8 +213,8 @@ const ClientSchedule: React.FC = () => {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/care-plans'))}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Heart className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded-lg">
+              <Heart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Care Plans</h3>
@@ -225,8 +225,8 @@ const ClientSchedule: React.FC = () => {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/messages'))}>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-950/30 rounded-lg">
+              <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Contact Care Team</h3>

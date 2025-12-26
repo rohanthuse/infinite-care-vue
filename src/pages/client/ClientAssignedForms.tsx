@@ -91,7 +91,7 @@ const ClientAssignedForms = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Error Loading Forms</h3>
+          <h3 className="text-lg font-semibold mb-2 text-foreground">Error Loading Forms</h3>
           <p className="text-muted-foreground">There was an error loading your assigned forms.</p>
         </div>
       </div>
@@ -101,20 +101,20 @@ const ClientAssignedForms = () => {
   const getStatusIcon = (submissionStatus: string) => {
     switch (submissionStatus) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'under_review':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
+        return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-400" />;
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusBadge = (submissionStatus: string) => {
     switch (submissionStatus) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</Badge>;
       case 'under_review':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Under Review</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">Under Review</Badge>;
       default:
         return <Badge variant="outline">Not Submitted</Badge>;
     }
@@ -123,8 +123,8 @@ const ClientAssignedForms = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Assigned Forms</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">My Assigned Forms</h1>
+        <p className="text-muted-foreground mt-2">
           Complete the forms that have been assigned to you by your care team.
         </p>
       </div>
@@ -133,8 +133,8 @@ const ClientAssignedForms = () => {
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Forms Assigned</h3>
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-foreground">No Forms Assigned</h3>
               <p className="text-muted-foreground">
                 You don't have any forms assigned to you at the moment.
               </p>
