@@ -138,23 +138,23 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
         {...getRootProps()}
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-          isDragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400",
+          isDragActive ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30" : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500",
           (uploading || disabled) && "cursor-not-allowed opacity-50"
         )}
       >
         <input {...getInputProps()} />
         <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
         {isDragActive ? (
-          <p className="text-blue-600">Drop the files here...</p>
+          <p className="text-blue-600 dark:text-blue-400">Drop the files here...</p>
         ) : (
           <div>
-            <p className="text-gray-600">
-              Drag & drop files here, or <span className="text-blue-600">click to select</span>
+            <p className="text-muted-foreground">
+              Drag & drop files here, or <span className="text-blue-600 dark:text-blue-400">click to select</span>
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground/70 mt-1">
               PDF, DOC, DOCX, Images (max {maxFiles} files, 50MB each)
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {totalFiles}/{maxFiles} files selected
             </p>
           </div>
@@ -180,16 +180,16 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
       {/* Selected Files (not yet uploaded) */}
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">Selected Files (pending upload)</h4>
+          <h4 className="text-sm font-medium text-foreground">Selected Files (pending upload)</h4>
           <div className="space-y-2">
             {selectedFiles.map((file, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <File className="h-5 w-5 text-yellow-600" />
+              <div key={index} className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                <File className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {file.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatFileSize(file.size)} • Selected for upload
                   </p>
                 </div>
@@ -210,16 +210,16 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
       {/* Existing Files */}
       {existingFiles && existingFiles.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">Uploaded Files</h4>
+          <h4 className="text-sm font-medium text-foreground">Uploaded Files</h4>
           <div className="space-y-2">
             {existingFiles.map((file) => (
-              <div key={file.id} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                <File className="h-5 w-5 text-green-600" />
+              <div key={file.id} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-700">
+                <File className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {file.file_name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatFileSize(file.file_size)} • {new Date(file.created_at).toLocaleDateString()}
                   </p>
                 </div>

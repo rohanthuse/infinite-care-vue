@@ -18,7 +18,7 @@ export const ReviewItem = ({
   comment: string;
 }) => {
   return (
-    <div className="py-3 px-3 border-b last:border-0 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-transparent rounded-lg transition-all duration-200 border-l-2 border-l-amber-400">
+    <div className="py-3 px-3 border-b last:border-0 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-transparent dark:hover:from-amber-950/30 rounded-lg transition-all duration-200 border-l-2 border-l-amber-400">
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="text-xs md:text-sm font-semibold text-foreground">{client}</div>
@@ -27,13 +27,13 @@ export const ReviewItem = ({
         <div className="text-xs text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">{date}</div>
       </div>
       <div className="flex items-start gap-2">
-        <div className="flex items-center bg-gradient-to-r from-amber-100 to-yellow-100 rounded-full px-2 py-1 gap-0.5 shadow-sm">
+        <div className="flex items-center bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/50 dark:to-yellow-900/50 rounded-full px-2 py-1 gap-0.5 shadow-sm">
           {Array(5)
             .fill(0)
             .map((_, i) => (
               <Star 
                 key={i} 
-                className={`h-3.5 w-3.5 ${i < rating ? 'text-amber-500 fill-amber-500' : 'text-gray-300'}`} 
+                className={`h-3.5 w-3.5 ${i < rating ? 'text-amber-500 fill-amber-500' : 'text-gray-300 dark:text-gray-600'}`} 
               />
             ))}
         </div>

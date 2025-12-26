@@ -65,7 +65,7 @@ export function StaffScheduleDraggable({
                 key={slot}
                 className={`
                   border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
-                  ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
+                  ${status.type === 'available' ? 'bg-card border-border hover:bg-muted/50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
                 `}
                 style={{ 
                   width: slotWidth,

@@ -294,17 +294,17 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
       case 'inactive':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
       case 'pending invitation':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700';
       case 'on leave':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700';
       case 'training':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
     }
   };
 
@@ -327,8 +327,8 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Team Members</h3>
-            <p className="text-gray-600">Manage your care team members</p>
+            <h3 className="text-xl font-semibold text-foreground">Team Members</h3>
+            <p className="text-muted-foreground">Manage your care team members</p>
           </div>
           <Button disabled className="bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4 mr-2" />
@@ -345,8 +345,8 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">Team Members</h3>
-          <p className="text-gray-600">Manage your care team members</p>
+          <h3 className="text-xl font-semibold text-foreground">Team Members</h3>
+          <p className="text-muted-foreground">Manage your care team members</p>
         </div>
         <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -378,7 +378,7 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+      <div className="bg-card rounded-lg border border-border shadow-sm overflow-x-auto">
         <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see all columns</div>
         <Table className="min-w-[1100px]">
           <TableHeader>
@@ -421,8 +421,8 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
                     <Badge variant="outline" className={getStatusColor(carer.status)}>
                       {carer.status}
                     </Badge>
-                    {carer.invitation_sent_at && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  {carer.invitation_sent_at && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700">
                         Invited
                       </Badge>
                     )}

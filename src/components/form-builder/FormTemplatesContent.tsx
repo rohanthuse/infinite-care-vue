@@ -98,11 +98,11 @@ export const FormTemplatesContent: React.FC<FormTemplatesContentProps> = ({ bran
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Assessment': return 'bg-blue-50 text-blue-600 border-blue-200';
-      case 'Intake': return 'bg-green-50 text-green-600 border-green-200';
-      case 'Care Plan': return 'bg-purple-50 text-purple-600 border-purple-200';
-      case 'Medication': return 'bg-red-50 text-red-600 border-red-200';
-      default: return 'bg-gray-50 text-gray-600 border-gray-200';
+      case 'Assessment': return 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700';
+      case 'Intake': return 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
+      case 'Care Plan': return 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700';
+      case 'Medication': return 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
+      default: return 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
     }
   };
 
@@ -121,7 +121,7 @@ export const FormTemplatesContent: React.FC<FormTemplatesContentProps> = ({ bran
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Form Templates</h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Choose from pre-built templates or create a new form from scratch
           </p>
         </div>
@@ -160,9 +160,9 @@ export const FormTemplatesContent: React.FC<FormTemplatesContentProps> = ({ bran
       {/* Templates Grid */}
       {filteredTemplates.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
-          <p className="text-gray-500 mb-4">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No templates found</h3>
+          <p className="text-muted-foreground mb-4">
             {searchQuery ? 'Try adjusting your search criteria' : 'Create your first form to use as a template'}
           </p>
           <Button onClick={handleCreateFromScratch}>
@@ -215,7 +215,7 @@ export const FormTemplatesContent: React.FC<FormTemplatesContentProps> = ({ bran
                       {category}
                     </Badge>
                     
-                    <div className="flex justify-between text-sm text-gray-500">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="mr-1 h-3 w-3" />
                         {formatDate(template.updated_at)}
