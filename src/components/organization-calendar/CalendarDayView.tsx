@@ -77,7 +77,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
             {events.length} event{events.length !== 1 ? 's' : ''} scheduled
           </p>
           {eventsOutsideRange.length > 0 && (
-            <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-900">
+            <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-300">
               <AlertCircle className="h-3 w-3 mr-1" />
               {eventsOutsideRange.length} outside 7 AM-10 PM
             </Badge>

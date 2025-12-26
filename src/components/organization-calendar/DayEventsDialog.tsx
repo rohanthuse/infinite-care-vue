@@ -88,7 +88,7 @@ export const DayEventsDialog: React.FC<DayEventsDialogProps> = ({
                       </Badge>
                       
                       {/* Event Title */}
-                      <h4 className="font-semibold text-base mt-2">
+                      <h4 className="font-semibold text-base mt-2 text-foreground">
                         {event.title}
                       </h4>
                       
