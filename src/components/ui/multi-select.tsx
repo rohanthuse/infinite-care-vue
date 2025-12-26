@@ -37,6 +37,9 @@ interface MultiSelectProps {
   allowCustom?: boolean;
   onCustomOptionAdd?: (value: string) => void;
   customPrefix?: string;
+  showAddManualOption?: boolean;
+  addManualLabel?: string;
+  onAddManualClick?: () => void;
 }
 
 export function MultiSelect({
@@ -52,6 +55,9 @@ export function MultiSelect({
   allowCustom = false,
   onCustomOptionAdd,
   customPrefix = "custom:",
+  showAddManualOption = false,
+  addManualLabel = "Add Manually",
+  onAddManualClick,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -177,7 +183,21 @@ export function MultiSelect({
               {showAddOption ? null : emptyText}
             </CommandEmpty>
             <CommandGroup>
-              {/* Add custom option at the top when applicable */}
+              {/* Permanent "Add Manually" option - always visible at top */}
+              {showAddManualOption && (
+                <CommandItem
+                  value="__add_manual__"
+                  onSelect={() => {
+                    onAddManualClick?.();
+                    setOpen(false);
+                  }}
+                  className="text-primary font-medium border-b border-border mb-1 pb-2"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addManualLabel}
+                </CommandItem>
+              )}
+              {/* Add custom option when typing and no exact match */}
               {showAddOption && (
                 <CommandItem
                   onSelect={handleAddCustom}

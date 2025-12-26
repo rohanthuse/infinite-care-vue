@@ -42,6 +42,8 @@ export function WizardStep4MedicalInfo({
 }: WizardStep4MedicalInfoProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [customModeEntries, setCustomModeEntries] = useState<Set<number>>(new Set());
+  const [showManualDiagnosisInput, setShowManualDiagnosisInput] = useState(false);
+  const [manualDiagnosisText, setManualDiagnosisText] = useState("");
   const { data: diagnosisOptions = [], isLoading: isLoadingDiagnosis } = useDiagnosis();
   
   // Custom diagnosis prefix for identifying custom entries
@@ -50,14 +52,26 @@ export function WizardStep4MedicalInfo({
   // Track custom diagnoses from form
   const customDiagnoses: string[] = form.watch("medical_info.custom_diagnoses") || [];
   
-  // Handle adding new custom diagnosis from dropdown
+  // Handle adding new custom diagnosis from dropdown or manual input
   const handleAddCustomDiagnosis = (value: string) => {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return;
+    
     const current = form.getValues("medical_info.custom_diagnoses") || [];
-    if (!current.includes(value)) {
-      form.setValue("medical_info.custom_diagnoses", [...current, value]);
+    if (!current.includes(trimmedValue)) {
+      form.setValue("medical_info.custom_diagnoses", [...current, trimmedValue]);
       // Auto-select the new custom diagnosis
       const currentSelected = form.getValues("medical_info.medical_conditions") || [];
-      form.setValue("medical_info.medical_conditions", [...currentSelected, `${CUSTOM_PREFIX}${value}`]);
+      form.setValue("medical_info.medical_conditions", [...currentSelected, `${CUSTOM_PREFIX}${trimmedValue}`]);
+    }
+  };
+  
+  // Handle manual diagnosis submission
+  const handleManualDiagnosisSubmit = () => {
+    if (manualDiagnosisText.trim()) {
+      handleAddCustomDiagnosis(manualDiagnosisText.trim());
+      setManualDiagnosisText("");
+      setShowManualDiagnosisInput(false);
     }
   };
   
@@ -246,15 +260,57 @@ export function WizardStep4MedicalInfo({
                         field.onChange(selected);
                         form.setValue("medical_info.custom_diagnoses", customSelections);
                       }}
-                      placeholder={isLoadingDiagnosis ? "Loading diagnoses..." : "Search or type to add diagnosis..."}
+                      placeholder={isLoadingDiagnosis ? "Loading diagnoses..." : "Search or select diagnosis..."}
                       searchPlaceholder="Search diagnoses..."
                       emptyText="No matching diagnosis found"
                       disabled={isLoadingDiagnosis}
                       allowCustom={true}
                       onCustomOptionAdd={handleAddCustomDiagnosis}
                       customPrefix={CUSTOM_PREFIX}
+                      showAddManualOption={true}
+                      addManualLabel="Add Diagnosis Manually"
+                      onAddManualClick={() => setShowManualDiagnosisInput(true)}
                     />
                   </FormControl>
+                  
+                  {/* Manual diagnosis inline input */}
+                  {showManualDiagnosisInput && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Enter diagnosis name..."
+                        value={manualDiagnosisText}
+                        onChange={(e) => setManualDiagnosisText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleManualDiagnosisSubmit();
+                          }
+                        }}
+                        autoFocus
+                        className="flex-1"
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm"
+                        onClick={handleManualDiagnosisSubmit}
+                        disabled={!manualDiagnosisText.trim()}
+                      >
+                        Add
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setManualDiagnosisText("");
+                          setShowManualDiagnosisInput(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                  
                   <FormMessage />
                 </FormItem>
               )}
