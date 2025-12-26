@@ -44,6 +44,23 @@ export function WizardStep4MedicalInfo({
   const [customModeEntries, setCustomModeEntries] = useState<Set<number>>(new Set());
   const { data: diagnosisOptions = [], isLoading: isLoadingDiagnosis } = useDiagnosis();
   
+  // Custom diagnosis prefix for identifying custom entries
+  const CUSTOM_PREFIX = "custom:";
+  
+  // Track custom diagnoses from form
+  const customDiagnoses: string[] = form.watch("medical_info.custom_diagnoses") || [];
+  
+  // Handle adding new custom diagnosis from dropdown
+  const handleAddCustomDiagnosis = (value: string) => {
+    const current = form.getValues("medical_info.custom_diagnoses") || [];
+    if (!current.includes(value)) {
+      form.setValue("medical_info.custom_diagnoses", [...current, value]);
+      // Auto-select the new custom diagnosis
+      const currentSelected = form.getValues("medical_info.medical_conditions") || [];
+      form.setValue("medical_info.medical_conditions", [...currentSelected, `${CUSTOM_PREFIX}${value}`]);
+    }
+  };
+  
 
   // Service Band helper functions
   const toggleServiceBandCategory = (category: string, checked: boolean) => {
@@ -179,14 +196,22 @@ export function WizardStep4MedicalInfo({
   const allergies = form.watch("medical_info.allergies") || [];
   const selectedDiagnoses = form.watch("medical_info.medical_conditions") || [];
 
-  // Map diagnosis data to MultiSelect format
-  const diagnosisMultiSelectOptions = diagnosisOptions
-    .filter(d => d.status?.toLowerCase() === "active")
-    .map(d => ({
-      value: d.id,
-      label: d.title,
-      description: d.field_caption || undefined
-    }));
+  // Map diagnosis data to MultiSelect format - include both system and custom
+  const diagnosisMultiSelectOptions = [
+    ...diagnosisOptions
+      .filter(d => d.status?.toLowerCase() === "active")
+      .map(d => ({
+        value: d.id,
+        label: d.title,
+        description: d.field_caption || undefined,
+        isCustom: false
+      })),
+    ...customDiagnoses.map((diagnosis: string) => ({
+      value: `${CUSTOM_PREFIX}${diagnosis}`,
+      label: diagnosis,
+      isCustom: true
+    }))
+  ];
   
   return (
     <div className="space-y-6">
@@ -212,12 +237,22 @@ export function WizardStep4MedicalInfo({
                       options={diagnosisMultiSelectOptions}
                       selected={field.value || []}
                       onSelectionChange={(selected) => {
+                        // Separate system and custom selections
+                        const systemSelections = selected.filter(v => !v.startsWith(CUSTOM_PREFIX));
+                        const customSelections = selected
+                          .filter(v => v.startsWith(CUSTOM_PREFIX))
+                          .map(v => v.replace(CUSTOM_PREFIX, ''));
+                        
                         field.onChange(selected);
+                        form.setValue("medical_info.custom_diagnoses", customSelections);
                       }}
-                      placeholder={isLoadingDiagnosis ? "Loading diagnoses..." : "Search and select diagnoses..."}
+                      placeholder={isLoadingDiagnosis ? "Loading diagnoses..." : "Search or type to add diagnosis..."}
                       searchPlaceholder="Search diagnoses..."
-                      emptyText="No diagnoses found. Add them in Core Settings → Diagnosis."
+                      emptyText="No matching diagnosis found"
                       disabled={isLoadingDiagnosis}
+                      allowCustom={true}
+                      onCustomOptionAdd={handleAddCustomDiagnosis}
+                      customPrefix={CUSTOM_PREFIX}
                     />
                   </FormControl>
                   <FormMessage />
