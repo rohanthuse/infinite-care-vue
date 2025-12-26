@@ -59,13 +59,13 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
 
   const getEventColor = (type: string) => {
     const colors = {
-      booking: 'border-blue-500 bg-blue-50 dark:bg-blue-950/50',
-      meeting: 'border-purple-500 bg-purple-50 dark:bg-purple-950/50',
-      leave: 'border-teal-500 bg-teal-50 dark:bg-teal-950/50',
-      training: 'border-green-500 bg-green-50 dark:bg-green-950/50',
-      agreement: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50'
+      booking: 'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/50 dark:text-blue-100',
+      meeting: 'border-purple-500 bg-purple-50 text-purple-900 dark:bg-purple-950/50 dark:text-purple-100',
+      leave: 'border-teal-500 bg-teal-50 text-teal-900 dark:bg-teal-950/50 dark:text-teal-100',
+      training: 'border-green-500 bg-green-50 text-green-900 dark:bg-green-950/50 dark:text-green-100',
+      agreement: 'border-yellow-500 bg-yellow-50 text-yellow-900 dark:bg-yellow-950/50 dark:text-yellow-100'
     };
-    return colors[type as keyof typeof colors] || 'border-border bg-card';
+    return colors[type as keyof typeof colors] || 'border-border bg-card text-foreground';
   };
 
   const getStatusColor = (status: string) => {
@@ -113,7 +113,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
             </span>
             {/* Show late duration in compact view */}
             {event.isLateStart && event.lateStartMinutes && event.lateStartMinutes > 0 && (
-              <span className="text-xs text-amber-600 font-medium">
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 (+{event.lateStartMinutes}m late)
               </span>
             )}
@@ -212,7 +212,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
               <span className="font-medium text-amber-700 dark:text-amber-400">
                 {format(new Date(event.actualStartTime), 'HH:mm')}
               </span>
-              <span className="text-amber-600 ml-1">
+              <span className="text-amber-600 dark:text-amber-400 ml-1">
                 ({event.lateStartMinutes}m late)
               </span>
             </div>
