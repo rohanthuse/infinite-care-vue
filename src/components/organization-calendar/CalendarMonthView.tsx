@@ -138,7 +138,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     {format(day, 'd')}
                   </span>
                   {dayEvents.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs dark:bg-secondary dark:text-secondary-foreground">
                       {dayEvents.length}
                     </Badge>
                   )}

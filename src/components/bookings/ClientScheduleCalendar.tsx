@@ -755,23 +755,23 @@ export function ClientScheduleCalendar({
               <CardContent className="pt-4">
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
+                    <div className="w-4 h-4 rounded bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-700"></div>
                     <span>Scheduled</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
+                    <div className="w-4 h-4 rounded bg-orange-100 dark:bg-orange-900/50 border border-orange-300 dark:border-orange-700"></div>
                     <span>In Progress</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+                    <div className="w-4 h-4 rounded bg-green-100 dark:bg-green-900/50 border border-green-300 dark:border-green-700"></div>
                     <span>Completed</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+                    <div className="w-4 h-4 rounded bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700"></div>
                     <span>Cancelled</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                    <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600"></div>
                     <span>Available</span>
                   </div>
                 </div>
