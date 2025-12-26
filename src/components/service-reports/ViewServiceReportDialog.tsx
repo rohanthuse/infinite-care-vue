@@ -147,15 +147,17 @@ export function ViewServiceReportDialog({
   const { events = [], incidents = [], accidents = [], observations = [], isLoading: eventsLoading } = useVisitEvents(safeReport?.visit_record_id);
 
   // Fetch client's care plan for goals and activities display
+  // Use consistent ACTIVE_CARE_PLAN_STATUSES for filtering
   const { data: clientCarePlan } = useQuery({
     queryKey: ['client-care-plan-for-view', safeReport?.client_id],
     queryFn: async () => {
       if (!safeReport?.client_id) return null;
+      const ACTIVE_STATUSES = ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'];
       const { data, error } = await supabase
         .from('client_care_plans')
         .select('id')
         .eq('client_id', safeReport.client_id)
-        .in('status', ['draft', 'pending', 'confirmed', 'active'])
+        .in('status', ACTIVE_STATUSES)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

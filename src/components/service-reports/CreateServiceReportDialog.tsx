@@ -161,11 +161,13 @@ export function CreateServiceReportDialog({
     queryKey: ['client-care-plan', preSelectedClient?.id],
     queryFn: async () => {
       if (!preSelectedClient?.id) return null;
+      // Import ACTIVE_CARE_PLAN_STATUSES constant for consistent status filtering
+      const ACTIVE_STATUSES = ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'];
       const { data, error } = await supabase
         .from('client_care_plans')
         .select('id')
         .eq('client_id', preSelectedClient.id)
-        .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'])
+        .in('status', ACTIVE_STATUSES)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -449,6 +451,7 @@ export function CreateServiceReportDialog({
   }, [open, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
 
   // Auto-load care plan tasks when dialog opens with no existing tasks
+  // Also sync goals/activities from JSON to relational tables
   useEffect(() => {
     const loadCarePlanTasks = async () => {
       if (!effectiveVisitRecordId || !preSelectedClient?.id) return;
@@ -456,13 +459,15 @@ export function CreateServiceReportDialog({
       
       console.log('[CreateServiceReportDialog] Loading care plan tasks for visit:', effectiveVisitRecordId);
       
+      const ACTIVE_STATUSES = ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'];
+      
       try {
         // Fetch care plan with auto_save_data
         const { data: carePlan } = await supabase
           .from('client_care_plans')
           .select('id, auto_save_data')
           .eq('client_id', preSelectedClient.id)
-          .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'])
+          .in('status', ACTIVE_STATUSES)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -491,18 +496,46 @@ export function CreateServiceReportDialog({
             });
           }
           
-          // Also fetch client_activities for the care plan
+          // Also fetch client_activities for the care plan (from relational table)
           const { data: activities } = await supabase
             .from('client_activities')
             .select('name, description')
             .eq('care_plan_id', carePlan.id)
             .eq('status', 'active');
           
+          // Add activities from relational table, avoiding duplicates
+          const existingTaskNames = new Set(tasks.map(t => t.task_name.toLowerCase().trim()));
           activities?.forEach(act => {
-            if (act.name || act.description) {
-              tasks.push({ task_category: 'Activity', task_name: act.name || act.description || '' });
+            const taskName = act.name || act.description || '';
+            if (taskName && !existingTaskNames.has(taskName.toLowerCase().trim())) {
+              tasks.push({ task_category: 'Activity', task_name: taskName });
+              existingTaskNames.add(taskName.toLowerCase().trim());
             }
           });
+          
+          // Also fetch goals from relational table
+          const { data: goals } = await supabase
+            .from('client_care_plan_goals')
+            .select('description')
+            .eq('care_plan_id', carePlan.id);
+          
+          goals?.forEach(goal => {
+            if (goal.description && !existingTaskNames.has(goal.description.toLowerCase().trim())) {
+              tasks.push({ task_category: 'Goal', task_name: goal.description });
+              existingTaskNames.add(goal.description.toLowerCase().trim());
+            }
+          });
+          
+          // Also add goals from JSON if not in relational table
+          if (autoSave?.goals) {
+            autoSave.goals.forEach((goal: any) => {
+              const goalDesc = goal.description || goal.goal || '';
+              if (goalDesc && !existingTaskNames.has(goalDesc.toLowerCase().trim())) {
+                tasks.push({ task_category: 'Goal', task_name: goalDesc });
+                existingTaskNames.add(goalDesc.toLowerCase().trim());
+              }
+            });
+          }
           
           console.log('[CreateServiceReportDialog] Found tasks to load:', tasks.length);
           
@@ -527,7 +560,7 @@ export function CreateServiceReportDialog({
     if (open && effectiveVisitRecordId) {
       loadCarePlanTasks();
     }
-  }, [open, effectiveVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient]);
+  }, [open, effectiveVisitRecordId, visitTasks?.length, preSelectedClient?.id, queryClient, clientCarePlan?.id]);
 
   // Create visit record when dialog opens in create mode to enable data loading
   useEffect(() => {
