@@ -561,15 +561,15 @@ export function ClientScheduleCalendar({
     // Default colors for status types
     switch (status.type) {
       case 'scheduled':
-        return 'bg-blue-100 border-blue-300 text-blue-800';
+        return 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300';
       case 'in-progress':
-        return 'bg-purple-100 border-purple-300 text-purple-800';
+        return 'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/50 dark:border-purple-700 dark:text-purple-300';
       case 'completed':
-        return 'bg-green-100 border-green-300 text-green-800';
+        return 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/50 dark:border-green-700 dark:text-green-300';
       case 'cancelled':
-        return 'bg-red-100 border-red-300 text-red-800';
+        return 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300';
       default:
-        return 'bg-white border-gray-200 hover:bg-gray-50';
+        return 'bg-background border-border hover:bg-muted/50';
     }
   };
 
@@ -949,7 +949,7 @@ export function ClientScheduleCalendar({
                           key={slot}
                           className={`
                             border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
-                            ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-transparent'}
+                            ${status.type === 'available' ? 'bg-background border-border hover:bg-muted/50' : 'bg-transparent'}
                           `}
                           style={{ 
                             width: SLOT_WIDTH,
