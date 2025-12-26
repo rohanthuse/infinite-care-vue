@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff, Repeat, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle, CalendarOff, Repeat, MapPin, Loader2 } from "lucide-react";
 import { findDatesForDayOfWeek } from "../utils/dateUtils";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
@@ -170,6 +170,7 @@ interface NewBookingDialogProps {
     carerId?: string;
   };
   preSelectedClientId?: string;
+  isCreating?: boolean;
 }
 
 export function NewBookingDialog({
@@ -181,6 +182,7 @@ export function NewBookingDialog({
   branchId,
   prefilledData,
   preSelectedClientId,
+  isCreating = false,
 }: NewBookingDialogProps) {
   const [scheduleCount, setScheduleCount] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -305,6 +307,14 @@ export function NewBookingDialog({
 
   // Reset form and close dialog safely
   const handleClose = () => {
+    // Prevent closing while creating bookings
+    if (isCreating) {
+      toast.warning("Please wait", {
+        description: "Bookings are still being created..."
+      });
+      return;
+    }
+    
     try {
       // Clear search queries to prevent selector re-renders
       setSearchQuery("");
@@ -630,7 +640,7 @@ export function NewBookingDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
+      <DialogContent className="relative max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
@@ -1573,12 +1583,31 @@ export function NewBookingDialog({
             </form>
           </Form>
         </div>
+        {/* Loading Overlay for Recurring Booking Creation */}
+        {isCreating && bookingMode === "recurring" && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4 rounded-lg">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="text-center space-y-2">
+              <p className="text-lg font-medium">Creating Recurring Bookings</p>
+              <p className="text-sm text-muted-foreground">
+                Please wait while your bookings are being scheduled...
+              </p>
+            </div>
+          </div>
+        )}
         <DialogFooter className="flex-shrink-0 mt-4">
-          <Button type="button" variant="outline" onClick={handleClose}>
+          <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
-            {bookingMode === "single" ? "Create Single Booking" : "Create Recurring Bookings"}
+          <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isCreating}>
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {bookingMode === "single" ? "Creating Booking..." : "Creating Bookings..."}
+              </>
+            ) : (
+              bookingMode === "single" ? "Create Single Booking" : "Create Recurring Bookings"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
