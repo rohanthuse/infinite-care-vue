@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Stethoscope, Activity, Eye, Ear, Accessibility, MessageSquare, ChevronDown, ChevronUp, Plus, X } from "lucide-react";
+import { Stethoscope, Activity, Eye, Ear, Accessibility, MessageSquare, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { YesNoToggle } from "@/components/care/forms/YesNoToggle";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 interface WizardStepDiagnosisProps {
   form: UseFormReturn<any>;
@@ -33,47 +34,66 @@ const SERVICE_BAND_CATEGORIES = [
   "Mental Health", "Substance Misuse", "Older Adults"
 ];
 
+const CUSTOM_PREFIX = "custom:";
+
 export function WizardStepDiagnosis({ form, effectiveCarePlanId }: WizardStepDiagnosisProps) {
   const [activeSubTab, setActiveSubTab] = useState("diagnosis");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [customDiagnosisInput, setCustomDiagnosisInput] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
-
-  // Toggle medical condition selection
-  const toggleMedicalCondition = (condition: string, checked: boolean) => {
-    const current = form.getValues("diagnosis.medical_conditions") || [];
-    if (checked) {
-      form.setValue("diagnosis.medical_conditions", [...current, condition]);
-    } else {
-      form.setValue("diagnosis.medical_conditions", current.filter((c: string) => c !== condition));
-    }
-  };
 
   const selectedConditions = form.watch("diagnosis.medical_conditions") || [];
   const customDiagnoses = form.watch("diagnosis.custom_diagnoses") || [];
 
-  // Add custom diagnosis
-  const addCustomDiagnosis = () => {
-    if (customDiagnosisInput.trim()) {
-      const current = form.getValues("diagnosis.custom_diagnoses") || [];
-      if (!current.includes(customDiagnosisInput.trim())) {
-        form.setValue("diagnosis.custom_diagnoses", [...current, customDiagnosisInput.trim()]);
-      }
-      setCustomDiagnosisInput("");
+  // Build combined options list (system + custom)
+  const allDiagnosisOptions: MultiSelectOption[] = [
+    ...MEDICAL_CONDITIONS_LIST.map(condition => ({
+      value: condition,
+      label: condition,
+      isCustom: false
+    })),
+    ...customDiagnoses.map((diagnosis: string) => ({
+      value: `${CUSTOM_PREFIX}${diagnosis}`,
+      label: diagnosis,
+      isCustom: true
+    }))
+  ];
+
+  // Combined selected values (system + custom with prefix)
+  const combinedSelected = [
+    ...selectedConditions,
+    ...customDiagnoses.map((d: string) => `${CUSTOM_PREFIX}${d}`)
+  ];
+
+  // Handle selection change from MultiSelect
+  const handleDiagnosisChange = (newSelection: string[]) => {
+    const systemConditions = newSelection.filter(v => !v.startsWith(CUSTOM_PREFIX));
+    const customValues = newSelection
+      .filter(v => v.startsWith(CUSTOM_PREFIX))
+      .map(v => v.replace(CUSTOM_PREFIX, ''));
+    
+    form.setValue("diagnosis.medical_conditions", systemConditions);
+    form.setValue("diagnosis.custom_diagnoses", customValues);
+  };
+
+  // Handle adding new custom diagnosis from dropdown
+  const handleAddCustomDiagnosis = (value: string) => {
+    const current = form.getValues("diagnosis.custom_diagnoses") || [];
+    if (!current.includes(value)) {
+      const newCustomDiagnoses = [...current, value];
+      form.setValue("diagnosis.custom_diagnoses", newCustomDiagnoses);
+      // Also add to selected
+      const currentSelected = form.getValues("diagnosis.medical_conditions") || [];
+      form.setValue("diagnosis.medical_conditions", currentSelected);
     }
   };
 
-  // Remove custom diagnosis
-  const removeCustomDiagnosis = (diagnosis: string) => {
-    const current = form.getValues("diagnosis.custom_diagnoses") || [];
-    form.setValue("diagnosis.custom_diagnoses", current.filter((d: string) => d !== diagnosis));
-  };
-
-  // Handle Enter key for adding custom diagnosis
-  const handleCustomDiagnosisKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addCustomDiagnosis();
+  // Remove a diagnosis (system or custom)
+  const removeDiagnosis = (value: string, isCustom: boolean) => {
+    if (isCustom) {
+      const current = form.getValues("diagnosis.custom_diagnoses") || [];
+      form.setValue("diagnosis.custom_diagnoses", current.filter((d: string) => d !== value));
+    } else {
+      const current = form.getValues("diagnosis.medical_conditions") || [];
+      form.setValue("diagnosis.medical_conditions", current.filter((c: string) => c !== value));
     }
   };
 
@@ -268,86 +288,21 @@ export function WizardStepDiagnosis({ form, effectiveCarePlanId }: WizardStepDia
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Select all applicable medical conditions
+                    Search and select medical conditions, or type to add a custom diagnosis
                   </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-1">
-                    {MEDICAL_CONDITIONS_LIST.map((condition) => (
-                      <div key={condition} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`condition-${condition}`}
-                          checked={selectedConditions.includes(condition)}
-                          onCheckedChange={(checked) => toggleMedicalCondition(condition, checked as boolean)}
-                        />
-                        <Label 
-                          htmlFor={`condition-${condition}`} 
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {condition}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Custom Diagnosis Option */}
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Checkbox
-                        id="custom-diagnosis-toggle"
-                        checked={showCustomInput || customDiagnoses.length > 0}
-                        onCheckedChange={(checked) => setShowCustomInput(checked as boolean)}
-                      />
-                      <Label 
-                        htmlFor="custom-diagnosis-toggle" 
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        Other / Custom Diagnosis
-                      </Label>
-                    </div>
-
-                    {(showCustomInput || customDiagnoses.length > 0) && (
-                      <div className="space-y-3 pl-6">
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Enter custom diagnosis..."
-                            value={customDiagnosisInput}
-                            onChange={(e) => setCustomDiagnosisInput(e.target.value)}
-                            onKeyDown={handleCustomDiagnosisKeyDown}
-                            className="flex-1"
-                          />
-                          <Button 
-                            type="button" 
-                            size="sm" 
-                            onClick={addCustomDiagnosis}
-                            disabled={!customDiagnosisInput.trim()}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-
-                        {customDiagnoses.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {customDiagnoses.map((diagnosis: string) => (
-                              <Badge 
-                                key={diagnosis} 
-                                variant="secondary" 
-                                className="bg-purple-100 text-purple-800 flex items-center gap-1"
-                              >
-                                {diagnosis}
-                                <button
-                                  type="button"
-                                  onClick={() => removeCustomDiagnosis(diagnosis)}
-                                  className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  
+                  <MultiSelect
+                    options={allDiagnosisOptions}
+                    selected={combinedSelected}
+                    onSelectionChange={handleDiagnosisChange}
+                    placeholder="Search or type to add diagnosis..."
+                    searchPlaceholder="Search diagnoses..."
+                    emptyText="No matching diagnosis found"
+                    allowCustom={true}
+                    onCustomOptionAdd={handleAddCustomDiagnosis}
+                    customPrefix={CUSTOM_PREFIX}
+                    maxDisplay={5}
+                  />
 
                   {/* Selected Conditions Summary */}
                   {(selectedConditions.length > 0 || customDiagnoses.length > 0) && (
@@ -355,13 +310,35 @@ export function WizardStepDiagnosis({ form, effectiveCarePlanId }: WizardStepDia
                       <p className="text-sm font-medium mb-2">Selected Conditions:</p>
                       <div className="flex flex-wrap gap-2">
                         {selectedConditions.map((condition: string) => (
-                          <Badge key={condition} variant="secondary" className="bg-blue-100 text-blue-800">
+                          <Badge 
+                            key={condition} 
+                            variant="secondary" 
+                            className="bg-blue-100 text-blue-800 flex items-center gap-1"
+                          >
                             {condition}
+                            <button
+                              type="button"
+                              onClick={() => removeDiagnosis(condition, false)}
+                              className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </Badge>
                         ))}
                         {customDiagnoses.map((diagnosis: string) => (
-                          <Badge key={`custom-${diagnosis}`} variant="secondary" className="bg-purple-100 text-purple-800">
+                          <Badge 
+                            key={`custom-${diagnosis}`} 
+                            variant="secondary" 
+                            className="bg-purple-100 text-purple-800 flex items-center gap-1"
+                          >
                             {diagnosis} (Custom)
+                            <button
+                              type="button"
+                              onClick={() => removeDiagnosis(diagnosis, true)}
+                              className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </Badge>
                         ))}
                       </div>
