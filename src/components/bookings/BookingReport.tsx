@@ -50,12 +50,12 @@ interface BookingReportProps {
 
 // A mapping of status to color for the badges
 const statusColors: Record<string, string> = {
-  "assigned": "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  "unassigned": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  "done": "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  "in-progress": "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  "cancelled": "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
-  "departed": "bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20",
+  "assigned": "bg-green-500/10 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-green-500/20",
+  "unassigned": "bg-amber-500/10 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-amber-500/20",
+  "done": "bg-blue-500/10 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-blue-500/20",
+  "in-progress": "bg-purple-500/10 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-purple-500/20",
+  "cancelled": "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-red-500/20",
+  "departed": "bg-teal-500/10 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 border-teal-500/20",
   "suspended": "bg-muted text-muted-foreground border-border",
 }
 
@@ -417,8 +417,8 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               <div className="space-y-3">
                 {reportData.topCarers.map((carer, index) => (
                   <div key={carer.name} className="flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                   <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 text-primary flex items-center justify-center text-sm font-medium">
                          {index + 1}
                        </div>
                        <div>
@@ -426,7 +426,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
                          <p className="text-sm text-muted-foreground">{carer.bookings} bookings</p>
                        </div>
                      </div>
-                     <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">
+                     <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:bg-green-900/50 dark:text-green-300">
                       {carer.completionRate.toFixed(1)}%
                     </Badge>
                   </div>
@@ -443,8 +443,8 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               <div className="space-y-3">
                 {reportData.topClients.map((client, index) => (
                   <div key={client.name} className="flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-400 flex items-center justify-center text-sm font-medium">
+                   <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 flex items-center justify-center text-sm font-medium">
                          {index + 1}
                        </div>
                        <div>
