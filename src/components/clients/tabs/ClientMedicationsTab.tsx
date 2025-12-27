@@ -124,7 +124,7 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
 
       {/* Active Medications */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Pill className="h-5 w-5 text-blue-600" />
@@ -146,8 +146,8 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
         </CardHeader>
         <CardContent className="pt-4">
           {activeMedications.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Pill className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <Pill className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No active medications</p>
             </div>
           ) : (
@@ -281,7 +281,7 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
                             <AlertTriangle className="h-4 w-4 text-orange-600" />
                           )}
                           <span className={`text-sm font-medium ${
-                            record.administered_at ? 'text-green-700' : 'text-orange-700'
+                            record.administered_at ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'
                           }`}>
                             {record.administered_at ? 'Administered' : 'Missed'}
                           </span>
@@ -298,7 +298,7 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
                           )}
                           
                           {!record.administered_at && (
-                            <p className="text-sm text-orange-600 bg-orange-50 rounded p-2">
+                            <p className="text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 rounded p-2">
                               Medication not administered
                             </p>
                           )}

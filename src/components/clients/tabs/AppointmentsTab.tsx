@@ -260,15 +260,15 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
     switch (status.toLowerCase()) {
       case 'confirmed':
       case 'assigned':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
     }
   };
 
@@ -295,7 +295,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />
@@ -310,8 +310,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         </CardHeader>
         <CardContent className="pt-4">
           {bookings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No appointments scheduled for this client</p>
             </div>
           ) : (
@@ -336,7 +336,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                              currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>{format(startDate, 'MMM dd, yyyy')}</span>
@@ -346,7 +346,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                             <span>{format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                           <div className="flex items-center gap-1">
                             <User className="h-4 w-4" />
                             <span>{booking.staff_name || 'Staff Not Assigned'}</span>
