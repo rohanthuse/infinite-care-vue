@@ -485,40 +485,40 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
         <div className="flex flex-wrap gap-4 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-sm text-gray-700">Completed</span>
+            <span className="text-sm text-foreground">Completed</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <Clock className="h-4 w-4 text-blue-600" />
+              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-sm text-gray-700">In Progress</span>
+            <span className="text-sm text-foreground">In Progress</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded border-2 border-cyan-300 bg-cyan-50 flex items-center justify-center">
-              <CircleDashed className="h-3 w-3 text-cyan-700" />
+            <div className="w-6 h-6 rounded border-2 border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
+              <CircleDashed className="h-3 w-3 text-cyan-700 dark:text-cyan-300" />
             </div>
-            <span className="text-sm text-gray-700 font-medium">Assigned (Not Started)</span>
+            <span className="text-sm text-foreground font-medium">Assigned (Not Started)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <XCircle className="h-4 w-4 text-red-600" />
+              <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
             </div>
-            <span className="text-sm text-gray-700">Expired</span>
+            <span className="text-sm text-foreground">Expired</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center opacity-40">
-              <CircleDashed className="h-4 w-4 text-gray-400" />
+              <CircleDashed className="h-4 w-4 text-muted-foreground" />
             </div>
-            <span className="text-sm text-gray-500">Not Assigned</span>
+            <span className="text-sm text-muted-foreground">Not Assigned</span>
           </div>
         </div>
       </div>
       
       <div className="overflow-x-auto border rounded-lg">
         <Table>
-          <TableHeader className="bg-gray-50">
+          <TableHeader>
             <TableRow>
               <TableHead className="min-w-[200px] w-[200px]">Staff Member</TableHead>
               <TableHead className="text-center w-[120px]">Completion</TableHead>
@@ -563,12 +563,12 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                       variant="outline" 
                       className={`text-[10px] mt-1 ${
                         training.category === 'core' 
-                          ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
                           : training.category === 'mandatory' 
-                            ? 'bg-red-50 text-red-700 border-red-200'
+                            ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700'
                             : training.category === 'specialized'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-gray-50 text-gray-700 border-gray-200'
+                              ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700'
+                              : 'bg-muted text-muted-foreground border-border'
                       }`}
                     >
                       {training.category}
@@ -582,7 +582,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
             {filteredStaff.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={filteredTrainings.length + 2} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center text-gray-500">
+                  <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Users className="h-8 w-8 mb-2" />
                     <p className="text-sm">No staff members found.</p>
                     <p className="text-xs mt-1">Try adjusting your search criteria.</p>
@@ -600,14 +600,14 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                       </Avatar>
                       <div>
                         <div className="font-medium text-sm">{staffMember.name}</div>
-                        <div className="text-xs text-gray-500">{staffMember.role}</div>
+                        <div className="text-xs text-muted-foreground">{staffMember.role}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-center gap-1">
                       <Progress value={calculateCompletionPercentage(staffMember.id)} className="h-2 w-full" />
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {calculateCompletionPercentage(staffMember.id)}%
                       </span>
                     </div>
@@ -623,11 +623,11 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                         />
                       ) : (
                         <div 
-                          className="p-2 border border-dashed rounded-md bg-gray-50 flex flex-col items-center justify-center min-h-[70px] min-w-[70px] opacity-40 hover:opacity-60 transition-opacity"
+                          className="p-2 border border-dashed rounded-md bg-muted flex flex-col items-center justify-center min-h-[70px] min-w-[70px] opacity-40 hover:opacity-60 transition-opacity"
                           title="Not assigned"
                         >
-                          <CircleDashed className="h-4 w-4 text-gray-400" />
-                          <div className="text-xs font-medium text-gray-400 mt-1">
+                          <CircleDashed className="h-4 w-4 text-muted-foreground" />
+                          <div className="text-xs font-medium text-muted-foreground mt-1">
                             Not Assigned
                           </div>
                         </div>
