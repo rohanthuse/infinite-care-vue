@@ -84,7 +84,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
   }
 
   const renderLoadingSkeleton = () => (
-    <Card className="border border-gray-200 shadow-sm">
+    <Card className="border border-border shadow-sm">
       <CardContent className="p-6">
         <Skeleton className="h-6 w-48 mb-4" />
         <Skeleton className="h-[350px] w-full" />
@@ -102,8 +102,8 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? "bg-blue-100 text-blue-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             {tab.label}
@@ -116,7 +116,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
       ) : (
         <>
           {activeTab === "performance" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Staff Performance Metrics</h3>
                 <div className="w-full" style={{ height: "350px" }}>
@@ -150,7 +150,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
           )}
           
           {activeTab === "availability" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Staff Availability by Day</h3>
                 <div className="w-full" style={{ height: "350px" }}>
@@ -184,7 +184,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
           )}
           
           {activeTab === "qualifications" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Staff Qualifications Distribution</h3>
                 <div className="w-full" style={{ height: "350px" }}>

@@ -174,7 +174,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
   
   return (
     <div className="space-y-4">
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-border shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-2xl font-bold">Reports</CardTitle>
           <CardDescription>
@@ -194,20 +194,20 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
                 onClick={() => setActiveReport(option.id)}
                 className={`cursor-pointer transition-all hover:shadow-md ${
                   activeReport === option.id 
-                    ? "bg-blue-50 border-blue-200" 
-                    : "bg-white hover:bg-gray-50"
+                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700" 
+                    : "bg-card hover:bg-muted"
                 }`}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center">
                   <div className={`p-2 rounded-full mb-2 ${
                     activeReport === option.id 
-                      ? "bg-blue-100 text-blue-700" 
-                      : "bg-gray-100 text-gray-700"
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" 
+                      : "bg-muted text-muted-foreground"
                   }`}>
                     {option.icon}
                   </div>
                   <h3 className={`font-medium text-sm ${
-                    activeReport === option.id ? "text-blue-700" : ""
+                    activeReport === option.id ? "text-blue-700 dark:text-blue-300" : ""
                   }`}>
                     {option.title}
                   </h3>
@@ -216,7 +216,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
             ))}
           </div>
           
-          <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+          <div className="bg-card p-4 border border-border rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">{reportOptions.find(option => option.id === activeReport)?.title}</h2>
             {renderActiveReport()}
           </div>

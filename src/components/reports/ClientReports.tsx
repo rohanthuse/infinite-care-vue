@@ -95,7 +95,7 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
   }
 
   const renderLoadingSkeleton = () => (
-    <Card className="border border-gray-200 shadow-sm">
+    <Card className="border border-border shadow-sm">
       <CardContent className="p-6">
         <Skeleton className="h-6 w-48 mb-4" />
         <Skeleton className="h-[350px] w-full" />
@@ -114,8 +114,8 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               {tab.label}
@@ -137,7 +137,7 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
       ) : (
         <>
           {activeTab === "activity" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Client Activity Overview</h3>
                 <div className="w-full" style={{ height: "350px" }}>
@@ -169,7 +169,7 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
           )}
           
           {activeTab === "demographics" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Client Demographics</h3>
                 <div className="w-full" style={{ height: "350px" }}>
@@ -208,7 +208,7 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
           )}
           
           {activeTab === "services" && (
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Client Service Utilization</h3>
                 <div className="w-full" style={{ height: "350px" }}>
