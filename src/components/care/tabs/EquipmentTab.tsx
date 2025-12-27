@@ -123,7 +123,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-orange-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-orange-600" />
@@ -254,7 +254,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
       {/* Moving & Handling Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <CardTitle className="text-lg">Moving & Handling of the Client</CardTitle>
           <CardDescription>Client handling considerations and techniques</CardDescription>
         </CardHeader>
@@ -318,7 +318,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
       {/* Environment Checks Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white dark:from-green-950/30 dark:to-background">
           <CardTitle className="text-lg">Environment Checks</CardTitle>
           <CardDescription>Assessment of environmental factors affecting client safety</CardDescription>
         </CardHeader>
@@ -361,7 +361,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
       {/* Home Repairs Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-background">
           <CardTitle className="text-lg">Home Repairs</CardTitle>
           <CardDescription>Recommended home modifications and repairs</CardDescription>
         </CardHeader>

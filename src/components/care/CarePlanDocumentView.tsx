@@ -440,7 +440,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                 <div className="space-y-4">
                   {dietaryRequirements.allergies && dietaryRequirements.allergies.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Food Allergies</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Food Allergies</p>
                       <div className="flex flex-wrap gap-2">
                         {dietaryRequirements.allergies.map((allergy: string, index: number) => (
                           <Badge key={index} variant="destructive" className="text-xs">
@@ -454,7 +454,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {dietaryRequirements.restrictions && dietaryRequirements.restrictions.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Dietary Restrictions</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Dietary Restrictions</p>
                       <div className="flex flex-wrap gap-2">
                         {dietaryRequirements.restrictions.map((restriction: string, index: number) => (
                           <Badge key={index} variant="outline" className="text-xs">
@@ -467,7 +467,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {dietaryRequirements.preferences && dietaryRequirements.preferences.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Food Preferences</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Food Preferences</p>
                       <div className="flex flex-wrap gap-2">
                         {dietaryRequirements.preferences.map((preference: string, index: number) => (
                           <Badge key={index} variant="secondary" className="text-xs">
@@ -480,13 +480,13 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {dietaryRequirements.special_considerations && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Special Considerations</p>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{dietaryRequirements.special_considerations}</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Special Considerations</p>
+                      <p className="text-sm bg-muted p-3 rounded">{dietaryRequirements.special_considerations}</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">No dietary requirements specified</p>
+                <p className="text-muted-foreground">No dietary requirements specified</p>
               )}
             </CardContent>
           </Card>
@@ -511,36 +511,36 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
               {personalCare ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Mobility</p>
+                    <p className="text-sm font-medium text-foreground">Mobility</p>
                     <p className="text-sm">{personalCare.mobility || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Hygiene Assistance</p>
+                    <p className="text-sm font-medium text-foreground">Hygiene Assistance</p>
                     <Badge variant="outline" className="text-xs">
                       {personalCare.hygiene_assistance || 'Not specified'}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Bathing Assistance</p>
+                    <p className="text-sm font-medium text-foreground">Bathing Assistance</p>
                     <Badge variant="outline" className="text-xs">
                       {personalCare.bathing_assistance || 'Not specified'}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Dressing Assistance</p>
+                    <p className="text-sm font-medium text-foreground">Dressing Assistance</p>
                     <Badge variant="outline" className="text-xs">
                       {personalCare.dressing_assistance || 'Not specified'}
                     </Badge>
                   </div>
                   {personalCare.behavioral_notes && (
                     <div className="md:col-span-2">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Behavioral Notes</p>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{personalCare.behavioral_notes}</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Behavioral Notes</p>
+                      <p className="text-sm bg-muted p-3 rounded">{personalCare.behavioral_notes}</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">No personal care information available</p>
+                <p className="text-muted-foreground">No personal care information available</p>
               )}
             </CardContent>
           </Card>
@@ -551,27 +551,27 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
         
         {/* Summary Statistics */}
         <section id="summary" className="mt-8">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
             <CardHeader>
-              <CardTitle className="text-blue-900">Care Plan Summary</CardTitle>
+              <CardTitle className="text-blue-900 dark:text-blue-100">Care Plan Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{goals.length}</div>
-                  <div className="text-sm text-gray-600">Active Goals</div>
+                  <div className="text-sm text-muted-foreground">Active Goals</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{assessments.length}</div>
-                  <div className="text-sm text-gray-600">Assessments</div>
+                  <div className="text-sm text-muted-foreground">Assessments</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">{equipment.length}</div>
-                  <div className="text-sm text-gray-600">Equipment Items</div>
+                  <div className="text-sm text-muted-foreground">Equipment Items</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">{riskAssessments.length}</div>
-                  <div className="text-sm text-gray-600">Risk Assessments</div>
+                  <div className="text-sm text-muted-foreground">Risk Assessments</div>
                 </div>
               </div>
             </CardContent>
