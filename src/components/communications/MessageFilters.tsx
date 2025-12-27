@@ -91,27 +91,27 @@ export const MessageFilters = ({
         </DropdownMenu>
       </div>
       
-      <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
+      <div className="w-full flex overflow-hidden bg-muted rounded-md">
         <button 
-          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'all' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'all' ? 'bg-background rounded-md shadow-sm' : ''}`}
           onClick={() => onFilterChange('all')}
         >
           All
         </button>
         <button 
-          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'carers' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'carers' ? 'bg-background rounded-md shadow-sm' : ''}`}
           onClick={() => onFilterChange('carers')}
         >
           Carers
         </button>
         <button 
-          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'clients' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'clients' ? 'bg-background rounded-md shadow-sm' : ''}`}
           onClick={() => onFilterChange('clients')}
         >
           Clients
         </button>
         <button 
-          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'groups' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'groups' ? 'bg-background rounded-md shadow-sm' : ''}`}
           onClick={() => onFilterChange('groups')}
         >
           Groups

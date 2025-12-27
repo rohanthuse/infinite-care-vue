@@ -164,7 +164,7 @@ export const MessageList = ({
             <div className="flex items-start space-x-3">
               <div className="relative flex-shrink-0">
                 <Avatar className="h-10 w-10 bg-muted">
-                  <AvatarFallback className={`${threadInfo.isGroup ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}>
+                  <AvatarFallback className={`${threadInfo.isGroup ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'bg-muted'}`}>
                     {threadInfo.avatar}
                   </AvatarFallback>
                 </Avatar>
@@ -184,12 +184,12 @@ export const MessageList = ({
                         {threadInfo.displayName}
                     </span>
                     {threadInfo.isGroup && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-purple-100 text-purple-700">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         Group
                       </Badge>
                     )}
                     {thread.threadType === 'support' && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-green-100 text-green-700">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                         Support
                       </Badge>
                     )}
@@ -255,22 +255,22 @@ export const MessageList = ({
                    {/* Message metadata badges */}
                    <div className="flex gap-1 ml-2">
                      {thread.lastMessage?.actionRequired && (
-                       <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200 px-1">
+                       <Badge variant="secondary" className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700 px-1">
                          <AlertTriangle className="h-3 w-3" />
                        </Badge>
                      )}
                      {thread.lastMessage?.adminEyesOnly && (
-                       <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200 px-1">
+                       <Badge variant="secondary" className="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 px-1">
                          <Eye className="h-3 w-3" />
                        </Badge>
                      )}
                      {thread.lastMessage?.priority === 'urgent' && (
-                       <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200 px-1">
+                       <Badge variant="secondary" className="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 px-1">
                          !!
                        </Badge>
                      )}
                      {thread.lastMessage?.priority === 'high' && (
-                       <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-orange-200 px-1">
+                       <Badge variant="secondary" className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700 px-1">
                          !
                        </Badge>
                      )}

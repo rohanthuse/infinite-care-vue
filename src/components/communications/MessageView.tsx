@@ -183,30 +183,30 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const getMessageTypeColor = (type?: string) => {
     switch (type) {
       case 'incident':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
       case 'emergency':
-        return 'bg-red-100 text-red-800 border-red-900';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-900 dark:border-red-700';
       case 'shift':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700';
       case 'general':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'urgent':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
       case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -259,7 +259,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500">Loading conversation...</div>
+          <div className="text-muted-foreground">Loading conversation...</div>
         </div>
       </div>
     );
@@ -287,7 +287,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500">No messages in this conversation</div>
+          <div className="text-muted-foreground">No messages in this conversation</div>
         </div>
       </div>
     );
@@ -296,28 +296,28 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white shrink-0">
+      <div className="p-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className={isGroupChat ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}>
+              <AvatarFallback className={isGroupChat ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'bg-muted'}>
                 {isGroupChat ? 'GR' : getAvatarInitials(otherParticipants[0]?.name || 'UN')}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-foreground">
                   {displayName}
                 </h3>
                 {isGroupChat && (
-                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                     <Users className="h-3 w-3 mr-1" />
                     Group
                   </Badge>
                 )}
               </div>
               {isGroupChat && (
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {participants.map(p => p.name).join(', ')}
                 </p>
               )}
@@ -356,7 +356,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
       </div>
 
       {/* Messages */}
-      <div id="messages-container" className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4 bg-gray-50">
+      <div id="messages-container" className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4 bg-muted/50">
         {messages.map((message, index) => {
           const isCurrentUser = message.senderId === currentUser?.id;
           const attachmentsList = parseAttachments(message.attachments);
@@ -385,8 +385,8 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                 <div className={`${showAvatar && !isCurrentUser ? '' : 'ml-10'} ${isCurrentUser ? 'mr-0' : ''}`}>
                   {showAvatar && !isCurrentUser && (
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-sm font-medium text-gray-700">{message.senderName}</span>
-                      <span className="text-xs text-gray-500">{formatTimestamp(message.timestamp)}</span>
+                      <span className="text-sm font-medium text-foreground">{message.senderName}</span>
+                      <span className="text-xs text-muted-foreground">{formatTimestamp(message.timestamp)}</span>
                     </div>
                   )}
                   
@@ -394,7 +394,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                      className={`rounded-lg px-4 py-2 relative group ${
                        isCurrentUser
                          ? 'bg-blue-600 text-white'
-                         : 'bg-white text-gray-900 border border-gray-200'
+                         : 'bg-card text-foreground border border-border'
                      }`}
                    >
                      {canDelete && (
@@ -456,13 +456,13 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                          </Badge>
                        )}
                        {message.actionRequired && (
-                         <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                         <Badge variant="secondary" className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700">
                            <AlertTriangle className="h-3 w-3 mr-1" />
                            Action Required
                          </Badge>
                        )}
                        {message.adminEyesOnly && (
-                         <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200">
+                         <Badge variant="secondary" className="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700">
                            <Eye className="h-3 w-3 mr-1" />
                            Admin Only
                          </Badge>

@@ -116,26 +116,26 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">Active</Badge>;
+        return <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-800/40">Active</Badge>;
       case "discontinued":
-        return <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-200">Discontinued</Badge>;
+        return <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-800/40">Discontinued</Badge>;
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200">Pending</Badge>;
+        return <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-800/40">Pending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200">{status}</Badge>;
+        return <Badge className="bg-muted text-muted-foreground">{status}</Badge>;
     }
   };
   
   const renderMarStatus = (status: string) => {
     switch (status) {
       case "given":
-        return <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center"><CheckCircle className="w-4 h-4 text-green-600" /></div>;
+        return <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"><CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" /></div>;
       case "refused":
-        return <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center"><AlertCircle className="w-4 h-4 text-red-600" /></div>;
+        return <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center"><AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" /></div>;
       case "not_applicable":
-        return <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center"><MoreHorizontal className="w-4 h-4 text-gray-600" /></div>;
+        return <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center"><MoreHorizontal className="w-4 h-4 text-muted-foreground" /></div>;
       default:
-        return <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center"><AlertTriangle className="w-4 h-4 text-yellow-600" /></div>;
+        return <div className="w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center"><AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /></div>;
     }
   };
 
@@ -248,20 +248,20 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
       </Card>
 
       <Tabs defaultValue="medications" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6 bg-white border border-gray-100 rounded-xl shadow-sm p-1">
-          <TabsTrigger value="medications" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+        <TabsList className="mb-6 bg-card border border-border rounded-xl shadow-sm p-1">
+          <TabsTrigger value="medications" className="data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/30 data-[state=active]:text-blue-800 dark:data-[state=active]:text-blue-300 rounded-lg px-4 py-2">
             Medications
           </TabsTrigger>
-          <TabsTrigger value="mar" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+          <TabsTrigger value="mar" className="data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/30 data-[state=active]:text-blue-800 dark:data-[state=active]:text-blue-300 rounded-lg px-4 py-2">
             MAR Chart
           </TabsTrigger>
-          <TabsTrigger value="records" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+          <TabsTrigger value="records" className="data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/30 data-[state=active]:text-blue-800 dark:data-[state=active]:text-blue-300 rounded-lg px-4 py-2">
             Records
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="medications" className="mt-0">
-          <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+          <div className="bg-card rounded-xl overflow-hidden border border-border shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow>
