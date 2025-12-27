@@ -102,22 +102,22 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
+      case 'in-progress': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
+      case 'on-hold': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300';
+      case 'active': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
+      case 'inactive': return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
     }
   };
 
   return (
     <div className="flex h-full">
       {/* Sidebar Navigation */}
-      <div className="w-64 bg-gray-50 border-r p-4 overflow-y-auto">
+      <div className="w-64 bg-muted border-r border-border p-4 overflow-y-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Document View</h3>
+            <h3 className="font-semibold text-foreground">Document View</h3>
             {onToggleViewMode && (
               <Button variant="ghost" size="sm" onClick={onToggleViewMode} className="text-xs">
                 <Eye className="h-3 w-3 mr-1" />
@@ -130,9 +130,9 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
               <button
                 key={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-white hover:shadow-sm transition-all duration-200 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-card hover:shadow-sm transition-all duration-200 flex items-center gap-2"
               >
-                <section.icon className="h-4 w-4 text-gray-500" />
+                <section.icon className="h-4 w-4 text-muted-foreground" />
                 {section.label}
               </button>
             ))}
@@ -145,11 +145,11 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
         {/* Overview Section */}
         <section id="overview">
           <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
-                    <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-lg font-bold">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 w-full h-full flex items-center justify-center text-lg font-bold">
                       {carePlan.avatar}
                     </div>
                   </Avatar>
@@ -159,7 +159,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                       <Badge variant="custom" className={getStatusColor(carePlan.status)}>
                         {carePlan.status}
                       </Badge>
-                      <span className="text-sm text-gray-600">ID: {carePlan.id}</span>
+                      <span className="text-sm text-muted-foreground">ID: {carePlan.id}</span>
                     </div>
                   </div>
                 </div>
@@ -168,24 +168,24 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
             <CardContent className="pt-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Created</p>
-                    <p className="text-sm text-gray-600">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
+                    <p className="text-sm text-muted-foreground">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Last Updated</p>
-                    <p className="text-sm text-gray-600">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
+                    <p className="text-sm text-muted-foreground">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <UserCog className="h-4 w-4 text-gray-500" />
+                  <UserCog className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Assigned To</p>
-                    <p className="text-sm text-gray-600">{carePlan.assignedTo}</p>
+                    <p className="text-sm text-muted-foreground">{carePlan.assignedTo}</p>
                     <Badge variant={carePlan.isStaffProvider ? "default" : "outline"} className="text-xs mt-1">
                       {carePlan.assignedToType}
                     </Badge>
@@ -215,26 +215,26 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
               {clientProfile ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Date of Birth</p>
+                    <p className="text-sm font-medium text-foreground">Date of Birth</p>
                     <p className="text-sm">{clientProfile.date_of_birth ? format(new Date(clientProfile.date_of_birth), 'MMM dd, yyyy') : 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Gender</p>
+                    <p className="text-sm font-medium text-foreground">Gender</p>
                     <p className="text-sm">{clientProfile.gender || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Phone</p>
+                    <p className="text-sm font-medium text-foreground">Phone</p>
                     <p className="text-sm flex items-center gap-1">
                       <Phone className="h-3 w-3" />
                       {clientProfile.phone || 'Not provided'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Email</p>
+                    <p className="text-sm font-medium text-foreground">Email</p>
                     <p className="text-sm">{clientProfile.email || 'Not provided'}</p>
                   </div>
                   <div className="md:col-span-2">
-                    <p className="text-sm font-medium text-gray-700">Address</p>
+                    <p className="text-sm font-medium text-foreground">Address</p>
                     <p className="text-sm flex items-start gap-1">
                       <MapPin className="h-3 w-3 mt-0.5" />
                       {clientProfile.address || 'Not provided'}
@@ -243,18 +243,18 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   {clientProfile.emergency_contact_name && (
                     <>
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Emergency Contact</p>
+                        <p className="text-sm font-medium text-foreground">Emergency Contact</p>
                         <p className="text-sm">{clientProfile.emergency_contact_name}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Emergency Phone</p>
+                        <p className="text-sm font-medium text-foreground">Emergency Phone</p>
                         <p className="text-sm">{clientProfile.emergency_contact_phone}</p>
                       </div>
                     </>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">Personal information not available</p>
+                <p className="text-muted-foreground">Personal information not available</p>
               )}
               
               {/* Cultural & Personal Preferences */}
@@ -269,19 +269,19 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Language</p>
+                      <p className="text-sm font-medium text-foreground">Language</p>
                       <p className="text-sm">{personalInfo.language || 'Not specified'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Religion</p>
+                      <p className="text-sm font-medium text-foreground">Religion</p>
                       <p className="text-sm">{personalInfo.religion || 'Not specified'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Cultural Background</p>
+                      <p className="text-sm font-medium text-foreground">Cultural Background</p>
                       <p className="text-sm">{personalInfo.cultural_background || 'Not specified'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Marital Status</p>
+                      <p className="text-sm font-medium text-foreground">Marital Status</p>
                       <p className="text-sm">{personalInfo.marital_status || 'Not specified'}</p>
                     </div>
                   </div>
@@ -311,7 +311,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                 <div className="space-y-4">
                   {medicalInfo.allergies && medicalInfo.allergies.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Allergies</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Allergies</p>
                       <div className="flex flex-wrap gap-2">
                         {medicalInfo.allergies.map((allergy: string, index: number) => (
                           <Badge key={index} variant="destructive" className="text-xs">
@@ -325,14 +325,14 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {medicalInfo.medications && medicalInfo.medications.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Current Diagnosis</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Current Diagnosis</p>
                       <div className="space-y-2">
                         {medicalInfo.medications.map((medication: any, index: number) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-                            <Pill className="h-4 w-4 text-blue-600" />
+                          <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded">
+                            <Pill className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             <div>
                               <p className="text-sm font-medium">{medication.name}</p>
-                              <p className="text-xs text-gray-600">{medication.dosage} - {medication.frequency}</p>
+                              <p className="text-xs text-muted-foreground">{medication.dosage} - {medication.frequency}</p>
                             </div>
                           </div>
                         ))}
@@ -342,7 +342,7 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {medicalInfo.conditions && medicalInfo.conditions.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Medical Conditions</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Medical Conditions</p>
                       <div className="flex flex-wrap gap-2">
                         {medicalInfo.conditions.map((condition: string, index: number) => (
                           <Badge key={index} variant="outline" className="text-xs">
@@ -355,13 +355,13 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   
                   {medicalInfo.medical_history && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Medical History</p>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{medicalInfo.medical_history}</p>
+                      <p className="text-sm font-medium text-foreground mb-2">Medical History</p>
+                      <p className="text-sm bg-muted p-3 rounded">{medicalInfo.medical_history}</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">Medical information not available</p>
+                <p className="text-muted-foreground">Medical information not available</p>
               )}
             </CardContent>
           </Card>
@@ -396,14 +396,14 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                       {goal.progress !== null && goal.progress !== undefined && (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Progress</span>
+                            <span className="text-muted-foreground">Progress</span>
                             <span className="font-medium">{goal.progress}%</span>
                           </div>
                           <Progress value={goal.progress} className="h-2" />
                         </div>
                       )}
                       {goal.notes && (
-                        <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                        <div className="mt-3 text-sm text-muted-foreground bg-muted p-3 rounded">
                           <strong>Notes:</strong> {goal.notes}
                         </div>
                       )}
@@ -411,8 +411,8 @@ export const CarePlanDocumentView: React.FC<CarePlanDocumentViewProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Target className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p>No care goals have been set for this care plan</p>
                 </div>
               )}
