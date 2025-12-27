@@ -92,7 +92,7 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
 
   // Render stars for rating
   const renderRating = (rating?: number) => {
-    if (!rating) return <span className="text-gray-500 text-sm">Not rated</span>;
+    if (!rating) return <span className="text-muted-foreground text-sm">Not rated</span>;
     
     return (
       <div className="flex items-center">
@@ -115,7 +115,7 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     if (resourceType === 'image') {
       return (
         <div className="flex justify-center py-4">
-          <div className="max-h-[400px] overflow-hidden rounded-md border border-gray-200">
+          <div className="max-h-[400px] overflow-hidden rounded-md border border-border">
             <img
               src={`https://picsum.photos/seed/${resource.id}/800/600`}
               alt={resource.title}
@@ -129,11 +129,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     if (resourceType === 'video') {
       return (
         <div className="flex justify-center py-4">
-          <div className="w-full h-[400px] bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+        <div className="w-full h-[400px] bg-muted rounded-md border border-border flex items-center justify-center">
             <div className="text-center">
-              <Video className="h-16 w-16 text-blue-500 mx-auto mb-2" />
-              <p className="font-medium text-gray-600">Video Preview</p>
-              <p className="text-sm text-gray-500 mt-1">Click play to watch or download for full video</p>
+              <Video className="h-16 w-16 text-blue-500 dark:text-blue-400 mx-auto mb-2" />
+              <p className="font-medium text-muted-foreground">Video Preview</p>
+              <p className="text-sm text-muted-foreground mt-1">Click play to watch or download for full video</p>
               
               <Button variant="outline" className="mt-4">
                 <Eye className="h-4 w-4 mr-2" />
@@ -148,11 +148,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     if (resourceType === 'pdf') {
       return (
         <div className="flex justify-center py-4">
-          <div className="w-full h-[400px] bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+        <div className="w-full h-[400px] bg-muted rounded-md border border-border flex items-center justify-center">
             <div className="text-center">
-              <FileText className="h-16 w-16 text-red-500 mx-auto mb-2" />
-              <p className="font-medium text-gray-600">PDF Preview</p>
-              <p className="text-sm text-gray-500 mt-1">Click download to view the full document</p>
+              <FileText className="h-16 w-16 text-red-500 dark:text-red-400 mx-auto mb-2" />
+              <p className="font-medium text-muted-foreground">PDF Preview</p>
+              <p className="text-sm text-muted-foreground mt-1">Click download to view the full document</p>
               
             </div>
           </div>
@@ -163,11 +163,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     if (resourceType === 'audio') {
       return (
         <div className="flex justify-center py-4">
-          <div className="w-full h-[200px] bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+        <div className="w-full h-[200px] bg-muted rounded-md border border-border flex items-center justify-center">
             <div className="text-center">
-              <AudioLines className="h-16 w-16 text-purple-500 mx-auto mb-2" />
-              <p className="font-medium text-gray-600">Audio Preview</p>
-              <p className="text-sm text-gray-500 mt-1">Download to listen to the full audio</p>
+              <AudioLines className="h-16 w-16 text-purple-500 dark:text-purple-400 mx-auto mb-2" />
+              <p className="font-medium text-muted-foreground">Audio Preview</p>
+              <p className="text-sm text-muted-foreground mt-1">Download to listen to the full audio</p>
               
               <Button variant="outline" className="mt-4">
                 <Eye className="h-4 w-4 mr-2" />
@@ -182,11 +182,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     if (resourceType === 'spreadsheet') {
       return (
         <div className="flex justify-center py-4">
-          <div className="w-full h-[300px] bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+        <div className="w-full h-[300px] bg-muted rounded-md border border-border flex items-center justify-center">
             <div className="text-center">
-              <FileSpreadsheet className="h-16 w-16 text-green-500 mx-auto mb-2" />
-              <p className="font-medium text-gray-600">Spreadsheet Preview</p>
-              <p className="text-sm text-gray-500 mt-1">Download to use the spreadsheet</p>
+              <FileSpreadsheet className="h-16 w-16 text-green-500 dark:text-green-400 mx-auto mb-2" />
+              <p className="font-medium text-muted-foreground">Spreadsheet Preview</p>
+              <p className="text-sm text-muted-foreground mt-1">Download to use the spreadsheet</p>
               
             </div>
           </div>
@@ -270,7 +270,7 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         </DialogHeader>
         
         {resource.description && (
-          <p className="text-gray-600 mt-1">{resource.description}</p>
+          <p className="text-muted-foreground mt-1">{resource.description}</p>
         )}
         
         <div className="flex flex-wrap gap-2 mt-2">
@@ -294,34 +294,34 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           {renderRating(resource.rating)}
         </div>
         
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-700 mt-4">
+        <div className="grid grid-cols-2 gap-4 text-sm text-foreground mt-4">
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-gray-500" />
+            <User className="h-4 w-4 text-muted-foreground" />
             <span>Added by: </span>
             <span className="font-medium">{resource.uploadedBy}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>Date added: </span>
             <span className="font-medium">{format(resource.uploadDate, 'dd MMM yyyy')}</span>
           </div>
           {resource.author && (
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-500" />
+              <User className="h-4 w-4 text-muted-foreground" />
               <span>Author/Source: </span>
               <span className="font-medium">{resource.author}</span>
             </div>
           )}
           {resource.version && (
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-gray-500" />
+              <FileText className="h-4 w-4 text-muted-foreground" />
               <span>Version: </span>
               <span className="font-medium">{resource.version}</span>
             </div>
           )}
           {resource.fileSize && (
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-gray-500" />
+              <FileText className="h-4 w-4 text-muted-foreground" />
               <span>Size: </span>
               <span className="font-medium">{formatFileSize(resource.fileSize)}</span>
             </div>
@@ -329,12 +329,12 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           {showEngagementMetrics && (
             <>
               <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-gray-500" />
+                <Eye className="h-4 w-4 text-muted-foreground" />
                 <span>Views: </span>
                 <span className="font-medium">{resource.views}</span>
               </div>
               <div className="flex items-center gap-2">
-                <ArrowDownToLine className="h-4 w-4 text-gray-500" />
+                <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
                 <span>Downloads: </span>
                 <span className="font-medium">{resource.downloads}</span>
               </div>
@@ -344,10 +344,10 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         
         {resource.isPrivate && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700 mb-1">Access permissions:</p>
+            <p className="text-sm font-medium text-foreground mb-1">Access permissions:</p>
             <div className="flex flex-wrap gap-2">
               {resource.accessRoles.map(role => (
-                <Badge key={role} variant="outline" className="text-gray-700">
+                <Badge key={role} variant="outline" className="text-muted-foreground">
                   {role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')}
                 </Badge>
               ))}
@@ -357,10 +357,10 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         
         {resource.tags && resource.tags.length > 0 && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700 mb-1">Tags:</p>
+            <p className="text-sm font-medium text-foreground mb-1">Tags:</p>
             <div className="flex flex-wrap gap-2">
               {resource.tags.map((tag, index) => (
-                <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                <span key={index} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
                   #{tag}
                 </span>
               ))}
@@ -371,8 +371,8 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         {/* Link Section - Show whenever resource.url exists */}
         {resource.url && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Resource Link:</p>
-            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border">
+            <p className="text-sm font-medium text-foreground mb-2">Resource Link:</p>
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-md border border-border">
               <ExternalLink className="h-4 w-4 text-blue-500 flex-shrink-0" />
               <a 
                 href={resource.url} 

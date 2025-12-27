@@ -150,18 +150,18 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
 
   if (userLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="flex h-[calc(100vh-4rem)] bg-card rounded-lg border border-border shadow-sm overflow-hidden items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   if (!currentUser) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden items-center justify-center">
+      <div className="flex h-[calc(100vh-4rem)] bg-card rounded-lg border border-border shadow-sm overflow-hidden items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-400 text-lg mb-2">Authentication Required</div>
-          <p className="text-sm text-gray-500">
+          <div className="text-muted-foreground text-lg mb-2">Authentication Required</div>
+          <p className="text-sm text-muted-foreground">
             Please log in to access the messaging system.
           </p>
         </div>
@@ -179,9 +179,9 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] bg-card rounded-lg border border-border shadow-sm overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full flex flex-col">
-        <div className="border-b px-4 bg-white">
+        <div className="border-b px-4 bg-card">
           <TabsList>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
@@ -191,7 +191,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
         
         <TabsContent value="messages" className="flex-1 m-0 flex overflow-hidden">
           {/* Left column - Contacts */}
-          <div className="w-1/4 border-r border-gray-200 flex flex-col">
+          <div className="w-1/4 border-r border-border flex flex-col">
             <ContactSidebar 
               branchId={branchId || "1"}
               onContactSelect={handleContactSelect}
@@ -208,8 +208,8 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
           </div>
           
           {/* Middle column - Message list */}
-          <div className="w-1/3 border-r border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-200">
+          <div className="w-1/3 border-r border-border flex flex-col">
+            <div className="p-4 border-b border-border">
               <h3 className="text-lg font-semibold mb-4">Messages</h3>
               <MessageFilters 
                 selectedFilter={filterType}
@@ -237,7 +237,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
                 dateFilter={dateFilter}
               />
             </div>
-            <div className="p-3 border-t border-gray-200">
+            <div className="p-3 border-t border-border">
               <Button className="w-full flex items-center justify-center" onClick={handleNewMessage}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Message
@@ -268,8 +268,8 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
                 <MessageInputBar threadId={selectedMessageId} />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-                <p className="text-gray-400 mb-4">Select a message to view or start a new conversation</p>
+              <div className="flex flex-col items-center justify-center h-full bg-muted">
+                <p className="text-muted-foreground mb-4">Select a message to view or start a new conversation</p>
                 <Button variant="outline" onClick={handleNewMessage}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Message

@@ -361,16 +361,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading training data...</div>
+          <div className="text-muted-foreground">Loading training data...</div>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-6">
       {isDeleting && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
           <div className="bg-background rounded-lg p-4 shadow-lg border">
@@ -382,14 +382,14 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
         </div>
       )}
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Training Program</h1>
-        <p className="text-gray-500 mt-2">Track and manage staff training requirements and completion status</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Training Program</h1>
+        <p className="text-muted-foreground mt-2">Track and manage staff training requirements and completion status</p>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search staff or trainings..."
               className="pl-10 pr-4"
@@ -400,17 +400,17 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
           
           <div className="flex gap-3 flex-wrap">
             <Tabs value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as (TrainingCategory | 'all'))} className="w-auto">
-              <TabsList className="bg-gray-100">
-                <TabsTrigger value="all" className="data-[state=active]:bg-white">
+              <TabsList className="bg-muted">
+                <TabsTrigger value="all" className="data-[state=active]:bg-background">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="mandatory" className="data-[state=active]:bg-white">
+                <TabsTrigger value="mandatory" className="data-[state=active]:bg-background">
                   Mandatory ({categories.find(c => c.category === 'mandatory')?.count || 0})
                 </TabsTrigger>
-                <TabsTrigger value="core" className="data-[state=active]:bg-white">
+                <TabsTrigger value="core" className="data-[state=active]:bg-background">
                   Core ({categories.find(c => c.category === 'core')?.count || 0})
                 </TabsTrigger>
-                <TabsTrigger value="specialized" className="data-[state=active]:bg-white">
+                <TabsTrigger value="specialized" className="data-[state=active]:bg-background">
                   Specialized ({categories.find(c => c.category === 'specialized')?.count || 0})
                 </TabsTrigger>
               </TabsList>

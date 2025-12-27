@@ -73,12 +73,12 @@ export function CancelLeaveDialog({ open, onOpenChange, leaveRequest }: CancelLe
           </div>
 
           {/* Impact Info */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
             <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-              <div className="text-sm text-blue-800">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <div className="text-sm text-blue-800 dark:text-blue-200">
                 <p className="font-medium mb-1">What happens when you cancel:</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-700">
+                <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
                   <li>The carer will be available for bookings on these dates</li>
                   <li>Previously reassigned bookings will remain unchanged</li>
                   <li>This action will be logged for audit</li>
