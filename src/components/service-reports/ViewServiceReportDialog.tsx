@@ -34,7 +34,6 @@ import {
   Calendar, 
   Clock, 
   User, 
-  Activity,
   Pill,
   Heart,
   AlertTriangle,
@@ -60,7 +59,7 @@ import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { GoalsDisplay } from './view-report/GoalsDisplay';
-import { ActivitiesDisplay } from './view-report/ActivitiesDisplay';
+
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
 
@@ -555,19 +554,6 @@ export function ViewServiceReportDialog({
               </CardHeader>
               <CardContent>
                 <GoalsDisplay carePlanId={clientCarePlan?.id} />
-              </CardContent>
-            </Card>
-
-            {/* Activities Section - Always Show */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Activities
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ActivitiesDisplay carePlanId={clientCarePlan?.id} />
               </CardContent>
             </Card>
 
