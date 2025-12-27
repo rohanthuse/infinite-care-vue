@@ -46,9 +46,9 @@ export const AddGoalDialog: React.FC<AddGoalDialogProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4">
+      <div className="bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-md border border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-semibold">Add New Goal</h2>
           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
             <X className="h-5 w-5" />

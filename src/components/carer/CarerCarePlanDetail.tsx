@@ -303,9 +303,9 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col border border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
               <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-sm font-medium">
@@ -314,7 +314,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
             </Avatar>
             <div>
               <h2 className="text-xl font-bold">{carePlan.clientName}</h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <span>Plan ID: {carePlan.id}</span>
                 <span>•</span>
                 <Badge>{carePlan.type}</Badge>

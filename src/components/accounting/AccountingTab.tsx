@@ -58,12 +58,12 @@ const AccountingTab: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+    <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm p-6">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Accounting</h1>
-            <p className="text-gray-500 mt-1">Manage financial operations for {branchName}</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Accounting</h1>
+            <p className="text-muted-foreground mt-1">Manage financial operations for {branchName}</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ const AccountingTab: React.FC = () => {
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="bg-gray-100 p-1 rounded-lg w-full md:w-auto grid grid-cols-3 md:grid-cols-6 mb-6">
+          <TabsList className="bg-muted p-1 rounded-lg w-full md:w-auto grid grid-cols-3 md:grid-cols-6 mb-6">
             <TabsTrigger 
               value="invoices-payments" 
               className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"

@@ -59,14 +59,14 @@ export const StuckStateRecovery = () => {
   if (!showRecovery) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 max-w-md bg-white border-2 border-orange-500 rounded-lg shadow-2xl p-6 z-[100] animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-4 right-4 max-w-md bg-card text-card-foreground border-2 border-orange-500 dark:border-orange-400 rounded-lg shadow-2xl p-6 z-[100] animate-in slide-in-from-bottom-5">
       <div className="flex items-start gap-3">
-        <AlertCircle className="h-6 w-6 text-orange-500 flex-shrink-0 mt-0.5" />
+        <AlertCircle className="h-6 w-6 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-1">
+          <h3 className="font-semibold text-foreground mb-1">
             Page Not Loading?
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             It looks like the page is stuck. Try one of these recovery options:
           </p>
           <div className="flex flex-col gap-2">
@@ -89,7 +89,7 @@ export const StuckStateRecovery = () => {
             </CustomButton>
             <button
               onClick={() => setShowRecovery(false)}
-              className="text-xs text-gray-500 hover:text-gray-700 mt-1"
+              className="text-xs text-muted-foreground hover:text-foreground mt-1"
             >
               Dismiss
             </button>
