@@ -50,10 +50,10 @@ const Library = () => {
   return (
     <>
       <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-bold">Library Resources</h2>
-          <p className="text-gray-500 mt-1">Add, manage and share educational and reference materials</p>
+      <div className="bg-card rounded-lg border border-border shadow-sm flex flex-col">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-2xl font-bold text-foreground">Library Resources</h2>
+          <p className="text-muted-foreground mt-1">Add, manage and share educational and reference materials</p>
         </div>
         
         <Tabs 
@@ -61,8 +61,8 @@ const Library = () => {
           onValueChange={handleTabChange} 
           className="w-full flex flex-col flex-1"
         >
-          <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
-            <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
+          <div className="bg-muted border-b border-border p-1.5 sm:p-2.5 sticky top-0 z-20">
+            <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-muted p-0.5 sm:p-1">
               <TabsTrigger 
                 value="add" 
                 className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"

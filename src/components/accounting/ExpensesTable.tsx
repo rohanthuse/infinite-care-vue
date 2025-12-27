@@ -29,14 +29,14 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
 }) => {
   const renderStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      approved: "bg-green-100 text-green-800 border-green-200",
-      rejected: "bg-red-100 text-red-800 border-red-200",
-      reimbursed: "bg-blue-100 text-blue-800 border-blue-200",
+      pending: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700",
+      approved: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700",
+      rejected: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700",
+      reimbursed: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700",
     };
 
     return (
-      <Badge variant="outline" className={`${variants[status] || 'bg-gray-100 text-gray-800 border-gray-200'} font-medium`}>
+      <Badge variant="outline" className={`${variants[status] || 'bg-muted text-muted-foreground'} font-medium`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
@@ -78,14 +78,14 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
 
   if (expenses.length === 0) {
     return (
-      <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-200">
-        <p className="text-gray-500">No expenses found. Add your first expense to get started.</p>
+      <div className="text-center py-10 bg-muted rounded-md border border-border">
+        <p className="text-muted-foreground">No expenses found. Add your first expense to get started.</p>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-md overflow-hidden bg-white">
+    <div className="border rounded-md overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -102,7 +102,7 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
         </TableHeader>
         <TableBody>
           {expenses.map((expense) => (
-            <TableRow key={expense.id} className="hover:bg-gray-50">
+            <TableRow key={expense.id} className="hover:bg-muted">
               <TableCell className="font-medium">
                 {format(new Date(expense.expense_date), "MMM dd, yyyy")}
               </TableCell>

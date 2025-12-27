@@ -47,28 +47,28 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
     switch (status) {
       case "approved":
         return (
-          <div className="flex items-center gap-1.5 text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs font-medium w-fit">
+          <div className="flex items-center gap-1.5 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full text-xs font-medium w-fit">
             <CheckCircle className="h-3.5 w-3.5" />
             <span>Approved</span>
           </div>
         );
       case "rejected":
         return (
-          <div className="flex items-center gap-1.5 text-red-700 bg-red-50 px-2 py-1 rounded-full text-xs font-medium w-fit">
+          <div className="flex items-center gap-1.5 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-full text-xs font-medium w-fit">
             <XCircle className="h-3.5 w-3.5" />
             <span>Rejected</span>
           </div>
         );
       case "reimbursed":
         return (
-          <div className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2 py-1 rounded-full text-xs font-medium w-fit">
+          <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs font-medium w-fit">
             <Receipt className="h-3.5 w-3.5" />
             <span>Reimbursed</span>
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2 py-1 rounded-full text-xs font-medium w-fit">
+          <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-full text-xs font-medium w-fit">
             <Clock className="h-3.5 w-3.5" />
             <span>Pending</span>
           </div>
@@ -129,7 +129,7 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    className="h-8 w-8 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30"
                     onClick={() => window.open(record.receipt_url, '_blank')}
                     title="View Receipt"
                   >
