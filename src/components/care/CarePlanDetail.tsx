@@ -139,8 +139,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col border border-border">
         <CarePlanHeader 
           carePlan={carePlan}
           clientData={clientDataForPDF}

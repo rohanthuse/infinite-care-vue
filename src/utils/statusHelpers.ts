@@ -34,94 +34,94 @@ export const getStatusBadgeClass = (status: string) => {
   
   // CRITICAL: Suspended status gets highest priority with special styling
   if (normalizedStatus === 'Suspended') {
-    return 'bg-red-100 text-red-800 border-red-300 font-bold animate-pulse';
+    return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700 font-bold animate-pulse';
   }
   
   switch (status) {
     // Client statuses
     case CLIENT_STATUSES.ACTIVE:
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700";
     case CLIENT_STATUSES.INACTIVE:
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700";
     case CLIENT_STATUSES.NEW_ENQUIRIES:
-      return "text-blue-600 bg-blue-50 border-blue-200";
+      return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700";
     case CLIENT_STATUSES.ACTIVELY_ASSESSING:
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case CLIENT_STATUSES.CLOSED_ENQUIRIES:
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
     case CLIENT_STATUSES.FORMER:
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700";
     case CLIENT_STATUSES.ARCHIVED:
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
     
     // Care plan statuses
     case CARE_PLAN_STATUSES.DRAFT:
-      return "text-slate-600 bg-slate-50 border-slate-200";
+      return "text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600";
     case CARE_PLAN_STATUSES.UNDER_REVIEW:
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case CARE_PLAN_STATUSES.ACTIVE:
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700";
     case CARE_PLAN_STATUSES.ON_HOLD:
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700";
     case CARE_PLAN_STATUSES.COMPLETED:
-      return "text-purple-600 bg-purple-50 border-purple-200";
+      return "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700";
     case CARE_PLAN_STATUSES.ARCHIVED:
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
     
     // Care plan approval statuses
     case "pending_approval":
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case "pending_client_approval":
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700";
     case "approved":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700";
     case "rejected":
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700";
     
     // Legacy/fallback statuses (case insensitive)
     case "active":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700";
     case "inactive":
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700";
     case "new enquiries":
     case "new_enquiries":
-      return "text-blue-600 bg-blue-50 border-blue-200";
+      return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700";
     case "actively assessing":
     case "actively_assessing":
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case "closed enquiries":
     case "closed_enquiries":
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
     case "former":
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700";
     case "draft":
-      return "text-slate-600 bg-slate-50 border-slate-200";
+      return "text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600";
     case "on hold":
     case "on_hold":
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700";
     case "completed":
-      return "text-purple-600 bg-purple-50 border-purple-200";
+      return "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700";
     case "under review":
     case "under_review":
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case "archived":
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
     
     default:
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
   }
 };
 
 export const getRiskLevelClass = (level: string) => {
   switch (level) {
     case "High":
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700";
     case "Moderate":
-      return "text-amber-600 bg-amber-50 border-amber-200";
+      return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700";
     case "Low":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700";
     default:
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600";
   }
 };
 

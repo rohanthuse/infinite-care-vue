@@ -8,9 +8,10 @@ import { ChevronLeft, ChevronRight, ArrowUpDown, Plus, Filter, Search, Download,
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 interface ColumnDef {
   header: string;
-  accessorKey?: string; // Made optional
+  accessorKey?: string;
   enableSorting?: boolean;
   className?: string;
   id?: string;
@@ -20,10 +21,12 @@ interface ColumnDef {
     };
   }) => React.ReactNode;
 }
+
 export interface ParameterItem {
   id: string | number;
   [key: string]: any;
 }
+
 interface ParameterTableProps {
   title: string;
   icon: React.ReactNode;
@@ -47,6 +50,7 @@ interface ParameterTableProps {
   onEdit?: (item: ParameterItem) => void;
   onDelete?: (item: ParameterItem) => void;
 }
+
 export function ParameterTable({
   title,
   icon,
@@ -68,6 +72,7 @@ export function ParameterTable({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState("");
   const [internalFilteredData, setInternalFilteredData] = useState(data);
+
   useEffect(() => {
     let sortedData = [...data];
     if (sortColumn) {
@@ -81,6 +86,7 @@ export function ParameterTable({
     }
     setInternalFilteredData(sortedData);
   }, [sortColumn, sortDirection, data]);
+
   const handleSort = (columnKey: string | undefined) => {
     if (!columnKey) return;
     const column = columnKey;
@@ -91,6 +97,7 @@ export function ParameterTable({
       setSortDirection('asc');
     }
   };
+
   useEffect(() => {
     let filteredData = data;
     if (searchQuery) {
@@ -101,9 +108,11 @@ export function ParameterTable({
     setInternalFilteredData(filteredData);
     setCurrentPage(1);
   }, [searchQuery, data]);
+
   const totalPages = Math.ceil(internalFilteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = internalFilteredData.slice(startIndex, startIndex + itemsPerPage);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -111,150 +120,219 @@ export function ParameterTable({
       onSearch(value);
     }
   };
-  const headerContent = <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-      {title && <div className="flex items-center gap-4">
-          <div className="p-3 bg-white rounded-xl shadow-sm">
+
+  const headerContent = (
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      {title && (
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-card dark:bg-muted rounded-xl shadow-sm border border-border">
             {icon}
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{title}</h1>
-            <p className="text-gray-500 text-sm md:text-base">Manage {title.toLowerCase()}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{title}</h1>
+            <p className="text-muted-foreground text-sm md:text-base">Manage {title.toLowerCase()}</p>
           </div>
-        </div>}
+        </div>
+      )}
       
       <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:justify-end">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full" placeholder={searchPlaceholder} value={searchQuery} onChange={handleSearchChange} />
-          </div>
-        
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            className="pl-9 bg-background border-border focus:border-primary w-full" 
+            placeholder={searchPlaceholder} 
+            value={searchQuery} 
+            onChange={handleSearchChange} 
+          />
+        </div>
         {addButton}
       </div>
-    </div>;
-  return <div className="w-full">
-      <div className="bg-white rounded-2xl p-6 md:p-8 mb-4 border-b">
-         {headerContent}
+    </div>
+  );
+
+  return (
+    <div className="w-full">
+      <div className="bg-card text-card-foreground rounded-2xl p-6 md:p-8 mb-4 border-b border-border">
+        {headerContent}
       </div>
       
-      {showFilter && filterOptions.length > 0 && <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm mb-4 p-4">
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+      {showFilter && filterOptions.length > 0 && (
+        <div className="bg-card rounded-xl border border-border shadow-sm mb-4 p-4">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <Filter className="h-4 w-4" />
             <div className="flex gap-2 flex-wrap">
-              {filterOptions.map(filter => <select key={filter.name} className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300" value={filter.value} onChange={e => filter.onChange(e.target.value)}>
-                  {filter.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>)}
+              {filterOptions.map(filter => (
+                <select 
+                  key={filter.name} 
+                  className="px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                  value={filter.value} 
+                  onChange={e => filter.onChange(e.target.value)}
+                >
+                  {filter.options.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              ))}
             </div>
           </div>
-        </div>}
+        </div>
+      )}
       
-      <motion.div initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} transition={{
-      duration: 0.5
-    }} className="bg-white rounded-xl overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        transition={{ duration: 0.5 }} 
+        className="bg-card rounded-xl overflow-hidden border border-border"
+      >
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50/80 hover:bg-gray-50/90">
-                {columns.map((column, index) => <TableHead key={index} className={cn("text-gray-700", column.className)}>
-                    {column.enableSorting ? <Button variant="ghost" className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent" onClick={() => handleSort(column.accessorKey)}>
+              <TableRow className="bg-muted/50 hover:bg-muted/60">
+                {columns.map((column, index) => (
+                  <TableHead key={index} className={cn("text-foreground", column.className)}>
+                    {column.enableSorting ? (
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent" 
+                        onClick={() => handleSort(column.accessorKey)}
+                      >
                         {column.header}
                         <ArrowUpDown className="h-4 w-4 ml-1" />
-                      </Button> : column.header}
-                  </TableHead>)}
+                      </Button>
+                    ) : column.header}
+                  </TableHead>
+                ))}
                 {showActions && <TableHead className="text-right"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.length > 0 ? paginatedData.map((item, rowIndex) => <TableRow key={item.id || rowIndex} className="hover:bg-gray-50/70 group">
-                    {columns.map((column, colIndex) => <TableCell key={`${rowIndex}-${colIndex}`} className={column.className}>
-                        {column.cell ? column.cell({
-                  row: {
-                    original: item
-                  }
-                }) : column.accessorKey && column.accessorKey === "color" ? <div className="h-6 w-12 rounded" style={{
-                  backgroundColor: item[column.accessorKey]
-                }}></div> : column.accessorKey ? item[column.accessorKey] : null}
-                      </TableCell>)}
-                    {showActions && onEdit && onDelete && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              className="cursor-pointer flex items-center gap-2" 
-                              onSelect={() => onEdit(item)}
-                            >
-                              <Edit className="h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="cursor-pointer text-destructive flex items-center gap-2" 
-                              onSelect={() => onDelete(item)}
-                            >
-                              <Trash2 className="h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                  </TableRow>) : <TableRow>
-                  <TableCell colSpan={columns.length + (showActions ? 1 : 0)} className="text-center py-8 text-gray-500">
+              {paginatedData.length > 0 ? paginatedData.map((item, rowIndex) => (
+                <TableRow key={item.id || rowIndex} className="hover:bg-muted/30 group">
+                  {columns.map((column, colIndex) => (
+                    <TableCell key={`${rowIndex}-${colIndex}`} className={column.className}>
+                      {column.cell 
+                        ? column.cell({ row: { original: item } }) 
+                        : column.accessorKey && column.accessorKey === "color" 
+                          ? <div className="h-6 w-12 rounded" style={{ backgroundColor: item[column.accessorKey] }}></div> 
+                          : column.accessorKey ? item[column.accessorKey] : null}
+                    </TableCell>
+                  ))}
+                  {showActions && onEdit && onDelete && (
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            className="cursor-pointer flex items-center gap-2" 
+                            onSelect={() => onEdit(item)}
+                          >
+                            <Edit className="h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer text-destructive flex items-center gap-2" 
+                            onSelect={() => onDelete(item)}
+                          >
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length + (showActions ? 1 : 0)} className="text-center py-8 text-muted-foreground">
                     No data found
                   </TableCell>
-                </TableRow>}
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
         
-        <div className="border-t border-gray-100/60 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-gray-50/50 rounded-b-xl">
-          <div className="text-gray-600 text-sm">
+        <div className="border-t border-border p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-muted/30 rounded-b-xl">
+          <div className="text-muted-foreground text-sm">
             Showing {Math.min(internalFilteredData.length, 1 + (currentPage - 1) * itemsPerPage)} to {Math.min(currentPage * itemsPerPage, internalFilteredData.length)} of {internalFilteredData.length} entries
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(1)} className="flex items-center gap-1 px-2.5 border-gray-200 text-gray-700 rounded-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === 1} 
+              onClick={() => setCurrentPage(1)} 
+              className="flex items-center gap-1 px-2.5 border-border text-foreground rounded-full"
+            >
               <ChevronLeft className="h-4 w-4" />
               <ChevronLeft className="h-4 w-4 -ml-3" />
             </Button>
-            <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} className="flex items-center gap-1 px-2.5 border-gray-200 text-gray-700 rounded-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === 1} 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+              className="flex items-center gap-1 px-2.5 border-border text-foreground rounded-full"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-1">
-              {Array.from({
-              length: Math.min(totalPages, 5)
-            }, (_, i) => {
-              const pageNum = i + 1;
-              return <Button key={pageNum} variant="outline" size="sm" onClick={() => setCurrentPage(pageNum)} className={cn("w-8 h-8 p-0 rounded-full", pageNum === currentPage ? "bg-blue-50 border-blue-200 text-blue-700" : "border-gray-200 text-gray-700")}>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <Button 
+                    key={pageNum} 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(pageNum)} 
+                    className={cn(
+                      "w-8 h-8 p-0 rounded-full",
+                      pageNum === currentPage 
+                        ? "bg-primary/10 border-primary/30 text-primary" 
+                        : "border-border text-foreground"
+                    )}
+                  >
                     {pageNum}
-                  </Button>;
-            })}
-              {totalPages > 5 && <span className="px-1">...</span>}
+                  </Button>
+                );
+              })}
+              {totalPages > 5 && <span className="px-1 text-muted-foreground">...</span>}
             </div>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} className="flex items-center gap-1 px-2.5 border-gray-200 text-gray-700 rounded-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage >= totalPages} 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+              className="flex items-center gap-1 px-2.5 border-border text-foreground rounded-full"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(totalPages)} className="flex items-center gap-1 px-2.5 border-gray-200 text-gray-700 rounded-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage >= totalPages} 
+              onClick={() => setCurrentPage(totalPages)} 
+              className="flex items-center gap-1 px-2.5 border-border text-foreground rounded-full"
+            >
               <ChevronRight className="h-4 w-4" />
               <ChevronRight className="h-4 w-4 -ml-3" />
             </Button>
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-1 px-2.5 border-gray-200 text-gray-700 rounded-full">
+            <Button variant="outline" size="sm" className="flex items-center gap-1 px-2.5 border-border text-foreground rounded-full">
               <Download className="h-4 w-4 mr-1" /> Export
             </Button>
           </div>
         </div>
       </motion.div>
-    </div>;
+    </div>
+  );
 }
