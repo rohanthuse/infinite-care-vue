@@ -180,7 +180,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
       case 'insurance': 
         return <FileText className="text-blue-500" />;
       default: 
-        return <FileText className="text-gray-500" />;
+        return <FileText className="text-muted-foreground" />;
     }
   };
 
@@ -195,7 +195,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
@@ -210,20 +210,20 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
         </CardHeader>
         <CardContent className="pt-4">
           {documents.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No documents available for this client</p>
             </div>
           ) : (
             <>
               {/* Select All Row */}
-              <div className="flex items-center gap-3 py-2 px-2 bg-gray-50 rounded-md mb-2">
+              <div className="flex items-center gap-3 py-2 px-2 bg-muted rounded-md mb-2">
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={handleSelectAll}
                   aria-label="Select all documents"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-foreground">
                   Select All ({documents.length} document{documents.length > 1 ? 's' : ''})
                 </span>
               </div>
@@ -237,7 +237,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
                     <div 
                       key={doc.id} 
                       className={`flex items-center justify-between py-3 px-2 rounded-md group transition-colors ${
-                        isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                        isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700' : 'hover:bg-muted'
                       }`}
                     >
                       <div className="flex items-center space-x-3 flex-1">
@@ -246,12 +246,12 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
                           onCheckedChange={(checked) => handleSelectDocument(doc.id, checked as boolean)}
                           aria-label={`Select ${doc.name}`}
                         />
-                        <div className="p-2 bg-gray-100 rounded-md">
+                        <div className="p-2 bg-muted rounded-md">
                           {getDocIcon(doc.type)}
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{doc.name}</p>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <span>{doc.uploaded_by}</span>
                             <span className="mx-1">•</span>
                             <Clock className="h-3 w-3 mr-1" />

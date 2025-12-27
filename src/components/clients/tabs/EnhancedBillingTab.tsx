@@ -58,14 +58,14 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'paid': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'sent': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'overdue': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'draft': return 'bg-muted text-muted-foreground';
+      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'refunded': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -218,7 +218,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Outstanding</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Outstanding</p>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(calculateTotalOutstanding())}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -230,7 +230,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Paid</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalPaid())}</p>
               </div>
               <Check className="h-8 w-8 text-green-600" />
@@ -242,7 +242,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Invoices</p>
                 <p className="text-2xl font-bold text-blue-600">{billingItems.length}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-600" />
@@ -253,7 +253,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
       {/* Main Content */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-lg">Invoices from Bookings</CardTitle>
@@ -269,10 +269,10 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
             <TabsContent value="invoices" className="space-y-4">
               {billingItems.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <CreditCard className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p className="text-sm font-medium">No booking-linked invoices yet</p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Invoices will appear here automatically when bookings are completed and invoiced
                   </p>
                 </div>
@@ -308,7 +308,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600">{invoice.description}</p>
+                            <p className="text-sm text-muted-foreground">{invoice.description}</p>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
                             <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
@@ -345,29 +345,29 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
                         {/* Booking Details Section */}
                         {invoice.booking && (
-                          <div className="mb-3 p-3 bg-blue-50/50 rounded-md border border-blue-100">
+                          <div className="mb-3 p-3 bg-blue-50/50 dark:bg-blue-900/20 rounded-md border border-blue-100 dark:border-blue-800">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                               <div>
-                                <span className="text-gray-500 block text-xs font-medium">Booking Date</span>
-                                <span className="font-medium text-gray-900">
+                                <span className="text-muted-foreground block text-xs font-medium">Booking Date</span>
+                                <span className="font-medium text-foreground">
                                   {formatDateSafe(invoice.booking.start_time, 'dd/MM/yyyy HH:mm')}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-gray-500 block text-xs font-medium">Booking Status</span>
+                                <span className="text-muted-foreground block text-xs font-medium">Booking Status</span>
                                 <Badge variant="secondary" className="text-xs mt-1">
                                   {invoice.booking.status || 'N/A'}
                                 </Badge>
                               </div>
                               <div>
-                                <span className="text-gray-500 block text-xs font-medium">Service</span>
-                                <span className="text-gray-900 truncate block">
+                                <span className="text-muted-foreground block text-xs font-medium">Service</span>
+                                <span className="text-foreground truncate block">
                                   {invoice.booking.services?.title || 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-gray-500 block text-xs font-medium">Booking ID</span>
-                                <span className="font-mono text-xs text-gray-700">
+                                <span className="text-muted-foreground block text-xs font-medium">Booking ID</span>
+                                <span className="font-mono text-xs text-muted-foreground">
                                   {invoice.booking.id.slice(0, 13)}...
                                 </span>
                               </div>
@@ -377,7 +377,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
                         {/* Financial Details */}
                         <div className="space-y-2">
-                          <div className="flex items-center gap-6 text-sm text-gray-600">
+                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <PoundSterling className="h-4 w-4" />
                               <span className="font-medium text-lg text-gray-900">{formatCurrency(total)}</span>

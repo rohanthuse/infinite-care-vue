@@ -38,11 +38,11 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'critical': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -52,7 +52,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
       case 'safety':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -85,7 +85,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-blue-600" />
@@ -102,8 +102,8 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
         </CardHeader>
         <CardContent className="pt-4">
           {events.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No events logged for this client</p>
               <Button variant="outline" className="mt-3" onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -127,9 +127,9 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                         </Badge>
                       </div>
                       {event.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">{event.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
                           <span>Reported by: {event.reporter}</span>

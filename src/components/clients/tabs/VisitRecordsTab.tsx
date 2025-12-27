@@ -165,13 +165,13 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
 
   const getCompletionBadge = (percentage: number) => {
     if (percentage >= 100) {
-      return <Badge className="bg-green-100 text-green-800">Complete</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Complete</Badge>;
     } else if (percentage >= 80) {
-      return <Badge className="bg-blue-100 text-blue-800">Nearly Complete</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">Nearly Complete</Badge>;
     } else if (percentage >= 50) {
-      return <Badge className="bg-orange-100 text-orange-800">In Progress</Badge>;
+      return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">In Progress</Badge>;
     } else {
-      return <Badge className="bg-red-100 text-red-800">Incomplete</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Incomplete</Badge>;
     }
   };
 
@@ -275,7 +275,7 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
 
       {/* Recent Visits */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-lg">Visit Records</CardTitle>
@@ -284,10 +284,10 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
         </CardHeader>
         <CardContent className="pt-4">
           {visitRecords.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No visit records available</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Visit records will appear after care visits are completed
               </p>
             </div>

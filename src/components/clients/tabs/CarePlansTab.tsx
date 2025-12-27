@@ -137,7 +137,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
@@ -152,8 +152,8 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
         </CardHeader>
         <CardContent className="pt-4">
           {carePlans.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No care plans available for this client</p>
             </div>
           ) : (
@@ -173,7 +173,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
                           <span>{getProviderDisplay(plan)}</span>
@@ -194,12 +194,12 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                         </div>
                       </div>
                       {plan.end_date && (
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           End Date: {format(new Date(plan.end_date), 'MMM dd, yyyy')}
                         </div>
                       )}
                       {plan.review_date && (
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           Next Review: {format(new Date(plan.review_date), 'MMM dd, yyyy')}
                         </div>
                       )}
@@ -209,7 +209,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                             <span>Progress</span>
                             <span>{plan.goals_progress}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div 
                               className="bg-blue-600 h-2 rounded-full" 
                               style={{ width: `${plan.goals_progress}%` }}

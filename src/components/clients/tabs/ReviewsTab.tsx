@@ -26,15 +26,15 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
   const getServiceBadge = (serviceType: string | null) => {
     const displayType = serviceType || "General Service";
     const colors: Record<string, string> = {
-      "Personal Care": "bg-blue-100 text-blue-800",
-      "Medication": "bg-green-100 text-green-800",
-      "Companionship": "bg-purple-100 text-purple-800",
-      "Domestic": "bg-orange-100 text-orange-800",
-      "General Service": "bg-gray-100 text-gray-800",
+      "Personal Care": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+      "Medication": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      "Companionship": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+      "Domestic": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+      "General Service": "bg-muted text-muted-foreground",
     };
     
     return (
-      <Badge variant="secondary" className={colors[displayType] || "bg-gray-100 text-gray-800"}>
+      <Badge variant="secondary" className={colors[displayType] || "bg-muted text-muted-foreground"}>
         {displayType}
       </Badge>
     );
@@ -123,7 +123,7 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
 
       {/* Reviews List */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-lg">Client Reviews</CardTitle>
@@ -132,10 +132,10 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
         </CardHeader>
         <CardContent className="pt-4">
           {reviews.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No reviews available yet</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Reviews will appear after services are completed
               </p>
             </div>
@@ -153,7 +153,7 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
                         {getServiceBadge(review.service_type)}
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>Service: {format(parseISO(review.service_date), "MMM dd, yyyy")}</span>
@@ -166,7 +166,7 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
                         </div>
                       )}
 
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Submitted on {format(parseISO(review.created_at), "MMM dd, yyyy 'at' HH:mm")}
                       </div>
                     </div>

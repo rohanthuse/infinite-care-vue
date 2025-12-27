@@ -181,16 +181,16 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
       case 'recreational':
         return <Heart className="h-4 w-4 text-pink-600" />;
       default:
-        return <Calendar className="h-4 w-4 text-gray-600" />;
+        return <Calendar className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: any, color: string }> = {
-      'active': { variant: 'default', color: 'bg-green-100 text-green-800' },
-      'completed': { variant: 'secondary', color: 'bg-blue-100 text-blue-800' },
-      'paused': { variant: 'outline', color: 'bg-orange-100 text-orange-800' },
-      'cancelled': { variant: 'secondary', color: 'bg-red-100 text-red-800' },
+      'active': { variant: 'default', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+      'completed': { variant: 'secondary', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+      'paused': { variant: 'outline', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' },
+      'cancelled': { variant: 'secondary', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
     };
     
     const statusConfig = config[status?.toLowerCase()] || config.active;
@@ -328,7 +328,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
 
       {/* Recent Activities */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-blue-600" />
@@ -343,10 +343,10 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
         </CardHeader>
         <CardContent className="pt-4">
           {activities.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Heart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <Heart className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">No activities recorded</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Activity records will appear when engagement activities are logged
               </p>
             </div>
