@@ -466,7 +466,16 @@ export function ViewServiceReportDialog({
               </CardHeader>
               <CardContent>
                 {tasks && tasks.length > 0 ? (
-                  <TasksTable tasks={tasks} />
+                  <TasksTable tasks={(() => {
+                    // Deduplicate tasks by category + normalized name to handle legacy duplicates
+                    const seen = new Set<string>();
+                    return tasks.filter(task => {
+                      const key = `${task.task_category}:${(task.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ')}`;
+                      if (seen.has(key)) return false;
+                      seen.add(key);
+                      return true;
+                    });
+                  })()} />
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
                     <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />

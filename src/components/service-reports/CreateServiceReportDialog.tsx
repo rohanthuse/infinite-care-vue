@@ -450,8 +450,13 @@ export function CreateServiceReportDialog({
     }
   }, [open, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
 
+  // Helper function to normalize task names for deduplication
+  const normalizeTaskName = (name: string): string => {
+    return name.toLowerCase().trim().replace(/\s+/g, ' ');
+  };
+
   // Auto-load care plan tasks when dialog opens with no existing tasks
-  // Also sync goals/activities from JSON to relational tables
+  // Uses relational tables as primary source, JSON as fallback only
   useEffect(() => {
     const loadCarePlanTasks = async () => {
       if (!effectiveVisitRecordId || !preSelectedClient?.id) return;
@@ -477,79 +482,108 @@ export function CreateServiceReportDialog({
         if (carePlan) {
           const autoSave = carePlan.auto_save_data as any;
           const tasks: Array<{ task_category: string; task_name: string }> = [];
+          // Use a Set with composite key: "category:normalizedName" for deduplication
+          const seenTaskKeys = new Set<string>();
           
-          // Extract tasks from personal_care section
+          const addTask = (category: string, name: string) => {
+            const normalizedName = normalizeTaskName(name);
+            const key = `${category}:${normalizedName}`;
+            if (normalizedName && !seenTaskKeys.has(key)) {
+              tasks.push({ task_category: category, task_name: name.trim() });
+              seenTaskKeys.add(key);
+            }
+          };
+          
+          // Extract tasks from personal_care section (JSON only source)
           if (autoSave?.personal_care?.items) {
             autoSave.personal_care.items.forEach((item: any) => {
-              if (item.description || item.name) {
-                tasks.push({ task_category: 'Personal Care', task_name: item.description || item.name });
+              const taskName = item.description || item.name;
+              if (taskName) {
+                addTask('Personal Care', taskName);
               }
             });
           }
           
-          // Extract tasks from activities section
-          if (autoSave?.activities) {
-            autoSave.activities.forEach((act: any) => {
-              if (act.name || act.description) {
-                tasks.push({ task_category: 'Activity', task_name: act.name || act.description });
-              }
-            });
-          }
-          
-          // Also fetch client_activities for the care plan (from relational table)
-          const { data: activities } = await supabase
+          // ACTIVITIES: Use relational table as PRIMARY source
+          const { data: relationalActivities } = await supabase
             .from('client_activities')
             .select('name, description')
             .eq('care_plan_id', carePlan.id)
             .eq('status', 'active');
           
-          // Add activities from relational table, avoiding duplicates
-          const existingTaskNames = new Set(tasks.map(t => t.task_name.toLowerCase().trim()));
-          activities?.forEach(act => {
-            const taskName = act.name || act.description || '';
-            if (taskName && !existingTaskNames.has(taskName.toLowerCase().trim())) {
-              tasks.push({ task_category: 'Activity', task_name: taskName });
-              existingTaskNames.add(taskName.toLowerCase().trim());
-            }
-          });
+          const hasRelationalActivities = relationalActivities && relationalActivities.length > 0;
           
-          // Also fetch goals from relational table
-          const { data: goals } = await supabase
-            .from('client_care_plan_goals')
-            .select('description')
-            .eq('care_plan_id', carePlan.id);
-          
-          goals?.forEach(goal => {
-            if (goal.description && !existingTaskNames.has(goal.description.toLowerCase().trim())) {
-              tasks.push({ task_category: 'Goal', task_name: goal.description });
-              existingTaskNames.add(goal.description.toLowerCase().trim());
-            }
-          });
-          
-          // Also add goals from JSON if not in relational table
-          if (autoSave?.goals) {
-            autoSave.goals.forEach((goal: any) => {
-              const goalDesc = goal.description || goal.goal || '';
-              if (goalDesc && !existingTaskNames.has(goalDesc.toLowerCase().trim())) {
-                tasks.push({ task_category: 'Goal', task_name: goalDesc });
-                existingTaskNames.add(goalDesc.toLowerCase().trim());
+          if (hasRelationalActivities) {
+            // Use ONLY relational activities (don't also add JSON activities)
+            relationalActivities.forEach(act => {
+              const taskName = act.name || act.description || '';
+              if (taskName) {
+                addTask('Activity', taskName);
+              }
+            });
+          } else if (autoSave?.activities) {
+            // Fallback: use JSON activities only if no relational activities exist
+            autoSave.activities.forEach((act: any) => {
+              const taskName = act.name || act.description;
+              if (taskName) {
+                addTask('Activity', taskName);
               }
             });
           }
           
-          console.log('[CreateServiceReportDialog] Found tasks to load:', tasks.length);
+          // GOALS: Use relational table as PRIMARY source
+          const { data: relationalGoals } = await supabase
+            .from('client_care_plan_goals')
+            .select('description')
+            .eq('care_plan_id', carePlan.id);
+          
+          const hasRelationalGoals = relationalGoals && relationalGoals.length > 0;
+          
+          if (hasRelationalGoals) {
+            relationalGoals.forEach(goal => {
+              if (goal.description) {
+                addTask('Goal', goal.description);
+              }
+            });
+          } else if (autoSave?.goals) {
+            // Fallback: use JSON goals only if no relational goals exist
+            autoSave.goals.forEach((goal: any) => {
+              const goalDesc = goal.description || goal.goal || '';
+              if (goalDesc) {
+                addTask('Goal', goalDesc);
+              }
+            });
+          }
+          
+          console.log('[CreateServiceReportDialog] Found unique tasks to load:', tasks.length);
           
           if (tasks.length > 0) {
-            const visitTasksToInsert = tasks.map(t => ({
-              visit_record_id: effectiveVisitRecordId,
-              task_category: t.task_category,
-              task_name: t.task_name,
-              is_completed: false,
-              priority: 'medium' as const,
-            }));
+            // Check for existing tasks in DB to prevent duplicates on re-open
+            const { data: existingTasks } = await supabase
+              .from('visit_tasks')
+              .select('task_category, task_name')
+              .eq('visit_record_id', effectiveVisitRecordId);
             
-            await supabase.from('visit_tasks').insert(visitTasksToInsert);
-            queryClient.invalidateQueries({ queryKey: ['visit-tasks', effectiveVisitRecordId] });
+            const existingKeys = new Set(
+              (existingTasks || []).map(t => `${t.task_category}:${normalizeTaskName(t.task_name)}`)
+            );
+            
+            const newTasks = tasks.filter(t => 
+              !existingKeys.has(`${t.task_category}:${normalizeTaskName(t.task_name)}`)
+            );
+            
+            if (newTasks.length > 0) {
+              const visitTasksToInsert = newTasks.map(t => ({
+                visit_record_id: effectiveVisitRecordId,
+                task_category: t.task_category,
+                task_name: t.task_name,
+                is_completed: false,
+                priority: 'medium' as const,
+              }));
+              
+              await supabase.from('visit_tasks').insert(visitTasksToInsert);
+              queryClient.invalidateQueries({ queryKey: ['visit-tasks', effectiveVisitRecordId] });
+            }
           }
         }
       } catch (error) {
