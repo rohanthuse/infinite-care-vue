@@ -664,15 +664,25 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     doc.text('No goals recorded', leftX + 2, goalsContentY + 6);
   }
   
-  // Right Column Content: Activities
+  // Right Column Content: Activities (extracted from tasks with category='Activity')
   doc.setFillColor(255, 247, 237); // Light orange background
   
-  if (activities?.length > 0) {
+  // Extract activities from tasks array (deduped by name)
+  const activityTasks = tasks?.filter(t => t.task_category === 'Activity') || [];
+  const seenActivityNames = new Set<string>();
+  const dedupedActivities = activityTasks.filter(t => {
+    const key = (t.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    if (seenActivityNames.has(key)) return false;
+    seenActivityNames.add(key);
+    return true;
+  });
+  
+  if (dedupedActivities.length > 0) {
     const activityLines: string[] = [];
-    activities.forEach((a, idx) => {
-      const actName = `${idx + 1}. ${(a.name || a.activity_name || 'N/A').substring(0, 40)}`;
-      const actDesc = `   ${(a.description || '-').substring(0, 40)}${a.description?.length > 40 ? '...' : ''}`;
-      activityLines.push(actName, actDesc);
+    dedupedActivities.forEach((a, idx) => {
+      const actName = `${idx + 1}. ${(a.task_name || 'N/A').substring(0, 40)}`;
+      const status = a.is_completed ? '✓ Completed' : '○ Pending';
+      activityLines.push(actName, `   ${status}`);
     });
     rightColumnHeight = activityLines.length * 4 + 4;
     
@@ -988,24 +998,9 @@ export const generatePDFForServiceReport = async (
     }
   }
 
-  // Fetch activities for the client
-  let clientActivities: any[] = [];
-  if (safeReport.client_id) {
-    const { data: carePlanData } = await supabase
-      .from('client_care_plans')
-      .select('id')
-      .eq('client_id', safeReport.client_id)
-      .eq('status', 'Active')
-      .maybeSingle();
-
-    if (carePlanData?.id) {
-      const { data: activities } = await supabase
-        .from('client_activities')
-        .select('name, description, frequency, status')
-        .eq('care_plan_id', carePlanData.id);
-      clientActivities = activities || [];
-    }
-  }
+  // NOTE: Activities are now included in visit_tasks with task_category='Activity'
+  // We no longer fetch client_activities separately to avoid duplication
+  // The tasks table already contains activities when a service report is created
 
   // If no visit record found, generate simplified PDF with report data only
   if (!visitRecordId) {
@@ -1021,7 +1016,7 @@ export const generatePDFForServiceReport = async (
       accidents: [],
       observations: [],
       carePlanGoals: carePlanGoals,
-      activities: clientActivities,
+      activities: [], // Activities are now in tasks with category='Activity'
       branchId: branchId || safeReport.branch_id,
     });
     return;
@@ -1049,7 +1044,7 @@ export const generatePDFForServiceReport = async (
       accidents: [],
       observations: [],
       carePlanGoals: carePlanGoals,
-      activities: clientActivities,
+      activities: [], // Activities are now in tasks with category='Activity'
       branchId: branchId || safeReport.branch_id,
     });
     return;
@@ -1113,7 +1108,7 @@ export const generatePDFForServiceReport = async (
     accidents: accidents,
     observations: observations,
     carePlanGoals: carePlanGoals,
-    activities: clientActivities,
+    activities: [], // Activities are now in tasks with category='Activity'
     branchId: branchId || safeReport.branch_id,
   });
   } catch (error) {
