@@ -386,6 +386,26 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       language_preferences: patientDataState.preferredLanguage,
                     }}
                     personalCare={transformedPersonalCare}
+                    aboutMeData={(patientDataState.aboutMe as any)?.has_key_safe !== undefined ? {
+                      has_key_safe: (patientDataState.aboutMe as any)?.has_key_safe,
+                      key_safe_code: (patientDataState.aboutMe as any)?.key_safe_code,
+                      requires_heating_help: (patientDataState.aboutMe as any)?.requires_heating_help,
+                      home_type: (patientDataState.aboutMe as any)?.home_type,
+                      living_status: (patientDataState.aboutMe as any)?.living_status,
+                      is_visually_impaired: (patientDataState.aboutMe as any)?.is_visually_impaired,
+                      vision_description: (patientDataState.aboutMe as any)?.vision_description,
+                      is_hearing_impaired: (patientDataState.aboutMe as any)?.is_hearing_impaired,
+                      hearing_description: (patientDataState.aboutMe as any)?.hearing_description,
+                      mobility: (patientDataState.aboutMe as any)?.mobility,
+                      communication_needs: (patientDataState.aboutMe as any)?.communication_needs,
+                      how_i_communicate: (patientDataState.aboutMe as any)?.how_i_communicate,
+                      ethnicity: (patientDataState.aboutMe as any)?.ethnicity,
+                      living_arrangement: (patientDataState.aboutMe as any)?.living_arrangement,
+                      has_dnr: (patientDataState.aboutMe as any)?.has_dnr,
+                      has_respect: (patientDataState.aboutMe as any)?.has_respect,
+                      has_dols: (patientDataState.aboutMe as any)?.has_dols,
+                      has_lpa: (patientDataState.aboutMe as any)?.has_lpa,
+                    } : null}
                   />
                 </TabsContent>
                 

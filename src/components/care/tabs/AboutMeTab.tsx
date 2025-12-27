@@ -29,6 +29,7 @@ interface AboutMeTabProps {
   } | null;
   aboutMeData?: {
     has_key_safe?: boolean;
+    key_safe_code?: string;
     requires_heating_help?: boolean;
     home_type?: string;
     living_status?: string;
@@ -130,6 +131,12 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 {renderYesNo('Key Safe', aboutMeData.has_key_safe)}
+                {aboutMeData.has_key_safe && aboutMeData.key_safe_code && (
+                  <div className="pl-4 border-l-2 border-primary/30 mt-2">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Key Safe Code/Location</h3>
+                    <p className="text-base font-mono bg-muted/50 px-2 py-1 rounded">{aboutMeData.key_safe_code}</p>
+                  </div>
+                )}
                 {renderYesNo('Requires Heating Help', aboutMeData.requires_heating_help)}
               </div>
               <div className="space-y-4">

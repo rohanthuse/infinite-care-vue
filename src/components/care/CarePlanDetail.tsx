@@ -11,6 +11,7 @@ import {
   useClientEquipment, 
   useClientServiceActions,
 } from "@/hooks/useClientData";
+import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useClientRiskAssessments } from "@/hooks/useClientRiskAssessments";
 import { useCarePlanDialogs } from "./hooks/useCarePlanDialogs";
 import { CarePlanHeader } from "./CarePlanHeader";
@@ -56,6 +57,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const { data: equipment = [] } = useClientEquipment(carePlan.patientId);
   const { data: riskAssessments = [] } = useClientRiskAssessments(carePlan.patientId);
   const { data: serviceActions = [] } = useClientServiceActions(carePlan.patientId);
+
+  // Fetch care plan data with auto_save_data for About Me section
+  const { data: carePlanData } = useCarePlanData(carePlan.id);
+  const aboutMeData = carePlanData?.about_me || null;
 
   // Use the custom hook for dialog management
   const dialogState = useCarePlanDialogs(carePlan.id, carePlan.patientId, branchId, branchName);
@@ -158,6 +163,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           riskAssessments={riskAssessments}
           serviceActions={serviceActions}
           branchId={branchId}
+          aboutMeData={aboutMeData}
           onAddNote={() => dialogState.setAddNoteDialogOpen(true)}
           onScheduleFollowUp={handleScheduleFollowUp}
           onRecordActivity={() => dialogState.setAddActivityDialogOpen(true)}
