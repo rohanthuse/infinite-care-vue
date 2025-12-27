@@ -35,7 +35,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
-      approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800 hover:bg-green-200" },
+      approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50" },
       rejected: { variant: "destructive" as const, label: "Rejected" },
     };
 
@@ -84,23 +84,23 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                     <div className="font-medium flex items-center gap-2">
                       {record.staff ? `${record.staff.first_name} ${record.staff.last_name}` : 'Unknown Staff'}
                       {record.booking_id && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200">
+                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                           <Link className="h-3 w-3 mr-1" />
                           Visit Linked
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500">{record.staff_id}</div>
+                    <div className="text-sm text-muted-foreground">{record.staff_id}</div>
                   </div>
                 </TableCell>
                 <TableCell>
                   {record.client ? (
                     <div>
                       <div className="font-medium">{record.client.first_name} {record.client.last_name}</div>
-                      <div className="text-sm text-gray-500">{record.client_id}</div>
+                      <div className="text-sm text-muted-foreground">{record.client_id}</div>
                     </div>
                   ) : (
-                    <span className="text-gray-500">N/A</span>
+                    <span className="text-muted-foreground">N/A</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -109,7 +109,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                 <TableCell>
                   <div className="text-sm">
                     <div>{record.scheduled_start_time} - {record.scheduled_end_time}</div>
-                    <div className="text-gray-500">
+                    <div className="text-muted-foreground">
                       ({formatDuration(record.scheduled_duration_minutes)})
                     </div>
                   </div>
@@ -118,20 +118,20 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                   {record.actual_start_time && record.actual_end_time ? (
                     <div className="text-sm">
                       <div>{record.actual_start_time} - {record.actual_end_time}</div>
-                      <div className="text-gray-500">
+                      <div className="text-muted-foreground">
                         ({formatDuration(record.actual_duration_minutes || 0)})
                       </div>
                     </div>
                   ) : (
-                    <span className="text-gray-500">Not recorded</span>
+                    <span className="text-muted-foreground">Not recorded</span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <div className="font-medium text-orange-600">
+                    <div className="font-medium text-orange-600 dark:text-orange-400">
                       {formatDuration(record.extra_time_minutes)}
                     </div>
-                    <div className="text-gray-500">
+                    <div className="text-muted-foreground">
                       @ £{(record.extra_time_rate || record.hourly_rate).toFixed(2)}/hr
                     </div>
                   </div>
@@ -142,9 +142,9 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                 <TableCell>
                   <div className="text-sm">
                     {record.created_by ? (
-                      <div className="text-gray-500">{record.created_by}</div>
+                      <div className="text-muted-foreground">{record.created_by}</div>
                     ) : (
-                      <div className="text-gray-400">System</div>
+                      <div className="text-muted-foreground/60">System</div>
                     )}
                   </div>
                 </TableCell>

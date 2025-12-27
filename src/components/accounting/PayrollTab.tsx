@@ -368,7 +368,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading payroll records...</p>
+          <p className="text-muted-foreground">Loading payroll records...</p>
         </div>
       </div>
     );
@@ -376,8 +376,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600">Error loading payroll records. Please try again.</p>
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-600 dark:text-red-400">Error loading payroll records. Please try again.</p>
       </div>
     );
   }
@@ -386,8 +386,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Payroll Management</h2>
-          <p className="text-gray-500 mt-1">Manage payslips and salary information for {branchName}</p>
+          <h2 className="text-xl font-semibold text-foreground">Payroll Management</h2>
+          <p className="text-muted-foreground mt-1">Manage payslips and salary information for {branchName}</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -429,7 +429,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search employees..."
             className="pl-9 md:max-w-xs"
@@ -440,60 +440,60 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         <Button
           variant="outline"
           size="sm"
-          className={`flex items-center gap-2 ${hasActiveFilters() ? 'border-blue-500 text-blue-600' : ''}`}
+          className={`flex items-center gap-2 ${hasActiveFilters() ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400' : ''}`}
           onClick={() => setFilterDialogOpen(true)}
         >
           <Filter className="h-4 w-4" />
           <span>Filter</span>
-          {hasActiveFilters() && <span className="rounded-full bg-blue-100 text-blue-600 w-5 h-5 text-xs flex items-center justify-center">!</span>}
+          {hasActiveFilters() && <span className="rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 w-5 h-5 text-xs flex items-center justify-center">!</span>}
         </Button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+        <div className="bg-card p-4 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500">Total Records</div>
-              <div className="text-2xl font-bold">{statusCounts.total}</div>
+              <div className="text-sm text-muted-foreground">Total Records</div>
+              <div className="text-2xl font-bold text-foreground">{statusCounts.total}</div>
             </div>
-            <div className="bg-gray-100 p-2 rounded-full">
-              <CalendarDays className="h-6 w-6 text-gray-500" />
+            <div className="bg-muted p-2 rounded-full">
+              <CalendarDays className="h-6 w-6 text-muted-foreground" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+        <div className="bg-card p-4 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500">Processed</div>
-              <div className="text-2xl font-bold text-green-600">{statusCounts.processed}</div>
+              <div className="text-sm text-muted-foreground">Processed</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{statusCounts.processed}</div>
             </div>
-            <div className="bg-green-50 p-2 rounded-full">
-              <CheckCircle2 className="h-6 w-6 text-green-500" />
+            <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded-full">
+              <CheckCircle2 className="h-6 w-6 text-green-500 dark:text-green-400" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+        <div className="bg-card p-4 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500">Pending</div>
-              <div className="text-2xl font-bold text-amber-600">{statusCounts.pending}</div>
+              <div className="text-sm text-muted-foreground">Pending</div>
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{statusCounts.pending}</div>
             </div>
-            <div className="bg-amber-50 p-2 rounded-full">
-              <Clock className="h-6 w-6 text-amber-500" />
+            <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-full">
+              <Clock className="h-6 w-6 text-amber-500 dark:text-amber-400" />
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+        <div className="bg-card p-4 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500">Failed</div>
-              <div className="text-2xl font-bold text-red-600">{statusCounts.failed}</div>
+              <div className="text-sm text-muted-foreground">Failed</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{statusCounts.failed}</div>
             </div>
-            <div className="bg-red-50 p-2 rounded-full">
-              <AlertTriangle className="h-6 w-6 text-red-500" />
+            <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded-full">
+              <AlertTriangle className="h-6 w-6 text-red-500 dark:text-red-400" />
             </div>
           </div>
         </div>

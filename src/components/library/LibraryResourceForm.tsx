@@ -96,9 +96,9 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
   if (!canAccess) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
+        <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30">
+          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <AlertDescription className="text-red-800 dark:text-red-300">
             You do not have permission to add resources to this branch. Please contact your administrator.
           </AlertDescription>
         </Alert>
@@ -170,12 +170,12 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* File Upload Section */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+          <div className="border-2 border-dashed border-border rounded-lg p-6">
             <div className="text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
               <div className="mt-4">
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <span className="mt-2 block text-sm font-medium text-gray-900">
+                  <span className="mt-2 block text-sm font-medium text-foreground">
                     Upload a file or add a link resource
                   </span>
                   <input
@@ -189,8 +189,8 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
                 </label>
                 {selectedFile && (
                   <div className="mt-2 flex items-center justify-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-gray-600">{selectedFile.name}</span>
+                    <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm text-muted-foreground">{selectedFile.name}</span>
                     <Button
                       type="button"
                       variant="ghost"

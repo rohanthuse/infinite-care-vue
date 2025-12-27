@@ -231,8 +231,8 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Travel & Mileage</h2>
-          <p className="text-gray-500 mt-1">Manage travel expenses and mileage claims for {branchName}</p>
+          <h2 className="text-xl font-semibold text-foreground">Travel & Mileage</h2>
+          <p className="text-muted-foreground mt-1">Manage travel expenses and mileage claims for {branchName}</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
       
       <div className="flex flex-col md:flex-row gap-3 items-stretch">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search travel records..."
             className="pl-10 pr-4"
@@ -267,21 +267,21 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
           <Button 
             variant="outline" 
             size="icon" 
-            className={`h-10 w-10 ${hasActiveFilters() ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+            className={`h-10 w-10 ${hasActiveFilters() ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700' : 'bg-background'}`}
             onClick={handleFilterClick}
           >
-            <Filter className={`h-4 w-4 ${hasActiveFilters() ? 'text-blue-600' : ''}`} />
+            <Filter className={`h-4 w-4 ${hasActiveFilters() ? 'text-blue-600 dark:text-blue-400' : ''}`} />
           </Button>
         </div>
       </div>
       
       {filteredRecords.length === 0 && searchTerm === "" && !hasActiveFilters() ? (
-        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-            <Car className="h-6 w-6 text-gray-400" />
+        <div className="bg-muted border border-dashed border-border rounded-lg p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <Car className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No Travel Records Yet</h3>
-          <p className="text-gray-500">Start logging travel expenses and mileage for {branchName}.</p>
+          <h3 className="text-lg font-medium text-foreground mb-1">No Travel Records Yet</h3>
+          <p className="text-muted-foreground">Start logging travel expenses and mileage for {branchName}.</p>
           <Button 
             variant="default" 
             className="mt-4 bg-blue-600 hover:bg-blue-700"

@@ -343,7 +343,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading rates...</p>
+          <p className="text-muted-foreground">Loading rates...</p>
         </div>
       </div>
     );
@@ -351,8 +351,8 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600">Error loading rates. Please try again.</p>
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-600 dark:text-red-400">Error loading rates. Please try again.</p>
         <Button onClick={() => refetch()} className="mt-2">
           Retry
         </Button>
@@ -364,21 +364,21 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Rate Management</h2>
-          <p className="text-gray-500 mt-1">Configure and manage service rates for {branchName}</p>
+          <h2 className="text-xl font-semibold text-foreground">Rate Management</h2>
+          <p className="text-muted-foreground mt-1">Configure and manage service rates for {branchName}</p>
         </div>
         
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="text-gray-600"
+            className="text-muted-foreground"
             onClick={() => setIsFilterDialogOpen(true)}
           >
             <Filter className="h-4 w-4 mr-2" />
             Filter
             {activeFilter && Object.keys(activeFilter).length > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
                 {Object.keys(activeFilter).length}
               </span>
             )}
@@ -422,65 +422,65 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className={cn("flex items-center p-4")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 mr-3">
-              <Check className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 mr-3">
+              <Check className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Rates</p>
-              <h3 className="text-2xl font-bold mt-1">{activeRatesCount}</h3>
+              <h3 className="text-2xl font-bold mt-1 text-foreground">{activeRatesCount}</h3>
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className={cn("flex items-center p-4")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 mr-3">
-              <Clock className="h-5 w-5 text-yellow-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 mr-3">
+              <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Rates</p>
-              <h3 className="text-2xl font-bold mt-1">{pendingRatesCount}</h3>
+              <h3 className="text-2xl font-bold mt-1 text-foreground">{pendingRatesCount}</h3>
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className={cn("flex items-center p-4")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 mr-3">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mr-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Expired Rates</p>
-              <h3 className="text-2xl font-bold mt-1">{expiredRatesCount}</h3>
+              <h3 className="text-2xl font-bold mt-1 text-foreground">{expiredRatesCount}</h3>
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className={cn("flex items-center p-4")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 mr-3">
-              <PoundSterling className="h-5 w-5 text-green-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mr-3">
+              <PoundSterling className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Avg Hourly Rate</p>
-              <h3 className="text-2xl font-bold mt-1">{formatCurrency(averageHourlyRate)}</h3>
+              <h3 className="text-2xl font-bold mt-1 text-foreground">{formatCurrency(averageHourlyRate)}</h3>
             </div>
           </CardContent>
         </Card>
       </div>
       
       {activeFilter && Object.keys(activeFilter).length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center">
-            <Info className="h-5 w-5 text-blue-500 mr-2" />
-            <span className="text-sm text-blue-700">
+            <Info className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2" />
+            <span className="text-sm text-blue-700 dark:text-blue-300">
               Filtered results: Showing {filteredRates.length} of {rates.length} rates
             </span>
           </div>
           <Button 
             variant="ghost" 
             size="sm"
-            className="h-8 text-blue-700 hover:bg-blue-100"
+            className="h-8 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
             onClick={clearFilters}
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1" />
