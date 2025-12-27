@@ -42,9 +42,9 @@ const NotificationCard = ({
           </div>
           <div className={cn("text-3xl font-bold", color)}>{count}</div>
         </div>
-        <h3 className="font-semibold text-lg text-gray-800 mb-2">{title}</h3>
+        <h3 className="font-semibold text-lg text-foreground mb-2">{title}</h3>
         {description && (
-          <p className="mt-1 text-sm text-gray-600">{description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
     </motion.div>

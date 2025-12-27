@@ -31,65 +31,65 @@ const categoryConfig = {
   staff: {
     title: "Staff Notifications",
     icon: Users,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-900/30",
+    borderColor: "border-blue-200 dark:border-blue-700",
     description: "Overdue bookings and staff alerts"
   },
   system: {
     title: "System Alerts", 
     icon: AlertTriangle,
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-50 dark:bg-red-900/30",
+    borderColor: "border-red-200 dark:border-red-700",
     description: "Critical system notifications"
   },
   client: {
     title: "Client Notifications",
     icon: User,
-    color: "text-green-600", 
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
+    color: "text-green-600 dark:text-green-400", 
+    bgColor: "bg-green-50 dark:bg-green-900/30",
+    borderColor: "border-green-200 dark:border-green-700",
     description: "Client requests and appointments"
   },
   medication: {
     title: "Medication Alerts",
     icon: Pill,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50", 
-    borderColor: "border-purple-200",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-900/30", 
+    borderColor: "border-purple-200 dark:border-purple-700",
     description: "Upcoming medication schedules"
   },
   rota: {
     title: "Rota Errors",
     icon: Calendar,
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200", 
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-900/30",
+    borderColor: "border-orange-200 dark:border-orange-700", 
     description: "Schedule conflicts and errors"
   },
   document: {
     title: "Document Updates",
     icon: FileText,
-    color: "text-gray-600",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
+    color: "text-gray-600 dark:text-gray-400",
+    bgColor: "bg-gray-50 dark:bg-gray-900/30",
+    borderColor: "border-gray-200 dark:border-gray-700",
     description: "Recently modified documents"
   },
   reports: {
     title: "Reports",
     icon: ClipboardList,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
-    borderColor: "border-indigo-200",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "bg-indigo-50 dark:bg-indigo-900/30",
+    borderColor: "border-indigo-200 dark:border-indigo-700",
     description: "Care plans and report updates"
   },
   message: {
     title: "Messages",
     icon: MessageSquare,
-    color: "text-teal-600",
-    bgColor: "bg-teal-50",
-    borderColor: "border-teal-200",
+    color: "text-teal-600 dark:text-teal-400",
+    bgColor: "bg-teal-50 dark:bg-teal-900/30",
+    borderColor: "border-teal-200 dark:border-teal-700",
     description: "Unread messages and communications"
   }
 };
@@ -272,11 +272,11 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge className="bg-red-100 text-red-800">High</Badge>;
+        return <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">High</Badge>;
       case "medium":
-        return <Badge className="bg-amber-100 text-amber-800">Medium</Badge>;
+        return <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">Medium</Badge>;
       case "low":
-        return <Badge className="bg-green-100 text-green-800">Low</Badge>;
+        return <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Low</Badge>;
       default:
         return <Badge variant="outline">Normal</Badge>;
     }
@@ -304,8 +304,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
               <IconComponent className={`h-6 w-6 ${config.color}`} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{config.title}</h1>
-              <p className="text-gray-500">{config.description}</p>
+              <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
+              <p className="text-muted-foreground">{config.description}</p>
             </div>
           </div>
         </div>
@@ -344,8 +344,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total</p>
+            <div>
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold">{notifications.length}</p>
               </div>
               <IconComponent className={`h-8 w-8 ${config.color}`} />
@@ -356,8 +356,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Unread</p>
+            <div>
+                <p className="text-sm text-muted-foreground">Unread</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {notifications.filter(n => !n.read_at).length}
                 </p>
@@ -370,8 +370,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">High Priority</p>
+            <div>
+                <p className="text-sm text-muted-foreground">High Priority</p>
                 <p className="text-2xl font-bold text-red-600">
                   {notifications.filter(n => n.priority === 'high').length}
                 </p>
@@ -384,8 +384,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Today</p>
+            <div>
+                <p className="text-sm text-muted-foreground">Today</p>
                 <p className="text-2xl font-bold text-green-600">
                   {notifications.filter(n => {
                     const createdAt = new Date(n.created_at);
@@ -409,15 +409,15 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
           {(notificationsLoading) ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading notifications...</p>
+              <p className="text-muted-foreground">Loading notifications...</p>
             </div>
           ) : notifications.length > 0 ? (
             <div className="divide-y">
               {notifications.map((notification) => (
                 <div 
                   key={notification.id}
-                    className={`p-4 hover:bg-gray-50 transition-colors ${
-                      !notification.read_at ? 'bg-blue-50/50' : ''
+                    className={`p-4 hover:bg-muted transition-colors ${
+                      !notification.read_at ? 'bg-primary/5' : ''
                     }`}
                 >
                   <div className="flex items-start justify-between">
@@ -426,13 +426,13 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
                         {!notification.read_at && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full" />
                         )}
-                        <h4 className="font-medium text-gray-900">
+                        <h4 className="font-medium text-foreground">
                           {notification.title}
                         </h4>
                         {getPriorityBadge(notification.priority || 'medium')}
                       </div>
-                        <p className="text-gray-600">{notification.message}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <p className="text-muted-foreground">{notification.message}</p>
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <span className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
                             {new Date(notification.created_at).toLocaleString()}

@@ -52,56 +52,56 @@ const WorkflowContent = ({
   return (
     <>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
-        <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Workflow Management</h1>
+        <p className="text-muted-foreground mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
       
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
         <div className="mb-8 mt-8">
-          <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Core Workflow Elements</h2>
+          <h2 className="text-xl font-bold text-foreground tracking-tight mb-4">Core Workflow Elements</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('notifications')}>
+            <Card className="bg-card hover:bg-muted transition-colors cursor-pointer border border-border" onClick={() => handleNavigate('notifications')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                  <Bell className="h-8 w-8 text-blue-600" />
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+                  <Bell className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Notification Overview</h3>
-                <p className="text-sm text-gray-500 mt-1">System alerts and updates</p>
+                <h3 className="font-semibold text-foreground text-lg">Notification Overview</h3>
+                <p className="text-sm text-muted-foreground mt-1">System alerts and updates</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={handleTaskMatrixClick}>
+            <Card className="bg-card hover:bg-muted transition-colors cursor-pointer border border-border" onClick={handleTaskMatrixClick}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                  <ListChecks className="h-8 w-8 text-purple-600" />
+                <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3">
+                  <ListChecks className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Action Plan</h3>
-                <p className="text-sm text-gray-500 mt-1">Manage priority tasks</p>
+                <h3 className="font-semibold text-foreground text-lg">Action Plan</h3>
+                <p className="text-sm text-muted-foreground mt-1">Manage priority tasks</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('forms?source=workflow')}>
+            <Card className="bg-card hover:bg-muted transition-colors cursor-pointer border border-border" onClick={() => handleNavigate('forms?source=workflow')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                  <FileText className="h-8 w-8 text-amber-600" />
+                <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-3">
+                  <FileText className="h-8 w-8 text-amber-600 dark:text-amber-400" />
                 </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Form Matrix</h3>
-                <p className="text-sm text-gray-500 mt-1">Document templates</p>
+                <h3 className="font-semibold text-foreground text-lg">Form Matrix</h3>
+                <p className="text-sm text-muted-foreground mt-1">Document templates</p>
               </CardContent>
             </Card>
           </div>
         </div>
         
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Additional Workflows</h2>
+          <h2 className="text-xl font-bold text-foreground tracking-tight mb-4">Additional Workflows</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('care-plan')}>
+            <Card className="bg-card hover:bg-muted transition-colors cursor-pointer border border-border" onClick={() => handleNavigate('care-plan')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mb-3">
-                  <ClipboardCheck className="h-8 w-8 text-cyan-600" />
+                <div className="w-16 h-16 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center mb-3">
+                  <ClipboardCheck className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
                 </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Care Plan</h3>
-                <p className="text-sm text-gray-500 mt-1">Patient care plans</p>
+                <h3 className="font-semibold text-foreground text-lg">Care Plan</h3>
+                <p className="text-sm text-muted-foreground mt-1">Patient care plans</p>
               </CardContent>
             </Card>
           </div>

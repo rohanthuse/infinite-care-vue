@@ -113,7 +113,7 @@ export const MessageList = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="text-gray-500">Loading messages...</div>
+        <div className="text-muted-foreground">Loading messages...</div>
       </div>
     );
   }
@@ -137,7 +137,7 @@ export const MessageList = ({
   if (filteredThreads.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="text-gray-500 text-center">
+        <div className="text-muted-foreground text-center">
           <p>No messages found</p>
           {searchTerm && <p className="text-sm mt-1">Try adjusting your search</p>}
         </div>
@@ -154,16 +154,16 @@ export const MessageList = ({
         return (
           <div
             key={thread.id}
-            className={`p-3 cursor-pointer hover:bg-gray-50 border-l-2 transition-colors ${
+            className={`p-3 cursor-pointer hover:bg-muted border-l-2 transition-colors ${
               isSelected 
-                ? 'bg-blue-50 border-l-blue-500' 
+                ? 'bg-primary/10 border-l-primary' 
                 : 'border-l-transparent'
             }`}
             onClick={() => onMessageSelect(thread.id)}
           >
             <div className="flex items-start space-x-3">
               <div className="relative flex-shrink-0">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 bg-muted">
                   <AvatarFallback className={`${threadInfo.isGroup ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}>
                     {threadInfo.avatar}
                   </AvatarFallback>
@@ -176,12 +176,12 @@ export const MessageList = ({
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center space-x-2">
-                    <span className={`font-medium text-sm truncate ${
-                      thread.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'
-                    }`}>
-                      {threadInfo.displayName}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center space-x-2">
+                      <span className={`font-medium text-sm truncate ${
+                        thread.unreadCount > 0 ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {threadInfo.displayName}
                     </span>
                     {threadInfo.isGroup && (
                       <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-purple-100 text-purple-700">
@@ -200,8 +200,8 @@ export const MessageList = ({
                         {thread.unreadCount}
                       </Badge>
                     )}
-                    <span className="text-xs text-gray-500">
-                      {formatDate(thread.lastMessage?.timestamp ? 
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(thread.lastMessage?.timestamp ?
                         thread.lastMessage.timestamp.toISOString() : 
                         thread.updatedAt)}
                     </span>
@@ -247,7 +247,7 @@ export const MessageList = ({
                 
                  <div className="flex items-center justify-between">
                    <h4 className={`text-sm truncate ${
-                     thread.unreadCount > 0 ? 'font-semibold text-gray-900' : 'text-gray-600'
+                     thread.unreadCount > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'
                    }`}>
                      {thread.subject}
                    </h4>
@@ -280,7 +280,7 @@ export const MessageList = ({
                 {thread.lastMessage && (
                   <div className="flex items-center justify-between gap-2 mt-1">
                     <p className={`text-xs truncate flex-1 ${
-                      thread.unreadCount > 0 ? 'text-gray-700' : 'text-gray-500'
+                      thread.unreadCount > 0 ? 'text-foreground' : 'text-muted-foreground'
                     }`}>
                       <span className="font-medium">{thread.lastMessage.senderName}:</span>{' '}
                       {thread.lastMessage.content}

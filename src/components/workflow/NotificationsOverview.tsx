@@ -57,9 +57,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Staff Notifications",
       count: isLoading ? 0 : categoryCounts.staff.total,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-900/30",
+      borderColor: "border-blue-200 dark:border-blue-700",
       description: "Overdue bookings and staff alerts",
       path: "staff",
       icon: Bell
@@ -67,9 +67,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "System Alerts",
       count: isLoading ? 0 : categoryCounts.system.total,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
-      borderColor: "border-red-200",
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-900/30",
+      borderColor: "border-red-200 dark:border-red-700",
       description: "Critical system notifications",
       path: "system",
       icon: AlertTriangle
@@ -77,9 +77,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Client Notifications",
       count: isLoading ? 0 : categoryCounts.client.total,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
+      color: "text-green-600 dark:text-green-400",
+      bgColor: "bg-green-50 dark:bg-green-900/30",
+      borderColor: "border-green-200 dark:border-green-700",
       description: "Client requests and appointments",
       path: "client",
       icon: Bell
@@ -87,9 +87,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Medication Alerts",
       count: isLoading ? 0 : categoryCounts.medication.total,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-900/30",
+      borderColor: "border-purple-200 dark:border-purple-700",
       description: "Upcoming medication schedules",
       path: "medication",
       icon: Clock
@@ -97,9 +97,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Rota Errors",
       count: isLoading ? 0 : categoryCounts.rota.total,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-      borderColor: "border-amber-200",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-900/30",
+      borderColor: "border-amber-200 dark:border-amber-700",
       description: "Schedule conflicts and errors",
       path: "rota",
       icon: Calendar
@@ -107,9 +107,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Document Updates",
       count: isLoading ? 0 : categoryCounts.document.total,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-      borderColor: "border-indigo-200",
+      color: "text-indigo-600 dark:text-indigo-400",
+      bgColor: "bg-indigo-50 dark:bg-indigo-900/30",
+      borderColor: "border-indigo-200 dark:border-indigo-700",
       description: "Recently modified documents",
       path: "document",
       icon: FileWarning
@@ -117,9 +117,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     {
       title: "Messages",
       count: isLoading ? 0 : categoryCounts.message.total,
-      color: "text-teal-600",
-      bgColor: "bg-teal-50",
-      borderColor: "border-teal-200",
+      color: "text-teal-600 dark:text-teal-400",
+      bgColor: "bg-teal-50 dark:bg-teal-900/30",
+      borderColor: "border-teal-200 dark:border-teal-700",
       description: "Unread messages and communications",
       path: "message",
       icon: MessageSquare
@@ -134,7 +134,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {notificationData.map((_, index) => (
-          <div key={index} className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+          <div key={index} className="h-32 bg-muted animate-pulse rounded-lg" />
         ))}
       </div>
     );
@@ -143,7 +143,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   return (
     <ErrorBoundary fallback={
       <div className="p-4 text-center">
-        <p className="text-gray-500">Unable to load notifications overview</p>
+        <p className="text-muted-foreground">Unable to load notifications overview</p>
       </div>
     }>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

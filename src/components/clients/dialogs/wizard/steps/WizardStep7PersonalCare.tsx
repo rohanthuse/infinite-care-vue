@@ -30,8 +30,8 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Personal Care</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl font-semibold text-foreground mb-2">Personal Care</h2>
+        <p className="text-muted-foreground">
           Daily living assistance and personal care requirements.
         </p>
       </div>
@@ -240,7 +240,7 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
 
           {/* Incontinence Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-800">Incontinence</h3>
+            <h3 className="text-lg font-medium text-foreground">Incontinence</h3>
             <FormField
               control={form.control}
               name="personal_care.incontinence_products_required"
@@ -271,7 +271,7 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
 
           {/* Sleep Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-800">Sleep</h3>
+            <h3 className="text-lg font-medium text-foreground">Sleep</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField

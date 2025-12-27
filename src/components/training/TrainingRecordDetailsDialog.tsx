@@ -64,13 +64,13 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700';
       case 'in-progress':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700';
       case 'expired':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -142,7 +142,7 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
               {/* Status and Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <div className="mt-1">
                     <Badge variant="outline" className={getStatusColor(record.status)}>
                       {record.status.replace('-', ' ')}
@@ -150,7 +150,7 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Assigned Date</label>
+                  <label className="text-sm font-medium text-muted-foreground">Assigned Date</label>
                   <div className="mt-1 text-sm">
                     {format(new Date(record.assigned_date), 'MMM dd, yyyy')}
                   </div>
@@ -162,7 +162,7 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
                 <div className="grid grid-cols-2 gap-4">
                   {record.completion_date && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Completion Date</label>
+                      <label className="text-sm font-medium text-muted-foreground">Completion Date</label>
                       <div className="mt-1 text-sm">
                         {format(new Date(record.completion_date), 'MMM dd, yyyy')}
                       </div>
@@ -170,7 +170,7 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
                   )}
                   {record.expiry_date && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Expiry Date</label>
+                      <label className="text-sm font-medium text-muted-foreground">Expiry Date</label>
                       <div className="mt-1 text-sm">
                         {format(new Date(record.expiry_date), 'MMM dd, yyyy')}
                       </div>
@@ -182,7 +182,7 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
               {/* Score */}
               {record.score !== null && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Score</label>
+                  <label className="text-sm font-medium text-muted-foreground">Score</label>
                   <div className="mt-1 text-sm">
                     {record.score} / {record.training_course.max_score}
                   </div>
@@ -192,8 +192,8 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
               {/* Notes */}
               {record.notes && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Notes</label>
-                  <div className="mt-1 text-sm bg-gray-50 p-3 rounded-md">
+                  <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                  <div className="mt-1 text-sm bg-muted p-3 rounded-md">
                     {record.notes}
                   </div>
                 </div>
@@ -229,13 +229,13 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
                       {normalizeEvidenceFiles(evidenceFiles).map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md border"
+                          className="flex items-center justify-between p-3 bg-muted rounded-md border border-border"
                         >
                           <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-gray-500" />
+                            <FileText className="h-5 w-5 text-muted-foreground" />
                             <div>
                               <div className="font-medium text-sm">{file.name}</div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-muted-foreground">
                                 {file.size > 0 ? formatFileSize(file.size) : 'Certificate file'}
                               </div>
                             </div>
@@ -253,9 +253,9 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
-                      <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">No certificates uploaded yet</p>
+                    <div className="text-center py-6 bg-muted rounded-md border-2 border-dashed border-border">
+                      <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No certificates uploaded yet</p>
                     </div>
                   )}
                 </div>
