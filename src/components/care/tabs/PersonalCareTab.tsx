@@ -62,7 +62,7 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
     return (
       <div className="space-y-6">
         <Card>
-          <CardHeader className="pb-2 bg-gradient-to-r from-pink-50 to-white">
+          <CardHeader className="pb-2 bg-gradient-to-r from-pink-50 to-white dark:from-pink-950/30 dark:to-background">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-pink-600" />
@@ -77,7 +77,7 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
           </CardHeader>
           <CardContent className="pt-4">
             <div className="text-center py-8">
-              <p className="text-gray-500">No personal care information available</p>
+              <p className="text-muted-foreground">No personal care information available</p>
             </div>
           </CardContent>
         </Card>
@@ -88,7 +88,7 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-pink-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-pink-50 to-white dark:from-pink-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-pink-600" />
@@ -105,10 +105,10 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
           <div className="space-y-6">
             {/* Daily Care Activities */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Daily Care Activities</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Daily Care Activities</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                     <Bath className="h-4 w-4 text-blue-500" />
                     Bathing Preferences
                   </h4>
@@ -116,41 +116,41 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                     <Shirt className="h-4 w-4 text-green-500" />
                     Dressing Assistance
                   </h4>
                   {personalCare?.dressing_assistance_level ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
                       {personalCare.dressing_assistance_level}
                     </Badge>
                   ) : (
-                    <p className="text-gray-500 text-sm">Not specified</p>
+                    <p className="text-muted-foreground text-sm">Not specified</p>
                   )}
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                     <Droplets className="h-4 w-4 text-blue-500" />
                     Toileting Assistance
                   </h4>
                   {personalCare?.toileting_assistance_level ? (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                       {personalCare.toileting_assistance_level}
                     </Badge>
                   ) : (
-                    <p className="text-gray-500 text-sm">Not specified</p>
+                    <p className="text-muted-foreground text-sm">Not specified</p>
                   )}
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Continence Status</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Continence Status</h4>
                   {personalCare?.continence_status ? (
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
                       {personalCare.continence_status}
                     </Badge>
                   ) : (
-                    <p className="text-gray-500 text-sm">Not specified</p>
+                    <p className="text-muted-foreground text-sm">Not specified</p>
                   )}
                 </div>
               </div>
@@ -159,18 +159,18 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
             {/* Personal Hygiene */}
             {personalCare?.personal_hygiene_needs && (
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">Personal Hygiene Needs</h3>
-                <p className="text-base bg-gray-50 p-3 rounded">{personalCare.personal_hygiene_needs}</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Personal Hygiene Needs</h3>
+                <p className="text-base bg-muted p-3 rounded">{personalCare.personal_hygiene_needs}</p>
               </div>
             )}
 
             {/* Sleep and Comfort */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Sleep & Comfort</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Sleep & Comfort</h3>
               <div className="space-y-4">
                 {personalCare?.sleep_patterns && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                       <Moon className="h-4 w-4 text-indigo-500" />
                       Sleep Patterns
                     </h4>
@@ -180,7 +180,7 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
                 
                 {personalCare?.comfort_measures && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Comfort Measures</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Comfort Measures</h4>
                     <p className="text-base">{personalCare.comfort_measures}</p>
                   </div>
                 )}
@@ -189,18 +189,18 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
 
             {/* Health Management */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Health Management</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Health Management</h3>
               <div className="space-y-4">
                 {personalCare?.pain_management && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Pain Management</h4>
-                    <p className="text-base bg-yellow-50 p-3 rounded border border-yellow-200">{personalCare.pain_management}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Pain Management</h4>
+                    <p className="text-base bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded border border-yellow-200 dark:border-yellow-700">{personalCare.pain_management}</p>
                   </div>
                 )}
                 
                 {personalCare?.skin_care_needs && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Skin Care Needs</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Skin Care Needs</h4>
                     <p className="text-base">{personalCare.skin_care_needs}</p>
                   </div>
                 )}
@@ -209,21 +209,21 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
 
             {/* Incontinence Section */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Incontinence</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Incontinence</h3>
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Incontinence Products Required</h4>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Incontinence Products Required</h4>
                 {personalCare?.incontinence_products_required !== undefined ? (
                   <Badge 
                     variant="outline" 
                     className={personalCare.incontinence_products_required 
-                      ? "bg-red-50 text-red-700 border-red-200" 
-                      : "bg-green-50 text-green-700 border-green-200"
+                      ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700" 
+                      : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
                     }
                   >
                     {personalCare.incontinence_products_required ? 'Yes' : 'No'}
                   </Badge>
                 ) : (
-                  <p className="text-gray-500 text-sm">Not specified</p>
+                  <p className="text-muted-foreground text-sm">Not specified</p>
                 )}
               </div>
             </div>
@@ -314,29 +314,29 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
 
             {/* Sleep Details Section */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Sleep Details</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Sleep Details</h3>
               <div className="space-y-4">
                 {/* Sleep Times */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Bedtime</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Bedtime</h4>
                     <p className="text-base">{personalCare?.sleep_go_to_bed_time || 'Not specified'}</p>
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Wake Up Time</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Wake Up Time</h4>
                     <p className="text-base">{personalCare?.sleep_wake_up_time || 'Not specified'}</p>
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Get Out of Bed Time</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Get Out of Bed Time</h4>
                     <p className="text-base">{personalCare?.sleep_get_out_of_bed_time || 'Not specified'}</p>
                   </div>
                 </div>
 
                 {personalCare?.sleep_prepare_duration && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Preparation Duration</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Preparation Duration</h4>
                     <p className="text-base">{personalCare.sleep_prepare_duration}</p>
                   </div>
                 )}
@@ -344,70 +344,70 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
                 {/* Sleep Assistance */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Going to Bed</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Assist Going to Bed</h4>
                     {personalCare?.assist_going_to_bed !== undefined ? (
                       <Badge 
                         variant="outline" 
                         className={personalCare.assist_going_to_bed 
-                          ? "bg-blue-50 text-blue-700 border-blue-200" 
-                          : "bg-gray-50 text-gray-700 border-gray-200"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700" 
+                          : "bg-muted text-muted-foreground border-border"
                         }
                       >
                         {personalCare.assist_going_to_bed ? 'Yes' : 'No'}
                       </Badge>
                     ) : (
-                      <p className="text-gray-500 text-sm">Not specified</p>
+                      <p className="text-muted-foreground text-sm">Not specified</p>
                     )}
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Getting Out of Bed</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Assist Getting Out of Bed</h4>
                     {personalCare?.assist_getting_out_of_bed !== undefined ? (
                       <Badge 
                         variant="outline" 
                         className={personalCare.assist_getting_out_of_bed 
-                          ? "bg-blue-50 text-blue-700 border-blue-200" 
-                          : "bg-gray-50 text-gray-700 border-gray-200"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700" 
+                          : "bg-muted text-muted-foreground border-border"
                         }
                       >
                         {personalCare.assist_getting_out_of_bed ? 'Yes' : 'No'}
                       </Badge>
                     ) : (
-                      <p className="text-gray-500 text-sm">Not specified</p>
+                      <p className="text-muted-foreground text-sm">Not specified</p>
                     )}
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Panic Button in Bed</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Panic Button in Bed</h4>
                     {personalCare?.panic_button_in_bed !== undefined ? (
                       <Badge 
                         variant="outline" 
                         className={personalCare.panic_button_in_bed 
-                          ? "bg-green-50 text-green-700 border-green-200" 
-                          : "bg-red-50 text-red-700 border-red-200"
+                          ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700" 
+                          : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700"
                         }
                       >
                         {personalCare.panic_button_in_bed ? 'Yes' : 'No'}
                       </Badge>
                     ) : (
-                      <p className="text-gray-500 text-sm">Not specified</p>
+                      <p className="text-muted-foreground text-sm">Not specified</p>
                     )}
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Turning in Sleep</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Assist Turning in Sleep</h4>
                     {personalCare?.assist_turn_to_sleep_position !== undefined ? (
                       <Badge 
                         variant="outline" 
                         className={personalCare.assist_turn_to_sleep_position 
-                          ? "bg-blue-50 text-blue-700 border-blue-200" 
-                          : "bg-gray-50 text-gray-700 border-gray-200"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700" 
+                          : "bg-muted text-muted-foreground border-border"
                         }
                       >
                         {personalCare.assist_turn_to_sleep_position ? 'Yes' : 'No'}
                       </Badge>
                     ) : (
-                      <p className="text-gray-500 text-sm">Not specified</p>
+                      <p className="text-muted-foreground text-sm">Not specified</p>
                     )}
                   </div>
                 </div>
@@ -486,8 +486,8 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
             {/* Behavioral Notes */}
             {personalCare?.behavioral_notes && (
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">Behavioral Notes</h3>
-                <p className="text-base bg-blue-50 p-3 rounded border border-blue-200">{personalCare.behavioral_notes}</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Behavioral Notes</h3>
+                <p className="text-base bg-blue-50 dark:bg-blue-900/30 p-3 rounded border border-blue-200 dark:border-blue-700">{personalCare.behavioral_notes}</p>
               </div>
             )}
 
@@ -529,7 +529,7 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
               personalCare?.has_podiatrist === undefined &&
               !personalCare?.personal_care_risks_explanation && (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No personal care information available</p>
+                  <p className="text-muted-foreground">No personal care information available</p>
                 </div>
               )}
           </div>
