@@ -275,11 +275,11 @@ export function AddMedicationDialog({
                         }}
                       />
                       {watchedSource === "nhs_database" && filteredMedications.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                           {filteredMedications.map(med => (
                             <div
                               key={med}
-                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                              className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
                               onClick={() => selectMedication(med)}
                             >
                               {med}

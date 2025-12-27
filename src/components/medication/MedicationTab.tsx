@@ -103,12 +103,12 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
     
     return (
       <>
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="bg-card rounded-lg border border-border shadow-sm p-6">
           <div className="mb-6">
             <Button 
               variant="ghost" 
               onClick={handleBackToPatients} 
-              className="mb-4 hover:bg-gray-100"
+              className="mb-4 hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Patients
@@ -116,12 +116,12 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
             
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-medium">
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-medium">
                   {patient?.avatar_initials || "??"}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">{patient ? `${patient.first_name} ${patient.last_name}` : "Unknown Patient"}</h2>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>ID: {patient?.id.slice(-8)}</span>
                     <span>DOB: {patient?.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
                     <span>Gender: {patient?.gender || 'N/A'}</span>
@@ -154,13 +154,13 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
   }
   
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h2 className="text-2xl font-bold">Medication Management</h2>
         
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search patients..."
               className="pl-10 pr-4 w-full md:w-[260px]"
@@ -191,11 +191,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <CardContent className="pt-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Total Medications</p>
+                <p className="text-sm text-muted-foreground">Total Medications</p>
                 <h3 className="text-2xl font-bold mt-1">{medicationStats?.totalMedications || 0}</h3>
               </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <Pill className="h-5 w-5 text-blue-600" />
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <Pill className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -205,11 +205,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <CardContent className="pt-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Due Today</p>
+                <p className="text-sm text-muted-foreground">Due Today</p>
                 <h3 className="text-2xl font-bold mt-1">{medicationStats?.dueToday || 0}</h3>
               </div>
-              <div className="p-3 rounded-full bg-amber-100">
-                <Clock className="h-5 w-5 text-amber-600" />
+              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
           </CardContent>
@@ -219,11 +219,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <CardContent className="pt-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Administered Today</p>
+                <p className="text-sm text-muted-foreground">Administered Today</p>
                 <h3 className="text-2xl font-bold mt-1">{medicationStats?.administeredToday || 0}</h3>
               </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>
@@ -233,11 +233,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <CardContent className="pt-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Missed Doses</p>
+                <p className="text-sm text-muted-foreground">Missed Doses</p>
                 <h3 className="text-2xl font-bold mt-1">{medicationStats?.missedDoses || 0}</h3>
               </div>
-              <div className="p-3 rounded-full bg-red-100">
-                <AlertCircle className="h-5 w-5 text-red-600" />
+              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
           </CardContent>
@@ -245,7 +245,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
       </div>
       
       <Tabs defaultValue="patients" className="mb-6">
-        <TabsList className="bg-gray-100 p-1 rounded-lg">
+        <TabsList className="bg-muted p-1 rounded-lg">
           <TabsTrigger 
             value="patients" 
             className="data-[state=active]:bg-green-500 data-[state=active]:text-white rounded-md px-4 py-2"
@@ -271,13 +271,13 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
       </Tabs>
       
       {viewMode === "patients" && (
-        <div className="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-card overflow-hidden rounded-xl border border-border shadow-sm">
           {patientsLoading ? (
             <div className="py-8 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                <Pill className="h-6 w-6 text-gray-400 animate-pulse" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                <Pill className="h-6 w-6 text-muted-foreground animate-pulse" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">Loading patients...</h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">Loading patients...</h3>
             </div>
           ) : (
             <Table>
@@ -294,16 +294,16 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               </TableHeader>
               <TableBody>
                 {paginatedPatients.map((patient) => (
-                  <TableRow key={patient.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handlePatientSelect(patient.id)}>
+                  <TableRow key={patient.id} className="cursor-pointer hover:bg-muted" onClick={() => handlePatientSelect(patient.id)}>
                     <TableCell className="font-medium">{patient.id.slice(-4)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-medium">
                           {patient.avatar_initials}
                         </div>
                         <div>
                           <div className="font-medium">{patient.first_name} {patient.last_name}</div>
-                          <div className="text-xs text-gray-500">{patient.gender}</div>
+                          <div className="text-xs text-muted-foreground">{patient.gender}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -312,14 +312,14 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <div className="text-sm">{patient.phone || 'N/A'}</div>
-                      <div className="text-xs text-gray-500">{patient.email || 'N/A'}</div>
+                      <div className="text-xs text-muted-foreground">{patient.email || 'N/A'}</div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                         {patient.medication_count} medications
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-gray-500 text-sm">
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                       {patient.last_updated}
                     </TableCell>
                     <TableCell className="text-right">
@@ -366,8 +366,8 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           )}
           
           {filteredPatients.length > 0 ? (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+              <div className="text-sm text-muted-foreground">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredPatients.length)} of {filteredPatients.length} patients
               </div>
               <div className="flex items-center gap-2">
@@ -393,11 +393,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
             </div>
           ) : (
             <div className="py-8 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                <Search className="h-6 w-6 text-gray-400" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                <Search className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No patients found</h3>
-              <p className="text-gray-500">Try adjusting your search criteria or add medications to patients.</p>
+              <h3 className="text-lg font-medium text-foreground mb-1">No patients found</h3>
+              <p className="text-muted-foreground">Try adjusting your search criteria or add medications to patients.</p>
             </div>
           )}
         </div>
@@ -414,7 +414,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               </Button>
             </div>
             
-            <div className="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-card overflow-hidden rounded-xl border border-border shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -430,7 +430,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <TableRow key={medication.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-medium">
                             {medication.client_care_plans?.clients?.first_name?.[0]}{medication.client_care_plans?.clients?.last_name?.[0]}
                           </div>
                           <div>
@@ -440,7 +440,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800"
+                              className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                               onClick={() => handlePatientSelect(medication.client_care_plans?.client_id || '')}
                             >
                               View Details
@@ -450,11 +450,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{medication.name}</div>
-                        <div className="text-xs text-gray-500">{medication.dosage}</div>
+                        <div className="text-xs text-muted-foreground">{medication.dosage}</div>
                       </TableCell>
                       <TableCell>{medication.frequency}</TableCell>
                       <TableCell>
-                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                        <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700">
                           Due
                         </Badge>
                       </TableCell>
@@ -471,11 +471,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               
               {pendingMedications.length === 0 && (
                 <div className="py-8 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="h-6 w-6 text-gray-400" />
+                  <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No pending medications</h3>
-                  <p className="text-gray-500">All medications have been administered for today.</p>
+                  <h3 className="text-lg font-medium text-foreground mb-1">No pending medications</h3>
+                  <p className="text-muted-foreground">All medications have been administered for today.</p>
                 </div>
               )}
             </div>
@@ -511,11 +511,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <Card>
                 <CardContent className="pt-6 pb-4">
                   <div className="text-center">
-                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
-                      <ClipboardList className="h-5 w-5 text-blue-600" />
+                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-2">
+                      <ClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <h4 className="text-lg font-semibold">{medicationStats?.totalMedications}</h4>
-                    <p className="text-sm text-gray-500">Total MAR Records</p>
+                    <p className="text-sm text-muted-foreground">Total MAR Records</p>
                   </div>
                 </CardContent>
               </Card>
@@ -523,11 +523,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <Card>
                 <CardContent className="pt-6 pb-4">
                   <div className="text-center">
-                    <div className="mx-auto w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <div className="mx-auto w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                     </div>
                     <h4 className="text-lg font-semibold">{medicationStats?.administeredToday}</h4>
-                    <p className="text-sm text-gray-500">Administered</p>
+                    <p className="text-sm text-muted-foreground">Administered</p>
                   </div>
                 </CardContent>
               </Card>
@@ -535,11 +535,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <Card>
                 <CardContent className="pt-6 pb-4">
                   <div className="text-center">
-                    <div className="mx-auto w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-2">
-                      <Clock className="h-5 w-5 text-amber-600" />
+                    <div className="mx-auto w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-2">
+                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <h4 className="text-lg font-semibold">{medicationStats?.dueToday}</h4>
-                    <p className="text-sm text-gray-500">Pending</p>
+                    <p className="text-sm text-muted-foreground">Pending</p>
                   </div>
                 </CardContent>
               </Card>
@@ -547,11 +547,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <Card>
                 <CardContent className="pt-6 pb-4">
                   <div className="text-center">
-                    <div className="mx-auto w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-2">
-                      <AlertCircle className="h-5 w-5 text-red-600" />
+                    <div className="mx-auto w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-2">
+                      <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
                     <h4 className="text-lg font-semibold">{medicationStats?.missedDoses}</h4>
-                    <p className="text-sm text-gray-500">Missed</p>
+                    <p className="text-sm text-muted-foreground">Missed</p>
                   </div>
                 </CardContent>
               </Card>

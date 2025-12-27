@@ -92,26 +92,26 @@ export const ContactSidebar = ({
     switch (contactRole) {
       case 'client':
         return (
-          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
             Client
           </Badge>
         );
       case 'carer':
         return (
-          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
             Carer
           </Badge>
         );
       case 'super_admin':
       case 'branch_admin':
         return (
-          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
             Admin
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-gray-50 text-gray-700 border-gray-200">
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-muted text-muted-foreground">
             Contact
           </Badge>
         );
@@ -120,25 +120,25 @@ export const ContactSidebar = ({
   
   return (
     <>
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-border">
         <h3 className="text-lg font-semibold mb-4">Contacts</h3>
         
         <div className="relative mb-4">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search contacts..."
-            className="pl-9 bg-gray-50"
+            className="pl-9 bg-muted"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         
         <div className="flex items-center justify-between mb-2">
-          <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
+          <div className="w-full flex overflow-hidden bg-muted rounded-md">
             {availableContactTypes().map((type) => (
               <button 
                 key={type}
-                className={`flex-1 text-sm py-2 px-4 ${contactType === type ? 'bg-white rounded-md shadow-sm' : ''}`}
+                className={`flex-1 text-sm py-2 px-4 ${contactType === type ? 'bg-background rounded-md shadow-sm' : ''}`}
                 onClick={() => onContactTypeChange(type as any)}
               >
                 {type === 'all' ? 'All' : 
@@ -179,13 +179,13 @@ export const ContactSidebar = ({
         </div>
 
         {(currentUser?.role === 'carer' || currentUser?.role === 'client') && (
-          <div className="mt-2 p-2 bg-blue-50 rounded-md text-xs text-blue-700">
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-md text-xs text-blue-700 dark:text-blue-300">
             You can only message administrators directly.
           </div>
         )}
 
         {contactsError && (
-          <div className="mt-2 p-2 bg-red-50 rounded-md text-xs text-red-700">
+          <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/30 rounded-md text-xs text-red-700 dark:text-red-300">
             Error loading contacts: {contactsError.message}
           </div>
         )}
@@ -193,24 +193,24 @@ export const ContactSidebar = ({
       
       <div className="flex-1 overflow-y-auto">
         {userLoading || contactsLoading ? (
-          <div className="p-4 text-center text-gray-500">
+          <div className="p-4 text-center text-muted-foreground">
             Loading contacts...
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {filteredContacts.map((contact) => (
               <div
                 key={contact.id}
-                className="flex items-center p-3 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center p-3 hover:bg-muted cursor-pointer"
                 onClick={() => onContactSelect(contact.id)}
               >
                 <div className="relative">
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
                     {contact.avatar}
                   </div>
-                  <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                  <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${
                     contact.status === "online" ? "bg-green-500" :
-                    contact.status === "away" ? "bg-amber-500" : "bg-gray-400"
+                    contact.status === "away" ? "bg-amber-500" : "bg-muted-foreground"
                   }`}></div>
                 </div>
                 
@@ -223,10 +223,10 @@ export const ContactSidebar = ({
                       </div>
                     )}
                   </div>
-                   <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                   <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                      {getContactTypeBadge(contact.type)}
                      {('canMessage' in contact && contact.canMessage === false) && (
-                       <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                       <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700">
                          Setup Required
                        </Badge>
                      )}
@@ -236,7 +236,7 @@ export const ContactSidebar = ({
             ))}
             
             {filteredContacts.length === 0 && !contactsLoading && (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-muted-foreground">
                 {contactsError ? 'Failed to load contacts' : 'No contacts found'}
                 {currentUser && (
                   <div className="mt-2 text-xs">

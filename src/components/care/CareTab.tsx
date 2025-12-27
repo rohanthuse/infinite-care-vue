@@ -429,10 +429,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   // NOW we can do conditional rendering after all hooks are declared
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Loading care plans...</span>
+          <span className="ml-2 text-muted-foreground">Loading care plans...</span>
         </div>
       </div>
     );
@@ -714,7 +714,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-6">
       {/* Admin Care Plan Management Section */}
       {userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role) && (
         <div className="mb-6">
@@ -745,14 +745,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold">Care Plans</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage care plans for clients in this branch
           </p>
         </div>
         
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search care plans..."
               className="pl-10 pr-4 w-full"
@@ -764,7 +764,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           <div className="flex gap-2">
             <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className={cn(isFiltering && "border-blue-500 bg-blue-50 text-blue-600")}>
+                <Button variant="outline" className={cn(isFiltering && "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300")}>
                   <Filter className="mr-2 h-4 w-4" />
                   {isFiltering ? "Filters Applied" : "Filter"}
                 </Button>
