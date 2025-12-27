@@ -45,7 +45,7 @@ export function ReportsHeader() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-between gap-4 bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+    <div className="flex flex-col md:flex-row justify-between gap-4 bg-card p-4 border border-border rounded-lg shadow-sm">
       <div className="flex flex-wrap gap-2">
         <Popover>
           <PopoverTrigger asChild>

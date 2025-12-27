@@ -65,14 +65,14 @@ export function OperationalReports({ branchId, branchName }: OperationalReportsP
 
   const renderLoadingSkeleton = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <Skeleton className="h-6 w-48 mb-4" />
           <Skeleton className="h-[350px] w-full" />
           <Skeleton className="h-4 w-full mt-4" />
         </CardContent>
       </Card>
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <Skeleton className="h-6 w-48 mb-4" />
           <Skeleton className="h-[350px] w-full" />
@@ -88,7 +88,7 @@ export function OperationalReports({ branchId, branchName }: OperationalReportsP
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Task Completion Rates</h3>
           <div className="w-full" style={{ height: "350px" }}>
@@ -122,7 +122,7 @@ export function OperationalReports({ branchId, branchName }: OperationalReportsP
         </CardContent>
       </Card>
 
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Average Response Time Trend</h3>
           <div className="w-full" style={{ height: "350px" }}>

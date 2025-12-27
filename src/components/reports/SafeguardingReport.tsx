@@ -290,7 +290,7 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
 
   const getSeverityBadge = (severity: string) => {
     const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className?: string }> = {
-      'critical': { variant: 'destructive', className: 'bg-red-600' },
+      'critical': { variant: 'destructive', className: 'bg-red-600 dark:bg-red-700' },
       'high': { variant: 'destructive' },
       'medium': { variant: 'secondary' },
       'low': { variant: 'outline' },
