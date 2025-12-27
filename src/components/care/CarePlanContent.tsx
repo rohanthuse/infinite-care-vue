@@ -58,6 +58,26 @@ interface CarePlanContentProps {
   riskAssessments: ClientRiskAssessment[];
   serviceActions: ClientServiceAction[];
   branchId?: string;
+  aboutMeData?: {
+    has_key_safe?: boolean;
+    key_safe_code?: string;
+    requires_heating_help?: boolean;
+    home_type?: string;
+    living_status?: string;
+    is_visually_impaired?: boolean;
+    vision_description?: string;
+    is_hearing_impaired?: boolean;
+    hearing_description?: string;
+    mobility?: string;
+    communication_needs?: string;
+    how_i_communicate?: string;
+    ethnicity?: string;
+    living_arrangement?: string;
+    has_dnr?: boolean;
+    has_respect?: boolean;
+    has_dols?: boolean;
+    has_lpa?: boolean;
+  } | null;
   onAddNote: () => void;
   onScheduleFollowUp: () => void;
   onRecordActivity: () => void;
@@ -90,6 +110,7 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
   riskAssessments,
   serviceActions,
   branchId,
+  aboutMeData,
   onAddNote,
   onScheduleFollowUp,
   onRecordActivity,
@@ -175,6 +196,7 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 }}
+                aboutMeData={aboutMeData}
                 onEditAboutMe={onEditAboutMe}
               />
             </TabsContent>
