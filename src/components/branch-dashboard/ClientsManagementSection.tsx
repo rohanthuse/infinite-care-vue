@@ -184,10 +184,10 @@ export function ClientsManagementSection({
   };
 
   const getSortIcon = (column: string) => {
-    if (sortBy !== column) return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    if (sortBy !== column) return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-blue-600" />
-      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+      ? <ArrowUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      : <ArrowDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
   };
 
   const handleDelete = async () => {
@@ -291,7 +291,7 @@ export function ClientsManagementSection({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by name, email, or Client ID..."
                   value={searchTerm}
@@ -300,7 +300,7 @@ export function ClientsManagementSection({
                 />
               </div>
               <div className="relative sm:w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by Post Code"
                   value={postCodeSearch}
@@ -411,7 +411,7 @@ export function ClientsManagementSection({
         <CardContent>
           {clients.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No clients found</p>
+              <p className="text-muted-foreground mb-4">No clients found</p>
               <Button onClick={onNewClient}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Client
@@ -486,7 +486,7 @@ export function ClientsManagementSection({
                   </thead>
                   <tbody>
                     {clients.map((client) => (
-                      <tr key={client.id} className="border-b hover:bg-gray-50">
+                      <tr key={client.id} className="border-b hover:bg-muted">
                         <td className="py-3 px-4">
                           <Checkbox
                             checked={isClientSelected(client)}
@@ -495,21 +495,21 @@ export function ClientsManagementSection({
                           />
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs font-medium">
+                          <span className="font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded text-xs font-medium">
                             {client.client_id || 'N/A'}
                           </span>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-medium text-blue-600">
+                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                                 {client.avatar_initials || `${client.first_name?.[0]}${client.last_name?.[0]}`}
                               </span>
                             </div>
                             <div>
                               <p className="font-medium">{client.first_name} {client.last_name}</p>
                               {client.preferred_name && (
-                                <p className="text-sm text-gray-500">"{client.preferred_name}"</p>
+                                <p className="text-sm text-muted-foreground">"{client.preferred_name}"</p>
                               )}
                             </div>
                           </div>
@@ -517,7 +517,7 @@ export function ClientsManagementSection({
                         <td className="py-3 px-4 text-sm">{client.email || 'N/A'}</td>
                         <td className="py-3 px-4 text-sm">{client.phone || client.mobile_number || 'N/A'}</td>
                         <td className="py-3 px-4 text-sm">
-                          <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs">
+                          <span className="font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-xs">
                             {client.pin_code || 'N/A'}
                           </span>
                         </td>

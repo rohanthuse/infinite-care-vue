@@ -74,7 +74,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     <div className="space-y-6">
       {/* GP Information Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white dark:from-green-950/30 dark:to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Stethoscope className="h-5 w-5 text-green-600" />
@@ -91,20 +91,20 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Name</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">GP Name</h3>
                 <p className="text-base">{gpInfo.gp_name || 'Not provided'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Phone Number</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">GP Phone Number</h3>
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{gpInfo.gp_phone || 'Not provided'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Email</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">GP Email</h3>
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{gpInfo.gp_email || 'Not provided'}</p>
                 </div>
               </div>
@@ -112,15 +112,15 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">GP Address</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">GP Address</h3>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{gpInfo.gp_address || 'Not provided'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">NHS Number</h3>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">NHS Number</h3>
+                <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 font-mono">
                   {gpInfo.nhs_number || 'Not provided'}
                 </Badge>
               </div>
@@ -131,7 +131,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
       {/* Pharmacy Contact Section */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-background">
           <div className="flex items-center gap-2">
             <Building className="h-5 w-5 text-purple-600" />
             <CardTitle className="text-lg">Pharmacy Contact</CardTitle>
@@ -142,13 +142,13 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Pharmacy Name</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Pharmacy Name</h3>
                 <p className="text-base">{pharmacyInfo.pharmacy_name || 'Not provided'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Phone Number</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Phone Number</h3>
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{pharmacyInfo.pharmacy_phone || 'Not provided'}</p>
                 </div>
               </div>
@@ -156,16 +156,16 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Pharmacy Address</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Pharmacy Address</h3>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{pharmacyInfo.pharmacy_address || 'Not provided'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Email</h3>
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{pharmacyInfo.pharmacy_email || 'Not provided'}</p>
                 </div>
               </div>
@@ -182,13 +182,13 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Contact Name</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Contact Name</h3>
               <p className="text-base">{personalInfo?.emergency_contact_name || 'Not provided'}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Contact Phone</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Contact Phone</h3>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
+                <Phone className="h-4 w-4 text-muted-foreground" />
                 <p className="text-base">{personalInfo?.emergency_contact_phone || 'Not provided'}</p>
               </div>
             </div>
@@ -198,7 +198,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
       {/* Client Basic Information */}
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-background">
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-lg">Client Information</CardTitle>
@@ -209,19 +209,19 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Full Name</h3>
                 <p className="text-base">{client.first_name || ''} {client.last_name || ''}</p>
               </div>
               {client.preferred_name && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Preferred Name</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Preferred Name</h3>
                   <p className="text-base">{client.preferred_name}</p>
                 </div>
               )}
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Date of Birth</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Date of Birth</h3>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">
                     {client.date_of_birth ? format(new Date(client.date_of_birth), 'MMM dd, yyyy') : 'Not provided'}
                   </p>
@@ -231,22 +231,22 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Email</h3>
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{client.email || 'Not provided'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Phone</h3>
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <p className="text-base">{client.phone || 'Not provided'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
+                <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
                   {client.status || 'Active'}
                 </Badge>
               </div>
