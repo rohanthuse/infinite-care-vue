@@ -94,6 +94,13 @@ const WEEKDAY_OPTIONS = [
   { value: "sunday", label: "Sunday" }
 ];
 
+const TIME_OF_DAY_OPTIONS = [
+  { value: "morning", label: "Morning", description: "6 AM - 12 PM" },
+  { value: "afternoon", label: "Afternoon", description: "12 PM - 5 PM" },
+  { value: "evening", label: "Evening", description: "5 PM - 9 PM" },
+  { value: "night", label: "Night", description: "9 PM - 6 AM" }
+];
+
 export function AddMedicationDialog({ 
   isOpen, 
   onClose, 
@@ -105,6 +112,7 @@ export function AddMedicationDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredMedications, setFilteredMedications] = useState<string[]>([]);
   const [selectedWeekDay, setSelectedWeekDay] = useState<string>("");
+  const [selectedTimesOfDay, setSelectedTimesOfDay] = useState<string[]>([]);
 
   const form = useForm<MedicationFormData>({
     resolver: zodResolver(medicationSchema),
@@ -188,6 +196,7 @@ export function AddMedicationDialog({
       warning: data.warning || "",
       side_effect: data.side_effect || "",
       frequency: finalFrequency,
+      time_of_day: selectedTimesOfDay.length > 0 ? selectedTimesOfDay : undefined,
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date ? data.end_date.toISOString().split('T')[0] : undefined,
       status: "active"
@@ -206,6 +215,7 @@ export function AddMedicationDialog({
     setSearchQuery("");
     setFilteredMedications([]);
     setSelectedWeekDay("");
+    setSelectedTimesOfDay([]);
     onClose();
   };
 
@@ -401,6 +411,38 @@ export function AddMedicationDialog({
                     </SelectContent>
                   </Select>
                 </FormItem>
+              </div>
+            )}
+
+            {/* Time of Day selector - shown for daily frequencies */}
+            {(watchedFrequency === "once_daily" || 
+              watchedFrequency === "twice_daily" || 
+              watchedFrequency === "three_times_daily" || 
+              watchedFrequency === "four_times_daily") && (
+              <div className="space-y-2">
+                <FormLabel>Time of Day</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  {TIME_OF_DAY_OPTIONS.map(option => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      variant={selectedTimesOfDay.includes(option.value) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTimesOfDay(prev => 
+                          prev.includes(option.value) 
+                            ? prev.filter(t => t !== option.value)
+                            : [...prev, option.value]
+                        );
+                      }}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select when this medication should be taken
+                </p>
               </div>
             )}
 
