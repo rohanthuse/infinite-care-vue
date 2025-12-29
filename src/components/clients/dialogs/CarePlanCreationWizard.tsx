@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -171,6 +171,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const initialDraftLoadedRef = useRef(false);
   
   // Fetch client profile data first
   const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
@@ -282,6 +283,7 @@ export function CarePlanCreationWizard({
       setClientDataLoaded(false);
       setCurrentStep(1);
       setStepError(null);
+      initialDraftLoadedRef.current = false;
       
       // Reset form to clean default values
       form.reset({
@@ -390,11 +392,12 @@ export function CarePlanCreationWizard({
   }, [clientProfile, isDraftLoading, clientDataLoaded, form]);
 
   // Load draft data when available (this should run after client data is loaded)
+  // Only set currentStep on INITIAL load to prevent auto-save from causing tab jumps
   useEffect(() => {
     if (draftData?.auto_save_data && !isDraftLoading && clientDataLoaded) {
       const savedData = draftData.auto_save_data;
       
-      console.log('Loading draft data:', savedData);
+      console.log('Loading draft data:', savedData, 'initialDraftLoaded:', initialDraftLoadedRef.current);
       
       try {
         // Safely set form values from saved data with proper type handling
@@ -444,8 +447,8 @@ export function CarePlanCreationWizard({
           }
         });
 
-        // Set current step from saved data with backward compatibility for new steps
-        if (draftData.last_step_completed) {
+        // Set current step from saved data ONLY on initial load (not on refetches from auto-save)
+        if (draftData.last_step_completed && !initialDraftLoadedRef.current) {
           let adjustedStep = draftData.last_step_completed;
           
           // If draft was saved before General step was added (step 4), adjust step numbers
@@ -471,6 +474,7 @@ export function CarePlanCreationWizard({
           }
           
           setCurrentStep(adjustedStep);
+          initialDraftLoadedRef.current = true;
         }
         
         console.log('Draft data loaded successfully');
@@ -851,6 +855,7 @@ export function CarePlanCreationWizard({
   const handleClose = () => {
     setStepError(null);
     setCurrentStep(1);
+    initialDraftLoadedRef.current = false;
     onClose();
   };
 
