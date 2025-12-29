@@ -216,6 +216,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         name: values.name,
         dosage: values.dosage,
         frequency: values.frequency,
+        time_of_day: selectedTimesOfDay.length > 0 ? selectedTimesOfDay : null,
         start_date: values.start_date.toISOString().split('T')[0],
         end_date: values.end_date?.toISOString().split('T')[0],
         status: values.status || "active",
@@ -228,6 +229,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       
       console.log('[AddMedicationDialog] Medication created successfully');
       form.reset();
+      setSelectedTimesOfDay([]);
       toast.success(`Medication added successfully for ${selectedClient?.first_name} ${selectedClient?.last_name}`);
       onOpenChange(false);
       
@@ -250,6 +252,16 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     { value: "After meals", label: "After meals" },
     { value: "At bedtime", label: "At bedtime" },
   ];
+
+  const TIME_OF_DAY_OPTIONS = [
+    { value: "morning", label: "Morning" },
+    { value: "afternoon", label: "Afternoon" },
+    { value: "evening", label: "Evening" },
+    { value: "night", label: "Night" }
+  ];
+
+  const [selectedTimesOfDay, setSelectedTimesOfDay] = useState<string[]>([]);
+  const watchedFrequency = form.watch("frequency");
 
   const isSubmitting = createMedication.isPending || createCarePlan.isPending || isCreatingCarePlan;
 
@@ -380,6 +392,39 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                   </FormItem>
                 )}
               />
+
+              {/* Time of Day selector - shown for daily frequencies */}
+              {(watchedFrequency === "Once daily" || 
+                watchedFrequency === "Twice daily" || 
+                watchedFrequency === "Three times daily" || 
+                watchedFrequency === "Four times daily") && (
+                <FormItem>
+                  <FormLabel>Time of Day</FormLabel>
+                  <div className="flex flex-wrap gap-2">
+                    {TIME_OF_DAY_OPTIONS.map(option => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={selectedTimesOfDay.includes(option.value) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTimesOfDay(prev => 
+                            prev.includes(option.value) 
+                              ? prev.filter(t => t !== option.value)
+                              : [...prev, option.value]
+                          );
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <FormDescription>
+                    Select when this medication should be taken
+                  </FormDescription>
+                </FormItem>
+              )}
             </div>
 
             <div className="space-y-4">

@@ -9,6 +9,7 @@ export interface Medication {
   name: string;
   dosage: string;
   frequency: string;
+  time_of_day?: string[] | null;
   start_date: string;
   end_date?: string;
   status: string;
@@ -32,6 +33,7 @@ export interface MedicationFormData {
   name: string;
   dosage: string;
   frequency: string;
+  time_of_day?: string[] | null;
   start_date: string;
   end_date?: string;
   status?: string;
@@ -81,7 +83,7 @@ export function useMedicationsByClient(clientId: string) {
       const creatorIds = [...new Set(medications?.map(m => m.created_by).filter(Boolean))] as string[];
       
       // Fetch profiles and roles for creators
-      let profilesMap: Record<string, { first_name: string | null; last_name: string | null; email?: string | null }> = {};
+      let profilesMap: Record<string, { id: string; first_name: string | null; last_name: string | null; email?: string | null }> = {};
       let rolesMap: Record<string, string> = {};
       
       if (creatorIds.length > 0) {
@@ -98,7 +100,7 @@ export function useMedicationsByClient(clientId: string) {
         
         if (profilesResult.data) {
           profilesResult.data.forEach(p => {
-            profilesMap[p.id] = { first_name: p.first_name, last_name: p.last_name, email: p.email };
+            profilesMap[p.id] = { id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email };
           });
         }
         
