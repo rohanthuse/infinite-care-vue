@@ -415,10 +415,13 @@ export function AddMedicationDialog({
             )}
 
             {/* Time of Day selector - shown for daily frequencies */}
-            {(watchedFrequency === "once_daily" || 
-              watchedFrequency === "twice_daily" || 
-              watchedFrequency === "three_times_daily" || 
-              watchedFrequency === "four_times_daily") && (
+{(watchedFrequency === "once_daily" || 
+                  watchedFrequency === "twice_daily" || 
+                  watchedFrequency === "three_times_daily" || 
+                  watchedFrequency === "four_times_daily" ||
+                  watchedFrequency === "every_other_day" ||
+                  watchedFrequency === "weekly" ||
+                  watchedFrequency === "monthly") && (
               <div className="space-y-2">
                 <FormLabel>Time of Day</FormLabel>
                 <div className="flex flex-wrap gap-2">
