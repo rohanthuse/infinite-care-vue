@@ -394,10 +394,13 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               />
 
               {/* Time of Day selector - shown for daily frequencies */}
-              {(watchedFrequency === "Once daily" || 
-                watchedFrequency === "Twice daily" || 
-                watchedFrequency === "Three times daily" || 
-                watchedFrequency === "Four times daily") && (
+{(watchedFrequency === "Once daily" || 
+                  watchedFrequency === "Twice daily" || 
+                  watchedFrequency === "Three times daily" || 
+                  watchedFrequency === "Four times daily" ||
+                  watchedFrequency === "Every other day" ||
+                  watchedFrequency === "Weekly" ||
+                  watchedFrequency === "Monthly") && (
                 <FormItem>
                   <FormLabel>Time of Day</FormLabel>
                   <div className="flex flex-wrap gap-2">
