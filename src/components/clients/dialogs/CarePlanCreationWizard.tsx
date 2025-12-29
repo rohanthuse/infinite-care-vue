@@ -679,40 +679,62 @@ export function CarePlanCreationWizard({
       if (formData.title?.trim()) completedSteps.push(1);
       // Step 2 - About Me
       if (hasAnyValue(formData.about_me)) completedSteps.push(2);
-      // Step 3 - Medical Info
+      // Step 3 - Diagnosis / Medical Info
       if (hasMedicalInfo(formData.medical_info)) completedSteps.push(3);
-      // Step 4 - Medication (check if medical_info has medication data)
-      if (formData.medical_info && hasAnyValue(formData.medical_info)) completedSteps.push(4);
-      // Step 5 - Admin Medication (only mark complete if user has entered admin medication details)
-      // Check for any admin medication related data in medical_info or separate fields
-      if ((formData as any).admin_medication && hasAnyValue((formData as any).admin_medication)) completedSteps.push(5);
-      // Step 6 - Goals
-      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(6);
-      // Step 7 - Activities
-      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(7);
-      // Step 8 - Personal Care
-      if (hasAnyValue(formData.personal_care)) completedSteps.push(8);
-      // Step 9 - Dietary
-      if (hasAnyValue(formData.dietary)) completedSteps.push(9);
-      // Step 10 - Risk Assessments
-      if (hasRiskAssessments(formData)) completedSteps.push(10);
-      // Step 11 - Equipment
+      // Step 4 - NEWS2 Health Monitoring
+      const medInfo = formData.medical_info as any;
+      if (medInfo?.news2_monitoring && hasAnyValue(medInfo.news2_monitoring)) completedSteps.push(4);
+      // Step 5 - Medication Schedule
+      if (medInfo?.medication_manager?.medications?.length > 0) completedSteps.push(5);
+      // Step 6 - Medication (administration details)
+      if ((formData as any).admin_medication && hasAnyValue((formData as any).admin_medication)) completedSteps.push(6);
+      // Step 7 - Goals
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(7);
+      // Step 8 - Activities
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(8);
+      // Step 9 - Personal Care
+      if (hasAnyValue(formData.personal_care)) completedSteps.push(9);
+      // Step 10 - Dietary
+      if (hasAnyValue(formData.dietary)) completedSteps.push(10);
+      // Step 11 - Risk Assessments
+      if (hasRiskAssessments(formData)) completedSteps.push(11);
+      // Step 12 - Equipment
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
         (formData.equipment.moving_handling && hasAnyValue(formData.equipment.moving_handling)) ||
         (formData.equipment.environment_checks && hasAnyValue(formData.equipment.environment_checks)) ||
         (formData.equipment.home_repairs && hasAnyValue(formData.equipment.home_repairs))
-      )) completedSteps.push(11);
-      // Step 12 - Service Plans
-      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(12);
-      // Step 13 - Service Actions
-      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(13);
-      // Step 14 - Documents
-      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(14);
-      // Step 15 - Consent
-      if (hasConsentInfo(formData.consent)) completedSteps.push(15);
-      // Step 16 - Review (only mark complete after user explicitly confirms review)
-      // Do NOT auto-mark as complete
+      )) completedSteps.push(12);
+      // Step 13 - Service Plans
+      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(13);
+      // Step 14 - Service Actions
+      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(14);
+      // Step 15 - Documents
+      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(15);
+      // Step 16 - Consent
+      if (hasConsentInfo(formData.consent)) completedSteps.push(16);
+      // Step 17 - Key Contacts
+      const personalInfo = formData.personal_info as any;
+      if (personalInfo?.emergency_contacts?.length > 0 || 
+          (formData as any).key_contacts?.length > 0) completedSteps.push(17);
+      
+      // Child-specific steps (18-20)
+      const behaviorSupport = (formData as any).behavior_support;
+      const childInfo = (formData as any).child_info;
+      const safeguarding = (formData as any).safeguarding;
+      
+      // Step 18 - Behavior Support
+      if (behaviorSupport && hasAnyValue(behaviorSupport)) completedSteps.push(18);
+      // Step 19 - Education & Development
+      if (childInfo && (
+        childInfo.education_placement ||
+        childInfo.daily_learning_goals ||
+        childInfo.independence_skills
+      )) completedSteps.push(19);
+      // Step 20 - Safeguarding & Risks
+      if (safeguarding && hasAnyValue(safeguarding)) completedSteps.push(20);
+      
+      // Step 21 - Review is NOT auto-marked (only on explicit submission)
 
       return completedSteps;
     } catch (error) {
@@ -834,6 +856,19 @@ export function CarePlanCreationWizard({
 
   const formData = form.watch();
   const completedSteps = getCompletedSteps();
+  
+  // Calculate real-time completion percentage based on completed steps
+  const completionPercentage = React.useMemo(() => {
+    // Exclude the Review step (21) from total count - it's only complete after submission
+    const countableSteps = filteredSteps.filter(s => s.id !== 21);
+    const totalCountableSteps = countableSteps.length;
+    if (totalCountableSteps <= 0) return 0;
+    
+    // Count completed steps (excluding Review step 21)
+    const completedCount = completedSteps.filter(stepId => stepId !== 21).length;
+    
+    return Math.round((completedCount / totalCountableSteps) * 100);
+  }, [completedSteps, filteredSteps]);
 
   // Show loading state while client data is being fetched
   const isLoading = isClientLoading || isDraftLoading || !clientDataLoaded;
@@ -910,7 +945,7 @@ export function CarePlanCreationWizard({
                 currentStep={currentStep}
                 completedSteps={completedSteps}
                 onStepClick={handleStepClick}
-                completionPercentage={draftData?.completion_percentage || 0}
+                completionPercentage={completionPercentage}
               />
             </div>
             {/* Main Content */}
