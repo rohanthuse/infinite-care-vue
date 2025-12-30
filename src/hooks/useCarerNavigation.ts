@@ -146,11 +146,6 @@ export const useCarerNavigation = () => {
       icon: "GraduationCap" 
     },
     { 
-      name: "Clients", 
-      path: createCarerPath("/clients"), 
-      icon: "Users" 
-    },
-    { 
       name: "Leave", 
       path: createCarerPath("/leave"), 
       icon: "Calendar" 

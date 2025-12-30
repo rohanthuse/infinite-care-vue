@@ -214,13 +214,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         
         console.log('[NotificationDropdown] Carer route:', { tenantSlug, route, effectiveType });
         
-        // Special handling for task/events with client_id
+        // Special handling for task/events with client_id - redirect to care plans instead of clients
         if ((effectiveType === 'task' || effectiveType === 'events_logs') && notification.data?.client_id) {
-          const clientPath = tenantSlug 
-            ? `/${tenantSlug}/carer-dashboard/clients/${notification.data.client_id}`
-            : `/carer-dashboard/clients/${notification.data.client_id}`;
-          console.log('[NotificationDropdown] Navigating to client:', clientPath);
-          navigate(clientPath);
+          const carePlansPath = tenantSlug 
+            ? `/${tenantSlug}/carer-dashboard/careplans`
+            : `/carer-dashboard/careplans`;
+          console.log('[NotificationDropdown] Navigating to care plans:', carePlansPath);
+          navigate(carePlansPath);
           return;
         }
         
