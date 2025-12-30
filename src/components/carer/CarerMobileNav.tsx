@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Calendar, Users, MessageSquare, Menu } from "lucide-react";
+import { Home, Calendar, MessageSquare, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -8,7 +8,6 @@ import { useSidebar } from "@/components/ui/sidebar";
 const navItems = [
   { icon: Home, label: "Home", value: "" },
   { icon: Calendar, label: "Schedule", value: "schedule" },
-  { icon: Users, label: "Clients", value: "clients" },
   { icon: MessageSquare, label: "Messages", value: "messages" },
 ];
 
