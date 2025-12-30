@@ -1760,30 +1760,36 @@ export type Database = {
           care_plan_id: string
           created_at: string
           description: string | null
+          duration: string | null
           frequency: string
           id: string
           name: string
           status: string
+          time_of_day: string[] | null
           updated_at: string
         }
         Insert: {
           care_plan_id: string
           created_at?: string
           description?: string | null
+          duration?: string | null
           frequency: string
           id?: string
           name: string
           status?: string
+          time_of_day?: string[] | null
           updated_at?: string
         }
         Update: {
           care_plan_id?: string
           created_at?: string
           description?: string | null
+          duration?: string | null
           frequency?: string
           id?: string
           name?: string
           status?: string
+          time_of_day?: string[] | null
           updated_at?: string
         }
         Relationships: [

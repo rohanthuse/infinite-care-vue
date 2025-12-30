@@ -13,7 +13,7 @@ interface JsonActivity {
   description?: string;
   duration?: string;
   frequency?: string;
-  time_of_day?: string;
+  time_of_day?: string | string[];
 }
 
 interface JsonMedication {
@@ -54,7 +54,7 @@ interface TransformedActivity {
   created_at: string;
   updated_at: string;
   duration?: string;
-  time_of_day?: string;
+  time_of_day?: string[];
 }
 
 interface TransformedMedication {
@@ -115,18 +115,26 @@ export const useCarePlanJsonData = (carePlanId: string) => {
       }));
 
       // Transform activities from JSON
-      const activities: TransformedActivity[] = (autoSaveData.activities || []).map((activity: JsonActivity, index: number) => ({
-        id: `json-activity-${index}`,
-        care_plan_id: data.id,
-        name: activity.name || '',
-        description: activity.description || null,
-        frequency: activity.frequency || 'daily',
-        status: 'active',
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        duration: activity.duration || null,
-        time_of_day: activity.time_of_day || null,
-      }));
+      const activities: TransformedActivity[] = (autoSaveData.activities || []).map((activity: JsonActivity, index: number) => {
+        // Normalize time_of_day to always be an array
+        let timeOfDay: string[] | undefined = undefined;
+        if (activity.time_of_day) {
+          timeOfDay = Array.isArray(activity.time_of_day) ? activity.time_of_day : [activity.time_of_day];
+        }
+        
+        return {
+          id: `json-activity-${index}`,
+          care_plan_id: data.id,
+          name: activity.name || '',
+          description: activity.description || null,
+          frequency: activity.frequency || 'daily',
+          status: 'active',
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          duration: activity.duration || undefined,
+          time_of_day: timeOfDay,
+        };
+      });
 
       // Transform medications from JSON (check multiple possible locations)
       const medicationsSource = autoSaveData.medications || 
