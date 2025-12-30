@@ -135,6 +135,23 @@ const ENGAGEMENT_OPTIONS = [
   { value: 'unresponsive', label: 'Unresponsive' },
 ];
 
+// Helper function to determine shift from booking start time - defined at top level to avoid TDZ
+const getShiftFromTime = (startTime: string | Date): string[] => {
+  const hour = new Date(startTime).getHours();
+  
+  // Morning: 6 AM - 12 PM (6-11)
+  if (hour >= 6 && hour < 12) return ['morning', 'any_time'];
+  
+  // Afternoon: 12 PM - 5 PM (12-16)
+  if (hour >= 12 && hour < 17) return ['afternoon', 'any_time'];
+  
+  // Evening: 5 PM - 9 PM (17-20)
+  if (hour >= 17 && hour < 21) return ['evening', 'any_time'];
+  
+  // Night: 9 PM - 6 AM (21-5)
+  return ['night', 'any_time'];
+};
+
 const CarerVisitWorkflow = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
@@ -146,6 +163,22 @@ const CarerVisitWorkflow = () => {
   const bookingAttendance = useBookingAttendance();
   const createServiceReport = useCreateServiceReport();
   const queryClient = useQueryClient();
+  
+  // Early validation - if no appointmentId, show error
+  if (!appointmentId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-semibold">Invalid Visit</h2>
+          <p className="text-muted-foreground">No appointment ID provided.</p>
+          <Button onClick={() => navigateToCarerPage('/appointments')}>
+            Return to Appointments
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   // Get appointment data from location state or fetch from API
   const appointment = location.state?.appointment;
@@ -289,22 +322,7 @@ const CarerVisitWorkflow = () => {
     return rawGoals;
   }, [normalizedGoals, jsonData?.goals, currentAppointment?.start_time]);
   
-  // Helper function to determine shift from booking start time
-  const getShiftFromTime = (startTime: string | Date): string[] => {
-    const hour = new Date(startTime).getHours();
-    
-    // Morning: 6 AM - 12 PM (6-11)
-    if (hour >= 6 && hour < 12) return ['morning', 'any_time'];
-    
-    // Afternoon: 12 PM - 5 PM (12-16)
-    if (hour >= 12 && hour < 17) return ['afternoon', 'any_time'];
-    
-    // Evening: 5 PM - 9 PM (17-20)
-    if (hour >= 17 && hour < 21) return ['evening', 'any_time'];
-    
-    // Night: 9 PM - 6 AM (21-5)
-    return ['night', 'any_time'];
-  };
+  // Note: getShiftFromTime is now defined above the component to avoid TDZ issues
 
   const carePlanActivities = useMemo((): any[] => {
     // Get the current booking's shift
