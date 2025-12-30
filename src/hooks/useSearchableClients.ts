@@ -111,11 +111,12 @@ export const useSearchableClients = (branchId: string) => {
   const filteredClients = useMemo(() => {
     if (!data?.clients) return [];
     
-    if (!searchTerm || searchTerm.length < 2) {
+    // Filter from 1 character onwards for better UX
+    if (!searchTerm || searchTerm.trim().length === 0) {
       return data.clients;
     }
 
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.toLowerCase().trim();
     return data.clients.filter(client => 
       client.search_text.includes(term)
     );

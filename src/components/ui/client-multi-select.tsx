@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +137,7 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
           </div>
         </div>
 
-        <ScrollArea className="max-h-[200px]">
+        <div className="max-h-[200px] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -174,7 +173,7 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {selectedIds.length > 0 && (
           <div className="p-2 border-t bg-muted/50">
