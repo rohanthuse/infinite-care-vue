@@ -64,7 +64,10 @@ const fetchOrganizationSuperAdmins = async (organizationId: string): Promise<Adm
     return [];
   }
 
-  return profiles.map(profile => ({
+  // Deduplicate profiles by id to prevent selection bugs
+  const uniqueProfiles = [...new Map(profiles.map(p => [p.id, p])).values()];
+
+  return uniqueProfiles.map(profile => ({
     id: profile.id,
     auth_user_id: profile.id,
     first_name: profile.first_name || 'Super',
@@ -115,7 +118,10 @@ const fetchBranchAdminsWithProfiles = async (branchId: string): Promise<AdminWit
     return [];
   }
 
-  return profiles.map(profile => ({
+  // Deduplicate profiles by id to prevent selection bugs
+  const uniqueProfiles = [...new Map(profiles.map(p => [p.id, p])).values()];
+
+  return uniqueProfiles.map(profile => ({
     id: profile.id,
     auth_user_id: profile.id,
     first_name: profile.first_name || 'Branch',
