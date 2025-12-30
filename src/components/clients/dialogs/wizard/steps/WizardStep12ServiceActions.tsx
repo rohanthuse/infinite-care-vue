@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { UseFormReturn } from "react-hook-form";
+import React, { useState, useEffect, useRef } from "react";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { Plus } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -13,51 +13,82 @@ interface WizardStep12ServiceActionsProps {
   form: UseFormReturn<any>;
 }
 
+// Helper to map raw action data to ServiceActionData format
+const mapActionToServiceActionData = (action: any): ServiceActionData => ({
+  id: action.id || crypto.randomUUID(),
+  action_type: action.action_type || 'new',
+  action_name: action.action_name || action.service_name || action.name || action.action || '',
+  has_instructions: action.has_instructions || false,
+  instructions: action.instructions || action.schedule_details || '',
+  required_written_outcome: action.required_written_outcome || false,
+  written_outcome: action.written_outcome || '',
+  is_service_specific: action.is_service_specific || false,
+  linked_service_id: action.linked_service_id || '',
+  linked_service_name: action.linked_service_name || '',
+  start_date: action.start_date,
+  end_date: action.end_date,
+  schedule_type: action.schedule_type || 'shift',
+  shift_times: action.shift_times || [],
+  start_time: action.start_time || '',
+  end_time: action.end_time || '',
+  selected_days: action.selected_days || [],
+  frequency: action.frequency || '',
+  notes: action.notes || '',
+  status: action.status || 'active',
+  registered_on: action.registered_on,
+  registered_by: action.registered_by,
+  registered_by_name: action.registered_by_name || '',
+  is_saved: true,
+});
+
 export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsProps) {
   const [savedActions, setSavedActions] = useState<ServiceActionData[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const { data: currentUser } = useUserRole();
+  
+  // Ref to prevent infinite loop between form sync effects
+  const isHydratingFromFormRef = useRef(false);
+  const hasInitializedRef = useRef(false);
 
-  // Initialize from form values on mount
+  // Watch form field for changes (draft loading after mount)
+  const watchedServiceActions = useWatch({ control: form.control, name: "service_actions" });
+
+  // Rehydrate savedActions when form field changes (e.g., draft loads after mount)
   useEffect(() => {
-    const existingActions = form.getValues("service_actions") || [];
-    if (existingActions.length > 0) {
-      // Map old format to new format if needed and mark as saved
-      const mappedActions = existingActions
-        .filter((action: any) => action.is_saved || action.action_name || action.service_name || action.name)
-        .map((action: any) => ({
-          id: action.id || crypto.randomUUID(),
-          action_type: action.action_type || 'new',
-          action_name: action.action_name || action.service_name || action.name || action.action || '',
-          has_instructions: action.has_instructions || false,
-          instructions: action.instructions || action.schedule_details || '',
-          required_written_outcome: action.required_written_outcome || false,
-          written_outcome: action.written_outcome || '',
-          is_service_specific: action.is_service_specific || false,
-          linked_service_id: action.linked_service_id || '',
-          linked_service_name: action.linked_service_name || '',
-          start_date: action.start_date,
-          end_date: action.end_date,
-          schedule_type: action.schedule_type || 'shift',
-          shift_times: action.shift_times || [],
-          start_time: action.start_time || '',
-          end_time: action.end_time || '',
-          selected_days: action.selected_days || [],
-          frequency: action.frequency || '',
-          notes: action.notes || '',
-          status: action.status || 'active',
-          registered_on: action.registered_on,
-          registered_by: action.registered_by,
-          registered_by_name: action.registered_by_name || '',
-          is_saved: true,
-        }));
-      setSavedActions(mappedActions);
+    // Skip if currently showing the add/edit form (don't interrupt user)
+    if (showForm) return;
+    
+    const formActions = watchedServiceActions || [];
+    
+    // Only rehydrate if form has actions and local state differs
+    if (formActions.length > 0) {
+      const validActions = formActions.filter(
+        (action: any) => action.is_saved || action.action_name || action.service_name || action.name
+      );
+      
+      // Check if we need to update (compare by length and first/last id as quick check)
+      const needsUpdate = 
+        validActions.length !== savedActions.length ||
+        (validActions.length > 0 && savedActions.length > 0 && 
+          validActions[0]?.id !== savedActions[0]?.id);
+      
+      if (needsUpdate && validActions.length > 0) {
+        isHydratingFromFormRef.current = true;
+        const mappedActions = validActions.map(mapActionToServiceActionData);
+        setSavedActions(mappedActions);
+        hasInitializedRef.current = true;
+      }
     }
-  }, []);
+  }, [watchedServiceActions, showForm]);
 
-  // Sync savedActions to form
+  // Sync savedActions to form (only when change originated locally, not from hydration)
   useEffect(() => {
+    if (isHydratingFromFormRef.current) {
+      // Reset flag, skip writing back to form
+      isHydratingFromFormRef.current = false;
+      return;
+    }
     form.setValue("service_actions", savedActions);
   }, [savedActions, form]);
 
