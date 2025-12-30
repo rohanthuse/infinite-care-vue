@@ -268,6 +268,15 @@ const CarerVisitWorkflow = () => {
     
     return rawActivities;
   }, [normalizedActivities, jsonData?.activities, currentAppointment?.start_time]);
+
+  // Helper to get current shift label for display
+  const getCurrentShiftLabel = () => {
+    if (!currentAppointment?.start_time) return null;
+    const shifts = getShiftFromTime(currentAppointment.start_time);
+    const shift = shifts[0];
+    if (!shift || shift === 'any_time') return null;
+    return shift.charAt(0).toUpperCase() + shift.slice(1);
+  };
   
   // Handler for goal status/progress updates
   const handleGoalUpdate = async (goal: any, newStatus: string, newProgress?: number) => {
@@ -374,6 +383,9 @@ const CarerVisitWorkflow = () => {
     }
   };
   
+  // State for auto-loading care plan items as visit tasks
+  const [carePlanTasksLoaded, setCarePlanTasksLoaded] = useState(false);
+  
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
   const [completedTabs, setCompletedTabs] = useState<string[]>([]);
@@ -438,6 +450,62 @@ const CarerVisitWorkflow = () => {
       });
     }
   }, [currentAppointment, visitRecord, visitLoading, carerContext?.staffId, autoCreateVisitRecord, autoCreateAttempted, isViewOnly]);
+
+  // Auto-load care plan goals and activities as visit tasks when visit record is created
+  useEffect(() => {
+    if (!isViewOnly && visitRecord?.id && !carePlanTasksLoaded && 
+        (carePlanGoals?.length > 0 || carePlanActivities?.length > 0)) {
+      
+      console.log('[CarerVisitWorkflow] Loading care plan items as visit tasks');
+      setCarePlanTasksLoaded(true);
+      
+      const tasksToAdd: Array<{
+        visit_record_id: string;
+        task_category: string;
+        task_name: string;
+        task_description?: string;
+        is_completed: boolean;
+        priority: 'low' | 'medium' | 'high' | 'urgent';
+      }> = [];
+      
+      // Add goals as tasks
+      carePlanGoals?.forEach((goal: any) => {
+        tasksToAdd.push({
+          visit_record_id: visitRecord.id,
+          task_category: 'Goal',
+          task_name: goal.description || goal.name || 'Care Plan Goal',
+          task_description: goal.notes || undefined,
+          is_completed: false,
+          priority: 'medium' as const,
+        });
+      });
+      
+      // Add activities as tasks (already filtered by time)
+      carePlanActivities?.forEach((activity: any) => {
+        tasksToAdd.push({
+          visit_record_id: visitRecord.id,
+          task_category: 'Activity',
+          task_name: activity.name || 'Care Plan Activity',
+          task_description: activity.description || undefined,
+          is_completed: false,
+          priority: 'medium' as const,
+        });
+      });
+      
+      // Bulk insert if tasks exist
+      if (tasksToAdd.length > 0) {
+        supabase.from('visit_tasks').insert(tasksToAdd)
+          .then(({ error }) => {
+            if (error) {
+              console.error('[CarerVisitWorkflow] Error loading care plan tasks:', error);
+            } else {
+              console.log('[CarerVisitWorkflow] Successfully loaded', tasksToAdd.length, 'care plan tasks');
+              queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord.id] });
+            }
+          });
+      }
+    }
+  }, [visitRecord?.id, carePlanGoals, carePlanActivities, isViewOnly, carePlanTasksLoaded, queryClient]);
 
   // Check if visit has been started and initialize data
   useEffect(() => {
@@ -1111,7 +1179,7 @@ const CarerVisitWorkflow = () => {
           staff_signature_data: completedVisit.staff_signature_data,
           visit_photos: Array.isArray(completedVisit.visit_photos) ? completedVisit.visit_photos : [],
         },
-        tasks: assignedTasks || [],
+        tasks: [...(assignedTasks || []), ...(tasks || [])],
         medications: medications || [],
         events: events || [],
         goals: carePlanGoals || [],
@@ -1534,9 +1602,16 @@ const CarerVisitWorkflow = () => {
           <TabsContent value="check-in" className="w-full mt-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="w-5 h-5" />
-                  Check-in
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-5 h-5" />
+                    Check-in
+                  </div>
+                  {getCurrentShiftLabel() && (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700">
+                      {getCurrentShiftLabel()} Visit
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1678,6 +1753,67 @@ const CarerVisitWorkflow = () => {
                     ) : (
                       <div className="text-center py-6 text-gray-500">
                         <p>No tasks assigned by admin/staff for this client</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Visit Tasks Section (from Care Plan Goals & Activities) */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium text-foreground mb-3">Visit Tasks</h3>
+                    {tasksLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="mt-2 text-muted-foreground">Loading visit tasks...</p>
+                      </div>
+                    ) : !visitRecord && !isViewOnly ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p>Start the visit to load tasks from the care plan</p>
+                      </div>
+                    ) : tasks && tasks.length > 0 ? (
+                      <div className="space-y-3">
+                        {tasks.map((task) => (
+                          <div key={task.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                            <Checkbox
+                              checked={task.is_completed}
+                              onCheckedChange={() => {
+                                if (!isViewOnly) {
+                                  updateTask.mutate({
+                                    taskId: task.id,
+                                    isCompleted: !task.is_completed,
+                                  });
+                                }
+                              }}
+                              className="flex-shrink-0"
+                              disabled={isViewOnly || updateTask.isPending}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className={`font-medium ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                  {task.task_name}
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {task.task_category}
+                                </Badge>
+                                {task.priority && task.priority !== 'medium' && getPriorityBadge(task.priority)}
+                              </div>
+                              {task.task_description && (
+                                <p className="text-sm text-muted-foreground mt-1">{task.task_description}</p>
+                              )}
+                              {task.completed_at && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Completed at {format(new Date(task.completed_at), 'h:mm a')}
+                                </p>
+                              )}
+                            </div>
+                            {task.is_completed && (
+                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p>No visit tasks loaded yet</p>
                       </div>
                     )}
                   </div>
