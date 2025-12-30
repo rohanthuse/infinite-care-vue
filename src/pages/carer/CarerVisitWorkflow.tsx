@@ -241,16 +241,16 @@ const CarerVisitWorkflow = () => {
     return ['night', 'any_time'];
   };
 
-  const carePlanActivities = useMemo(() => {
+  const carePlanActivities = useMemo((): any[] => {
     // Get the current booking's shift
     const currentShifts = currentAppointment?.start_time 
       ? getShiftFromTime(currentAppointment.start_time) 
       : [];
     
     // Get raw activities from normalized tables or JSON
-    let rawActivities = normalizedActivities && normalizedActivities.length > 0
-      ? normalizedActivities
-      : (jsonData?.activities || []);
+    let rawActivities: any[] = normalizedActivities && normalizedActivities.length > 0
+      ? [...normalizedActivities]
+      : [...(jsonData?.activities || [])];
     
     // If we have a booking time, filter activities by time_of_day
     if (currentShifts.length > 0 && rawActivities.length > 0) {
