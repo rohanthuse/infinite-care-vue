@@ -262,6 +262,14 @@ export class ReportExporter {
         doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
         detailY += 3;
       }
+      if (orgSettings?.email) {
+        doc.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
+        detailY += 3;
+      }
+      if (orgSettings?.website) {
+        doc.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
+        detailY += 3;
+      }
       doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });
       
       // Centered title
@@ -488,6 +496,14 @@ export class ReportExporter {
       }
       if (orgSettings?.telephone) {
         doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+        detailY += 3;
+      }
+      if (orgSettings?.email) {
+        doc.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
+        detailY += 3;
+      }
+      if (orgSettings?.website) {
+        doc.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
         detailY += 3;
       }
       doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });

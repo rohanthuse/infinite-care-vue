@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarEvent } from '@/types/calendar';
 import { ReportExporter } from '@/utils/reportExporter';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { FileText, Download } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, isAfter, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { FileText, Download, AlertCircle } from 'lucide-react';
+import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 
 interface CalendarExportDialogProps {
   open: boolean;
@@ -43,13 +44,36 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
   const [includeParticipants, setIncludeParticipants] = useState(true);
   const [includeConflicts, setIncludeConflicts] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Date range state - default to current month
+  const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(currentDate));
+  const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(currentDate));
+
+  // Validation
+  const isValidRange = useMemo(() => {
+    if (!startDate || !endDate) return false;
+    return !isAfter(startDate, endDate);
+  }, [startDate, endDate]);
+
+  // Filter events based on date range
+  const filteredEvents = useMemo(() => {
+    if (!startDate || !endDate || !isValidRange) return [];
+    return events.filter(event => 
+      isWithinInterval(event.startTime, { 
+        start: startOfDay(startDate), 
+        end: endOfDay(endDate) 
+      })
+    );
+  }, [events, startDate, endDate, isValidRange]);
 
   const handleExport = async () => {
+    if (!startDate || !endDate || !isValidRange) return;
+    
     setIsExporting(true);
     
     try {
       // Prepare export data with separate columns for Date, Start Time, End Time
-      const exportData = events.map(event => ({
+      const exportData = filteredEvents.map(event => ({
         Date: format(event.startTime, 'dd/MM/yyyy'),
         Start: format(event.startTime, 'HH:mm'),
         End: format(event.endTime, 'HH:mm'),
@@ -77,13 +101,13 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
         branchName,
         branchId,
         dateRange: {
-          from: startOfMonth(currentDate),
-          to: endOfMonth(currentDate)
+          from: startDate,
+          to: endDate
         },
         metadata: {
-          exportedRecords: events.length,
+          exportedRecords: filteredEvents.length,
           filters: {
-            month: format(currentDate, 'MMMM yyyy'),
+            dateRange: `${format(startDate, 'dd/MM/yyyy')} - ${format(endDate, 'dd/MM/yyyy')}`,
             branch: branchName || 'All Branches'
           }
         }
@@ -112,11 +136,43 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
             Export Calendar
           </DialogTitle>
           <DialogDescription>
-            Export {events.length} calendar events for {format(currentDate, 'MMMM yyyy')}
+            Export {filteredEvents.length} calendar events
+            {startDate && endDate && isValidRange && (
+              <> for {format(startDate, 'dd MMM yyyy')} - {format(endDate, 'dd MMM yyyy')}</>
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Date Range Selection */}
+          <div className="space-y-3">
+            <Label>Date Range</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="startDate" className="text-xs text-muted-foreground">Start Date</Label>
+                <EnhancedDatePicker
+                  value={startDate}
+                  onChange={setStartDate}
+                  placeholder="Start date"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="endDate" className="text-xs text-muted-foreground">End Date</Label>
+                <EnhancedDatePicker
+                  value={endDate}
+                  onChange={setEndDate}
+                  placeholder="End date"
+                />
+              </div>
+            </div>
+            {startDate && endDate && !isValidRange && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                End date must be after or equal to start date
+              </div>
+            )}
+          </div>
+
           {/* Export Format */}
           <div className="space-y-2">
             <Label htmlFor="format">Export Format</Label>
@@ -184,7 +240,7 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
             </Button>
             <Button 
               onClick={handleExport}
-              disabled={isExporting}
+              disabled={isExporting || !isValidRange || !startDate || !endDate || filteredEvents.length === 0}
             >
               {isExporting ? 'Exporting...' : `Export ${exportFormat.toUpperCase()}`}
             </Button>
