@@ -41,43 +41,29 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
     setIsSharing(true);
     
     try {
-      // Prepare export data with improved structure (matching export dialog)
+      // Prepare export data with separate columns - matches export dialog for consistency
       const exportData = events.map(event => ({
         Date: format(event.startTime, 'dd/MM/yyyy'),
-        Time: `${format(event.startTime, 'HH:mm')} - ${format(event.endTime, 'HH:mm')}`,
-        'Client/Title': event.title,
-        'Carer/Staff': event.participants?.map(p => p.name).join(', ') || 'Not assigned',
+        Start: format(event.startTime, 'HH:mm'),
+        End: format(event.endTime, 'HH:mm'),
+        Client: event.title || '-',
+        Carer: event.participants?.map(p => p.name).join(', ') || 'Not assigned',
         Type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         Status: event.status?.charAt(0).toUpperCase() + (event.status?.slice(1) || ''),
-        Branch: event.branchName || branchName || '-',
-        Location: event.location || '-',
-        ...(includeParticipants && {
-          Participants: event.participants?.map(p => p.name).join(', ') || 'None'
-        }),
-        ...(includeDetails && {
-          Priority: event.priority || 'Normal',
-        }),
-        ...(includeConflicts && {
-          Conflicts: event.conflictsWith?.length ? `${event.conflictsWith.length} conflict(s)` : 'None'
-        }),
       }));
 
+      // Core columns - always included
       const columns = [
         'Date',
-        'Time',
-        'Client/Title',
-        'Carer/Staff',
+        'Start',
+        'End',
+        'Client',
+        'Carer', 
         'Type',
         'Status',
-        'Branch',
-        'Location',
-        ...(includeParticipants ? ['Participants'] : []),
-        ...(includeDetails ? ['Priority'] : []),
-        ...(includeConflicts ? ['Conflicts'] : []),
       ];
 
-      // Generate PDF blob for sharing using dedicated calendar method
-      const pdfBlob = await ReportExporter.exportCalendarToPDFBlob({
+      const exportOptions = {
         title: 'Organisation Calendar Report',
         data: exportData,
         columns,
@@ -94,9 +80,11 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
             branch: branchName || 'All Branches'
           }
         }
-      });
+      };
 
-      const fileName = `Calendar_${format(currentDate, 'yyyy-MM')}.pdf`;
+      // Generate PDF blob using the same method as export for consistency
+      const pdfBlob = await ReportExporter.exportCalendarToPDFBlob(exportOptions);
+      const fileName = `Organisation_Calendar_${format(currentDate, 'MMM_yyyy')}.pdf`;
       const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
       // Try Web Share API if available

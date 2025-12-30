@@ -48,39 +48,26 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
     setIsExporting(true);
     
     try {
-      // Prepare export data with improved structure
+      // Prepare export data with separate columns for Date, Start Time, End Time
       const exportData = events.map(event => ({
         Date: format(event.startTime, 'dd/MM/yyyy'),
-        Time: `${format(event.startTime, 'HH:mm')} - ${format(event.endTime, 'HH:mm')}`,
-        'Client/Title': event.title,
-        'Carer/Staff': event.participants?.map(p => p.name).join(', ') || 'Not assigned',
+        Start: format(event.startTime, 'HH:mm'),
+        End: format(event.endTime, 'HH:mm'),
+        Client: event.title || '-',
+        Carer: event.participants?.map(p => p.name).join(', ') || 'Not assigned',
         Type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         Status: event.status?.charAt(0).toUpperCase() + (event.status?.slice(1) || ''),
-        Branch: event.branchName || branchName || '-',
-        Location: event.location || '-',
-        ...(includeParticipants && {
-          Participants: event.participants?.map(p => p.name).join(', ') || 'None'
-        }),
-        ...(includeDetails && {
-          Priority: event.priority || 'Normal',
-        }),
-        ...(includeConflicts && {
-          Conflicts: event.conflictsWith?.length ? `${event.conflictsWith.length} conflict(s)` : 'None'
-        }),
       }));
 
+      // Core columns - always included
       const columns = [
         'Date',
-        'Time',
-        'Client/Title',
-        'Carer/Staff', 
+        'Start',
+        'End',
+        'Client',
+        'Carer', 
         'Type',
         'Status',
-        'Branch',
-        'Location',
-        ...(includeParticipants ? ['Participants'] : []),
-        ...(includeDetails ? ['Priority'] : []),
-        ...(includeConflicts ? ['Conflicts'] : []),
       ];
 
       const exportOptions = {
