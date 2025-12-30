@@ -241,7 +241,7 @@ export const useAdoptSystemServices = () => {
         title: service.title,
         category: service.category,
         description: service.description,
-        status: 'Active',
+        status: 'active',
         organization_id: organization.id,
         source_system_id: service.id,
       }));
@@ -271,7 +271,7 @@ export const useAdoptSystemHobbies = () => {
       
       const inserts = systemHobbies.map(hobby => ({
         title: hobby.title,
-        status: 'Active',
+        status: 'active',
         organization_id: organization.id,
         source_system_id: hobby.id,
       }));
@@ -302,7 +302,7 @@ export const useAdoptSystemSkills = () => {
       const inserts = systemSkills.map(skill => ({
         name: skill.name,
         explanation: skill.explanation,
-        status: 'Active',
+        status: 'active',
         organization_id: organization.id,
         source_system_id: skill.id,
       }));
@@ -332,7 +332,7 @@ export const useAdoptSystemWorkTypes = () => {
       
       const inserts = systemWorkTypes.map(workType => ({
         title: workType.title,
-        status: 'Active',
+        status: 'active',
         organization_id: organization.id,
         source_system_id: workType.id,
       }));
@@ -364,7 +364,7 @@ export const useAdoptSystemBodyMapPoints = () => {
         letter: point.letter,
         title: point.title,
         color: point.color,
-        status: 'Active',
+        status: 'active',
         organization_id: organization.id,
         source_system_id: point.id,
       }));
