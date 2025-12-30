@@ -13,22 +13,21 @@ export const useCarerNavigation = () => {
     // Fallback 1: Extract from current URL if context doesn't have it
     if (!finalTenantSlug) {
       const pathParts = location.pathname.split('/').filter(Boolean);
-      if (pathParts.length > 0 && pathParts[0] !== 'carer-dashboard') {
+      // Check that first part is not a known route segment
+      if (pathParts.length > 0 && 
+          pathParts[0] !== 'carer-dashboard' &&
+          pathParts[0] !== 'login' &&
+          pathParts[0] !== 'visit') {
         finalTenantSlug = pathParts[0];
         console.log('[useCarerNavigation] Extracted tenant from URL:', finalTenantSlug);
       }
     }
 
-    // Fallback 2: Try localStorage for development
+    // Fallback 2: Try localStorage for all environments (not just dev)
     if (!finalTenantSlug) {
-      const isDev = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' || 
-                    window.location.hostname.includes('preview');
-      if (isDev) {
-        finalTenantSlug = localStorage.getItem('dev-tenant') || undefined;
-        if (finalTenantSlug) {
-          console.log('[useCarerNavigation] Using dev-tenant from localStorage:', finalTenantSlug);
-        }
+      finalTenantSlug = localStorage.getItem('dev-tenant') || undefined;
+      if (finalTenantSlug) {
+        console.log('[useCarerNavigation] Using dev-tenant from localStorage:', finalTenantSlug);
       }
     }
 
@@ -44,7 +43,7 @@ export const useCarerNavigation = () => {
       return outputPath;
     }
     
-    console.warn('[useCarerNavigation] No tenant slug found, returning non-tenant path');
+    console.error('[useCarerNavigation] No tenant slug found - navigation may fail');
     const fallbackPath = `/carer-dashboard${path}`;
     console.log('[useCarerNavigation] Fallback path:', fallbackPath);
     return fallbackPath;
