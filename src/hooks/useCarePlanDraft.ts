@@ -1,8 +1,8 @@
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useRef, useState } from "react";
+import { calculateCompletionPercentage } from "@/utils/carePlanCompletionUtils";
 
 interface DraftData {
   form_data: any;
@@ -34,81 +34,6 @@ const formatDateSafely = (date: any): string => {
   } catch {
     return new Date().toISOString().split('T')[0];
   }
-};
-
-// Function to calculate content-based completion percentage
-const calculateContentBasedCompletion = (formData: any): number => {
-  if (!formData) return 0;
-
-  const sections = [
-    {
-      id: "basic_info",
-      data: {
-        title: formData.title,
-        provider_type: formData.provider_type,
-        start_date: formData.start_date,
-        priority: formData.priority
-      }
-    },
-    {
-      id: "personal_info",
-      data: formData.personal_info
-    },
-    {
-      id: "about_me",
-      data: formData.about_me
-    },
-    {
-      id: "medical_info",
-      data: formData.medical_info
-    },
-    {
-      id: "goals",
-      data: formData.goals
-    },
-    {
-      id: "activities",
-      data: formData.activities
-    },
-    {
-      id: "personal_care",
-      data: formData.personal_care
-    },
-    {
-      id: "dietary",
-      data: formData.dietary
-    },
-    {
-      id: "risk_assessments",
-      data: formData.risk_assessments
-    },
-    {
-      id: "equipment",
-      data: formData.equipment
-    },
-    {
-      id: "service_plans",
-      data: formData.service_plans
-    },
-    {
-      id: "service_actions",
-      data: formData.service_actions
-    },
-    {
-      id: "documents",
-      data: formData.documents
-    }
-  ];
-
-  const getSectionStatus = (sectionData: any) => {
-    if (!sectionData) return "empty";
-    if (typeof sectionData === "object" && Object.keys(sectionData).length === 0) return "empty";
-    if (Array.isArray(sectionData) && sectionData.length === 0) return "empty";
-    return "completed";
-  };
-
-  const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
-  return Math.round((completedSections.length / sections.length) * 100);
 };
 
 export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew: boolean = false) {
@@ -189,9 +114,10 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
       if (isCheckingExistingDraft) {
         throw new Error('Still checking for existing draft, please wait');
       }
-
-      // Calculate content-based completion percentage instead of step-based
-      const completionPercentage = calculateContentBasedCompletion(formData);
+      // Calculate content-based completion percentage using unified utility
+      // Note: isChild detection would require client profile, for now we use false as default
+      // This will be accurate for adults, and slightly undercount for children (acceptable)
+      const completionPercentage = calculateCompletionPercentage(formData, false);
       
       const draftPayload: any = {
         client_id: clientId,
