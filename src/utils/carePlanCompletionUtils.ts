@@ -4,6 +4,15 @@
  * This ensures consistent completion percentages and step tick marks across the application.
  */
 
+/**
+ * Context object for completion calculation.
+ * Allows passing DB-backed data that may not be in the form JSON.
+ */
+export interface CompletionContext {
+  /** Number of medications stored in client_medications table (DB) */
+  medicationCount?: number;
+}
+
 // Helper function to check if a value is a non-empty string
 export const isNonEmptyString = (value: any): boolean => {
   return typeof value === 'string' && value.trim().length > 0;
@@ -58,7 +67,8 @@ export const hasAboutMe = (aboutMe: any): boolean => {
 export const hasMedicalInfo = (medicalInfo: any): boolean => {
   if (!medicalInfo || typeof medicalInfo !== 'object') return false;
   
-  // Check for medical conditions arrays
+  // Check for medical conditions arrays (new format)
+  if (Array.isArray(medicalInfo.medical_conditions) && medicalInfo.medical_conditions.length > 0) return true;
   if (Array.isArray(medicalInfo.physical_health_conditions) && medicalInfo.physical_health_conditions.length > 0) return true;
   if (Array.isArray(medicalInfo.mental_health_conditions) && medicalInfo.mental_health_conditions.length > 0) return true;
   
@@ -67,9 +77,22 @@ export const hasMedicalInfo = (medicalInfo: any): boolean => {
       Array.isArray(medicalInfo.medication_manager.medications) && 
       medicalInfo.medication_manager.medications.length > 0) return true;
   
-  // Check for other medical fields
-  const medicalFields = ['allergies', 'current_medications', 'medical_history', 'service_band'];
-  return medicalFields.some(field => isNonEmptyString(medicalInfo[field]));
+  // Check for allergies array (new format)
+  if (Array.isArray(medicalInfo.allergies) && medicalInfo.allergies.some((a: any) => typeof a === 'string' ? a.trim() : a)) return true;
+  
+  // Check for current_medications array (new format)
+  if (Array.isArray(medicalInfo.current_medications) && medicalInfo.current_medications.some((m: any) => typeof m === 'string' ? m.trim() : m)) return true;
+  
+  // Check for other medical fields (string format - legacy)
+  const textFields = ['medical_history', 'service_band'];
+  if (textFields.some(field => isNonEmptyString(medicalInfo[field]))) return true;
+  
+  // Check for service_band object with categories
+  if (medicalInfo.service_band?.categories && 
+      Array.isArray(medicalInfo.service_band.categories) && 
+      medicalInfo.service_band.categories.length > 0) return true;
+  
+  return false;
 };
 
 // Check if NEWS2 health monitoring has data
@@ -84,25 +107,45 @@ export const hasNews2Monitoring = (medicalInfo: any): boolean => {
 };
 
 // Check if medication schedule has medications
-export const hasMedicationSchedule = (medicalInfo: any): boolean => {
+// Now accepts optional medicationCount from DB context
+export const hasMedicationSchedule = (medicalInfo: any, medicationCount?: number): boolean => {
+  // If DB has medications, consider complete
+  if (medicationCount !== undefined && medicationCount > 0) return true;
+  
   if (!medicalInfo || typeof medicalInfo !== 'object') return false;
   
+  // Check if medication is marked as not applicable
+  if (medicalInfo.medication_manager?.applicable === false) return true;
+  
+  // Check local JSON medications
   return medicalInfo.medication_manager?.medications && 
          Array.isArray(medicalInfo.medication_manager.medications) && 
          medicalInfo.medication_manager.medications.length > 0;
 };
 
 // Check if medication administration has data
-export const hasMedicationAdministration = (formData: any): boolean => {
-  // Check dedicated admin_medication field
+export const hasMedicationAdministration = (formData: any, medicationCount?: number): boolean => {
+  // Check dedicated admin_medication field under medical_info (correct path)
+  if (formData.medical_info?.admin_medication && hasAnyValue(formData.medical_info.admin_medication)) return true;
+  
+  // Also check root level admin_medication (legacy/fallback path)
   if (formData.admin_medication && hasAnyValue(formData.admin_medication)) return true;
   
-  // Also check if medications have administration details
+  // If DB has medications and any have administration details in JSON, count as complete
   const medications = formData.medical_info?.medication_manager?.medications;
   if (Array.isArray(medications) && medications.length > 0) {
-    return medications.some((med: any) => 
+    const hasAdminDetails = medications.some((med: any) => 
       med.administration_route || med.instructions || med.special_instructions
     );
+    if (hasAdminDetails) return true;
+  }
+  
+  // If we have DB medications AND medication_manager has admin settings configured
+  if (medicationCount !== undefined && medicationCount > 0) {
+    const medManager = formData.medical_info?.medication_manager;
+    if (medManager && (medManager.administration_method || medManager.storage_location)) {
+      return true;
+    }
   }
   
   return false;
@@ -199,13 +242,15 @@ export const hasKeyContacts = (formData: any): boolean => {
  * 
  * @param formData - The care plan form data
  * @param isChild - Whether the client is a child/young person
+ * @param ctx - Optional context with DB-backed data (e.g., medication count)
  * @returns Array of completed step IDs
  */
-export const getCompletedStepIds = (formData: any, isChild: boolean = false): number[] => {
+export const getCompletedStepIds = (formData: any, isChild: boolean = false, ctx?: CompletionContext): number[] => {
   if (!formData) return [];
   
   const completedSteps: number[] = [];
   const medInfo = formData.medical_info;
+  const medicationCount = ctx?.medicationCount;
 
   // Step 1 - Basic Info (title is required)
   if (isNonEmptyString(formData.title)) completedSteps.push(1);
@@ -219,11 +264,11 @@ export const getCompletedStepIds = (formData: any, isChild: boolean = false): nu
   // Step 4 - NEWS2 Health Monitoring
   if (hasNews2Monitoring(medInfo)) completedSteps.push(4);
   
-  // Step 5 - Medication Schedule
-  if (hasMedicationSchedule(medInfo)) completedSteps.push(5);
+  // Step 5 - Medication Schedule (now considers DB medication count)
+  if (hasMedicationSchedule(medInfo, medicationCount)) completedSteps.push(5);
   
-  // Step 6 - Medication (administration details)
-  if (hasMedicationAdministration(formData)) completedSteps.push(6);
+  // Step 6 - Medication Administration (now considers DB medication count)
+  if (hasMedicationAdministration(formData, medicationCount)) completedSteps.push(6);
   
   // Step 7 - Goals
   if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(7);
@@ -289,12 +334,13 @@ export const getCompletedStepIds = (formData: any, isChild: boolean = false): nu
  * 
  * @param formData - The care plan form data
  * @param isChild - Whether the client is a child/young person
+ * @param ctx - Optional context with DB-backed data (e.g., medication count)
  * @returns Completion percentage (0-100)
  */
-export const calculateCompletionPercentage = (formData: any, isChild: boolean = false): number => {
+export const calculateCompletionPercentage = (formData: any, isChild: boolean = false, ctx?: CompletionContext): number => {
   if (!formData) return 0;
   
-  const completedSteps = getCompletedStepIds(formData, isChild);
+  const completedSteps = getCompletedStepIds(formData, isChild, ctx);
   
   // Total countable steps (excluding Review step 21)
   // For children: 20 steps (1-20)

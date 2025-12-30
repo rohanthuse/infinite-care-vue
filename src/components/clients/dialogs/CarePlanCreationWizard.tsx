@@ -12,6 +12,7 @@ import { useCarePlanDraft } from "@/hooks/useCarePlanDraft";
 import { useCarePlanCreation } from "@/hooks/useCarePlanCreation";
 import { useClientProfile } from "@/hooks/useClientData";
 import { fetchCarePlanStaffAssignments } from "@/hooks/useCarePlanStaffAssignments";
+import { useMedicationsByCarePlan } from "@/hooks/useMedications";
 import { toast } from "sonner";
 import { 
   getCompletedStepIds, 
@@ -21,7 +22,8 @@ import {
   hasPersonalInfo,
   hasMedicalInfo,
   hasConsentInfo,
-  hasRiskAssessments
+  hasRiskAssessments,
+  CompletionContext
 } from "@/utils/carePlanCompletionUtils";
 
 const carePlanSchema = z.object({
@@ -282,6 +284,10 @@ export function CarePlanCreationWizard({
 
   // Effective care plan ID for database operations
   const effectiveCarePlanId = savedCarePlanId || carePlanId;
+
+  // Fetch DB medications for the care plan to get accurate completion status
+  const { data: dbMedications } = useMedicationsByCarePlan(effectiveCarePlanId || '');
+  const medicationCount = dbMedications?.length ?? 0;
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
 
@@ -563,7 +569,7 @@ export function CarePlanCreationWizard({
         try {
           // Save undo state before auto-save
           saveUndoState(data);
-          autoSave(data, currentStep);
+          autoSave(data, currentStep, isChild, medicationCount);
         } catch (error) {
           console.error('Auto-save error:', error);
         }
@@ -571,7 +577,7 @@ export function CarePlanCreationWizard({
     });
     
     return () => subscription.unsubscribe();
-  }, [form, autoSave, currentStep, isOpen, clientDataLoaded, isCheckingExistingDraft, saveUndoState]);
+  }, [form, autoSave, currentStep, isOpen, clientDataLoaded, isCheckingExistingDraft, saveUndoState, isChild, medicationCount]);
 
   // Handle undo action
   const handleUndo = () => {
@@ -585,10 +591,12 @@ export function CarePlanCreationWizard({
   };
 
   // Calculate completed steps based on form data using unified utility
+  // Now includes DB medication count for accurate completion status
   const getCompletedSteps = () => {
     try {
       const formData = form.getValues();
-      return getCompletedStepIds(formData, isChild);
+      const ctx: CompletionContext = { medicationCount };
+      return getCompletedStepIds(formData, isChild, ctx);
     } catch (error) {
       console.error('Error calculating completed steps:', error);
       return [];
@@ -647,7 +655,7 @@ export function CarePlanCreationWizard({
     
     try {
       const formData = form.getValues();
-      await saveDraft(formData, currentStep);
+      await saveDraft(formData, currentStep, isChild, medicationCount);
       setStepError(null);
     } catch (error) {
       console.error('Error saving draft:', error);
@@ -666,7 +674,7 @@ export function CarePlanCreationWizard({
       console.log('[handleFinalize] Staff data:', { staff_id: staffId, staff_ids: staffIds });
       
       // First save as draft to get the latest data
-      await saveDraft(formData, currentStep);
+      await saveDraft(formData, currentStep, isChild, medicationCount);
       
       // Set care plan status - always go directly to client approval (no staff approval step)
       const status = 'pending_client_approval';
@@ -711,6 +719,7 @@ export function CarePlanCreationWizard({
   const completedSteps = getCompletedSteps();
   
   // Calculate real-time completion percentage based on completed steps
+  // Includes medicationCount dependency to update when DB meds change
   const completionPercentage = React.useMemo(() => {
     // Exclude the Review step (21) from total count - it's only complete after submission
     const countableSteps = filteredSteps.filter(s => s.id !== 21);
@@ -721,7 +730,7 @@ export function CarePlanCreationWizard({
     const completedCount = completedSteps.filter(stepId => stepId !== 21).length;
     
     return Math.round((completedCount / totalCountableSteps) * 100);
-  }, [completedSteps, filteredSteps]);
+  }, [completedSteps, filteredSteps, medicationCount]);
 
   // Show loading state while client data is being fetched
   const isLoading = isClientLoading || isDraftLoading || !clientDataLoaded;
