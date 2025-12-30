@@ -215,10 +215,10 @@ export const ViewMeetingDialog: React.FC<ViewMeetingDialogProps> = ({
           <div className="space-y-6 py-4">
             {/* Meeting Type and Status */}
             <div className="flex items-center justify-between">
-              <Badge className={getMeetingTypeColor()}>
+              <Badge variant="custom" className={getMeetingTypeColor()}>
                 {meetingType} Meeting
               </Badge>
-              <Badge className={getStatusColor(appointment.status)}>
+              <Badge variant="custom" className={getStatusColor(appointment.status)}>
                 {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
               </Badge>
             </div>
@@ -365,21 +365,6 @@ export const ViewMeetingDialog: React.FC<ViewMeetingDialogProps> = ({
               </>
             )}
 
-            <Separator />
-
-            {/* Meeting Details */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                Meeting Details
-              </div>
-              <div className="pl-6 space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Meeting ID:</span>
-                  <span className="text-sm font-medium font-mono text-xs">{appointment.id}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
