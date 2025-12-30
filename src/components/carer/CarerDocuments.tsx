@@ -99,12 +99,15 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
 
     const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
 
-    // Use the new bypass RLS function to create document record
+    // Use the bypass RLS function to create document record (pass all 7 params explicitly)
     const { data: result, error: docError } = await supabase.rpc('upload_staff_document_bypass_rls', {
       p_staff_id: carerId,
       p_document_type: category,
       p_file_path: filePath,
-      p_file_size: formattedSize
+      p_file_size: formattedSize,
+      p_expiry_date: null,
+      p_file_name: file.name,
+      p_description: null
     });
     
     if (docError) {
