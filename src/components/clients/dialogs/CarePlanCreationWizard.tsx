@@ -718,19 +718,18 @@ export function CarePlanCreationWizard({
   const formData = form.watch();
   const completedSteps = getCompletedSteps();
   
-  // Calculate real-time completion percentage based on completed steps
-  // Includes medicationCount dependency to update when DB meds change
+  // Calculate real-time completion percentage using the unified utility
+  // This ensures the wizard shows the same % as the list view
   const completionPercentage = React.useMemo(() => {
-    // Exclude the Review step (21) from total count - it's only complete after submission
-    const countableSteps = filteredSteps.filter(s => s.id !== 21);
-    const totalCountableSteps = countableSteps.length;
-    if (totalCountableSteps <= 0) return 0;
-    
-    // Count completed steps (excluding Review step 21)
-    const completedCount = completedSteps.filter(stepId => stepId !== 21).length;
-    
-    return Math.round((completedCount / totalCountableSteps) * 100);
-  }, [completedSteps, filteredSteps, medicationCount]);
+    try {
+      const formData = form.getValues();
+      const ctx: CompletionContext = { medicationCount };
+      return calculateCompletionPercentage(formData, isChild, ctx);
+    } catch (error) {
+      console.error('Error calculating completion percentage:', error);
+      return 0;
+    }
+  }, [completedSteps, medicationCount, isChild, form]);
 
   // Show loading state while client data is being fetched
   const isLoading = isClientLoading || isDraftLoading || !clientDataLoaded;

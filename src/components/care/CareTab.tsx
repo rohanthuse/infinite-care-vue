@@ -62,6 +62,7 @@ import { getCarePlanStatusOptions } from "@/utils/statusHelpers";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { calculateCompletionPercentage } from "@/utils/carePlanCompletionUtils";
 import { getNavigationId } from "@/utils/carePlanIdMapping";
 import { ClientSelector } from "./ClientSelector";
 import { CarePlanCreationWizard } from "@/components/clients/dialogs/CarePlanCreationWizard";
@@ -195,6 +196,7 @@ const useCarePlans = (branchId: string | undefined) => {
         console.log('[useCarePlans] Fetching care plans for branch:', branchId);
         
         // Updated query to include both legacy staff relationship AND junction table staff_assignments
+        // Also include medications count for completion calculation
         const { data: carePlans, error } = await supabase
           .from('client_care_plans')
           .select(`
@@ -210,7 +212,8 @@ const useCarePlans = (branchId: string | undefined) => {
               staff_id,
               is_primary,
               staff:staff(id, first_name, last_name)
-            )
+            ),
+            medications:client_medications(id)
           `)
           .eq('client.branch_id', branchId)
           .order('created_at', { ascending: false });
@@ -257,6 +260,20 @@ const useCarePlans = (branchId: string | undefined) => {
             assignedTo = `${assignedStaffList[0]} +${assignedStaffList.length - 1} more`;
           }
 
+          // Compute completion percentage dynamically from auto_save_data
+          // This ensures the list shows the same % as the wizard
+          const autoSaveData = plan.auto_save_data;
+          const medicationCount = Array.isArray(plan.medications) ? plan.medications.length : 0;
+          const isChild = plan.client?.age_group === 'child' || plan.client?.age_group === 'young_person';
+          
+          let computedPercentage = 0;
+          if (autoSaveData && typeof autoSaveData === 'object') {
+            computedPercentage = calculateCompletionPercentage(autoSaveData, isChild, { medicationCount });
+          } else {
+            // Fallback to stored value if auto_save_data is missing
+            computedPercentage = plan.completion_percentage || 0;
+          }
+
           return {
             id: plan.display_id || `CP-${String(index + 1).padStart(3, '0')}`,
             patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
@@ -278,7 +295,7 @@ const useCarePlans = (branchId: string | undefined) => {
             // Store the actual database ID for backend operations and full plan data
             _databaseId: plan.id,
             _fullPlanData: plan,
-            completionPercentage: plan.completion_percentage || 0
+            completionPercentage: computedPercentage
           };
         });
 

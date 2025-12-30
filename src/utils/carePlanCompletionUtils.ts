@@ -63,7 +63,7 @@ export const hasAboutMe = (aboutMe: any): boolean => {
   return hasSpecificFields || hasAnyValue(aboutMe);
 };
 
-// Check if medical info / diagnosis step has meaningful data
+// Check if medical info section has meaningful data (legacy format)
 export const hasMedicalInfo = (medicalInfo: any): boolean => {
   if (!medicalInfo || typeof medicalInfo !== 'object') return false;
   
@@ -93,6 +93,33 @@ export const hasMedicalInfo = (medicalInfo: any): boolean => {
       medicalInfo.service_band.categories.length > 0) return true;
   
   return false;
+};
+
+// Check if diagnosis step has meaningful data (handles both "diagnosis" and legacy "medical_info" paths)
+export const hasDiagnosisInfo = (formData: any): boolean => {
+  // Check new diagnosis path (used by WizardStepDiagnosis)
+  const diagnosis = formData?.diagnosis;
+  if (diagnosis) {
+    // Check for medical conditions
+    if (Array.isArray(diagnosis.medical_conditions) && diagnosis.medical_conditions.length > 0) {
+      return true;
+    }
+    // Check for custom diagnoses
+    if (Array.isArray(diagnosis.custom_diagnoses) && diagnosis.custom_diagnoses.some((d: string) => d?.trim())) {
+      return true;
+    }
+    // Check for impairment flags
+    if (diagnosis.hearing_impaired || diagnosis.visual_impaired || diagnosis.cognitive_impairment) {
+      return true;
+    }
+    // Check for hearing/visual/cognitive details
+    if (diagnosis.hearing_details?.trim() || diagnosis.visual_details?.trim() || diagnosis.cognitive_details?.trim()) {
+      return true;
+    }
+  }
+  
+  // Also check legacy medical_info path for backward compatibility
+  return hasMedicalInfo(formData?.medical_info);
 };
 
 // Check if NEWS2 health monitoring has data
@@ -258,8 +285,8 @@ export const getCompletedStepIds = (formData: any, isChild: boolean = false, ctx
   // Step 2 - About Me
   if (hasAboutMe(formData.about_me)) completedSteps.push(2);
   
-  // Step 3 - Diagnosis / Medical Info
-  if (hasMedicalInfo(medInfo)) completedSteps.push(3);
+  // Step 3 - Diagnosis / Medical Info (checks both diagnosis and medical_info paths)
+  if (hasDiagnosisInfo(formData)) completedSteps.push(3);
   
   // Step 4 - NEWS2 Health Monitoring
   if (hasNews2Monitoring(medInfo)) completedSteps.push(4);
