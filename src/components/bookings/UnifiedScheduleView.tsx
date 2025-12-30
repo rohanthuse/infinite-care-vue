@@ -13,6 +13,7 @@ import {
   calculateDuration, 
   addMinutesToTime,
   extractStaffIdFromDroppableId,
+  extractClientIdFromDroppableId,
   doBookingsOverlap
 } from "./drag-drop/dragDropHelpers";
 import { createBookingDateTime } from "./utils/dateUtils";
@@ -94,11 +95,9 @@ export function UnifiedScheduleView({
     const booking = bookings.find(b => b.id === draggableId);
     if (!booking) return;
 
-    // Extract staff IDs
-    const sourceStaffId = extractStaffIdFromDroppableId(source.droppableId);
-    const destStaffId = extractStaffIdFromDroppableId(destination.droppableId);
-    
-    if (!destStaffId) return;
+    // Determine if this is a staff or client drop
+    const isStaffDrop = destination.droppableId.startsWith('staff-');
+    const isClientDrop = destination.droppableId.startsWith('client-');
 
     // Get droppable element to calculate X position
     const droppableEl = document.querySelector(`[data-rbd-droppable-id="${destination.droppableId}"]`);
@@ -111,32 +110,12 @@ export function UnifiedScheduleView({
     const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
     const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
     
-    console.log('[DragDrop] Debug info:', {
-      mouseX: window._dragDropPointerX,
-      rectLeft: rect.left,
-      rectWidth: rect.width,
-      xPosition,
-      timeInterval,
-      SLOT_WIDTH,
-      slotIndex,
-      calculatedTime: timeInterval === 60 
-        ? `${Math.min(23, Math.max(0, slotIndex)).toString().padStart(2, '0')}:00`
-        : (() => {
-            const totalMinutes = slotIndex * 30;
-            const hours = Math.min(23, Math.floor(totalMinutes / 60));
-            const minutes = totalMinutes % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-          })()
-    });
-    
     // Convert slot index to time
     let newStartTime: string;
     if (timeInterval === 60) {
-      // For 60-minute intervals: slot 0 = 00:00, slot 1 = 01:00, etc.
       const hours = Math.min(23, Math.max(0, slotIndex));
       newStartTime = `${hours.toString().padStart(2, '0')}:00`;
     } else {
-      // For 30-minute intervals: slot 0 = 00:00, slot 1 = 00:30, slot 2 = 01:00, etc.
       const totalMinutes = slotIndex * 30;
       const hours = Math.min(23, Math.floor(totalMinutes / 60));
       const minutes = totalMinutes % 60;
@@ -146,36 +125,75 @@ export function UnifiedScheduleView({
     // Calculate duration and new end time
     const duration = calculateDuration(booking.startTime, booking.endTime);
     const newEndTime = addMinutesToTime(newStartTime, duration);
-    
-    // Get staff name
-    const newStaff = carers.find(c => c.id === destStaffId);
-    if (!newStaff) return;
-
-    // Check for conflicts with other bookings for this staff
     const dateString = format(date, 'yyyy-MM-dd');
-    const conflictingBookings = bookings.filter(b => 
-      b.carerId === destStaffId && 
-      b.id !== booking.id &&
-      b.date === dateString &&
-      doBookingsOverlap(newStartTime, newEndTime, b.startTime, b.endTime)
-    );
 
-    const hasConflict = conflictingBookings.length > 0;
-    const conflictMessage = hasConflict 
-      ? `${newStaff.name} already has ${conflictingBookings.length} booking(s) at this time`
-      : undefined;
+    if (isStaffDrop) {
+      // Staff drop - reassign to different staff and/or time
+      const destStaffId = extractStaffIdFromDroppableId(destination.droppableId);
+      if (!destStaffId) return;
 
-    // Show confirmation dialog
-    setPendingMove({
-      booking,
-      newStaffId: destStaffId,
-      newStaffName: newStaff.name,
-      newStartTime,
-      newEndTime,
-      hasConflict,
-      conflictMessage
-    });
-    setDialogOpen(true);
+      // Get staff name
+      const newStaff = carers.find(c => c.id === destStaffId);
+      if (!newStaff) return;
+
+      // Check for conflicts with other bookings for this staff
+      const conflictingBookings = bookings.filter(b => 
+        b.carerId === destStaffId && 
+        b.id !== booking.id &&
+        b.date === dateString &&
+        doBookingsOverlap(newStartTime, newEndTime, b.startTime, b.endTime)
+      );
+
+      const hasConflict = conflictingBookings.length > 0;
+      const conflictMessage = hasConflict 
+        ? `${newStaff.name} already has ${conflictingBookings.length} booking(s) at this time`
+        : undefined;
+
+      // Show confirmation dialog
+      setPendingMove({
+        booking,
+        newStaffId: destStaffId,
+        newStaffName: newStaff.name,
+        newStartTime,
+        newEndTime,
+        hasConflict,
+        conflictMessage
+      });
+      setDialogOpen(true);
+    } else if (isClientDrop) {
+      // Client drop - reschedule time (keep same staff)
+      const destClientId = extractClientIdFromDroppableId(destination.droppableId);
+      if (!destClientId) return;
+
+      // Get current staff name
+      const currentStaff = carers.find(c => c.id === booking.carerId);
+      const staffName = currentStaff?.name || booking.carerName || 'Unknown';
+
+      // Check for conflicts - same staff at same time
+      const conflictingBookings = bookings.filter(b => 
+        b.carerId === booking.carerId && 
+        b.id !== booking.id &&
+        b.date === dateString &&
+        doBookingsOverlap(newStartTime, newEndTime, b.startTime, b.endTime)
+      );
+
+      const hasConflict = conflictingBookings.length > 0;
+      const conflictMessage = hasConflict 
+        ? `${staffName} already has ${conflictingBookings.length} booking(s) at this time`
+        : undefined;
+
+      // Show confirmation dialog (time change only, keep same staff)
+      setPendingMove({
+        booking,
+        newStaffId: booking.carerId,
+        newStaffName: staffName,
+        newStartTime,
+        newEndTime,
+        hasConflict,
+        conflictMessage
+      });
+      setDialogOpen(true);
+    }
   };
 
   const handleConfirmMove = () => {
@@ -320,6 +338,7 @@ export function UnifiedScheduleView({
             timeInterval={timeInterval}
             selectedBookings={selectedBookings}
             onBookingSelect={handleBookingSelect}
+            enableDragDrop={true}
           />
         </div>
       </div>

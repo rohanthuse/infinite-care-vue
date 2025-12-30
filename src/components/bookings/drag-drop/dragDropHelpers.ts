@@ -81,6 +81,17 @@ export function extractStaffIdFromDroppableId(droppableId: string): string {
 }
 
 /**
+ * Extract client ID from droppable ID
+ * @param droppableId - Droppable ID in format "client-{clientId}"
+ * @returns Client ID or empty string
+ */
+export function extractClientIdFromDroppableId(droppableId: string): string {
+  // Format: "client-{uuid}"
+  const match = droppableId.match(/^client-(.+)$/);
+  return match ? match[1] : '';
+}
+
+/**
  * Extract date from droppable ID (for weekly view)
  * @param droppableId - Droppable ID in format "staff-{staffId}-{date}"
  * @returns Date string or null
