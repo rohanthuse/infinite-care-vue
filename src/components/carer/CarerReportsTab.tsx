@@ -154,12 +154,19 @@ export function CarerReportsTab() {
   });
 
   // Cross-reference with reports to get full report status
+  // Always pick the LATEST report for each booking (by created_at desc)
   const pastAppointmentsWithReportStatus = pastAppointments.map(booking => {
-    const report = reports.find(r => r.booking_id === booking.id);
+    // Filter all reports for this booking and sort by created_at descending
+    const bookingReports = reports
+      .filter(r => r.booking_id === booking.id)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    const latestReport = bookingReports[0] || null;
+    
     return {
       ...booking,
-      has_report: !!report,
-      report: report // Include the full report object
+      has_report: !!latestReport,
+      report: latestReport // Include the latest report object
     };
   });
 

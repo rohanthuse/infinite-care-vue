@@ -1187,12 +1187,36 @@ const CarerVisitWorkflow = () => {
         createdBy: user.id,
       });
 
-      // Step 4: Save service report
-      console.log('Step 4: Creating service report in database...');
+      // Step 4: Upsert service report (update if exists, create if not)
+      console.log('Step 4: Upserting service report in database...');
       setCompletionStep('Saving service report...');
       setCompletionProgress(70);
       
-      await createServiceReport.mutateAsync(serviceReportData);
+      // Check if report already exists for this booking
+      const { data: existingReport } = await supabase
+        .from('client_service_reports')
+        .select('id')
+        .eq('booking_id', currentAppointment.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingReport) {
+        // Update existing report
+        console.log('Updating existing service report:', existingReport.id);
+        const { error: updateError } = await supabase
+          .from('client_service_reports')
+          .update({
+            ...serviceReportData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingReport.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // Create new report
+        await createServiceReport.mutateAsync(serviceReportData);
+      }
 
       // Step 5: Update booking status
       console.log('Step 5: Updating booking status to completed...');
