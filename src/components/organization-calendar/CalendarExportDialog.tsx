@@ -55,15 +55,23 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
     return !isAfter(startDate, endDate);
   }, [startDate, endDate]);
 
-  // Filter events based on date range
+  // Filter events based on date range AND deduplicate by event ID
   const filteredEvents = useMemo(() => {
     if (!startDate || !endDate || !isValidRange) return [];
-    return events.filter(event => 
+    
+    const eventsInRange = events.filter(event => 
       isWithinInterval(event.startTime, { 
         start: startOfDay(startDate), 
         end: endOfDay(endDate) 
       })
     );
+    
+    // Deduplicate by event ID - each event appears only once
+    const uniqueEvents = eventsInRange.filter((event, index, self) => 
+      index === self.findIndex(e => e.id === event.id)
+    );
+    
+    return uniqueEvents;
   }, [events, startDate, endDate, isValidRange]);
 
   const handleExport = async () => {
@@ -72,22 +80,18 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
     setIsExporting(true);
     
     try {
-      // Prepare export data with separate columns for Date, Start Time, End Time
+      // Prepare export data with combined Date & Time column
       const exportData = filteredEvents.map(event => ({
-        Date: format(event.startTime, 'dd/MM/yyyy'),
-        Start: format(event.startTime, 'HH:mm'),
-        End: format(event.endTime, 'HH:mm'),
+        'Date & Time': `${format(event.startTime, 'dd/MM/yyyy')} | ${format(event.startTime, 'HH:mm')} - ${format(event.endTime, 'HH:mm')}`,
         Client: event.title || '-',
         Carer: event.participants?.map(p => p.name).join(', ') || 'Not assigned',
         Type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         Status: event.status?.charAt(0).toUpperCase() + (event.status?.slice(1) || ''),
       }));
 
-      // Core columns - always included
+      // Core columns - 5 columns with combined Date & Time
       const columns = [
-        'Date',
-        'Start',
-        'End',
+        'Date & Time',
         'Client',
         'Carer', 
         'Type',
