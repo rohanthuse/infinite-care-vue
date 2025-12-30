@@ -137,10 +137,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
     }
   };
 
-  // Handle select all
+  // Handle select all (exclude Care Plan documents)
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedDocumentIds(documents.map(doc => doc.id));
+      setSelectedDocumentIds(documents.filter(doc => doc.source !== 'care_plan').map(doc => doc.id));
     } else {
       setSelectedDocumentIds([]);
     }
@@ -169,7 +169,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
     }
   };
 
-  const allSelected = documents.length > 0 && selectedDocumentIds.length === documents.length;
+  // Only count selectable documents (exclude Care Plan documents)
+  const selectableDocuments = documents.filter(doc => doc.source !== 'care_plan');
+  const allSelected = selectableDocuments.length > 0 && selectedDocumentIds.length === selectableDocuments.length;
 
   const getDocIcon = (type: string) => {
     switch(type.toLowerCase()) {
@@ -217,17 +219,19 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
             </div>
           ) : (
             <>
-              {/* Select All Row */}
-              <div className="flex items-center gap-3 py-2 px-2 bg-muted rounded-md mb-2">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={handleSelectAll}
-                  aria-label="Select all documents"
-                />
-                <span className="text-sm font-medium text-foreground">
-                  Select All ({documents.length} document{documents.length > 1 ? 's' : ''})
-                </span>
-              </div>
+              {/* Select All Row - only for non-Care Plan documents */}
+              {selectableDocuments.length > 0 && (
+                <div className="flex items-center gap-3 py-2 px-2 bg-muted rounded-md mb-2">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all documents"
+                  />
+                  <span className="text-sm font-medium text-foreground">
+                    Select All ({selectableDocuments.length} document{selectableDocuments.length !== 1 ? 's' : ''})
+                  </span>
+                </div>
+              )}
               
               {/* Document List */}
               <div className="divide-y">
@@ -246,6 +250,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
                           checked={isSelected}
                           onCheckedChange={(checked) => handleSelectDocument(doc.id, checked as boolean)}
                           aria-label={`Select ${doc.name}`}
+                          disabled={doc.source === 'care_plan'}
                         />
                         <div className="p-2 bg-muted rounded-md">
                           {getDocIcon(doc.type)}
@@ -293,7 +298,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        {canManageDocuments && (
+                        {canManageDocuments && doc.source !== 'care_plan' && (
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               variant="outline"
