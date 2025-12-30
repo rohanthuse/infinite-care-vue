@@ -32,7 +32,7 @@ export function ClientsManagementSection({
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [postCodeSearch, setPostCodeSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("Active");
   const [regionFilter, setRegionFilter] = useState("all");
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
