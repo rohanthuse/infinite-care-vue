@@ -20,6 +20,7 @@ interface Medication {
   instruction?: string;
   warning?: string;
   side_effect?: string;
+  time_of_day?: string[];
 }
 
 interface MedicationDetailsDialogProps {
@@ -27,6 +28,13 @@ interface MedicationDetailsDialogProps {
   onClose: () => void;
   medication: Medication | null;
 }
+
+const TIME_OF_DAY_LABELS: Record<string, string> = {
+  morning: "Morning (6 AM - 12 PM)",
+  afternoon: "Afternoon (12 PM - 5 PM)",
+  evening: "Evening (5 PM - 9 PM)",
+  night: "Night (9 PM - 6 AM)"
+};
 
 export function MedicationDetailsDialog({ isOpen, onClose, medication }: MedicationDetailsDialogProps) {
   if (!medication) return null;
@@ -72,19 +80,19 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Name</label>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
                 <p className="font-semibold">{medication.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Dosage</label>
+                <label className="text-sm font-medium text-muted-foreground">Dosage</label>
                 <p>{medication.dosage}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Shape</label>
+                <label className="text-sm font-medium text-muted-foreground">Shape</label>
                 <p>{medication.shape || "—"}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Route</label>
+                <label className="text-sm font-medium text-muted-foreground">Route</label>
                 <p>{medication.route || "—"}</p>
               </div>
             </div>
@@ -92,11 +100,11 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
             {/* Administration */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Who Administers</label>
+                <label className="text-sm font-medium text-muted-foreground">Who Administers</label>
                 <p>{medication.who_administers || "—"}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Level</label>
+                <label className="text-sm font-medium text-muted-foreground">Level</label>
                 <p>{medication.level || "—"}</p>
               </div>
             </div>
@@ -104,22 +112,36 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
             {/* Schedule */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Frequency</label>
+                <label className="text-sm font-medium text-muted-foreground">Frequency</label>
                 <p>{formatFrequency(medication.frequency)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Start Date</label>
+                <label className="text-sm font-medium text-muted-foreground">Start Date</label>
                 <p>{formatDate(medication.start_date)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">End Date</label>
+                <label className="text-sm font-medium text-muted-foreground">End Date</label>
                 <p>{medication.end_date ? formatDate(medication.end_date) : "—"}</p>
               </div>
             </div>
 
+            {/* Time of Day */}
+            {medication.time_of_day && medication.time_of_day.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Time of Day</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {medication.time_of_day.map(time => (
+                    <Badge key={time} variant="secondary">
+                      {TIME_OF_DAY_LABELS[time] || time}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Status */}
             <div>
-              <label className="text-sm font-medium text-gray-600">Status</label>
+              <label className="text-sm font-medium text-muted-foreground">Status</label>
               <div className="mt-1">
                 <Badge variant={medication.status === "active" ? "default" : "secondary"}>
                   {medication.status || "active"}
@@ -134,22 +156,22 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
                 
                 {medication.instruction && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Instructions</label>
-                    <p className="text-sm bg-gray-50 p-3 rounded-md">{medication.instruction}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Instructions</label>
+                    <p className="text-sm bg-muted p-3 rounded-md">{medication.instruction}</p>
                   </div>
                 )}
                 
                 {medication.warning && (
                   <div>
                     <label className="text-sm font-medium text-amber-600">Warnings</label>
-                    <p className="text-sm bg-amber-50 p-3 rounded-md text-amber-800">{medication.warning}</p>
+                    <p className="text-sm bg-amber-50 dark:bg-amber-950 p-3 rounded-md text-amber-800 dark:text-amber-200">{medication.warning}</p>
                   </div>
                 )}
                 
                 {medication.side_effect && (
                   <div>
                     <label className="text-sm font-medium text-red-600">Side Effects</label>
-                    <p className="text-sm bg-red-50 p-3 rounded-md text-red-800">{medication.side_effect}</p>
+                    <p className="text-sm bg-red-50 dark:bg-red-950 p-3 rounded-md text-red-800 dark:text-red-200">{medication.side_effect}</p>
                   </div>
                 )}
               </div>

@@ -3337,12 +3337,19 @@ export type Database = {
           end_date: string | null
           frequency: string
           id: string
+          instruction: string | null
+          level: string | null
           name: string
           notes: string | null
+          route: string | null
+          shape: string | null
+          side_effect: string | null
           start_date: string
           status: string
           time_of_day: string[] | null
           updated_at: string
+          warning: string | null
+          who_administers: string | null
         }
         Insert: {
           care_plan_id: string
@@ -3352,12 +3359,19 @@ export type Database = {
           end_date?: string | null
           frequency: string
           id?: string
+          instruction?: string | null
+          level?: string | null
           name: string
           notes?: string | null
+          route?: string | null
+          shape?: string | null
+          side_effect?: string | null
           start_date: string
           status?: string
           time_of_day?: string[] | null
           updated_at?: string
+          warning?: string | null
+          who_administers?: string | null
         }
         Update: {
           care_plan_id?: string
@@ -3367,12 +3381,19 @@ export type Database = {
           end_date?: string | null
           frequency?: string
           id?: string
+          instruction?: string | null
+          level?: string | null
           name?: string
           notes?: string | null
+          route?: string | null
+          shape?: string | null
+          side_effect?: string | null
           start_date?: string
           status?: string
           time_of_day?: string[] | null
           updated_at?: string
+          warning?: string | null
+          who_administers?: string | null
         }
         Relationships: [
           {

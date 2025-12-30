@@ -14,6 +14,13 @@ export interface Medication {
   end_date?: string;
   status: string;
   notes?: string;
+  shape?: string | null;
+  route?: string | null;
+  who_administers?: string | null;
+  level?: string | null;
+  instruction?: string | null;
+  warning?: string | null;
+  side_effect?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -35,9 +42,16 @@ export interface MedicationFormData {
   frequency: string;
   time_of_day?: string[] | null;
   start_date: string;
-  end_date?: string;
+  end_date?: string | null;
   status?: string;
   notes?: string;
+  shape?: string | null;
+  route?: string | null;
+  who_administers?: string | null;
+  level?: string | null;
+  instruction?: string | null;
+  warning?: string | null;
+  side_effect?: string | null;
   created_by?: string;
 }
 
