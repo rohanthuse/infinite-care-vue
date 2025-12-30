@@ -368,7 +368,6 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
         time_from: rateBlock.effectiveFrom || null,
         time_until: rateBlock.effectiveUntil || null,
         branch_id: branchId,
-        organization_id: organizationId,
         created_by: user.id,
       };
 
