@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { VisitBillingCalculator } from "@/utils/visitBillingCalculator";
 import type { Visit } from "@/types/clientAccounting";
 import { fetchClientBillingConfig, type ClientBillingConfig } from "./useClientBillingConfig";
@@ -19,6 +19,13 @@ interface ExtraTimeRecord {
   reason?: string;
 }
 
+interface TravelRate {
+  id: string;
+  rate_per_mile: number;
+  rate_per_hour: number;
+  title: string;
+}
+
 export interface BulkGenerationResult {
   successCount: number;
   errorCount: number;
@@ -36,6 +43,7 @@ export interface BulkGenerationResult {
     amount: number;
     lineItemCount: number;
     extraTimeCount?: number;
+    travelCost?: number;
   }>;
   message?: string;
 }
@@ -46,6 +54,98 @@ export interface PeriodDetails {
   endDate: string;
   label: string;
 }
+
+// Helper function to group bookings by invoice method
+const groupBookingsByInvoiceMethod = (
+  bookings: any[],
+  invoiceMethod: string | null
+): Map<string, any[]> => {
+  const groups = new Map<string, any[]>();
+  
+  if (!invoiceMethod || invoiceMethod === 'per_visit') {
+    // Group all bookings together for single invoice
+    groups.set('all', bookings);
+    return groups;
+  }
+  
+  for (const booking of bookings) {
+    const bookingDate = parseISO(booking.start_time.split('T')[0]);
+    let groupKey: string;
+    
+    if (invoiceMethod === 'weekly') {
+      // Group by ISO week
+      const weekStart = startOfWeek(bookingDate, { weekStartsOn: 1 }); // Monday
+      groupKey = format(weekStart, 'yyyy-\'W\'ww');
+    } else if (invoiceMethod === 'monthly') {
+      // Group by month
+      groupKey = format(bookingDate, 'yyyy-MM');
+    } else {
+      // Default: single group
+      groupKey = 'all';
+    }
+    
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, []);
+    }
+    groups.get(groupKey)!.push(booking);
+  }
+  
+  return groups;
+};
+
+// Helper to get period description for grouped invoices
+const getPeriodDescription = (
+  groupKey: string,
+  invoiceMethod: string | null,
+  bookings: any[]
+): { startDate: string; endDate: string; description: string } => {
+  if (!invoiceMethod || invoiceMethod === 'per_visit' || groupKey === 'all') {
+    const dates = bookings.map(b => new Date(b.start_time).getTime());
+    return {
+      startDate: format(new Date(Math.min(...dates)), 'yyyy-MM-dd'),
+      endDate: format(new Date(Math.max(...dates)), 'yyyy-MM-dd'),
+      description: 'Service Invoice'
+    };
+  }
+  
+  if (invoiceMethod === 'weekly') {
+    const dates = bookings.map(b => new Date(b.start_time).getTime());
+    const firstDate = new Date(Math.min(...dates));
+    const weekStart = startOfWeek(firstDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(firstDate, { weekStartsOn: 1 });
+    return {
+      startDate: format(weekStart, 'yyyy-MM-dd'),
+      endDate: format(weekEnd, 'yyyy-MM-dd'),
+      description: `Weekly Invoice (${format(weekStart, 'dd MMM')} - ${format(weekEnd, 'dd MMM yyyy')})`
+    };
+  }
+  
+  if (invoiceMethod === 'monthly') {
+    const [year, month] = groupKey.split('-');
+    const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return {
+      startDate: format(startOfMonth(monthDate), 'yyyy-MM-dd'),
+      endDate: format(endOfMonth(monthDate), 'yyyy-MM-dd'),
+      description: `Monthly Invoice (${format(monthDate, 'MMMM yyyy')})`
+    };
+  }
+  
+  return { startDate: '', endDate: '', description: 'Service Invoice' };
+};
+
+// Fetch travel rate details
+const fetchTravelRate = async (travelRateId: string | null): Promise<TravelRate | null> => {
+  if (!travelRateId) return null;
+  
+  const { data, error } = await supabase
+    .from('travel_rates')
+    .select('id, rate_per_mile, rate_per_hour, title')
+    .eq('id', travelRateId)
+    .maybeSingle();
+  
+  if (error || !data) return null;
+  return data as TravelRate;
+};
 
 const generateUniqueInvoiceNumber = async (organizationId: string): Promise<string> => {
   const prefix = `INV-${format(new Date(), 'yyyy-MM')}`;
@@ -182,13 +282,15 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Processing client: ${clientData.clientName} (${clientData.bookings.length} bookings)`);
 
-        // 4a. Fetch client billing configuration (NEW: integrates accounting settings)
+        // 4a. Fetch client billing configuration (integrates accounting settings)
         const billingConfig = await fetchClientBillingConfig(clientId);
         console.log(`[BulkInvoiceGeneration] Client ${clientData.clientName} billing config:`, {
           useActualTime: billingConfig.useActualTime,
           creditPeriodDays: billingConfig.creditPeriodDays,
           billToType: billingConfig.billToType,
-          extraTimeEnabled: billingConfig.extraTimeEnabled
+          extraTimeEnabled: billingConfig.extraTimeEnabled,
+          invoiceMethod: billingConfig.invoiceMethod,
+          mileageRuleNoPayment: billingConfig.mileageRuleNoPayment
         });
 
         // Get extra time records for this client
@@ -248,46 +350,33 @@ export const useBulkInvoiceGeneration = () => {
                 id: assignment.id,
                 client_id: assignment.client_id,
                 authority_id: assignment.authority_id,
-                // Required date range fields
                 start_date: assignment.start_date || assignment.service_rate?.effective_from || '2000-01-01',
                 end_date: assignment.end_date || assignment.service_rate?.effective_to || null,
-                // Required days_covered - default to all days if not specified
                 days_covered: assignment.service_rate?.applicable_days || 
                               ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'bank_holiday'],
-                // Required time range - default to full day if not specified
                 time_from: assignment.service_rate?.time_from || '00:00:00',
                 time_until: assignment.service_rate?.time_until || '23:59:59',
-                // Required base_rate for billing calculation
                 base_rate: assignment.service_rate?.amount || 
                            assignment.service_rate?.hourly_rate || 
                            assignment.service_rate?.rate_per_unit || 0,
-                // Required charge_type for rate calculation logic
                 charge_type: assignment.service_rate?.charge_type || 'rate_per_minutes_pro_rata',
-                // Flat rate tiers (optional)
                 rate_15_minutes: assignment.service_rate?.rate_15_minutes,
                 rate_30_minutes: assignment.service_rate?.rate_30_minutes,
                 rate_45_minutes: assignment.service_rate?.rate_45_minutes,
                 rate_60_minutes: assignment.service_rate?.rate_60_minutes,
-                // Status and multipliers
                 is_active: assignment.is_active ?? true,
-                // Use database is_vatable column, fallback to service_type check for legacy data
                 is_vatable: assignment.service_rate?.is_vatable ?? 
                             (assignment.service_rate?.service_type === 'vatable' ? true : false),
                 bank_holiday_multiplier: assignment.service_rate?.bank_holiday_multiplier || 1.5,
-                // Legacy fields for compatibility
                 service_id: assignment.service_rate_id,
                 description: assignment.service_rate?.name || assignment.service_rate?.description || 'Service Rate'
               };
               
-              // Enhanced logging for rate details
               console.log(`[BulkInvoiceGeneration] Rate assignment for ${clientData.clientName}:`, {
                 rateId: assignment.id,
-                rateAuthorityId: assignment.authority_id,
-                clientAuthorityId: preferredAuthorityId,
                 chargeType: schedule.charge_type,
                 baseRate: schedule.base_rate,
-                isVatable: schedule.is_vatable,
-                daysCovered: schedule.days_covered
+                isVatable: schedule.is_vatable
               });
               
               return schedule;
@@ -311,195 +400,257 @@ export const useBulkInvoiceGeneration = () => {
 
         console.log(`[BulkInvoiceGeneration] Using ${typedRateSchedules.length} rate schedule(s) for: ${clientData.clientName}`);
 
-        // 4c. Convert bookings to Visit format for calculator
-        const visits: Visit[] = await Promise.all(
-          clientData.bookings.map(async (booking) => ({
-            id: booking.id,
-            client_id: clientId,
-            date: format(new Date(booking.start_time), 'yyyy-MM-dd'),
-            planned_start: format(new Date(booking.start_time), 'HH:mm:ss'),
-            planned_end: format(new Date(booking.end_time), 'HH:mm:ss'),
-            actual_start: booking.actual_start_time 
-              ? format(new Date(booking.actual_start_time), 'HH:mm:ss') 
-              : undefined,
-            actual_end: booking.actual_end_time 
-              ? format(new Date(booking.actual_end_time), 'HH:mm:ss') 
-              : undefined,
-            is_bank_holiday: await checkIfBankHoliday(booking.start_time)
-          }))
-        );
+        // 4c. Fetch travel rate if configured and mileage payment is enabled
+        let travelRate: TravelRate | null = null;
+        if (!billingConfig.mileageRuleNoPayment) {
+          const travelRateId = billingConfig.billToType === 'authority' 
+            ? billingConfig.authorityTravelRateId 
+            : billingConfig.privateTravelRateId;
+          travelRate = await fetchTravelRate(travelRateId);
+          if (travelRate) {
+            console.log(`[BulkInvoiceGeneration] Client has travel rate: ${travelRate.title} (£${travelRate.rate_per_mile}/mile)`);
+          }
+        }
 
-        // 4d. Calculate using VisitBillingCalculator with correct time basis from config
-        const calculator = new VisitBillingCalculator(typedRateSchedules, billingConfig.useActualTime);
-        const billingSummary = calculator.calculateVisitsBilling(visits);
+        // 4d. Group bookings by invoice method (per_visit, weekly, monthly)
+        const invoiceMethod = billingConfig.invoiceMethod || 'per_visit';
+        const bookingGroups = groupBookingsByInvoiceMethod(clientData.bookings, invoiceMethod);
+        console.log(`[BulkInvoiceGeneration] Grouped ${clientData.bookings.length} bookings into ${bookingGroups.size} invoice(s) (method: ${invoiceMethod})`);
 
-        // 4e. Calculate total booked time from all scheduled booking times
-        const totalBookedMinutes = clientData.bookings.reduce((sum, booking) => {
-          const duration = Math.round(
-            (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
+        // 4e. Process each booking group as a separate invoice
+        for (const [groupKey, groupBookings] of bookingGroups) {
+          const groupPeriod = getPeriodDescription(groupKey, invoiceMethod, groupBookings);
+          
+          // Convert bookings to Visit format for calculator
+          const visits: Visit[] = await Promise.all(
+            groupBookings.map(async (booking) => ({
+              id: booking.id,
+              client_id: clientId,
+              date: format(new Date(booking.start_time), 'yyyy-MM-dd'),
+              planned_start: format(new Date(booking.start_time), 'HH:mm:ss'),
+              planned_end: format(new Date(booking.end_time), 'HH:mm:ss'),
+              actual_start: booking.actual_start_time 
+                ? format(new Date(booking.actual_start_time), 'HH:mm:ss') 
+                : undefined,
+              actual_end: booking.actual_end_time 
+                ? format(new Date(booking.actual_end_time), 'HH:mm:ss') 
+                : undefined,
+              is_bank_holiday: await checkIfBankHoliday(booking.start_time)
+            }))
           );
-          return sum + duration;
-        }, 0);
 
-        // 4f. Add extra time costs only if enabled in client settings
-        const extraTimeCost = billingConfig.extraTimeEnabled 
-          ? clientExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0)
-          : 0;
-        const totalWithExtraTime = billingSummary.total_amount + extraTimeCost;
+          // Calculate using VisitBillingCalculator with correct time basis from config
+          const calculator = new VisitBillingCalculator(typedRateSchedules, billingConfig.useActualTime);
+          const billingSummary = calculator.calculateVisitsBilling(visits);
 
-        console.log(`[BulkInvoiceGeneration] Calculated billing for ${clientData.clientName}:`, {
-          net: billingSummary.net_amount,
-          vat: billingSummary.vat_amount,
-          total: billingSummary.total_amount,
-          extraTimeCost,
-          extraTimeEnabled: billingConfig.extraTimeEnabled,
-          totalWithExtraTime,
-          lineItems: billingSummary.line_items.length
-        });
+          // Calculate total booked time from all scheduled booking times
+          const totalBookedMinutes = groupBookings.reduce((sum, booking) => {
+            const duration = Math.round(
+              (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
+            );
+            return sum + duration;
+          }, 0);
 
-        // Validation: Skip client if no billable line items were generated (prevents £0.00 invoices)
-        if (billingSummary.line_items.length === 0) {
-          console.warn(`[BulkInvoiceGeneration] No billable line items for ${clientData.clientName} - rate matching failed`);
-          results.errors.push({
-            clientId,
-            clientName: clientData.clientName,
-            reason: 'Could not calculate billing - no matching rate found for bookings. Check that rates cover the booking dates, times, and days of week.',
-            bookingCount: clientData.bookings.length
+          // Calculate travel costs if travel rate is configured
+          let travelCost = 0;
+          if (travelRate) {
+            // Sum up travel distances from bookings (if available)
+            const totalMiles = groupBookings.reduce((sum, booking) => {
+              return sum + (booking.travel_distance_miles || 0);
+            }, 0);
+            const totalTravelHours = groupBookings.reduce((sum, booking) => {
+              return sum + (booking.travel_duration_hours || 0);
+            }, 0);
+            travelCost = (totalMiles * travelRate.rate_per_mile) + (totalTravelHours * travelRate.rate_per_hour);
+          }
+
+          // Filter extra time for this group's date range
+          const groupExtraTime = clientExtraTime.filter(et => {
+            const etDate = et.work_date;
+            return etDate >= groupPeriod.startDate && etDate <= groupPeriod.endDate;
           });
-          results.errorCount++;
-          processedClients++;
-          continue;
-        }
 
-        // 4g. Generate unique invoice number
-        const invoiceNumber = await generateUniqueInvoiceNumber(organizationId);
+          // Add extra time costs only if enabled in client settings
+          const extraTimeCost = billingConfig.extraTimeEnabled 
+            ? groupExtraTime.reduce((sum, et) => sum + (et.total_cost || 0), 0)
+            : 0;
+          
+          const totalWithExtras = billingSummary.total_amount + extraTimeCost + travelCost;
 
-        // 4h. Calculate due date based on credit period from client settings
-        const dueDate = new Date(Date.now() + billingConfig.creditPeriodDays * 24 * 60 * 60 * 1000);
+          console.log(`[BulkInvoiceGeneration] Calculated billing for ${clientData.clientName} (${groupKey}):`, {
+            net: billingSummary.net_amount,
+            vat: billingSummary.vat_amount,
+            total: billingSummary.total_amount,
+            extraTimeCost,
+            travelCost,
+            totalWithExtras,
+            lineItems: billingSummary.line_items.length
+          });
 
-        // 4i. Build description with authority reference if applicable
-        let description = `${periodDetails.type.charAt(0).toUpperCase() + periodDetails.type.slice(1)} Invoice (${periodDetails.startDate} to ${periodDetails.endDate})`;
-        if (billingConfig.billToType === 'authority' && billingConfig.authorityReferenceNumber) {
-          description = `${description} - Ref: ${billingConfig.authorityReferenceNumber}`;
-        }
+          // Validation: Skip if no billable line items were generated
+          if (billingSummary.line_items.length === 0) {
+            console.warn(`[BulkInvoiceGeneration] No billable line items for ${clientData.clientName} (${groupKey}) - rate matching failed`);
+            results.errors.push({
+              clientId,
+              clientName: clientData.clientName,
+              reason: `Could not calculate billing for ${groupKey} - no matching rate found for bookings.`,
+              bookingCount: groupBookings.length
+            });
+            results.errorCount++;
+            continue;
+          }
 
-        // 4j. Create invoice with correct settings from client config
-        const { data: invoice, error: invoiceError } = await supabase
-          .from('client_billing')
-          .insert({
-            client_id: clientId,
-            organization_id: organizationId,
-            invoice_number: invoiceNumber,
-            description,
-            amount: billingSummary.net_amount + extraTimeCost,
-            net_amount: billingSummary.net_amount + extraTimeCost,
-            vat_amount: billingSummary.vat_amount,
-            total_amount: totalWithExtraTime + billingSummary.vat_amount,
-            invoice_date: new Date().toISOString().split('T')[0],
-            due_date: dueDate.toISOString().split('T')[0],
-            status: 'pending',
-            start_date: periodDetails.startDate,
-            end_date: periodDetails.endDate,
-            invoice_type: 'automatic',
-            invoice_method: billingConfig.invoiceMethod || periodDetails.type,
-            bill_to_type: billingConfig.billToType,
-            authority_id: billingConfig.billToType === 'authority' ? billingConfig.authorityId : null,
-            booked_time_minutes: totalBookedMinutes,
-            generated_from_booking: true
-          })
-          .select()
-          .single();
+          // Generate unique invoice number
+          const invoiceNumber = await generateUniqueInvoiceNumber(organizationId);
 
-        if (invoiceError) throw invoiceError;
+          // Calculate due date based on credit period from client settings
+          const dueDate = new Date(Date.now() + billingConfig.creditPeriodDays * 24 * 60 * 60 * 1000);
 
-        console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName} (bill_to: ${billingConfig.billToType}, due in ${billingConfig.creditPeriodDays} days)`);
+          // Build description with authority reference if applicable
+          let description = groupPeriod.description;
+          if (billingConfig.billToType === 'authority' && billingConfig.authorityReferenceNumber) {
+            description = `${description} - Ref: ${billingConfig.authorityReferenceNumber}`;
+          }
 
-        // 4k. Create line items for bookings (VAT stored at invoice level, not per line item)
-        const lineItemsData = billingSummary.line_items.map(item => ({
-          invoice_id: invoice.id,
-          organization_id: organizationId,
-          booking_id: item.visit_id,
-          description: item.description,
-          visit_date: item.date,
-          duration_minutes: item.billing_duration_minutes,
-          rate_type_applied: item.rate_type,
-          rate_per_unit: item.unit_rate,
-          unit_price: item.unit_rate,
-          quantity: item.billing_duration_minutes / 60,
-          line_total: item.line_total,
-          bank_holiday_multiplier_applied: item.multiplier,
-          day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday'
-        }));
+          // Create invoice with correct settings from client config
+          const { data: invoice, error: invoiceError } = await supabase
+            .from('client_billing')
+            .insert({
+              client_id: clientId,
+              organization_id: organizationId,
+              invoice_number: invoiceNumber,
+              description,
+              amount: billingSummary.net_amount + extraTimeCost + travelCost,
+              net_amount: billingSummary.net_amount + extraTimeCost + travelCost,
+              vat_amount: billingSummary.vat_amount,
+              total_amount: totalWithExtras + billingSummary.vat_amount,
+              invoice_date: new Date().toISOString().split('T')[0],
+              due_date: dueDate.toISOString().split('T')[0],
+              status: 'pending',
+              start_date: groupPeriod.startDate,
+              end_date: groupPeriod.endDate,
+              invoice_type: 'automatic',
+              invoice_method: invoiceMethod,
+              bill_to_type: billingConfig.billToType,
+              authority_id: billingConfig.billToType === 'authority' ? billingConfig.authorityId : null,
+              booked_time_minutes: totalBookedMinutes,
+              generated_from_booking: true
+            })
+            .select()
+            .single();
 
-        const { error: lineItemsError } = await supabase
-          .from('invoice_line_items')
-          .insert(lineItemsData);
+          if (invoiceError) throw invoiceError;
 
-        if (lineItemsError) throw lineItemsError;
+          console.log(`[BulkInvoiceGeneration] Created invoice ${invoiceNumber} for ${clientData.clientName} (${groupKey})`);
 
-        // 4l. Add extra time as line items (only if enabled)
-        if (billingConfig.extraTimeEnabled && clientExtraTime.length > 0) {
-          const extraTimeLineItems = clientExtraTime.map(et => ({
+          // Create line items for bookings
+          const lineItemsData = billingSummary.line_items.map(item => ({
             invoice_id: invoice.id,
             organization_id: organizationId,
-            description: `Extra Time: ${et.reason || 'Additional work time'}`,
-            visit_date: et.work_date,
-            duration_minutes: et.extra_time_minutes,
-            rate_type_applied: 'extra_time',
-            rate_per_unit: et.total_cost / (et.extra_time_minutes / 60),
-            unit_price: et.total_cost / (et.extra_time_minutes / 60),
-            quantity: et.extra_time_minutes / 60,
-            line_total: et.total_cost,
-            day_type: 'extra_time'
+            booking_id: item.visit_id,
+            description: item.description,
+            visit_date: item.date,
+            duration_minutes: item.billing_duration_minutes,
+            rate_type_applied: item.rate_type,
+            rate_per_unit: item.unit_rate,
+            unit_price: item.unit_rate,
+            quantity: item.billing_duration_minutes / 60,
+            line_total: item.line_total,
+            bank_holiday_multiplier_applied: item.multiplier,
+            day_type: item.is_bank_holiday ? 'bank_holiday' : 'weekday'
           }));
 
-          const { error: extraTimeLineError } = await supabase
+          const { error: lineItemsError } = await supabase
             .from('invoice_line_items')
-            .insert(extraTimeLineItems);
+            .insert(lineItemsData);
 
-          if (extraTimeLineError) {
-            console.error('[BulkInvoiceGeneration] Error adding extra time line items:', extraTimeLineError);
+          if (lineItemsError) throw lineItemsError;
+
+          // Add travel cost as line item if applicable
+          if (travelCost > 0 && travelRate) {
+            const { error: travelLineError } = await supabase
+              .from('invoice_line_items')
+              .insert({
+                invoice_id: invoice.id,
+                organization_id: organizationId,
+                description: `Travel: ${travelRate.title}`,
+                rate_type_applied: 'travel',
+                line_total: travelCost,
+                quantity: 1,
+                unit_price: travelCost,
+                day_type: 'travel'
+              });
+
+            if (travelLineError) {
+              console.error('[BulkInvoiceGeneration] Error adding travel line item:', travelLineError);
+            }
           }
 
-          // Mark extra time records as invoiced
-          const extraTimeIds = clientExtraTime.map(et => et.id);
-          const { error: markInvoicedError } = await supabase
-            .from('extra_time_records')
-            .update({ invoiced: true, invoice_id: invoice.id })
-            .in('id', extraTimeIds);
+          // Add extra time as line items (only if enabled)
+          if (billingConfig.extraTimeEnabled && groupExtraTime.length > 0) {
+            const extraTimeLineItems = groupExtraTime.map(et => ({
+              invoice_id: invoice.id,
+              organization_id: organizationId,
+              description: `Extra Time: ${et.reason || 'Additional work time'}`,
+              visit_date: et.work_date,
+              duration_minutes: et.extra_time_minutes,
+              rate_type_applied: 'extra_time',
+              rate_per_unit: et.total_cost / (et.extra_time_minutes / 60),
+              unit_price: et.total_cost / (et.extra_time_minutes / 60),
+              quantity: et.extra_time_minutes / 60,
+              line_total: et.total_cost,
+              day_type: 'extra_time'
+            }));
 
-          if (markInvoicedError) {
-            console.error('[BulkInvoiceGeneration] Error marking extra time as invoiced:', markInvoicedError);
+            const { error: extraTimeLineError } = await supabase
+              .from('invoice_line_items')
+              .insert(extraTimeLineItems);
+
+            if (extraTimeLineError) {
+              console.error('[BulkInvoiceGeneration] Error adding extra time line items:', extraTimeLineError);
+            }
+
+            // Mark extra time records as invoiced
+            const extraTimeIds = groupExtraTime.map(et => et.id);
+            const { error: markInvoicedError } = await supabase
+              .from('extra_time_records')
+              .update({ invoiced: true, invoice_id: invoice.id })
+              .in('id', extraTimeIds);
+
+            if (markInvoicedError) {
+              console.error('[BulkInvoiceGeneration] Error marking extra time as invoiced:', markInvoicedError);
+            }
           }
+
+          // Mark bookings as invoiced
+          const bookingIds = groupBookings.map(b => b.id);
+          if (bookingIds.length > 0) {
+            const { error: bookingUpdateError } = await supabase
+              .from('bookings')
+              .update({ 
+                is_invoiced: true, 
+                included_in_invoice_id: invoice.id 
+              })
+              .in('id', bookingIds);
+
+            if (bookingUpdateError) {
+              console.error(`[BulkInvoiceGeneration] Error marking bookings as invoiced:`, bookingUpdateError);
+            }
+          }
+
+          // Success for this group!
+          results.successCount++;
+          results.totalAmount += totalWithExtras + billingSummary.vat_amount;
+          results.invoices.push({
+            clientId,
+            clientName: clientData.clientName,
+            invoiceNumber,
+            amount: totalWithExtras + billingSummary.vat_amount,
+            lineItemCount: lineItemsData.length,
+            extraTimeCount: billingConfig.extraTimeEnabled ? groupExtraTime.length : 0,
+            travelCost: travelCost > 0 ? travelCost : undefined
+          });
         }
-
-        // Mark bookings as invoiced
-        const bookingIds = clientData.bookings.map(b => b.id);
-        if (bookingIds.length > 0) {
-          const { error: bookingUpdateError } = await supabase
-            .from('bookings')
-            .update({ 
-              is_invoiced: true, 
-              included_in_invoice_id: invoice.id 
-            })
-            .in('id', bookingIds);
-
-          if (bookingUpdateError) {
-            console.error(`[BulkInvoiceGeneration] Error marking bookings as invoiced:`, bookingUpdateError);
-          }
-        }
-
-        // Success!
-        results.successCount++;
-        results.totalAmount += totalWithExtraTime + billingSummary.vat_amount;
-        results.invoices.push({
-          clientId,
-          clientName: clientData.clientName,
-          invoiceNumber,
-          amount: totalWithExtraTime + billingSummary.vat_amount,
-          lineItemCount: lineItemsData.length,
-          extraTimeCount: billingConfig.extraTimeEnabled ? clientExtraTime.length : 0
-        });
 
         console.log(`[BulkInvoiceGeneration] Successfully processed ${clientData.clientName}`);
 
