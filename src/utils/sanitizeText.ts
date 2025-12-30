@@ -14,9 +14,8 @@ export const sanitizeText = (text: string | null | undefined): string => {
     // Remove null characters (main culprit for "unsupported Unicode escape sequence")
     .replace(/\u0000/g, '')
     // Remove other control characters (except newline \n, tab \t, carriage return \r)
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    // Normalize whitespace (collapse multiple spaces, trim)
-    .trim();
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  // NOTE: Removed .trim() - trimming should only happen on form submission, not during typing
 };
 
 /**
