@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { formatSafeDate } from '@/lib/dateUtils';
 import { formatDurationHoursMinutes } from '@/lib/utils';
+import { getTimeOfDayFromTimestamp, doesMedicationMatchTimeOfDay } from '@/utils/timeOfDayUtils';
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   booking_id: z.string().optional(),
@@ -413,11 +414,19 @@ export function CreateServiceReportDialog({
       console.log('[CreateServiceReportDialog] Loading care plan medications for visit:', effectiveVisitRecordId);
       
       try {
-        // Fetch medications from care plan
+        // Determine time of day from booking start time
+        const bookingStartTime = preSelectedBooking?.start_time || existingReport?.booking?.start_time;
+        const visitTimeOfDay = bookingStartTime 
+          ? getTimeOfDayFromTimestamp(bookingStartTime) 
+          : getTimeOfDayFromTimestamp(new Date());
+        
+        console.log('[CreateServiceReportDialog] Visit time of day:', visitTimeOfDay);
+
+        // Fetch medications from care plan including time_of_day
         const { data: clientMedications } = await supabase
           .from('client_medications')
           .select(`
-            id, name, dosage, frequency,
+            id, name, dosage, frequency, time_of_day,
             client_care_plans!inner (client_id, status)
           `)
           .eq('client_care_plans.client_id', preSelectedClient.id)
@@ -427,18 +436,27 @@ export function CreateServiceReportDialog({
         console.log('[CreateServiceReportDialog] Found care plan medications:', clientMedications?.length || 0);
         
         if (clientMedications && clientMedications.length > 0) {
-          const visitMeds = clientMedications.map(med => ({
-            visit_record_id: effectiveVisitRecordId,
-            medication_id: med.id,
-            medication_name: med.name,
-            dosage: med.dosage,
-            prescribed_time: '08:00',
-            administration_method: 'oral',
-            is_administered: false,
-          }));
+          // Filter medications by time of day
+          const filteredMedications = clientMedications.filter(med => 
+            doesMedicationMatchTimeOfDay(med.time_of_day as string[] | null, visitTimeOfDay)
+          );
           
-          await supabase.from('visit_medications').insert(visitMeds);
-          queryClient.invalidateQueries({ queryKey: ['visit-medications', effectiveVisitRecordId] });
+          console.log(`[CreateServiceReportDialog] Filtered to ${filteredMedications.length} medications for ${visitTimeOfDay}`);
+          
+          if (filteredMedications.length > 0) {
+            const visitMeds = filteredMedications.map(med => ({
+              visit_record_id: effectiveVisitRecordId,
+              medication_id: med.id,
+              medication_name: med.name,
+              dosage: med.dosage,
+              prescribed_time: '08:00',
+              administration_method: 'oral',
+              is_administered: false,
+            }));
+            
+            await supabase.from('visit_medications').insert(visitMeds);
+            queryClient.invalidateQueries({ queryKey: ['visit-medications', effectiveVisitRecordId] });
+          }
         }
       } catch (error) {
         console.error('Error loading care plan medications:', error);
@@ -448,7 +466,7 @@ export function CreateServiceReportDialog({
     if (open && effectiveVisitRecordId) {
       loadCarePlanMedications();
     }
-  }, [open, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient]);
+  }, [open, effectiveVisitRecordId, visitMedications?.length, preSelectedClient?.id, queryClient, preSelectedBooking?.start_time, existingReport?.booking?.start_time]);
 
   // Helper function to normalize task names for deduplication
   const normalizeTaskName = (name: string): string => {

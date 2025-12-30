@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getTimeOfDayFromTimestamp, doesMedicationMatchTimeOfDay } from "@/utils/timeOfDayUtils";
 
 export interface VisitMedication {
   id: string;
@@ -119,8 +120,15 @@ export const useVisitMedications = (visitRecordId?: string) => {
 
   // Add common medications for a visit
   const addCommonMedications = useMutation({
-    mutationFn: async ({ visitRecordId, clientId }: { visitRecordId: string; clientId: string }) => {
-      // Fetch active medications from client's care plan
+    mutationFn: async ({ visitRecordId, clientId, visitStartTime }: { visitRecordId: string; clientId: string; visitStartTime?: string }) => {
+      // Determine time of day from visit start time
+      const visitTimeOfDay = visitStartTime 
+        ? getTimeOfDayFromTimestamp(visitStartTime) 
+        : getTimeOfDayFromTimestamp(new Date());
+      
+      console.log('[useVisitMedications] Visit time of day:', visitTimeOfDay, 'from:', visitStartTime || 'current time');
+
+      // Fetch active medications from client's care plan, including time_of_day
       const { data: clientMedications, error: medicationsError } = await supabase
         .from('client_medications')
         .select(`
@@ -128,6 +136,7 @@ export const useVisitMedications = (visitRecordId?: string) => {
           name,
           dosage,
           frequency,
+          time_of_day,
           care_plan_id,
           client_care_plans!inner (
             client_id,
@@ -148,8 +157,20 @@ export const useVisitMedications = (visitRecordId?: string) => {
         return [];
       }
 
-      // Convert client medications to visit medications
-      const visitMedications = clientMedications.map(med => ({
+      // Filter medications by time of day
+      const filteredMedications = clientMedications.filter(med => 
+        doesMedicationMatchTimeOfDay(med.time_of_day as string[] | null, visitTimeOfDay)
+      );
+
+      console.log(`[useVisitMedications] Filtered ${clientMedications.length} medications to ${filteredMedications.length} for ${visitTimeOfDay}`);
+
+      if (filteredMedications.length === 0) {
+        console.log('No medications scheduled for this time of day');
+        return [];
+      }
+
+      // Convert filtered client medications to visit medications
+      const visitMedications = filteredMedications.map(med => ({
         visit_record_id: visitRecordId,
         medication_id: med.id,
         medication_name: med.name,

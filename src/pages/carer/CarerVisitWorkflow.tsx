@@ -441,7 +441,8 @@ const CarerVisitWorkflow = () => {
       medicationsInitializedRef.current = true;
       addCommonMedications.mutate({ 
         visitRecordId: visitRecord.id, 
-        clientId: currentAppointment.client_id 
+        clientId: currentAppointment.client_id,
+        visitStartTime: currentAppointment.start_time
       });
     }
   }, [visitRecord?.id, currentAppointment?.client_id, isViewOnly]);
