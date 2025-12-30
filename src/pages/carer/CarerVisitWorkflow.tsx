@@ -179,24 +179,47 @@ const CarerVisitWorkflow = () => {
 
   const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, currentAppointment?.client_id);
   
-  // Fetch active care plan for goals and activities
+  // Fetch care plan for goals and activities - prioritize active, fallback to other statuses
   const { data: activeCareplan, isLoading: carePlanLoading } = useQuery({
     queryKey: ['client-active-care-plan', currentAppointment?.client_id],
     queryFn: async () => {
       if (!currentAppointment?.client_id) return null;
       
-      const { data, error } = await supabase
+      // First try to get an active care plan
+      const { data: activeData, error: activeError } = await supabase
         .from('client_care_plans')
         .select('*')
         .eq('client_id', currentAppointment.client_id)
         .eq('status', 'active')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching care plan:', error);
+      if (activeData) {
+        console.log('[CarerVisitWorkflow] Found active care plan:', activeData.id);
+        return activeData;
+      }
+
+      // Fallback: get the most recent care plan with usable statuses
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('client_care_plans')
+        .select('*')
+        .eq('client_id', currentAppointment.client_id)
+        .in('status', ['approved', 'pending_approval', 'pending_client_approval', 'draft'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fallbackError) {
+        console.error('Error fetching care plan:', fallbackError);
         return null;
       }
-      return data;
+      
+      if (fallbackData) {
+        console.log('[CarerVisitWorkflow] Using fallback care plan with status:', fallbackData.status);
+      }
+      
+      return fallbackData;
     },
     enabled: !!currentAppointment?.client_id,
   });
@@ -453,8 +476,28 @@ const CarerVisitWorkflow = () => {
 
   // Auto-load care plan goals and activities as visit tasks when visit record is created
   useEffect(() => {
-    if (!isViewOnly && visitRecord?.id && !carePlanTasksLoaded && 
-        (carePlanGoals?.length > 0 || carePlanActivities?.length > 0)) {
+    const loadCarePlanTasks = async () => {
+      if (!visitRecord?.id || isViewOnly || carePlanTasksLoaded) return;
+      if (carePlanGoals?.length === 0 && carePlanActivities?.length === 0) return;
+      
+      // Check if tasks already exist for this visit (prevent duplicates)
+      const { data: existingTasks, error: checkError } = await supabase
+        .from('visit_tasks')
+        .select('id')
+        .eq('visit_record_id', visitRecord.id)
+        .limit(1);
+      
+      if (checkError) {
+        console.error('[CarerVisitWorkflow] Error checking existing tasks:', checkError);
+        return;
+      }
+      
+      // If tasks already exist, skip loading
+      if (existingTasks && existingTasks.length > 0) {
+        console.log('[CarerVisitWorkflow] Tasks already exist, skipping auto-load');
+        setCarePlanTasksLoaded(true);
+        return;
+      }
       
       console.log('[CarerVisitWorkflow] Loading care plan items as visit tasks');
       setCarePlanTasksLoaded(true);
@@ -494,17 +537,17 @@ const CarerVisitWorkflow = () => {
       
       // Bulk insert if tasks exist
       if (tasksToAdd.length > 0) {
-        supabase.from('visit_tasks').insert(tasksToAdd)
-          .then(({ error }) => {
-            if (error) {
-              console.error('[CarerVisitWorkflow] Error loading care plan tasks:', error);
-            } else {
-              console.log('[CarerVisitWorkflow] Successfully loaded', tasksToAdd.length, 'care plan tasks');
-              queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord.id] });
-            }
-          });
+        const { error } = await supabase.from('visit_tasks').insert(tasksToAdd);
+        if (error) {
+          console.error('[CarerVisitWorkflow] Error loading care plan tasks:', error);
+        } else {
+          console.log('[CarerVisitWorkflow] Successfully loaded', tasksToAdd.length, 'care plan tasks');
+          queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord.id] });
+        }
       }
-    }
+    };
+    
+    loadCarePlanTasks();
   }, [visitRecord?.id, carePlanGoals, carePlanActivities, isViewOnly, carePlanTasksLoaded, queryClient]);
 
   // Check if visit has been started and initialize data
