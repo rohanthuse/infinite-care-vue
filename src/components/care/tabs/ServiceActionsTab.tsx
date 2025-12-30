@@ -126,13 +126,19 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
                 <TableBody>
                 {serviceActions.map((action, index) => {
                     const status = getStatus(action);
-                    const isFromCarePlan = action.care_plan_id || action.source === 'care_plan';
+                    const isFromCarePlanDraft = action.source === 'care_plan_draft';
+                    const isFromCarePlan = action.care_plan_id || action.source === 'care_plan' || isFromCarePlanDraft;
                     return (
                       <TableRow key={action.id || index}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {getActionName(action)}
-                            {isFromCarePlan && (
+                            {isFromCarePlanDraft && (
+                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                From Care Plan (Draft)
+                              </Badge>
+                            )}
+                            {isFromCarePlan && !isFromCarePlanDraft && (
                               <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                                 From Care Plan
                               </Badge>
