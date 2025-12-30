@@ -1,5 +1,20 @@
 import { supabase } from '@/integrations/supabase/client';
 
+interface CarePlanKeyContact {
+  id?: string;
+  first_name: string;
+  surname: string;
+  relationship?: string;
+  is_next_of_kin?: boolean;
+  gender?: string;
+  email?: string;
+  phone?: string;
+  contact_type: string;
+  address?: string;
+  preferred_communication?: string;
+  notes?: string;
+}
+
 interface CarePlanAutoSaveData {
   about_me?: {
     has_key_safe?: string;
@@ -57,6 +72,7 @@ interface CarePlanAutoSaveData {
     next_of_kin_phone?: string;
     next_of_kin_relationship?: string;
   };
+  key_contacts?: CarePlanKeyContact[];
 }
 
 // Helper to convert yes/no/unknown string to boolean
@@ -281,6 +297,50 @@ export const syncCarePlanToClientProfile = async (
     }
 
     console.log('[syncCarePlanToClientProfile] Successfully synced care plan data to client profile');
+    
+    // Sync key contacts from care plan to client_key_contacts table
+    const keyContacts = autoSaveData.key_contacts || [];
+    if (keyContacts.length > 0) {
+      console.log('[syncCarePlanToClientProfile] Syncing key contacts:', keyContacts.length);
+      
+      // Delete existing contacts for this client (replace strategy)
+      const { error: deleteError } = await supabase
+        .from('client_key_contacts')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (deleteError) {
+        console.error('[syncCarePlanToClientProfile] Error deleting existing contacts:', deleteError);
+        // Continue anyway - we'll still try to insert new contacts
+      }
+
+      // Insert new contacts from care plan
+      const contactsToInsert = keyContacts.map((contact: CarePlanKeyContact) => ({
+        client_id: clientId,
+        first_name: contact.first_name,
+        surname: contact.surname,
+        relationship: contact.relationship || null,
+        is_next_of_kin: contact.is_next_of_kin || false,
+        gender: contact.gender || null,
+        email: contact.email || null,
+        phone: contact.phone || null,
+        contact_type: contact.contact_type,
+        address: contact.address || null,
+        preferred_communication: contact.preferred_communication || null,
+        notes: contact.notes || null,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('client_key_contacts')
+        .insert(contactsToInsert);
+
+      if (insertError) {
+        console.error('[syncCarePlanToClientProfile] Error inserting key contacts:', insertError);
+      } else {
+        console.log('[syncCarePlanToClientProfile] Successfully synced key contacts');
+      }
+    }
+    
     return { success: true };
   } catch (error) {
     console.error('[syncCarePlanToClientProfile] Unexpected error:', error);

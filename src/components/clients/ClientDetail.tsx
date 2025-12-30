@@ -31,6 +31,7 @@ import { ClientNews2Tab } from "./tabs/ClientNews2Tab";
 import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { ClientComplianceTab } from "./tabs/ClientComplianceTab";
+import { ClientKeyContactsTab } from "./tabs/ClientKeyContactsTab";
 import { AdminServiceReportsTab } from "../service-reports/AdminServiceReportsTab";
 import { ServiceReportsErrorBoundary } from "../service-reports/ServiceReportsErrorBoundary";
 import { useAdminClientDetail, useAdminUpdateClient } from "@/hooks/useAdminClientData";
@@ -246,6 +247,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                     onSave={handleSave}
                     isSaving={updateClientMutation.isPending}
                   />
+                </TabsContent>
+                
+                <TabsContent value="keycontacts" className="p-6 m-0">
+                  <ClientKeyContactsTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="general" className="p-6 m-0">
