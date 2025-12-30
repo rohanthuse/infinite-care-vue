@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Home, User, Calendar, CalendarDays, FileText, 
   ClipboardList, Clock, FileBarChart, Wallet, 
-  GraduationCap, Users, AlertTriangle, MessageSquare,
+  GraduationCap, AlertTriangle, MessageSquare,
   Bell, Search, ScrollText, Book
 } from "lucide-react";
 import {
@@ -30,7 +30,6 @@ import { ChevronDown } from "lucide-react";
     { icon: Home, label: "Dashboard", value: "", description: "Home overview" },
     { icon: Calendar, label: "My Schedule", value: "schedule", description: "Booking calendar" },
     { icon: CalendarDays, label: "Appointments", value: "appointments", description: "View all appointments" },
-    { icon: Users, label: "My Clients", value: "clients", description: "Client list" },
     { icon: ClipboardList, label: "My Tasks", value: "tasks", description: "Task management" },
     { icon: AlertTriangle, label: "My Assignments", value: "my-tasks", description: "Assigned tasks" },
     { icon: FileText, label: "Events & Logs", value: "events-logs", description: "Assigned events and logs" },
