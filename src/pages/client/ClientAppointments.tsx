@@ -84,9 +84,9 @@ const ClientAppointments = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your appointments.</p>
+          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Authentication Required</h3>
+          <p className="text-muted-foreground">Please log in to view your appointments.</p>
         </div>
       </div>
     );
@@ -230,7 +230,7 @@ const ClientAppointments = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your appointments...</p>
+          <p className="text-muted-foreground">Loading your appointments...</p>
         </div>
       </div>
     );
@@ -240,11 +240,11 @@ const ClientAppointments = () => {
     console.error('[ClientAppointments] Error loading appointments:', error);
     return (
       <div className="text-center py-12">
-        <Calendar className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading appointments</h3>
-        <p className="text-gray-600 mb-4">Unable to load your appointments. Please try refreshing the page.</p>
+        <Calendar className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Error loading appointments</h3>
+        <p className="text-muted-foreground mb-4">Unable to load your appointments. Please try refreshing the page.</p>
         {error && (
-          <p className="text-sm text-red-600">Error details: {error.message}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">Error details: {error.message}</p>
         )}
       </div>
     );
@@ -399,7 +399,7 @@ const ClientAppointments = () => {
                           variant="outline" 
                           size="sm" 
                           onClick={() => handleCancelAppointment(appointment)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                         >
                           <XCircle className="h-4 w-4 mr-1" />
                           Cancel
@@ -417,11 +417,11 @@ const ClientAppointments = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming appointments</h3>
-            <p className="text-gray-600">Your scheduled appointments will appear here.</p>
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No upcoming appointments</h3>
+            <p className="text-muted-foreground">Your scheduled appointments will appear here.</p>
             {appointments && appointments.length > 0 && (
-              <p className="text-sm text-blue-600 mt-2">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
                 You have {appointments.length} total appointment(s) in the system.
               </p>
             )}
@@ -447,11 +447,11 @@ const ClientAppointments = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No past appointments</h3>
-            <p className="text-gray-600">Your completed appointments will appear here.</p>
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No past appointments</h3>
+            <p className="text-muted-foreground">Your completed appointments will appear here.</p>
             {appointments && appointments.length > 0 && (
-              <p className="text-sm text-blue-600 mt-2">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
                 You have {appointments.length} total appointment(s) in the system.
               </p>
             )}

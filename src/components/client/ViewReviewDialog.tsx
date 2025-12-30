@@ -15,7 +15,7 @@ export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialo
     return Array(5).fill(0).map((_, i) => (
       <Star 
         key={i} 
-        className={`h-5 w-5 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+        className={`h-5 w-5 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} 
       />
     ));
   };
@@ -31,17 +31,17 @@ export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialo
         
         <div className="py-4 space-y-4">
           <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-500">Service Type</div>
-            <div>{review.service_type || 'Care Service'}</div>
+            <div className="text-sm font-medium text-muted-foreground">Service Type</div>
+            <div className="text-foreground">{review.service_type || 'Care Service'}</div>
           </div>
           
           <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-500">Service Date</div>
-            <div>{new Date(review.service_date).toLocaleDateString()}</div>
+            <div className="text-sm font-medium text-muted-foreground">Service Date</div>
+            <div className="text-foreground">{new Date(review.service_date).toLocaleDateString()}</div>
           </div>
           
           <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-500">Your Rating</div>
+            <div className="text-sm font-medium text-muted-foreground">Your Rating</div>
             <div className="flex">
               {renderStars(review.rating)}
             </div>
@@ -49,27 +49,27 @@ export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialo
           
           {review.comment && (
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-500">Your Comments</div>
-              <div className="text-sm p-3 bg-gray-50 rounded border border-gray-100">
+              <div className="text-sm font-medium text-muted-foreground">Your Comments</div>
+              <div className="text-sm p-3 bg-muted rounded border border-border text-foreground">
                 {review.comment}
               </div>
             </div>
           )}
           
           <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-500">Submitted On</div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm font-medium text-muted-foreground">Submitted On</div>
+            <div className="text-sm text-muted-foreground">
               {new Date(review.created_at).toLocaleDateString()} at {new Date(review.created_at).toLocaleTimeString()}
             </div>
           </div>
 
           {new Date(review.can_edit_until) > new Date() && (
-            <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
+            <div className="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 p-3 rounded">
               <strong>Note:</strong> You can edit this review until {new Date(review.can_edit_until).toLocaleString()}
             </div>
           )}
           
-          <div className="text-sm text-gray-500 italic">
+          <div className="text-sm text-muted-foreground italic">
             Thank you for your feedback. It helps us improve our services.
           </div>
         </div>

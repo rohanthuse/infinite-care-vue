@@ -42,7 +42,7 @@ export const ClientMobileNav: React.FC = () => {
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-gray-900 border-t border-border shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-safe">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-card border-t border-border shadow-lg dark:shadow-none pb-safe">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => (
           <button

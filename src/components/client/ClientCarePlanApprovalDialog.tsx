@@ -227,15 +227,15 @@ export function ClientCarePlanApprovalDialog({
                     disabled={isLoading}
                   />
                   {signatureData && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span className="text-sm text-green-800 font-medium">Signature captured successfully</span>
+                    <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <span className="text-sm text-green-800 dark:text-green-300 font-medium">Signature captured successfully</span>
                     </div>
                   )}
                   {!signatureData && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      <span className="text-sm text-blue-800">Please draw your signature above and click "Save" to continue</span>
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <span className="text-sm text-blue-800 dark:text-blue-300">Please draw your signature above and click "Save" to continue</span>
                     </div>
                   )}
                 </CardContent>

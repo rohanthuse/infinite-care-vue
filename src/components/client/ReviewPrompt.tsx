@@ -107,28 +107,28 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
       <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-600">
+            <DialogTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
               <Star className="h-5 w-5" />
               Share Your Experience
             </DialogTitle>
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               We'd love to hear about your recent care experience! Your feedback helps us improve our services.
             </p>
             
             <div className="space-y-3">
-              <h4 className="font-medium text-gray-900">Recent Appointments:</h4>
+              <h4 className="font-medium text-foreground">Recent Appointments:</h4>
               {pendingReviews.slice(0, 3).map((appointment: any, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded border border-border">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <User className="h-4 w-4 text-blue-600" />
+                    <div className="bg-blue-100 dark:bg-blue-950/30 p-2 rounded-full">
+                      <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{appointment.provider}</div>
-                      <div className="text-xs text-gray-500 flex items-center">
+                      <div className="font-medium text-sm text-foreground">{appointment.provider}</div>
+                      <div className="text-xs text-muted-foreground flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
                         {appointment.date} at {appointment.time}
                       </div>
@@ -143,7 +143,7 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
                 </div>
               ))}
               {pendingReviews.length > 3 && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   +{pendingReviews.length - 3} more appointment{pendingReviews.length - 3 > 1 ? 's' : ''} awaiting feedback
                 </p>
               )}

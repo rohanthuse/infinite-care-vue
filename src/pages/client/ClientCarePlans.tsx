@@ -71,29 +71,29 @@ const ClientCarePlans = () => {
     return <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your care plans...</p>
+          <p className="text-muted-foreground">Loading your care plans...</p>
         </div>
       </div>;
   }
   if (authError || !clientId) {
     return <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-        <p className="text-gray-600">Please log in to view your care plans.</p>
+        <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Authentication Required</h3>
+        <p className="text-muted-foreground">Please log in to view your care plans.</p>
       </div>;
   }
   if (error) {
     return <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plans</h3>
-        <p className="text-gray-600">Unable to load your care plans. Please try refreshing the page.</p>
+        <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">Error loading care plans</h3>
+        <p className="text-muted-foreground">Unable to load your care plans. Please try refreshing the page.</p>
       </div>;
   }
   if (!carePlans || carePlans.length === 0) {
     return <div className="text-center py-12">
-        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No care plans found</h3>
-        <p className="text-gray-600">You don't have any care plans at this time. Please contact your care provider if you believe this is an error.</p>
+        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">No care plans found</h3>
+        <p className="text-muted-foreground">You don't have any care plans at this time. Please contact your care provider if you believe this is an error.</p>
       </div>;
   }
   const handleApproveCarePlan = async (signatureData: string, comments: string) => {

@@ -175,7 +175,7 @@ export const RequestAppointmentDialog: React.FC<RequestAppointmentDialogProps> =
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-medium">
-                    Service Type <span className="text-red-500">*</span>
+                    Service Type <span className="text-red-500 dark:text-red-400">*</span>
                   </FormLabel>
                   <Select
                     onValueChange={field.onChange}
@@ -207,7 +207,7 @@ export const RequestAppointmentDialog: React.FC<RequestAppointmentDialogProps> =
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel className="font-medium">
-                    Preferred Date <span className="text-red-500">*</span>
+                    Preferred Date <span className="text-red-500 dark:text-red-400">*</span>
                   </FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -243,7 +243,7 @@ export const RequestAppointmentDialog: React.FC<RequestAppointmentDialogProps> =
             {/* Time Selection */}
             <div className="space-y-2">
               <FormLabel className="font-medium">
-                Preferred Time <span className="text-red-500">*</span>
+                Preferred Time <span className="text-red-500 dark:text-red-400">*</span>
               </FormLabel>
               <div className="flex gap-2">
                 <FormField

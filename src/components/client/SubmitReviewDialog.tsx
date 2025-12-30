@@ -187,7 +187,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
                 >
                   <Star
                     className={`h-8 w-8 ${
-                      star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                      star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"
                     }`}
                   />
                 </button>

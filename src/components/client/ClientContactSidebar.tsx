@@ -139,7 +139,7 @@ export const ClientContactSidebar = ({
                   </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-card ${
                     contact.status === "online" ? "bg-green-500" :
-                    contact.status === "away" ? "bg-amber-500" : "bg-gray-400"
+                    contact.status === "away" ? "bg-amber-500" : "bg-gray-400 dark:bg-gray-500"
                   }`}></div>
                 </div>
                 
