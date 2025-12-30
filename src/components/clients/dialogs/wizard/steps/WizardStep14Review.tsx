@@ -20,6 +20,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  hasAboutMe,
+  hasMedicalInfo,
+  hasNews2Monitoring,
+  hasMedicationSchedule,
+  hasMedicationAdministration,
+  hasConsentInfo,
+  hasRiskAssessments,
+  hasEquipment,
+  hasKeyContacts,
+  hasAnyValue,
+} from "@/utils/carePlanCompletionUtils";
 
 interface WizardStep14ReviewProps {
   form: UseFormReturn<any>;
@@ -47,11 +59,54 @@ interface RequirementItem {
 export function WizardStep14Review({ form, clientId, isChild = false }: WizardStep14ReviewProps) {
   const formData = form.watch();
 
-  const getSectionStatus = (sectionData: any) => {
-    if (!sectionData) return "empty";
-    if (typeof sectionData === "object" && Object.keys(sectionData).length === 0) return "empty";
-    if (Array.isArray(sectionData) && sectionData.length === 0) return "empty";
-    return "completed";
+  // Use unified validation functions for consistent status across the app
+  const getSectionStatus = (sectionId: string, sectionData: any): "completed" | "empty" => {
+    switch (sectionId) {
+      case "about_me":
+        return hasAboutMe(sectionData) ? "completed" : "empty";
+      case "medical_info":
+        return hasMedicalInfo(sectionData) ? "completed" : "empty";
+      case "news2_monitoring":
+        return hasNews2Monitoring(formData.medical_info) ? "completed" : "empty";
+      case "medication_schedule":
+        return hasMedicationSchedule(formData.medical_info) ? "completed" : "empty";
+      case "medication":
+        return hasMedicationSchedule(formData.medical_info) ? "completed" : "empty";
+      case "admin_medication":
+        return hasMedicationAdministration(formData) ? "completed" : "empty";
+      case "consent":
+        return hasConsentInfo(sectionData) ? "completed" : "empty";
+      case "risk_assessments":
+        return hasRiskAssessments(formData) ? "completed" : "empty";
+      case "equipment":
+        return hasEquipment(sectionData) ? "completed" : "empty";
+      case "key_contacts":
+        return hasKeyContacts(formData) ? "completed" : "empty";
+      case "personal_care":
+      case "dietary":
+      case "behavior_support":
+      case "education_development":
+      case "safeguarding_risks":
+        return hasAnyValue(sectionData) ? "completed" : "empty";
+      case "goals":
+      case "activities":
+      case "service_plans":
+      case "service_actions":
+      case "documents":
+        return Array.isArray(sectionData) && sectionData.length > 0 ? "completed" : "empty";
+      case "basic_info":
+      case "personal_info":
+        // For basic/personal info, check if any field has content
+        if (!sectionData) return "empty";
+        if (typeof sectionData === "object" && Object.keys(sectionData).length === 0) return "empty";
+        return hasAnyValue(sectionData) ? "completed" : "empty";
+      default:
+        // Fallback for any other sections
+        if (!sectionData) return "empty";
+        if (typeof sectionData === "object" && Object.keys(sectionData).length === 0) return "empty";
+        if (Array.isArray(sectionData) && sectionData.length === 0) return "empty";
+        return "completed";
+    }
   };
 
   const allSections: Section[] = [
@@ -236,8 +291,8 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
     ? allSections 
     : allSections.filter(section => !section.childOnly);
 
-  const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
-  const emptySections = sections.filter(section => getSectionStatus(section.data) === "empty");
+  const completedSections = sections.filter(section => getSectionStatus(section.id, section.data) === "completed");
+  const emptySections = sections.filter(section => getSectionStatus(section.id, section.data) === "empty");
 
   // Check if care plan has enough content to be finalized
   const hasMinimumContent = completedSections.length >= 3; // Require at least 3 sections to be complete
@@ -413,7 +468,7 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sections.map((section) => {
-              const status = getSectionStatus(section.data);
+              const status = getSectionStatus(section.id, section.data);
               const Icon = section.icon;
               
               // Special handling for section with custom status
