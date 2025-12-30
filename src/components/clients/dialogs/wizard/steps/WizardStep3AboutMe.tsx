@@ -89,7 +89,7 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                   )}
                 />
 
-                {form.watch("about_me.has_key_safe") === "yes" && (
+                {form.watch("about_me.has_key_safe") === true && (
                   <FormField
                     control={form.control}
                     name="about_me.key_safe_code"
