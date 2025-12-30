@@ -251,7 +251,14 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName
                           {getDocIcon(doc.type)}
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium">{doc.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{doc.name}</p>
+                            {doc.source === 'care_plan' && (
+                              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                Uploaded from Care Plan
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <span>{doc.uploaded_by}</span>
                             <span className="mx-1">•</span>
