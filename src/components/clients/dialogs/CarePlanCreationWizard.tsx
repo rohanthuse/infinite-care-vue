@@ -707,12 +707,26 @@ export function CarePlanCreationWizard({
     }
   };
 
-  // Reset form state when dialog closes
-  const handleClose = () => {
-    setStepError(null);
-    setCurrentStep(1);
-    initialDraftLoadedRef.current = false;
-    onClose();
+  // Reset form state when dialog closes - save draft first to prevent data loss
+  const handleClose = async () => {
+    try {
+      // Save current form state before closing to prevent data loss
+      const formData = form.getValues();
+      
+      if (clientId && formData) {
+        console.log('[handleClose] Saving draft before closing...');
+        await saveDraft(formData, currentStep, isChild, medicationCount);
+        console.log('[handleClose] Draft saved successfully');
+      }
+    } catch (error) {
+      console.error('[handleClose] Error saving draft on close:', error);
+      // Continue closing even if save fails - don't block the user
+    } finally {
+      setStepError(null);
+      setCurrentStep(1);
+      initialDraftLoadedRef.current = false;
+      onClose();
+    }
   };
 
   const formData = form.watch();
