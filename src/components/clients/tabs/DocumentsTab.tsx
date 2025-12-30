@@ -24,10 +24,11 @@ import {
 
 interface DocumentsTabProps {
   clientId: string;
+  clientName?: string;
   documents?: any[];
 }
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, clientName }) => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -206,7 +207,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
               <span>Upload Document</span>
             </Button>
           </div>
-          <CardDescription>Documents and files for client {clientId}</CardDescription>
+          <CardDescription>Documents and files{clientName ? ` for ${clientName}` : ''}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {documents.length === 0 ? (

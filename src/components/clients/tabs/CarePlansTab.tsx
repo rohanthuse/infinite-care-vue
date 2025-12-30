@@ -23,10 +23,11 @@ import { useParams } from "react-router-dom";
 
 interface CarePlansTabProps {
   clientId: string;
+  clientName?: string;
   carePlans?: any[];
 }
 
-export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
+export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId, clientName }) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
@@ -148,7 +149,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
               <span>Create Plan</span>
             </Button>
           </div>
-          <CardDescription>Care plans and treatment programs for client {clientId}</CardDescription>
+          <CardDescription>Care plans and treatment programs{clientName ? ` for ${clientName}` : ''}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {carePlans.length === 0 ? (
