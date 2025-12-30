@@ -38,6 +38,7 @@ import {
   FileBarChart2,
   Target,
   Calendar,
+  Smile,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,6 +114,26 @@ interface Event {
   date: string;
   time: string;
 }
+
+// Mood and engagement options for Complete tab
+const MOOD_OPTIONS = [
+  { value: 'happy', label: 'Happy' },
+  { value: 'content', label: 'Content' },
+  { value: 'neutral', label: 'Neutral' },
+  { value: 'anxious', label: 'Anxious' },
+  { value: 'sad', label: 'Sad' },
+  { value: 'confused', label: 'Confused' },
+  { value: 'agitated', label: 'Agitated' },
+];
+
+const ENGAGEMENT_OPTIONS = [
+  { value: 'highly_engaged', label: 'Highly Engaged' },
+  { value: 'engaged', label: 'Engaged' },
+  { value: 'somewhat_engaged', label: 'Somewhat Engaged' },
+  { value: 'passive', label: 'Passive' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+  { value: 'unresponsive', label: 'Unresponsive' },
+];
 
 const CarerVisitWorkflow = () => {
   const { appointmentId } = useParams();
@@ -449,6 +470,16 @@ const CarerVisitWorkflow = () => {
   const [consciousness, setConsciousness] = useState("A");
   const [temperature, setTemperature] = useState(37.0);
   const [o2Therapy, setO2Therapy] = useState(false);
+  
+  // Client Mood & Engagement state for Complete tab
+  const [clientMood, setClientMood] = useState<string>('');
+  const [clientEngagement, setClientEngagement] = useState<string>('');
+  const [activitiesUndertaken, setActivitiesUndertaken] = useState<string>('');
+  
+  // Visit Notes state for Complete tab
+  const [carerObservations, setCarerObservations] = useState<string>('');
+  const [clientFeedback, setClientFeedback] = useState<string>('');
+  const [nextVisitPreparations, setNextVisitPreparations] = useState<string>('');
   
   // Enhanced view-only check: URL param, state, completed status, or existing visit record status
   const isViewOnly = urlViewMode || stateViewOnly || 
@@ -981,7 +1012,9 @@ const CarerVisitWorkflow = () => {
       case "sign-off":
         return !!carerSignature; // Client signature is optional
       case "complete":
-        return tabOrder.slice(0, -1).every(tab => isTabCompleted(tab));
+        // Complete tab requires mood, engagement, observations, and all previous tabs
+        return !!clientMood && !!clientEngagement && carerObservations.trim().length >= 10 && 
+               tabOrder.slice(0, -1).every(tab => isTabCompleted(tab));
       default:
         return false;
     }
@@ -1081,6 +1114,9 @@ const CarerVisitWorkflow = () => {
   const getButtonDisabledReason = () => {
     if (isCompletingVisit) return "Completing visit...";
     if (!carerSignature) return "Carer signature required";
+    if (!clientMood) return "Select client mood";
+    if (!clientEngagement) return "Select client engagement";
+    if (carerObservations.trim().length < 10) return "Add carer observations (min 10 characters)";
     if (visitLoading) return "Loading visit data...";
     if (authLoading) return "Loading user data...";
     if (!visitRecord) return "Visit record not found";
@@ -1228,6 +1264,14 @@ const CarerVisitWorkflow = () => {
         goals: carePlanGoals || [],
         activities: carePlanActivities || [],
         createdBy: user.id,
+        assessmentData: {
+          clientMood,
+          clientEngagement,
+          activitiesUndertaken: activitiesUndertaken || undefined,
+          carerObservations,
+          clientFeedback: clientFeedback || undefined,
+          nextVisitPreparations: nextVisitPreparations || undefined,
+        },
       });
 
       // Step 4: Upsert service report (update if exists, create if not)
@@ -3099,13 +3143,31 @@ const CarerVisitWorkflow = () => {
                                  Add visit notes (minimum 10 characters)
                                </li>
                              )}
-                             {!carerSignature && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Add carer signature
-                               </li>
-                             )}
-                           </ul>
+                              {!carerSignature && (
+                                <li className="flex items-center gap-2 text-red-600">
+                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                  Add carer signature
+                                </li>
+                              )}
+                              {!clientMood && (
+                                <li className="flex items-center gap-2 text-red-600">
+                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                  Select client mood
+                                </li>
+                              )}
+                              {!clientEngagement && (
+                                <li className="flex items-center gap-2 text-red-600">
+                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                  Select client engagement level
+                                </li>
+                              )}
+                              {carerObservations.trim().length < 10 && (
+                                <li className="flex items-center gap-2 text-red-600">
+                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                  Add carer observations (minimum 10 characters)
+                                </li>
+                              )}
+                            </ul>
                          </div>
                        </>
                      )}
@@ -3132,6 +3194,125 @@ const CarerVisitWorkflow = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Client Mood & Engagement Section */}
+                  {!isViewOnly && (
+                    <Card className="mt-6 bg-blue-50/50 border-blue-100">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Smile className="w-5 h-5 text-blue-600" />
+                          Client Mood & Engagement
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="clientMood" className="text-sm font-medium">
+                              Client Mood <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={clientMood} onValueChange={setClientMood}>
+                              <SelectTrigger id="clientMood" className="bg-white">
+                                <SelectValue placeholder="Select mood..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {MOOD_OPTIONS.map(option => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="clientEngagement" className="text-sm font-medium">
+                              Client Engagement <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={clientEngagement} onValueChange={setClientEngagement}>
+                              <SelectTrigger id="clientEngagement" className="bg-white">
+                                <SelectValue placeholder="Select engagement level..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ENGAGEMENT_OPTIONS.map(option => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="activitiesUndertaken" className="text-sm font-medium">
+                            Activities Undertaken
+                          </Label>
+                          <Textarea
+                            id="activitiesUndertaken"
+                            placeholder="Describe any activities completed during the visit..."
+                            value={activitiesUndertaken}
+                            onChange={(e) => setActivitiesUndertaken(e.target.value)}
+                            className="min-h-[80px] bg-white"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {/* Visit Notes Section */}
+                  {!isViewOnly && (
+                    <Card className="mt-4 bg-blue-50/50 border-blue-100">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                          Visit Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="carerObservations" className="text-sm font-medium">
+                            Carer Observations <span className="text-red-500">*</span>
+                          </Label>
+                          <Textarea
+                            id="carerObservations"
+                            placeholder="Record your observations about the client's condition, behavior, and any notable changes..."
+                            value={carerObservations}
+                            onChange={(e) => setCarerObservations(e.target.value)}
+                            className="min-h-[100px] bg-white"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {carerObservations.length}/10 characters minimum
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="clientFeedback" className="text-sm font-medium">
+                            Client Feedback
+                          </Label>
+                          <Textarea
+                            id="clientFeedback"
+                            placeholder="Record any feedback provided by the client..."
+                            value={clientFeedback}
+                            onChange={(e) => setClientFeedback(e.target.value)}
+                            className="min-h-[80px] bg-white"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="nextVisitPreparations" className="text-sm font-medium">
+                            Next Visit Preparations
+                          </Label>
+                          <Textarea
+                            id="nextVisitPreparations"
+                            placeholder="Note any preparations or reminders for the next visit..."
+                            value={nextVisitPreparations}
+                            onChange={(e) => setNextVisitPreparations(e.target.value)}
+                            className="min-h-[80px] bg-white"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </CardContent>
               
@@ -3162,6 +3343,9 @@ const CarerVisitWorkflow = () => {
                         disabled={
                           isCompletingVisit || 
                           !carerSignature || 
+                          !clientMood ||
+                          !clientEngagement ||
+                          carerObservations.trim().length < 10 ||
                           visitLoading || 
                           authLoading || 
                           !visitRecord || 
