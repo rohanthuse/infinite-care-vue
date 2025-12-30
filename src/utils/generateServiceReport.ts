@@ -106,7 +106,7 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     organization_id: data.visitRecord.organization_id || undefined,
     service_date: format(new Date(data.visitRecord.visit_start_time), 'yyyy-MM-dd'),
     service_duration_minutes: data.visitRecord.actual_duration_minutes || undefined,
-    services_provided: ['Home Care Visit'], // Default, can be enhanced
+    services_provided: ['Home Care Visit'],
     tasks_completed: completedTasks.length > 0 ? completedTasks : undefined,
     medication_administered: medicationsAdministered.length > 0,
     medication_notes: medicationNotes,
@@ -114,9 +114,9 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     incident_details: incidentDetails,
     carer_observations: observations || undefined,
     activities_undertaken: activitiesPerformed,
-    status: 'approved' as const, // Auto-approved
-    visible_to_client: true,
-    reviewed_at: new Date().toISOString(),
+    // Set to 'pending' - carer needs to complete mood/engagement fields
+    status: 'pending' as const,
+    visible_to_client: false,
     created_by: data.createdBy,
   };
 }
