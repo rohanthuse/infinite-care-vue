@@ -610,7 +610,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
 const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWithDetails[]> => {
   console.log(`[fetchCarerAssignedCarePlans] Input carer ID (auth user ID): ${carerId}`);
 
-  // First get the carer's staff record and branch_id
+  // First get the carer's staff record
   const { data: carerData, error: carerError } = await supabase
     .from('staff')
     .select('id, branch_id')
@@ -623,13 +623,32 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
   }
 
   const staffId = carerData?.id;
-  const branchId = carerData?.branch_id;
 
-  console.log(`[fetchCarerAssignedCarePlans] Staff ID: ${staffId}, Branch ID: ${branchId}`);
+  console.log(`[fetchCarerAssignedCarePlans] Staff ID: ${staffId}`);
 
-  // Fetch care plans assigned directly to the carer OR in their branch (fallback)
-  // First get directly assigned care plans (using staff.id, not auth_user_id)
-  const directQuery = supabase
+  // Get client IDs from bookings assigned to this carer
+  const { data: bookingsData, error: bookingsError } = await supabase
+    .from('bookings')
+    .select('client_id')
+    .eq('staff_id', staffId)
+    .not('client_id', 'is', null);
+
+  if (bookingsError) {
+    console.error('Error fetching carer bookings:', bookingsError);
+    throw bookingsError;
+  }
+
+  // Extract unique client IDs
+  const assignedClientIds = [...new Set(bookingsData?.map(b => b.client_id).filter(Boolean))];
+
+  console.log(`[fetchCarerAssignedCarePlans] Assigned client IDs from bookings: ${assignedClientIds.length}`);
+
+  if (assignedClientIds.length === 0) {
+    return []; // No assigned clients via bookings, return empty
+  }
+
+  // Fetch care plans ONLY for clients the carer has bookings with
+  const { data: carePlansData, error: carePlansError } = await supabase
     .from('client_care_plans')
     .select(`
       *,
@@ -649,46 +668,16 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         last_name
       )
     `)
-    .eq('staff_id', staffId)  // Use staff.id, not auth_user_id
-    .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
+    .in('client_id', assignedClientIds)
+    .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval'])
+    .order('created_at', { ascending: false });
 
-  // Then get branch-level care plans where staff_id is null
-  const branchQuery = supabase
-    .from('client_care_plans')
-    .select(`
-      *,
-      client:clients!inner(
-        id,
-        first_name,
-        last_name,
-        avatar_initials,
-        branch_id
-      ),
-      goals:client_care_plan_goals(*),
-      activities:client_activities(*),
-      medications:client_medications(*),
-      staff:staff!staff_id(
-        id,
-        first_name,
-        last_name
-      )
-    `)
-    .eq('client.branch_id', branchId)
-    .is('staff_id', null)
-    .in('status', ['draft', 'active', 'pending_approval', 'approved', 'pending_client_approval']);
-
-  const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
-
-  if (directResult.error && branchResult.error) {
-    console.error('Error fetching carer assigned care plans:', directResult.error || branchResult.error);
-    throw directResult.error || branchResult.error;
+  if (carePlansError) {
+    console.error('Error fetching care plans for assigned clients:', carePlansError);
+    throw carePlansError;
   }
 
-  // Combine the results
-  const combinedData = [
-    ...(directResult.data || []),
-    ...(branchResult.data || [])
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const combinedData = carePlansData || [];
 
   // Transform the data similar to fetchClientCarePlansWithDetails
   const transformedData: CarePlanWithDetails[] = combinedData.map(item => {
