@@ -165,13 +165,13 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
 
   const getCompletionBadge = (percentage: number) => {
     if (percentage >= 100) {
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Complete</Badge>;
+      return <Badge variant="custom" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Complete</Badge>;
     } else if (percentage >= 80) {
-      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">Nearly Complete</Badge>;
+      return <Badge variant="custom" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Nearly Complete</Badge>;
     } else if (percentage >= 50) {
-      return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">In Progress</Badge>;
+      return <Badge variant="custom" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">In Progress</Badge>;
     } else {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Incomplete</Badge>;
+      return <Badge variant="custom" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Incomplete</Badge>;
     }
   };
 

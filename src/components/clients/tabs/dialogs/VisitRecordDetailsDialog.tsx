@@ -59,8 +59,8 @@ export const VisitRecordDetailsDialog: React.FC<VisitRecordDetailsDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold">
             Visit Record Details
           </DialogTitle>
@@ -71,7 +71,7 @@ export const VisitRecordDetailsDialog: React.FC<VisitRecordDetailsDialogProps> =
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-120px)]">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-120px)] overflow-y-auto">
           <div className="space-y-6 pr-4">
             
             {/* Visit Overview Section */}
@@ -117,10 +117,10 @@ export const VisitRecordDetailsDialog: React.FC<VisitRecordDetailsDialogProps> =
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge className={
+                  <Badge variant="custom" className={
                     visit.status === 'completed' 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
                   }>
                     {visit.status}
                   </Badge>
