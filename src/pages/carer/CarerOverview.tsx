@@ -62,15 +62,21 @@ const CarerOverview: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-700';
+      case 'done':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
       case 'in-progress':
-        return 'bg-blue-600 text-white';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'assigned':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
       case 'scheduled':
-        return 'bg-gray-100 text-gray-700';
+      case 'pending':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
       case 'cancelled':
-        return 'bg-red-100 text-red-700';
+      case 'missed':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -243,25 +249,27 @@ const CarerOverview: React.FC = () => {
             {upcomingAppointments.length > 0 ? (
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 border rounded-lg">
+                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 border border-border rounded-lg bg-card">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <div className="text-sm">
-                        <div className="font-medium">{appointment.time}</div>
-                        <div className="text-gray-500">{appointment.date}</div>
+                        <div className="font-medium text-foreground">{appointment.time}</div>
+                        <div className="text-muted-foreground">{appointment.date}</div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{appointment.client}</div>
-                        <div className="text-sm text-gray-500 truncate">{appointment.service}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-foreground truncate">{appointment.client}</div>
+                        <div className="text-sm text-muted-foreground truncate max-w-[180px] sm:max-w-[200px]" title={appointment.service}>
+                          {appointment.service}
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {appointment.isToday && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">Today</Badge>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800">Today</Badge>
                       )}
                       {appointment.isTomorrow && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700">Tomorrow</Badge>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">Tomorrow</Badge>
                       )}
-                      <Badge className={getStatusColor(appointment.status)}>
+                      <Badge variant="custom" className={getStatusColor(appointment.status)}>
                         {appointment.status}
                       </Badge>
                     </div>
