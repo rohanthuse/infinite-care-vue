@@ -13,10 +13,11 @@ import { useClientNotes, useCreateClientNote, useUpdateClientNote, useDeleteClie
 
 interface NotesTabProps {
   clientId: string;
+  clientName?: string;
   notes?: any[];
 }
 
-export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
+export const NotesTab: React.FC<NotesTabProps> = ({ clientId, clientName }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -96,7 +97,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
               <span>Add Note</span>
             </Button>
           </div>
-          <CardDescription>Clinical observations and updates for client {clientId}</CardDescription>
+          <CardDescription>Clinical observations and updates{clientName ? ` for ${clientName}` : ''}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-4">

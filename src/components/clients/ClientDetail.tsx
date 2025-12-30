@@ -257,7 +257,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes" className="p-6 m-0">
-                  <NotesTab clientId={client.id} />
+                  <NotesTab clientId={client.id} clientName={displayName} />
                 </TabsContent>
                 
                 <TabsContent value="messages" className="p-6 m-0">
@@ -300,11 +300,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="documents" className="p-6 m-0">
-                  <DocumentsTab clientId={client.id} />
+                  <DocumentsTab clientId={client.id} clientName={displayName} />
                 </TabsContent>
                 
                 <TabsContent value="appointments" className="p-6 m-0">
-                  <AppointmentsTab clientId={client.id} />
+                  <AppointmentsTab clientId={client.id} clientName={displayName} />
                 </TabsContent>
                 
                 <TabsContent value="billing" className="p-6 m-0">
@@ -312,11 +312,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="careplans" className="p-6 m-0">
-                  <CarePlansTab clientId={client.id} />
+                  <CarePlansTab clientId={client.id} clientName={displayName} />
                 </TabsContent>
                 
                 <TabsContent value="eventslogs" className="p-6 m-0">
-                  <EventsLogsTab clientId={client.id} branchId={branchId} />
+                  <EventsLogsTab clientId={client.id} branchId={branchId} clientName={displayName} />
                 </TabsContent>
                 
                 <TabsContent value="rates" className="p-6 m-0">

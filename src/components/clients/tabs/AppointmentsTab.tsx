@@ -22,9 +22,10 @@ import { useTenant } from "@/contexts/TenantContext";
 
 interface AppointmentsTabProps {
   clientId: string;
+  clientName?: string;
 }
 
-export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) => {
+export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId, clientName }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -306,7 +307,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
               <span>Schedule</span>
             </Button>
           </div>
-          <CardDescription>Scheduled appointments for client {clientId}</CardDescription>
+          <CardDescription>Scheduled appointments{clientName ? ` for ${clientName}` : ''}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {bookings.length === 0 ? (

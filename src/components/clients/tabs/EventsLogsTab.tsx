@@ -17,6 +17,7 @@ interface EventsLogsTabProps {
   clientId: string;
   carePlanId?: string;
   patientName?: string;
+  clientName?: string;
   onAddEvent?: () => void;
   branchId?: string;
 }
@@ -25,6 +26,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   clientId, 
   carePlanId, 
   patientName, 
+  clientName,
   onAddEvent,
   branchId
 }) => {
@@ -97,7 +99,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
             </Button>
           </div>
           <CardDescription>
-            Incident reports and event logs for {patientName || `client ${clientId}`}
+            Incident reports and event logs{(patientName || clientName) ? ` for ${patientName || clientName}` : ''}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">

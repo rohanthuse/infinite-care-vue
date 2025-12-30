@@ -244,10 +244,6 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
               <span className="font-medium">Status:</span>
               <span>{getStatusBadge(client.status)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Client ID:</span>
-              <span>{client.id}</span>
-            </div>
           </CardContent>
         </Card>
 
