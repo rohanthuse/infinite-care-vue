@@ -8,6 +8,7 @@ import { User, Edit, Save, X } from "lucide-react";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CarerPersonalDetailsTabProps {
   carerId: string;
@@ -41,6 +42,7 @@ const parseAddress = (addressString: string | null | undefined) => {
 export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = ({ carerId }) => {
   const { data: carer } = useCarerProfileById(carerId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   
   const [formData, setFormData] = useState(() => {
@@ -105,6 +107,12 @@ export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = (
         .eq('id', carerId);
 
       if (error) throw error;
+
+      // Invalidate cache to refresh UI with new data
+      await queryClient.invalidateQueries({ queryKey: ['carer-profile-by-id', carerId] });
+      await queryClient.invalidateQueries({ queryKey: ['carer-profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-profile', carerId] });
+      await queryClient.invalidateQueries({ queryKey: ['branch-carers'] });
 
       toast({
         title: "Personal details updated",
