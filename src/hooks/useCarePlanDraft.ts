@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useRef, useState } from "react";
-import { calculateCompletionPercentage } from "@/utils/carePlanCompletionUtils";
+import { calculateCompletionPercentage, CompletionContext } from "@/utils/carePlanCompletionUtils";
 
 interface DraftData {
   form_data: any;
@@ -100,10 +100,12 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
 
   // Mutation to save draft
   const saveDraftMutation = useMutation({
-    mutationFn: async ({ formData, currentStep, isAutoSave = false }: {
+    mutationFn: async ({ formData, currentStep, isAutoSave = false, isChild = false, medicationCount = 0 }: {
       formData: any;
       currentStep: number;
       isAutoSave?: boolean;
+      isChild?: boolean;
+      medicationCount?: number;
     }) => {
       // Prevent auto-save if manual save is in progress
       if (isAutoSave && isManualSavingRef.current) {
@@ -114,10 +116,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
       if (isCheckingExistingDraft) {
         throw new Error('Still checking for existing draft, please wait');
       }
+      
       // Calculate content-based completion percentage using unified utility
-      // Note: isChild detection would require client profile, for now we use false as default
-      // This will be accurate for adults, and slightly undercount for children (acceptable)
-      const completionPercentage = calculateCompletionPercentage(formData, false);
+      // Now accepts context with medication count for accurate calculation
+      const ctx: CompletionContext = { medicationCount };
+      const completionPercentage = calculateCompletionPercentage(formData, isChild, ctx);
       
       const draftPayload: any = {
         client_id: clientId,
@@ -220,7 +223,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
   });
 
   // Auto-save function with debouncing
-  const autoSave = useCallback((formData: any, currentStep: number) => {
+  const autoSave = useCallback((formData: any, currentStep: number, isChild: boolean = false, medicationCount: number = 0) => {
     // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -238,13 +241,15 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
           formData,
           currentStep,
           isAutoSave: true,
+          isChild,
+          medicationCount,
         });
       }
     }, 30000); // Auto-save after 30 seconds of inactivity
   }, [saveDraftMutation]);
 
   // Manual save function with coordination
-  const saveDraft = useCallback(async (formData: any, currentStep: number): Promise<void> => {
+  const saveDraft = useCallback(async (formData: any, currentStep: number, isChild: boolean = false, medicationCount: number = 0): Promise<void> => {
     // Set manual save flag and clear auto-save
     isManualSavingRef.current = true;
     if (autoSaveTimeoutRef.current) {
@@ -258,6 +263,8 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
           formData,
           currentStep,
           isAutoSave: false,
+          isChild,
+          medicationCount,
         },
         {
           onSuccess: () => {
