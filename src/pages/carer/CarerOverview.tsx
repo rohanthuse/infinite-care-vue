@@ -249,20 +249,22 @@ const CarerOverview: React.FC = () => {
             {upcomingAppointments.length > 0 ? (
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 border border-border rounded-lg bg-card">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <div className="text-sm">
+                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 border border-border rounded-lg bg-card overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="text-sm flex-shrink-0 w-14 sm:w-16">
                         <div className="font-medium text-foreground">{appointment.time}</div>
                         <div className="text-muted-foreground">{appointment.date}</div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-foreground truncate">{appointment.client}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[180px] sm:max-w-[200px]" title={appointment.service}>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <div className="font-medium text-foreground truncate" title={appointment.client}>
+                          {appointment.client}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate" title={appointment.service}>
                           {appointment.service}
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                       {appointment.isToday && (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800">Today</Badge>
                       )}
