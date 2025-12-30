@@ -69,7 +69,7 @@ const ClientOverview = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <AlertCircle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">Authentication Required</h3>
           <p className="text-muted-foreground">Please log in to view your dashboard.</p>
         </div>

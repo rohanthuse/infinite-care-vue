@@ -90,7 +90,7 @@ const ClientReviews = () => {
         disabled={!editable}
       >
         <Star 
-          className={`h-5 w-5 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+          className={`h-5 w-5 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} 
         />
       </button>
     ));
