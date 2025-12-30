@@ -14,6 +14,7 @@ import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { BookingsMonthView } from "./BookingsMonthView";
 import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
 import { getRequestStatusColors } from "./utils/requestIndicatorHelpers";
+import { ClientScheduleDraggable } from "./ClientScheduleDraggable";
 
 interface ClientScheduleCalendarProps {
   date: Date;
@@ -35,6 +36,7 @@ interface ClientScheduleCalendarProps {
   timeInterval?: 30 | 60;
   selectedBookings?: Booking[];
   onBookingSelect?: (booking: Booking, selected: boolean) => void;
+  enableDragDrop?: boolean;
 }
 
 interface ClientStatus {
@@ -88,6 +90,7 @@ export function ClientScheduleCalendar({
   timeInterval = 30,
   selectedBookings = [],
   onBookingSelect,
+  enableDragDrop = false,
 }: ClientScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -939,8 +942,24 @@ export function ClientScheduleCalendar({
                       )}
                     </div>
                   ))
+                ) : enableDragDrop ? (
+                  // Daily view with drag-and-drop enabled
+                  <ClientScheduleDraggable
+                    clientId={client.id}
+                    clientName={client.name}
+                    timeSlots={timeSlots}
+                    schedule={client.schedule}
+                    bookingBlocks={client.bookingBlocks}
+                    slotWidth={SLOT_WIDTH}
+                    onViewBooking={onViewBooking}
+                    onCellClick={handleCellClick}
+                    getStatusColor={getStatusColor}
+                    renderTooltipContent={renderTooltipContent}
+                    selectedBookings={selectedBookings}
+                    onBookingSelect={onBookingSelect}
+                  />
                 ) : (
-                  // Daily view: Time-based booking blocks
+                  // Daily view: Time-based booking blocks (non-draggable)
                   <div className="relative flex">
                     {timeSlots.map(slot => {
                       const status = client.schedule[slot];
