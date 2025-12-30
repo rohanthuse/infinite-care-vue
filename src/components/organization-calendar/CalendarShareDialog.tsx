@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarEvent } from '@/types/calendar';
 import { ReportExporter } from '@/utils/reportExporter';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,6 +21,7 @@ interface CalendarShareDialogProps {
   events: CalendarEvent[];
   currentDate: Date;
   branchName?: string;
+  branchId?: string;
 }
 
 export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
@@ -29,6 +30,7 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
   events,
   currentDate,
   branchName,
+  branchId,
 }) => {
   const [includeDetails, setIncludeDetails] = useState(true);
   const [includeParticipants, setIncludeParticipants] = useState(true);
@@ -39,32 +41,34 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
     setIsSharing(true);
     
     try {
-      // Prepare export data
+      // Prepare export data with improved structure (matching export dialog)
       const exportData = events.map(event => ({
-        Title: event.title,
-        Type: event.type,
-        Status: event.status,
-        'Start Time': format(event.startTime, 'MMM d, yyyy HH:mm'),
-        'End Time': format(event.endTime, 'MMM d, yyyy HH:mm'),
-        Branch: event.branchName,
-        Location: event.location || 'Not specified',
+        Date: format(event.startTime, 'dd/MM/yyyy'),
+        Time: `${format(event.startTime, 'HH:mm')} - ${format(event.endTime, 'HH:mm')}`,
+        'Client/Title': event.title,
+        'Carer/Staff': event.participants?.map(p => p.name).join(', ') || 'Not assigned',
+        Type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
+        Status: event.status?.charAt(0).toUpperCase() + (event.status?.slice(1) || ''),
+        Branch: event.branchName || branchName || '-',
+        Location: event.location || '-',
         ...(includeParticipants && {
           Participants: event.participants?.map(p => p.name).join(', ') || 'None'
         }),
         ...(includeDetails && {
-          Priority: event.priority,
+          Priority: event.priority || 'Normal',
         }),
-        ...(includeConflicts && event.conflictsWith?.length && {
-          Conflicts: `${event.conflictsWith.length} conflicts`
+        ...(includeConflicts && {
+          Conflicts: event.conflictsWith?.length ? `${event.conflictsWith.length} conflict(s)` : 'None'
         }),
       }));
 
       const columns = [
-        'Title',
-        'Type', 
+        'Date',
+        'Time',
+        'Client/Title',
+        'Carer/Staff',
+        'Type',
         'Status',
-        'Start Time',
-        'End Time',
         'Branch',
         'Location',
         ...(includeParticipants ? ['Participants'] : []),
@@ -72,15 +76,23 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
         ...(includeConflicts ? ['Conflicts'] : []),
       ];
 
-      // Generate PDF blob for sharing
-      const pdfBlob = await ReportExporter.exportToPDFBlob({
+      // Generate PDF blob for sharing using dedicated calendar method
+      const pdfBlob = await ReportExporter.exportCalendarToPDFBlob({
         title: 'Organisation Calendar Report',
         data: exportData,
         columns,
         branchName,
+        branchId,
         dateRange: {
-          from: currentDate,
-          to: currentDate
+          from: startOfMonth(currentDate),
+          to: endOfMonth(currentDate)
+        },
+        metadata: {
+          exportedRecords: events.length,
+          filters: {
+            month: format(currentDate, 'MMMM yyyy'),
+            branch: branchName || 'All Branches'
+          }
         }
       });
 

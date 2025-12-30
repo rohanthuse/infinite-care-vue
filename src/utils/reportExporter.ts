@@ -190,6 +190,411 @@ export class ReportExporter {
     return doc.output('blob');
   }
 
+  /**
+   * Export Organisation Calendar to professional PDF
+   * Matches the healthcare-styled format used in Service Reports
+   */
+  static async exportCalendarToPDF(options: ExportOptions) {
+    const { title, data, columns, fileName, branchName, dateRange, branchId, metadata } = options;
+    const doc = new jsPDF();
+    
+    // Fetch organization settings
+    const orgSettings = branchId ? await fetchOrganizationSettings(branchId) : null;
+    
+    // Load company logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    }
+    
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    const FOOTER_HEIGHT = 20;
+    
+    /**
+     * Add professional calendar header
+     */
+    const addCalendarHeader = (isFirstPage: boolean = true): number => {
+      // Blue top bar
+      doc.setFillColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
+      doc.rect(0, 0, pageWidth, 5, 'F');
+      
+      let currentY = 12;
+      
+      // Logo on left
+      if (logoBase64) {
+        try {
+          const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+            if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+            if (base64.includes('data:image/gif')) return 'GIF';
+            return 'PNG';
+          };
+          doc.addImage(logoBase64, getImageFormat(logoBase64), margin, currentY, 40, 22);
+        } catch (e) {
+          console.error('Error adding logo:', e);
+        }
+      }
+      
+      // Organization details on right
+      const rightX = pageWidth - margin;
+      
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(orgSettings?.name || 'Organisation', rightX, currentY + 3, { align: 'right' });
+      
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
+      
+      let detailY = currentY + 8;
+      if (orgSettings?.address) {
+        const addressLine = orgSettings.address.split('\n')[0];
+        doc.text(addressLine, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.telephone) {
+        doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.email) {
+        doc.text(orgSettings.email, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (branchName) {
+        doc.text(`Branch: ${branchName}`, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });
+      
+      // Centered title
+      currentY = 40;
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.text(title || 'Organisation Calendar Report', pageWidth / 2, currentY, { align: 'center' });
+      
+      // Date range subtitle
+      if (dateRange) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text(
+          `Period: ${format(dateRange.from, 'dd MMM yyyy')} - ${format(dateRange.to, 'dd MMM yyyy')}`,
+          pageWidth / 2,
+          currentY + 6,
+          { align: 'center' }
+        );
+      }
+      
+      // Summary info
+      if (isFirstPage && metadata) {
+        currentY = 52;
+        doc.setFontSize(8);
+        const recordsText = `Total Events: ${metadata.exportedRecords || data.length}`;
+        doc.text(recordsText, pageWidth / 2, currentY, { align: 'center' });
+        currentY = 58;
+      } else {
+        currentY = 52;
+      }
+      
+      return currentY;
+    };
+    
+    /**
+     * Add professional footer
+     */
+    const addCalendarFooter = (pageNumber: number, totalPages: number) => {
+      const footerY = pageHeight - 12;
+      
+      // Divider line
+      doc.setDrawColor(PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b);
+      doc.setLineWidth(0.3);
+      doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+      
+      // Footer text
+      doc.setFontSize(6);
+      doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      doc.setFont('helvetica', 'normal');
+      
+      doc.text('Confidential - For authorised use only', margin, footerY);
+      const centerText = `© ${orgSettings?.name || 'Organisation'} | Calendar Report`;
+      doc.text(centerText, pageWidth / 2, footerY, { align: 'center' });
+      doc.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+    };
+    
+    // Add first page header
+    let currentY = addCalendarHeader(true);
+    
+    // Define optimized column widths for calendar data
+    const calendarColumns = ['Date', 'Time', 'Client/Title', 'Carer/Staff', 'Type', 'Status', 'Branch', 'Location'];
+    const columnStyles: Record<number, { cellWidth: number }> = {
+      0: { cellWidth: 20 },  // Date
+      1: { cellWidth: 24 },  // Time
+      2: { cellWidth: 30 },  // Client/Title
+      3: { cellWidth: 28 },  // Carer/Staff
+      4: { cellWidth: 18 },  // Type
+      5: { cellWidth: 18 },  // Status
+      6: { cellWidth: 22 },  // Branch
+      7: { cellWidth: 'auto' as any },  // Location
+    };
+    
+    // Build body data
+    const bodyData = data.map(row => columns.map(col => {
+      const value = row[col];
+      // Truncate long values
+      if (typeof value === 'string' && value.length > 30) {
+        return value.substring(0, 27) + '...';
+      }
+      return value || '-';
+    }));
+    
+    // Add data table with optimized styling
+    autoTable(doc, {
+      head: [columns],
+      body: bodyData,
+      startY: currentY,
+      theme: 'grid',
+      styles: { 
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b],
+        lineWidth: 0.1,
+        overflow: 'linebreak',
+        valign: 'middle'
+      },
+      headStyles: { 
+        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'left',
+        fontSize: 7
+      },
+      alternateRowStyles: {
+        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
+      },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
+      columnStyles,
+      didDrawPage: (data) => {
+        // Add header on subsequent pages
+        if (data.pageNumber > 1) {
+          addCalendarHeader(false);
+        }
+      }
+    });
+    
+    // Add footers to all pages
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      addCalendarFooter(i, pageCount);
+    }
+    
+    // Save the PDF
+    const finalFileName = fileName || `Organisation_Calendar_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
+    doc.save(finalFileName);
+  }
+
+  /**
+   * Export Organisation Calendar to PDF Blob (for sharing)
+   */
+  static async exportCalendarToPDFBlob(options: ExportOptions): Promise<Blob> {
+    const { title, data, columns, branchName, dateRange, branchId, metadata } = options;
+    const doc = new jsPDF();
+    
+    // Fetch organization settings
+    const orgSettings = branchId ? await fetchOrganizationSettings(branchId) : null;
+    
+    // Load company logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    }
+    
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 15;
+    const FOOTER_HEIGHT = 20;
+    
+    /**
+     * Add professional calendar header
+     */
+    const addCalendarHeader = (isFirstPage: boolean = true): number => {
+      // Blue top bar
+      doc.setFillColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
+      doc.rect(0, 0, pageWidth, 5, 'F');
+      
+      let currentY = 12;
+      
+      // Logo on left
+      if (logoBase64) {
+        try {
+          const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+            if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+            if (base64.includes('data:image/gif')) return 'GIF';
+            return 'PNG';
+          };
+          doc.addImage(logoBase64, getImageFormat(logoBase64), margin, currentY, 40, 22);
+        } catch (e) {
+          console.error('Error adding logo:', e);
+        }
+      }
+      
+      // Organization details on right
+      const rightX = pageWidth - margin;
+      
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(orgSettings?.name || 'Organisation', rightX, currentY + 3, { align: 'right' });
+      
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
+      
+      let detailY = currentY + 8;
+      if (orgSettings?.address) {
+        const addressLine = orgSettings.address.split('\n')[0];
+        doc.text(addressLine, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.telephone) {
+        doc.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (orgSettings?.email) {
+        doc.text(orgSettings.email, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      if (branchName) {
+        doc.text(`Branch: ${branchName}`, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      }
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, rightX, detailY, { align: 'right' });
+      
+      // Centered title
+      currentY = 40;
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+      doc.text(title || 'Organisation Calendar Report', pageWidth / 2, currentY, { align: 'center' });
+      
+      // Date range subtitle
+      if (dateRange) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text(
+          `Period: ${format(dateRange.from, 'dd MMM yyyy')} - ${format(dateRange.to, 'dd MMM yyyy')}`,
+          pageWidth / 2,
+          currentY + 6,
+          { align: 'center' }
+        );
+      }
+      
+      // Summary info
+      if (isFirstPage && metadata) {
+        currentY = 52;
+        doc.setFontSize(8);
+        const recordsText = `Total Events: ${metadata.exportedRecords || data.length}`;
+        doc.text(recordsText, pageWidth / 2, currentY, { align: 'center' });
+        currentY = 58;
+      } else {
+        currentY = 52;
+      }
+      
+      return currentY;
+    };
+    
+    /**
+     * Add professional footer
+     */
+    const addCalendarFooter = (pageNumber: number, totalPages: number) => {
+      const footerY = pageHeight - 12;
+      
+      doc.setDrawColor(PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b);
+      doc.setLineWidth(0.3);
+      doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+      
+      doc.setFontSize(6);
+      doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      doc.setFont('helvetica', 'normal');
+      
+      doc.text('Confidential - For authorised use only', margin, footerY);
+      const centerText = `© ${orgSettings?.name || 'Organisation'} | Calendar Report`;
+      doc.text(centerText, pageWidth / 2, footerY, { align: 'center' });
+      doc.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+    };
+    
+    // Add first page header
+    let currentY = addCalendarHeader(true);
+    
+    // Column width config
+    const columnStyles: Record<number, { cellWidth: number }> = {
+      0: { cellWidth: 20 },
+      1: { cellWidth: 24 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 18 },
+      5: { cellWidth: 18 },
+      6: { cellWidth: 22 },
+      7: { cellWidth: 'auto' as any },
+    };
+    
+    // Build body data
+    const bodyData = data.map(row => columns.map(col => {
+      const value = row[col];
+      if (typeof value === 'string' && value.length > 30) {
+        return value.substring(0, 27) + '...';
+      }
+      return value || '-';
+    }));
+    
+    // Add data table
+    autoTable(doc, {
+      head: [columns],
+      body: bodyData,
+      startY: currentY,
+      theme: 'grid',
+      styles: { 
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b],
+        lineWidth: 0.1,
+        overflow: 'linebreak',
+        valign: 'middle'
+      },
+      headStyles: { 
+        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'left',
+        fontSize: 7
+      },
+      alternateRowStyles: {
+        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
+      },
+      margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5 },
+      columnStyles,
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addCalendarHeader(false);
+        }
+      }
+    });
+    
+    // Add footers to all pages
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      addCalendarFooter(i, pageCount);
+    }
+    
+    return doc.output('blob');
+  }
+
   static exportToCSV(options: ExportOptions) {
     const { title, data, columns, fileName, metadata } = options;
     

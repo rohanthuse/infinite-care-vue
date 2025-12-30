@@ -1199,10 +1199,24 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
        )}
 
        {/* Export Dialog */}
-      <CalendarExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />
+      <CalendarExportDialog 
+        open={exportDialogOpen} 
+        onOpenChange={setExportDialogOpen} 
+        events={calendarEvents || []} 
+        currentDate={currentDate} 
+        branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'}
+        branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+      />
 
       {/* Share Dialog */}
-      <CalendarShareDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />
+      <CalendarShareDialog 
+        open={shareDialogOpen} 
+        onOpenChange={setShareDialogOpen} 
+        events={calendarEvents || []} 
+        currentDate={currentDate} 
+        branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'}
+        branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+      />
 
       {/* Delete Event Dialog */}
       <DeleteEventDialog open={deleteEventDialogOpen} onOpenChange={setDeleteEventDialogOpen} event={eventToDelete} onConfirm={handleConfirmDeleteEvent} isDeleting={deleteEventMutation.isPending} />
