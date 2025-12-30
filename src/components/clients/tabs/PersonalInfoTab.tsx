@@ -625,6 +625,23 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
               </div>
             )}
+
+            {/* Emergency Contact Section */}
+            {(client.emergency_contact || client.emergency_phone) && (
+              <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border">
+                <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Contact Name</h4>
+                    <p className="mt-1">{client.emergency_contact || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Contact Phone</h4>
+                    <p className="mt-1">{client.emergency_phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -1149,32 +1166,44 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
-                      <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                  <>
+                    {/* Show legacy GP details if no personalInfo GP data */}
+                    {!personalInfo?.gp_name && client.gp_details && (
+                      <div className="mb-4 p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2">Legacy GP Details</h4>
+                        <p className="text-sm whitespace-pre-wrap">{client.gp_details}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Click "Edit All Sections" to update GP information in the new format.
+                        </p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
+                        <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
+                        <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
+                        <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
+                        <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                        <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
+                        <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
-                      <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
-                      <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
-                      <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
-                      <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
-                      <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
-                    </div>
-                  </div>
+                  </>
                 )}
                 <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
