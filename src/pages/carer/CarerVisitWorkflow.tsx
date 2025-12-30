@@ -260,13 +260,34 @@ const CarerVisitWorkflow = () => {
   const [isUpdatingGoal, setIsUpdatingGoal] = useState<string | null>(null);
   const [isUpdatingActivity, setIsUpdatingActivity] = useState<string | null>(null);
   
-  // Merge data: prioritize normalized tables, fall back to JSON data
-  const carePlanGoals = useMemo(() => {
-    if (normalizedGoals && normalizedGoals.length > 0) {
-      return normalizedGoals;
+  // Merge data: prioritize normalized tables, fall back to JSON data, then filter by time
+  const carePlanGoals = useMemo((): any[] => {
+    // Get the current booking's shift
+    const currentShifts = currentAppointment?.start_time 
+      ? getShiftFromTime(currentAppointment.start_time) 
+      : [];
+    
+    // Get raw goals from normalized tables or JSON
+    let rawGoals: any[] = normalizedGoals && normalizedGoals.length > 0
+      ? [...normalizedGoals]
+      : [...(jsonData?.goals || [])];
+    
+    // If we have a booking time, filter goals by time_of_day
+    if (currentShifts.length > 0 && rawGoals.length > 0) {
+      rawGoals = rawGoals.filter((goal: any) => {
+        const goalTimes = goal.time_of_day;
+        
+        // If no time_of_day specified, show the goal (backwards compatibility)
+        if (!goalTimes || goalTimes.length === 0) return true;
+        
+        // Check if goal's time_of_day includes the current shift
+        const timesArray = Array.isArray(goalTimes) ? goalTimes : [goalTimes];
+        return timesArray.some((time: string) => currentShifts.includes(time));
+      });
     }
-    return jsonData?.goals || [];
-  }, [normalizedGoals, jsonData?.goals]);
+    
+    return rawGoals;
+  }, [normalizedGoals, jsonData?.goals, currentAppointment?.start_time]);
   
   // Helper function to determine shift from booking start time
   const getShiftFromTime = (startTime: string | Date): string[] => {
@@ -1960,6 +1981,11 @@ const CarerVisitWorkflow = () => {
                  <CardTitle className="flex items-center gap-2">
                    <Pill className="w-5 h-5" />
                    Medication Administration
+                   {getCurrentShiftLabel() && (
+                     <Badge variant="outline" className="ml-2 capitalize">
+                       {getCurrentShiftLabel()} shift
+                     </Badge>
+                   )}
                  </CardTitle>
                </CardHeader>
               <CardContent>
@@ -2621,6 +2647,11 @@ const CarerVisitWorkflow = () => {
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5" />
                   Care Plan Goals
+                  {getCurrentShiftLabel() && (
+                    <Badge variant="outline" className="ml-2 capitalize">
+                      {getCurrentShiftLabel()} shift
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -2759,6 +2790,11 @@ const CarerVisitWorkflow = () => {
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
                   Daily Activities
+                  {getCurrentShiftLabel() && (
+                    <Badge variant="outline" className="ml-2 capitalize">
+                      {getCurrentShiftLabel()} shift
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>

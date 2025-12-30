@@ -2410,6 +2410,7 @@ export type Database = {
           notes: string | null
           progress: number | null
           status: string
+          time_of_day: string[] | null
           updated_at: string
         }
         Insert: {
@@ -2420,6 +2421,7 @@ export type Database = {
           notes?: string | null
           progress?: number | null
           status?: string
+          time_of_day?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -2430,6 +2432,7 @@ export type Database = {
           notes?: string | null
           progress?: number | null
           status?: string
+          time_of_day?: string[] | null
           updated_at?: string
         }
         Relationships: [
