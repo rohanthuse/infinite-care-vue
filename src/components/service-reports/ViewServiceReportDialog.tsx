@@ -76,23 +76,56 @@ export function ViewServiceReportDialog({
   report,
   adminMode = false,
 }: ViewServiceReportDialogProps) {
+  // Fetch fresh report data from database when dialog opens
+  const { data: fetchedReport, isLoading: isFetchingReport } = useQuery({
+    queryKey: ['service-report-detail', report?.id],
+    queryFn: async () => {
+      if (!report?.id) return null;
+      const { data, error } = await supabase
+        .from('client_service_reports')
+        .select(`
+          *,
+          clients:client_id (id, first_name, last_name, email, avatar_url),
+          staff:staff_id (id, first_name, last_name, email)
+        `)
+        .eq('id', report.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('[ViewServiceReportDialog] Error fetching report:', error);
+        throw error;
+      }
+      console.log('[ViewServiceReportDialog] Fetched fresh report:', data?.id, {
+        client_mood: data?.client_mood,
+        client_engagement: data?.client_engagement,
+        carer_observations: data?.carer_observations?.substring(0, 50),
+      });
+      return data;
+    },
+    enabled: open && !!report?.id,
+    staleTime: 0, // Always fetch fresh data when dialog opens
+  });
+
+  // Use fetched report if available, otherwise fall back to prop (for initial render)
+  const resolvedReport = fetchedReport || report;
+
   // Create safeReport with fallbacks BEFORE any hooks
-  const safeReport = report ? {
-    ...report,
-    clients: report.clients || { first_name: '', last_name: '', email: '' },
-    staff: report.staff || { first_name: '', last_name: '', email: '' },
-    services_provided: report.services_provided || [],
-    client_mood: report.client_mood || '',
-    client_engagement: report.client_engagement || '',
-    carer_observations: report.carer_observations || '',
-    client_feedback: report.client_feedback || '',
-    activities_undertaken: report.activities_undertaken || '',
-    medication_notes: report.medication_notes || '',
-    incident_details: report.incident_details || '',
-    next_visit_preparations: report.next_visit_preparations || '',
-    review_notes: report.review_notes || '',
-    medication_administered: report.medication_administered ?? false,
-    incident_occurred: report.incident_occurred ?? false,
+  const safeReport = resolvedReport ? {
+    ...resolvedReport,
+    clients: resolvedReport.clients || { first_name: '', last_name: '', email: '' },
+    staff: resolvedReport.staff || { first_name: '', last_name: '', email: '' },
+    services_provided: resolvedReport.services_provided || [],
+    client_mood: resolvedReport.client_mood || '',
+    client_engagement: resolvedReport.client_engagement || '',
+    carer_observations: resolvedReport.carer_observations || '',
+    client_feedback: resolvedReport.client_feedback || '',
+    activities_undertaken: resolvedReport.activities_undertaken || '',
+    medication_notes: resolvedReport.medication_notes || '',
+    incident_details: resolvedReport.incident_details || '',
+    next_visit_preparations: resolvedReport.next_visit_preparations || '',
+    review_notes: resolvedReport.review_notes || '',
+    medication_administered: resolvedReport.medication_administered ?? false,
+    incident_occurred: resolvedReport.incident_occurred ?? false,
   } : null;
 
   // Form state for editable fields
@@ -104,7 +137,7 @@ export function ViewServiceReportDialog({
     next_visit_preparations: safeReport?.next_visit_preparations || '',
   });
 
-  // Sync form data when dialog opens or report changes
+  // Sync form data when dialog opens or fetched report changes
   React.useEffect(() => {
     if (open && safeReport) {
       setFormData({
@@ -115,7 +148,7 @@ export function ViewServiceReportDialog({
         next_visit_preparations: safeReport.next_visit_preparations || '',
       });
     }
-  }, [open, report?.id]);
+  }, [open, fetchedReport?.id, fetchedReport?.updated_at]);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -179,7 +212,7 @@ export function ViewServiceReportDialog({
     enabled: !!safeReport?.client_id && open,
   });
 
-  const isDataLoading = visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
+  const isDataLoading = isFetchingReport || visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
 
   // NOW we can do the early return - AFTER all hooks are called
   if (!report || !safeReport) return null;
