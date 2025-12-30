@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle, Eye, Download } from "lucide-react";
+import { useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
 import { format } from "date-fns";
 import {
   Form,
@@ -42,6 +43,25 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
   const { uploadDocument, isUploading } = useUnifiedDocuments(branchId || '');
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: number]: boolean }>({});
   const [uploadErrors, setUploadErrors] = useState<{ [key: number]: string }>({});
+  
+  const viewDocumentMutation = useViewClientDocument();
+  const downloadDocumentMutation = useDownloadClientDocument();
+
+  const handleViewDocument = (filePath: string) => {
+    if (filePath) {
+      viewDocumentMutation.mutate({ filePath });
+    } else {
+      toast.error('Document file path not available');
+    }
+  };
+
+  const handleDownloadDocument = (filePath: string, fileName: string) => {
+    if (filePath) {
+      downloadDocumentMutation.mutate({ filePath, fileName });
+    } else {
+      toast.error('Document file path not available');
+    }
+  };
 
   // Debug logging for initialization
   console.log('[WizardStep13Documents] Component initialized:', {
@@ -508,19 +528,39 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                 {form.watch(`documents.${index}.file_path`) && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-green-800">
                           {form.watch(`documents.${index}.name`)}
                         </p>
                         <p className="text-xs text-green-600">
                           {form.watch(`documents.${index}.file_size`)} • Uploaded successfully
                         </p>
-                        <p className="text-xs text-green-600">
-                          ID: {form.watch(`documents.${index}.uploaded_document_id`)}
-                        </p>
                       </div>
-                      <div className="text-green-600">
-                        <CheckCircle className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDocument(form.watch(`documents.${index}.file_path`))}
+                          disabled={viewDocumentMutation.isPending}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(
+                            form.watch(`documents.${index}.file_path`),
+                            form.watch(`documents.${index}.name`)
+                          )}
+                          disabled={downloadDocumentMutation.isPending}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                       </div>
                     </div>
                   </div>
