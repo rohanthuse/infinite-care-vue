@@ -17,11 +17,22 @@ interface JsonActivity {
 }
 
 interface JsonMedication {
+  id?: string;
   name?: string;
   dosage?: string;
   frequency?: string;
   instructions?: string;
+  instruction?: string;  // Alternative field name used in some forms
   prescriber?: string;
+  time_of_day?: string[];  // For time-based filtering
+  status?: string;
+  route?: string;
+  shape?: string;
+  who_administers?: string;
+  level?: string;
+  warning?: string;
+  side_effect?: string;
+  start_date?: string;
 }
 
 interface JsonTask {
@@ -65,6 +76,7 @@ interface TransformedMedication {
   frequency: string;
   instructions?: string;
   status: string;
+  time_of_day?: string[];  // For time-based filtering
 }
 
 interface TransformedTask {
@@ -136,18 +148,20 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         };
       });
 
-      // Transform medications from JSON (check multiple possible locations)
+      // Transform medications from JSON (check all possible locations)
       const medicationsSource = autoSaveData.medications || 
+        autoSaveData.medical_info?.medication_manager?.medications ||
         autoSaveData.medical_info?.medications || 
         [];
       const medications: TransformedMedication[] = medicationsSource.map((med: JsonMedication, index: number) => ({
-        id: `json-medication-${index}`,
+        id: med.id || `json-medication-${index}`,
         care_plan_id: data.id,
         name: med.name || '',
         dosage: med.dosage || '',
         frequency: med.frequency || 'daily',
-        instructions: med.instructions || null,
-        status: 'active',
+        instructions: med.instructions || med.instruction || null,
+        status: med.status || 'active',
+        time_of_day: med.time_of_day || [],
       }));
 
       // Transform tasks from personal_care and activities

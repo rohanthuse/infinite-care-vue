@@ -352,6 +352,33 @@ const CarerVisitWorkflow = () => {
     return rawActivities;
   }, [normalizedActivities, jsonData?.activities, currentAppointment?.start_time]);
 
+  // Care plan medications filtered by time slot (from JSON when no database medications)
+  const carePlanMedications = useMemo((): any[] => {
+    // Get the current booking's shift
+    const currentShifts = currentAppointment?.start_time 
+      ? getShiftFromTime(currentAppointment.start_time) 
+      : [];
+    
+    // Get medications from JSON data
+    let rawMedications: any[] = jsonData?.medications || [];
+    
+    // If we have a booking time, filter medications by time_of_day
+    if (currentShifts.length > 0 && rawMedications.length > 0) {
+      rawMedications = rawMedications.filter((medication: any) => {
+        const medTimes = medication.time_of_day;
+        
+        // If no time_of_day specified, show the medication (backwards compatibility)
+        if (!medTimes || medTimes.length === 0) return true;
+        
+        // Check if medication's time_of_day includes the current shift
+        const timesArray = Array.isArray(medTimes) ? medTimes : [medTimes];
+        return timesArray.some((time: string) => currentShifts.includes(time));
+      });
+    }
+    
+    return rawMedications;
+  }, [jsonData?.medications, currentAppointment?.start_time]);
+
   // Helper to get current shift label for display
   const getCurrentShiftLabel = () => {
     if (!currentAppointment?.start_time) return null;
@@ -2128,10 +2155,47 @@ const CarerVisitWorkflow = () => {
                               </div>
                             ))}
                           </div>
+                        ) : carePlanMedications.length > 0 ? (
+                          <div className="space-y-3">
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                                <div className="text-sm text-amber-700">
+                                  <p className="font-medium">Care Plan Medications (Draft)</p>
+                                  <p className="mt-0.5">These medications are from the care plan but not yet synced to the medication tracker.</p>
+                                </div>
+                              </div>
+                            </div>
+                            {carePlanMedications.map((med) => (
+                              <div key={med.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-all">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium text-gray-900">{med.name}</p>
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      {med.dosage && <Badge variant="outline">{med.dosage}</Badge>}
+                                      <Badge variant="secondary">{med.frequency}</Badge>
+                                      {med.time_of_day?.length > 0 && (
+                                        <Badge variant="outline" className="capitalize">
+                                          {med.time_of_day.join(', ')}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {med.instructions && (
+                                      <p className="text-sm text-gray-600 mt-2">{med.instructions}</p>
+                                    )}
+                                  </div>
+                                  <Badge variant="secondary">Care Plan</Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         ) : (
                           <div className="text-center py-6 text-gray-500">
                             <Pill className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                             <p>No care plan medications for this visit</p>
+                            {getCurrentShiftLabel() && (
+                              <p className="text-xs mt-1">Showing medications for {getCurrentShiftLabel().toLowerCase()} shift</p>
+                            )}
                           </div>
                         )}
                       </div>
