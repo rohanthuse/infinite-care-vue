@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookingAttendance, BookingAttendanceData } from "@/hooks/useBookingAttendance";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerContext } from "@/hooks/useCarerContext";
 import { useVisitRecord } from "@/hooks/useVisitRecord";
 import { useVisitTasks } from "@/hooks/useVisitTasks";
 import { useVisitMedications } from "@/hooks/useVisitMedications";
@@ -119,6 +120,7 @@ const CarerVisitWorkflow = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, loading: authLoading } = useCarerAuth();
+  const { data: carerContext, isLoading: carerContextLoading } = useCarerContext();
   const { navigateToCarerPage } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
   const createServiceReport = useCreateServiceReport();
@@ -385,17 +387,19 @@ const CarerVisitWorkflow = () => {
   
   useEffect(() => {
     // Don't auto-create visit records in view-only mode
-    if (!isViewOnly && currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user && !autoCreateAttempted) {
-      console.log('Auto-creating visit record for in-progress appointment');
+    // Wait for carerContext to load to get correct staff_id (not auth user id)
+    const staffId = carerContext?.staffId;
+    if (!isViewOnly && currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && staffId && !autoCreateAttempted) {
+      console.log('Auto-creating visit record for in-progress appointment with staff_id:', staffId);
       setAutoCreateAttempted(true);
       autoCreateVisitRecord.mutate({
         id: currentAppointment.id,
         client_id: currentAppointment.client_id,
-        staff_id: user.id,
+        staff_id: staffId,
         branch_id: currentAppointment.clients?.branch_id || currentAppointment.branch_id,
       });
     }
-  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord, autoCreateAttempted, isViewOnly]);
+  }, [currentAppointment, visitRecord, visitLoading, carerContext?.staffId, autoCreateVisitRecord, autoCreateAttempted, isViewOnly]);
 
   // Check if visit has been started and initialize data
   useEffect(() => {
