@@ -9920,6 +9920,53 @@ export type Database = {
           },
         ]
       }
+      staff_work_preferences: {
+        Row: {
+          client_types: string[] | null
+          created_at: string
+          id: string
+          service_types: string[] | null
+          special_notes: string | null
+          staff_id: string
+          travel_distance: number | null
+          updated_at: string
+          work_locations: string[] | null
+          work_patterns: string[] | null
+        }
+        Insert: {
+          client_types?: string[] | null
+          created_at?: string
+          id?: string
+          service_types?: string[] | null
+          special_notes?: string | null
+          staff_id: string
+          travel_distance?: number | null
+          updated_at?: string
+          work_locations?: string[] | null
+          work_patterns?: string[] | null
+        }
+        Update: {
+          client_types?: string[] | null
+          created_at?: string
+          id?: string
+          service_types?: string[] | null
+          special_notes?: string | null
+          staff_id?: string
+          travel_distance?: number | null
+          updated_at?: string
+          work_locations?: string[] | null
+          work_patterns?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_work_preferences_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_working_hours: {
         Row: {
           availability_type: string

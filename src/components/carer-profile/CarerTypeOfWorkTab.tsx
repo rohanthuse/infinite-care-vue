@@ -1,26 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Briefcase, Clock, MapPin, Users, Heart, Edit, Save, X } from "lucide-react";
+import { Briefcase, Clock, MapPin, Users, Heart, Edit, Save, X, Loader2 } from "lucide-react";
+import { useStaffWorkPreferences, useUpdateStaffWorkPreferences } from "@/hooks/useStaffWorkPreferences";
 
 interface CarerTypeOfWorkTabProps {
   carerId: string;
 }
 
+const defaultPreferences = {
+  clientTypes: [] as string[],
+  serviceTypes: [] as string[],
+  workPatterns: [] as string[],
+  locations: [] as string[],
+  travelDistance: 10,
+  specialNotes: ''
+};
+
 export const CarerTypeOfWorkTab: React.FC<CarerTypeOfWorkTabProps> = ({ carerId }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [preferences, setPreferences] = useState({
-    clientTypes: ['elderly', 'adults_learning_disabilities', 'mental_health'],
-    serviceTypes: ['personal_care', 'companionship', 'domestic_support', 'medication'],
-    workPatterns: ['day_shifts', 'weekend_work'],
-    locations: ['client_home', 'residential'],
-    travelDistance: 10,
-    specialNotes: 'I have experience working with dementia clients and enjoy providing companionship. I am comfortable with personal care and have my own transport for visits.'
-  });
+  const [preferences, setPreferences] = useState(defaultPreferences);
+
+  const { data: savedPreferences, isLoading } = useStaffWorkPreferences(carerId);
+  const updatePreferences = useUpdateStaffWorkPreferences();
+
+  // Sync local state with fetched data
+  useEffect(() => {
+    if (savedPreferences) {
+      setPreferences({
+        clientTypes: savedPreferences.client_types || [],
+        serviceTypes: savedPreferences.service_types || [],
+        workPatterns: savedPreferences.work_patterns || [],
+        locations: savedPreferences.work_locations || [],
+        travelDistance: savedPreferences.travel_distance || 10,
+        specialNotes: savedPreferences.special_notes || ''
+      });
+    }
+  }, [savedPreferences]);
 
   const clientTypeOptions = [
     { id: 'elderly', label: 'Elderly Care', icon: Heart },
@@ -70,10 +90,45 @@ export const CarerTypeOfWorkTab: React.FC<CarerTypeOfWorkTabProps> = ({ carerId 
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
+  const handleSave = async () => {
+    await updatePreferences.mutateAsync({
+      staff_id: carerId,
+      client_types: preferences.clientTypes,
+      service_types: preferences.serviceTypes,
+      work_patterns: preferences.workPatterns,
+      work_locations: preferences.locations,
+      travel_distance: preferences.travelDistance,
+      special_notes: preferences.specialNotes
+    });
     setIsEditing(false);
   };
+
+  const handleCancel = () => {
+    // Reset to saved data
+    if (savedPreferences) {
+      setPreferences({
+        clientTypes: savedPreferences.client_types || [],
+        serviceTypes: savedPreferences.service_types || [],
+        workPatterns: savedPreferences.work_patterns || [],
+        locations: savedPreferences.work_locations || [],
+        travelDistance: savedPreferences.travel_distance || 10,
+        specialNotes: savedPreferences.special_notes || ''
+      });
+    } else {
+      setPreferences(defaultPreferences);
+    }
+    setIsEditing(false);
+  };
+
+  const hasNoPreferences = !savedPreferences && !isLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -86,11 +141,15 @@ export const CarerTypeOfWorkTab: React.FC<CarerTypeOfWorkTabProps> = ({ carerId 
           <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={handleSave} disabled={updatePreferences.isPending}>
+                  {updatePreferences.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Save
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                <Button size="sm" variant="outline" onClick={handleCancel} disabled={updatePreferences.isPending}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -104,162 +163,172 @@ export const CarerTypeOfWorkTab: React.FC<CarerTypeOfWorkTabProps> = ({ carerId 
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Client Types */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Preferred Client Types
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {clientTypeOptions.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  {isEditing ? (
-                    <>
-                      <Checkbox
-                        id={option.id}
-                        checked={preferences.clientTypes.includes(option.id)}
-                        onCheckedChange={(checked) => 
-                          handleCheckboxChange('clientTypes', option.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={option.id}>{option.label}</Label>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${
-                        preferences.clientTypes.includes(option.id) ? 'bg-green-500' : 'bg-gray-300'
-                      }`} />
-                      <span className={preferences.clientTypes.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                        {option.label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
+          {hasNoPreferences && !isEditing && (
+            <div className="text-center py-6 text-muted-foreground">
+              <p>No preferences set yet. Click "Edit Preferences" to add your work preferences.</p>
             </div>
-          </div>
+          )}
 
-          {/* Service Types */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Heart className="h-4 w-4" />
-              Service Types
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {serviceTypeOptions.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  {isEditing ? (
-                    <>
-                      <Checkbox
-                        id={option.id}
-                        checked={preferences.serviceTypes.includes(option.id)}
-                        onCheckedChange={(checked) => 
-                          handleCheckboxChange('serviceTypes', option.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={option.id}>{option.label}</Label>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${
-                        preferences.serviceTypes.includes(option.id) ? 'bg-blue-500' : 'bg-gray-300'
-                      }`} />
-                      <span className={preferences.serviceTypes.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                        {option.label}
-                      </span>
+          {(isEditing || !hasNoPreferences) && (
+            <>
+              {/* Client Types */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Preferred Client Types
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {clientTypeOptions.map((option) => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      {isEditing ? (
+                        <>
+                          <Checkbox
+                            id={option.id}
+                            checked={preferences.clientTypes.includes(option.id)}
+                            onCheckedChange={(checked) => 
+                              handleCheckboxChange('clientTypes', option.id, checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={option.id}>{option.label}</Label>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${
+                            preferences.clientTypes.includes(option.id) ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`} />
+                          <span className={preferences.clientTypes.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
+                            {option.label}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Work Patterns */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Work Patterns
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {workPatternOptions.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  {isEditing ? (
-                    <>
-                      <Checkbox
-                        id={option.id}
-                        checked={preferences.workPatterns.includes(option.id)}
-                        onCheckedChange={(checked) => 
-                          handleCheckboxChange('workPatterns', option.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={option.id}>{option.label}</Label>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${
-                        preferences.workPatterns.includes(option.id) ? 'bg-purple-500' : 'bg-gray-300'
-                      }`} />
-                      <span className={preferences.workPatterns.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                        {option.label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Work Locations */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Work Locations
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {locationOptions.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  {isEditing ? (
-                    <>
-                      <Checkbox
-                        id={option.id}
-                        checked={preferences.locations.includes(option.id)}
-                        onCheckedChange={(checked) => 
-                          handleCheckboxChange('locations', option.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={option.id}>{option.label}</Label>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${
-                        preferences.locations.includes(option.id) ? 'bg-amber-500' : 'bg-gray-300'
-                      }`} />
-                      <span className={preferences.locations.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                        {option.label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Special Notes */}
-          <div>
-            <h3 className="font-semibold mb-3">Special Notes & Requirements</h3>
-            {isEditing ? (
-              <Textarea
-                value={preferences.specialNotes}
-                onChange={(e) => setPreferences(prev => ({ ...prev, specialNotes: e.target.value }))}
-                rows={4}
-                placeholder="Add any special notes about your work preferences..."
-              />
-            ) : (
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm">{preferences.specialNotes}</p>
               </div>
-            )}
-          </div>
+
+              {/* Service Types */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Heart className="h-4 w-4" />
+                  Service Types
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {serviceTypeOptions.map((option) => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      {isEditing ? (
+                        <>
+                          <Checkbox
+                            id={option.id}
+                            checked={preferences.serviceTypes.includes(option.id)}
+                            onCheckedChange={(checked) => 
+                              handleCheckboxChange('serviceTypes', option.id, checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={option.id}>{option.label}</Label>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${
+                            preferences.serviceTypes.includes(option.id) ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`} />
+                          <span className={preferences.serviceTypes.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
+                            {option.label}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Work Patterns */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Work Patterns
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {workPatternOptions.map((option) => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      {isEditing ? (
+                        <>
+                          <Checkbox
+                            id={option.id}
+                            checked={preferences.workPatterns.includes(option.id)}
+                            onCheckedChange={(checked) => 
+                              handleCheckboxChange('workPatterns', option.id, checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={option.id}>{option.label}</Label>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${
+                            preferences.workPatterns.includes(option.id) ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`} />
+                          <span className={preferences.workPatterns.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
+                            {option.label}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Work Locations */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Work Locations
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {locationOptions.map((option) => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      {isEditing ? (
+                        <>
+                          <Checkbox
+                            id={option.id}
+                            checked={preferences.locations.includes(option.id)}
+                            onCheckedChange={(checked) => 
+                              handleCheckboxChange('locations', option.id, checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={option.id}>{option.label}</Label>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${
+                            preferences.locations.includes(option.id) ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`} />
+                          <span className={preferences.locations.includes(option.id) ? 'text-foreground' : 'text-muted-foreground'}>
+                            {option.label}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Special Notes */}
+              <div>
+                <h3 className="font-semibold mb-3">Special Notes & Requirements</h3>
+                {isEditing ? (
+                  <Textarea
+                    value={preferences.specialNotes}
+                    onChange={(e) => setPreferences(prev => ({ ...prev, specialNotes: e.target.value }))}
+                    rows={4}
+                    placeholder="Add any special notes about your work preferences..."
+                  />
+                ) : (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm">{preferences.specialNotes || 'No special notes added.'}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -268,51 +337,73 @@ export const CarerTypeOfWorkTab: React.FC<CarerTypeOfWorkTabProps> = ({ carerId 
           <CardTitle>Current Work Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium mb-2">Preferred Client Types</h4>
-              <div className="flex flex-wrap gap-2">
-                {preferences.clientTypes.map(type => (
-                  <Badge key={type} variant="secondary">
-                    {clientTypeOptions.find(opt => opt.id === type)?.label}
-                  </Badge>
-                ))}
+          {hasNoPreferences ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <p>No work preferences configured yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium mb-2">Preferred Client Types</h4>
+                <div className="flex flex-wrap gap-2">
+                  {preferences.clientTypes.length > 0 ? (
+                    preferences.clientTypes.map(type => (
+                      <Badge key={type} variant="secondary">
+                        {clientTypeOptions.find(opt => opt.id === type)?.label}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">None selected</span>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Service Types</h4>
+                <div className="flex flex-wrap gap-2">
+                  {preferences.serviceTypes.length > 0 ? (
+                    preferences.serviceTypes.map(type => (
+                      <Badge key={type} variant="outline">
+                        {serviceTypeOptions.find(opt => opt.id === type)?.label}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">None selected</span>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Work Patterns</h4>
+                <div className="flex flex-wrap gap-2">
+                  {preferences.workPatterns.length > 0 ? (
+                    preferences.workPatterns.map(pattern => (
+                      <Badge key={pattern} className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                        {workPatternOptions.find(opt => opt.id === pattern)?.label}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">None selected</span>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Work Locations</h4>
+                <div className="flex flex-wrap gap-2">
+                  {preferences.locations.length > 0 ? (
+                    preferences.locations.map(location => (
+                      <Badge key={location} className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                        {locationOptions.find(opt => opt.id === location)?.label}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">None selected</span>
+                  )}
+                </div>
               </div>
             </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Service Types</h4>
-              <div className="flex flex-wrap gap-2">
-                {preferences.serviceTypes.map(type => (
-                  <Badge key={type} variant="outline">
-                    {serviceTypeOptions.find(opt => opt.id === type)?.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Work Patterns</h4>
-              <div className="flex flex-wrap gap-2">
-                {preferences.workPatterns.map(pattern => (
-                  <Badge key={pattern} className="bg-purple-100 text-purple-800">
-                    {workPatternOptions.find(opt => opt.id === pattern)?.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Work Locations</h4>
-              <div className="flex flex-wrap gap-2">
-                {preferences.locations.map(location => (
-                  <Badge key={location} className="bg-amber-100 text-amber-800">
-                    {locationOptions.find(opt => opt.id === location)?.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
