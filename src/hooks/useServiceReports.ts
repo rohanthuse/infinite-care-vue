@@ -18,12 +18,12 @@ export const useClientServiceReports = (clientId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          clients!inner (
+          clients (
             first_name,
             last_name,
             email
           ),
-          staff!inner (
+          staff (
             first_name,
             last_name,
             email
@@ -55,12 +55,12 @@ export const useCarerServiceReports = (staffId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          clients!inner (
+          clients (
             first_name,
             last_name,
             email
           ),
-          staff!inner (
+          staff (
             first_name,
             last_name,
             email
@@ -89,12 +89,12 @@ export const usePendingServiceReports = (branchId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          clients!inner (
+          clients (
             first_name,
             last_name,
             email
           ),
-          staff!inner (
+          staff (
             first_name,
             last_name,
             email
@@ -235,14 +235,14 @@ export const useApprovedServiceReports = (clientId?: string) => {
       try {
         const { data, error } = await supabase
           .from('client_service_reports')
-          .select(`
-            *,
-            staff!inner (
-              first_name,
-              last_name
-            )
-          `)
-          .eq('client_id', clientId)
+        .select(`
+          *,
+          staff (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('client_id', clientId)
           .eq('status', 'approved')
           .eq('visible_to_client', true)
           .order('service_date', { ascending: false });
@@ -286,13 +286,13 @@ export const useBranchServiceReports = (
         .from('client_service_reports')
         .select(`
           *,
-          clients!inner (
+          clients (
             id,
             first_name,
             last_name,
             email
           ),
-          staff!inner (
+          staff (
             id,
             first_name,
             last_name,

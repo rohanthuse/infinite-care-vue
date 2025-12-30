@@ -276,7 +276,7 @@ function ServiceReportCard({
             <CardDescription className="flex items-center gap-4 text-sm">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
-                {report.staff?.first_name} {report.staff?.last_name}
+                {report.staff?.first_name ? `${report.staff.first_name} ${report.staff.last_name || ''}`.trim() : 'Staff'}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
