@@ -11,6 +11,7 @@ import { Save, Edit, X, Loader2, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useCarePlanRelatedInfo } from "@/hooks/useCarePlanRelatedInfo";
 import { useClientServiceActions, useCreateClientServiceAction, ClientServiceAction } from "@/hooks/useClientServiceActions";
 import { useCarePlanServiceActions, CarePlanServiceAction } from "@/hooks/useCarePlanServiceActions";
 import { useClientVaccinations } from "@/hooks/useClientVaccinations";
@@ -279,9 +280,43 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   const [isSavingRelatedInfo, setIsSavingRelatedInfo] = useState(false);
   
   const { data: personalInfo, isLoading: isPersonalInfoLoading, refetch: refetchPersonalInfo } = useClientPersonalInfo(client?.id);
+  const { data: carePlanRelatedInfo, isLoading: isCarePlanRelatedInfoLoading } = useCarePlanRelatedInfo(client?.id);
   const { data: dbServiceActions, isLoading: isDbServiceActionsLoading } = useClientServiceActions(client?.id);
   const { data: carePlanServiceActions, isLoading: isCarePlanServiceActionsLoading } = useCarePlanServiceActions(client?.id);
   const { data: vaccinations, isLoading: isVaccinationsLoading } = useClientVaccinations(client?.id);
+
+  // Merge personal info with care plan related info (DB takes precedence)
+  const mergedRelatedInfo = React.useMemo(() => {
+    const db = personalInfo;
+    const cp = carePlanRelatedInfo;
+    
+    return {
+      ethnicity: db?.ethnicity || cp?.ethnicity || '',
+      religion: db?.religion || cp?.religion || '',
+      property_type: db?.property_type || cp?.property_type || '',
+      living_arrangement: db?.living_arrangement || cp?.living_arrangement || '',
+      key_safe_location: db?.key_safe_location || cp?.key_safe_location || '',
+      pets: db?.pets || cp?.pets || '',
+      interpreter_required: db?.interpreter_required ?? cp?.interpreter_required ?? false,
+      vision_difficulties: db?.vision_difficulties ?? cp?.vision_difficulties ?? false,
+      hearing_difficulties: db?.hearing_difficulties ?? cp?.hearing_difficulties ?? false,
+      mobility_aids: db?.mobility_aids || cp?.mobility_aids || '',
+      preferred_communication_method: db?.preferred_communication_method || cp?.preferred_communication_method || '',
+      communication_aids: db?.communication_aids || cp?.communication_aids || '',
+      likes_preferences: db?.likes_preferences || cp?.likes_preferences || '',
+      dislikes_restrictions: db?.dislikes_restrictions || cp?.dislikes_restrictions || '',
+      dos: db?.dos || cp?.dos || '',
+      donts: db?.donts || cp?.donts || '',
+      gp_name: db?.gp_name || cp?.gp_name || '',
+      gp_surgery_name: db?.gp_surgery_name || cp?.gp_surgery_name || '',
+      gp_surgery_address: db?.gp_surgery_address || cp?.gp_surgery_address || '',
+      gp_surgery_phone: db?.gp_surgery_phone || cp?.gp_surgery_phone || '',
+      pharmacy_name: db?.pharmacy_name || cp?.pharmacy_name || '',
+      pharmacy_address: db?.pharmacy_address || cp?.pharmacy_address || '',
+      pharmacy_phone: db?.pharmacy_phone || cp?.pharmacy_phone || '',
+      _source: cp?.source,
+    };
+  }, [personalInfo, carePlanRelatedInfo]);
 
   // Merge database service actions with care plan JSON service actions
   const mergedServiceActions = React.useMemo(() => {
@@ -363,54 +398,54 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     priority_areas: personalInfo?.priority_areas || ''
   });
 
-  // Update form data when personalInfo changes
+  // Update form data when personalInfo or care plan data changes
   useEffect(() => {
-    if (personalInfo) {
+    if (personalInfo || carePlanRelatedInfo) {
       setRelatedInfoFormData({
-        ethnicity: personalInfo.ethnicity || '',
-        sexual_orientation: personalInfo.sexual_orientation || '',
-        gender_identity: personalInfo.gender_identity || '',
-        nationality: personalInfo.nationality || '',
-        primary_language: personalInfo.primary_language || '',
-        interpreter_required: personalInfo.interpreter_required || false,
-        preferred_interpreter_language: personalInfo.preferred_interpreter_language || '',
-        religion: personalInfo.religion || '',
-        property_type: personalInfo.property_type || '',
-        living_arrangement: personalInfo.living_arrangement || '',
-        home_accessibility: personalInfo.home_accessibility || '',
-        pets: personalInfo.pets || '',
-        key_safe_location: personalInfo.key_safe_location || '',
-        parking_availability: personalInfo.parking_availability || '',
-        emergency_access: personalInfo.emergency_access || '',
-        sensory_impairment: personalInfo.sensory_impairment || '',
-        communication_aids: personalInfo.communication_aids || '',
-        preferred_communication_method: personalInfo.preferred_communication_method || '',
-        hearing_difficulties: personalInfo.hearing_difficulties || false,
-        vision_difficulties: personalInfo.vision_difficulties || false,
-        speech_difficulties: personalInfo.speech_difficulties || false,
-        cognitive_impairment: personalInfo.cognitive_impairment || false,
-        mobility_aids: personalInfo.mobility_aids || '',
-        likes_preferences: personalInfo.likes_preferences || '',
-        dislikes_restrictions: personalInfo.dislikes_restrictions || '',
-        dos: personalInfo.dos || '',
-        donts: personalInfo.donts || '',
-        gp_name: personalInfo.gp_name || '',
-        gp_surgery_name: personalInfo.gp_surgery_name || '',
-        gp_surgery_address: personalInfo.gp_surgery_address || '',
-        gp_surgery_phone: personalInfo.gp_surgery_phone || '',
-        gp_surgery_ods_code: personalInfo.gp_surgery_ods_code || '',
-        gp_practice: personalInfo.gp_practice || '',
-        pharmacy_name: personalInfo.pharmacy_name || '',
-        pharmacy_address: personalInfo.pharmacy_address || '',
-        pharmacy_phone: personalInfo.pharmacy_phone || '',
-        pharmacy_ods_code: personalInfo.pharmacy_ods_code || '',
-        personal_goals: personalInfo.personal_goals || '',
-        desired_outcomes: personalInfo.desired_outcomes || '',
-        success_measures: personalInfo.success_measures || '',
-        priority_areas: personalInfo.priority_areas || ''
+        ethnicity: mergedRelatedInfo.ethnicity,
+        sexual_orientation: personalInfo?.sexual_orientation || '',
+        gender_identity: personalInfo?.gender_identity || '',
+        nationality: personalInfo?.nationality || '',
+        primary_language: personalInfo?.primary_language || '',
+        interpreter_required: mergedRelatedInfo.interpreter_required,
+        preferred_interpreter_language: personalInfo?.preferred_interpreter_language || '',
+        religion: mergedRelatedInfo.religion,
+        property_type: mergedRelatedInfo.property_type,
+        living_arrangement: mergedRelatedInfo.living_arrangement,
+        home_accessibility: personalInfo?.home_accessibility || '',
+        pets: mergedRelatedInfo.pets,
+        key_safe_location: mergedRelatedInfo.key_safe_location,
+        parking_availability: personalInfo?.parking_availability || '',
+        emergency_access: personalInfo?.emergency_access || '',
+        sensory_impairment: personalInfo?.sensory_impairment || '',
+        communication_aids: mergedRelatedInfo.communication_aids,
+        preferred_communication_method: mergedRelatedInfo.preferred_communication_method,
+        hearing_difficulties: mergedRelatedInfo.hearing_difficulties,
+        vision_difficulties: mergedRelatedInfo.vision_difficulties,
+        speech_difficulties: personalInfo?.speech_difficulties || false,
+        cognitive_impairment: personalInfo?.cognitive_impairment || false,
+        mobility_aids: mergedRelatedInfo.mobility_aids,
+        likes_preferences: mergedRelatedInfo.likes_preferences,
+        dislikes_restrictions: mergedRelatedInfo.dislikes_restrictions,
+        dos: mergedRelatedInfo.dos,
+        donts: mergedRelatedInfo.donts,
+        gp_name: mergedRelatedInfo.gp_name,
+        gp_surgery_name: mergedRelatedInfo.gp_surgery_name,
+        gp_surgery_address: mergedRelatedInfo.gp_surgery_address,
+        gp_surgery_phone: mergedRelatedInfo.gp_surgery_phone,
+        gp_surgery_ods_code: personalInfo?.gp_surgery_ods_code || '',
+        gp_practice: personalInfo?.gp_practice || '',
+        pharmacy_name: mergedRelatedInfo.pharmacy_name,
+        pharmacy_address: mergedRelatedInfo.pharmacy_address,
+        pharmacy_phone: mergedRelatedInfo.pharmacy_phone,
+        pharmacy_ods_code: personalInfo?.pharmacy_ods_code || '',
+        personal_goals: personalInfo?.personal_goals || '',
+        desired_outcomes: personalInfo?.desired_outcomes || '',
+        success_measures: personalInfo?.success_measures || '',
+        priority_areas: personalInfo?.priority_areas || ''
       });
     }
-  }, [personalInfo]);
+  }, [personalInfo, carePlanRelatedInfo, mergedRelatedInfo]);
   const handleSaveServiceAction = (data: any) => {
     createServiceActionMutation.mutate(data, {
       onSuccess: () => {
