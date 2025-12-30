@@ -233,7 +233,7 @@ export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: E
           <DialogTitle>Edit Medication</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh] pr-4">
+        <div className="max-h-[70vh] overflow-y-auto pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
               {/* Name */}
@@ -604,7 +604,7 @@ export function EditPersistedMedicationDialog({ isOpen, onClose, medication }: E
               </DialogFooter>
             </form>
           </Form>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
