@@ -20,6 +20,7 @@ import { EquipmentTab } from "./tabs/EquipmentTab";
 import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
 import { CarePlanFormsTab } from "./forms/CarePlanFormsTab";
 import { AdminMedicationTab } from "./tabs/AdminMedicationTab";
+import { ClientKeyContactsTab } from "@/components/clients/tabs/ClientKeyContactsTab";
 import {
   ClientProfile,
   ClientPersonalInfo,
@@ -358,6 +359,10 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                 patientName={carePlan.patientName}
                 onAddEvent={onAddEvent}
               />
+            </TabsContent>
+
+            <TabsContent value="keycontacts">
+              <ClientKeyContactsTab clientId={carePlan.patientId} />
             </TabsContent>
           </Tabs>
         </div>
