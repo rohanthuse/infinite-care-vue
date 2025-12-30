@@ -104,6 +104,19 @@ export function ViewServiceReportDialog({
     next_visit_preparations: safeReport?.next_visit_preparations || '',
   });
 
+  // Sync form data when dialog opens or report changes
+  React.useEffect(() => {
+    if (open && safeReport) {
+      setFormData({
+        client_mood: safeReport.client_mood || '',
+        client_engagement: safeReport.client_engagement || '',
+        carer_observations: safeReport.carer_observations || '',
+        client_feedback: safeReport.client_feedback || '',
+        next_visit_preparations: safeReport.next_visit_preparations || '',
+      });
+    }
+  }, [open, report?.id]);
+
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Mutation hook for updating the report
