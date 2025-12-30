@@ -15,6 +15,32 @@ interface CarePlanKeyContact {
   notes?: string;
 }
 
+interface CarePlanServiceAction {
+  id?: string;
+  action_type: string;
+  action_name: string;
+  has_instructions?: boolean;
+  instructions?: string;
+  required_written_outcome?: boolean;
+  written_outcome?: string;
+  is_service_specific?: boolean;
+  linked_service_id?: string;
+  linked_service_name?: string;
+  start_date?: string | Date | null;
+  end_date?: string | Date | null;
+  schedule_type?: string;
+  shift_times?: string[];
+  start_time?: string;
+  end_time?: string;
+  selected_days?: string[];
+  frequency?: string;
+  notes?: string;
+  status?: string;
+  registered_on?: string;
+  registered_by?: string;
+  registered_by_name?: string;
+}
+
 interface CarePlanAutoSaveData {
   about_me?: {
     has_key_safe?: string;
@@ -73,6 +99,7 @@ interface CarePlanAutoSaveData {
     next_of_kin_relationship?: string;
   };
   key_contacts?: CarePlanKeyContact[];
+  service_actions?: CarePlanServiceAction[];
 }
 
 // Helper to convert yes/no/unknown string to boolean
@@ -338,6 +365,98 @@ export const syncCarePlanToClientProfile = async (
         console.error('[syncCarePlanToClientProfile] Error inserting key contacts:', insertError);
       } else {
         console.log('[syncCarePlanToClientProfile] Successfully synced key contacts');
+      }
+    }
+
+    // Sync service actions from care plan to client_service_actions table
+    const serviceActions = autoSaveData.service_actions || [];
+    if (serviceActions.length > 0) {
+      console.log('[syncCarePlanToClientProfile] Syncing service actions:', serviceActions.length);
+      
+      // Delete existing service actions linked to this care plan (replace strategy)
+      const { error: deleteServiceActionsError } = await supabase
+        .from('client_service_actions')
+        .delete()
+        .eq('client_id', clientId)
+        .eq('care_plan_id', carePlanId);
+
+      if (deleteServiceActionsError) {
+        console.error('[syncCarePlanToClientProfile] Error deleting existing service actions:', deleteServiceActionsError);
+      }
+
+      // Helper function to format schedule details
+      const formatScheduleDetails = (action: CarePlanServiceAction): string => {
+        const parts: string[] = [];
+        
+        if (action.schedule_type === 'shift' && action.shift_times?.length) {
+          parts.push(`Shifts: ${action.shift_times.join(', ')}`);
+        } else if (action.schedule_type === 'time_specific') {
+          if (action.start_time || action.end_time) {
+            parts.push(`Time: ${action.start_time || '--'} - ${action.end_time || '--'}`);
+          }
+        }
+        
+        if (action.selected_days?.length) {
+          parts.push(`Days: ${action.selected_days.join(', ')}`);
+        }
+        
+        if (action.instructions) {
+          parts.push(`Instructions: ${action.instructions}`);
+        }
+        
+        return parts.join(' | ') || '';
+      };
+
+      // Helper function to format duration
+      const formatDuration = (action: CarePlanServiceAction): string => {
+        if (action.schedule_type === 'shift' && action.shift_times?.length) {
+          return action.shift_times.join(', ');
+        }
+        if (action.start_time && action.end_time) {
+          return `${action.start_time} - ${action.end_time}`;
+        }
+        return 'As needed';
+      };
+
+      // Transform and insert service actions
+      const actionsToInsert = serviceActions
+        .filter((action: CarePlanServiceAction) => action.action_name)
+        .map((action: CarePlanServiceAction) => ({
+          client_id: clientId,
+          care_plan_id: carePlanId,
+          service_name: action.action_name,
+          service_category: action.action_type || 'new',
+          provider_name: action.registered_by_name || 'Care Team',
+          frequency: action.frequency || 'As needed',
+          duration: formatDuration(action),
+          schedule_details: formatScheduleDetails(action),
+          goals: action.required_written_outcome && action.written_outcome 
+            ? [action.written_outcome] 
+            : null,
+          progress_status: action.status || 'active',
+          start_date: action.start_date 
+            ? (typeof action.start_date === 'string' 
+              ? action.start_date.split('T')[0] 
+              : new Date(action.start_date).toISOString().split('T')[0])
+            : new Date().toISOString().split('T')[0],
+          end_date: action.end_date 
+            ? (typeof action.end_date === 'string' 
+              ? action.end_date.split('T')[0] 
+              : new Date(action.end_date).toISOString().split('T')[0])
+            : null,
+          notes: action.notes || null,
+        }));
+
+      if (actionsToInsert.length > 0) {
+        const { error: insertServiceActionsError } = await supabase
+          .from('client_service_actions')
+          .insert(actionsToInsert);
+
+        if (insertServiceActionsError) {
+          console.error('[syncCarePlanToClientProfile] Error inserting service actions:', insertServiceActionsError);
+        } else {
+          console.log('[syncCarePlanToClientProfile] Successfully synced service actions');
+        }
       }
     }
     

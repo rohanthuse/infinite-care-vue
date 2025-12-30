@@ -124,11 +124,21 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {serviceActions.map((action, index) => {
+                {serviceActions.map((action, index) => {
                     const status = getStatus(action);
+                    const isFromCarePlan = action.care_plan_id || action.source === 'care_plan';
                     return (
                       <TableRow key={action.id || index}>
-                        <TableCell className="font-medium">{getActionName(action)}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {getActionName(action)}
+                            {isFromCarePlan && (
+                              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                From Care Plan
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{formatDate(action.start_date)}</TableCell>
                         <TableCell>{formatDate(action.end_date)}</TableCell>
                         <TableCell>{formatShiftOrTime(action)}</TableCell>
