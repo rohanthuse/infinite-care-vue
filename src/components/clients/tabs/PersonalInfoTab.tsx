@@ -11,7 +11,8 @@ import { Save, Edit, X, Loader2, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
-import { useClientServiceActions, useCreateClientServiceAction } from "@/hooks/useClientServiceActions";
+import { useClientServiceActions, useCreateClientServiceAction, ClientServiceAction } from "@/hooks/useClientServiceActions";
+import { useCarePlanServiceActions, CarePlanServiceAction } from "@/hooks/useCarePlanServiceActions";
 import { useClientVaccinations } from "@/hooks/useClientVaccinations";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
@@ -278,8 +279,32 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   const [isSavingRelatedInfo, setIsSavingRelatedInfo] = useState(false);
   
   const { data: personalInfo, isLoading: isPersonalInfoLoading, refetch: refetchPersonalInfo } = useClientPersonalInfo(client?.id);
-  const { data: serviceActions, isLoading: isServiceActionsLoading } = useClientServiceActions(client?.id);
+  const { data: dbServiceActions, isLoading: isDbServiceActionsLoading } = useClientServiceActions(client?.id);
+  const { data: carePlanServiceActions, isLoading: isCarePlanServiceActionsLoading } = useCarePlanServiceActions(client?.id);
   const { data: vaccinations, isLoading: isVaccinationsLoading } = useClientVaccinations(client?.id);
+
+  // Merge database service actions with care plan JSON service actions
+  const mergedServiceActions = React.useMemo(() => {
+    const dbActions = dbServiceActions || [];
+    const cpActions = carePlanServiceActions || [];
+    
+    // Get IDs of actions already synced to database (those with care_plan_id)
+    const syncedCarePlanActionIds = new Set(
+      dbActions
+        .filter((a: ClientServiceAction) => a.care_plan_id)
+        .map((a: ClientServiceAction) => a.care_plan_id)
+    );
+    
+    // Filter care plan JSON actions to only include those not yet synced
+    const unsyncedCpActions = cpActions.filter(
+      (cpAction: CarePlanServiceAction) => !syncedCarePlanActionIds.has(cpAction.care_plan_id)
+    );
+    
+    // Combine: DB actions first, then unsynced care plan JSON actions
+    return [...dbActions, ...unsyncedCpActions];
+  }, [dbServiceActions, carePlanServiceActions]);
+
+  const isServiceActionsLoading = isDbServiceActionsLoading || isCarePlanServiceActionsLoading;
   const createServiceActionMutation = useCreateClientServiceAction();
   const updateClientMutation = useUpdateClient();
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
@@ -1420,7 +1445,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             </Card>
           ) : (
             <ServiceActionsTab 
-              serviceActions={serviceActions || []} 
+              serviceActions={mergedServiceActions || []} 
               onAddServiceAction={() => setIsAddServiceActionOpen(true)} 
             />
           )}
