@@ -50,7 +50,15 @@ export function WizardStepMedication({
         frequency: medication.frequency,
         start_date: medication.start_date,
         end_date: medication.end_date,
-        status: medication.status || "active"
+        status: medication.status || "active",
+        shape: medication.shape || null,
+        route: medication.route || null,
+        who_administers: medication.who_administers || null,
+        level: medication.level || null,
+        instruction: medication.instruction || null,
+        warning: medication.warning || null,
+        side_effect: medication.side_effect || null,
+        time_of_day: medication.time_of_day || null
       }, {
         onSuccess: () => {
           // Remove local medication from form state after successful DB save
