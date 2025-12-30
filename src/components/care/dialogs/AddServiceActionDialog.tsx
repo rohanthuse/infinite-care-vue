@@ -1,56 +1,18 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-
-const formSchema = z.object({
-  service_name: z.string().min(1, "Service name is required"),
-  service_category: z.string().min(1, "Service category is required"),
-  provider_name: z.string().min(1, "Provider name is required"),
-  frequency: z.string().min(1, "Frequency is required"),
-  duration: z.string().min(1, "Duration is required"),
-  schedule_details: z.string().optional(),
-  goals: z.string().optional(),
-  progress_status: z.string().default("active"),
-  start_date: z.date({
-    required_error: "Start date is required",
-  }),
-  end_date: z.date().optional(),
-  next_scheduled_date: z.date().optional(),
-  notes: z.string().optional(),
-});
+import { Form } from "@/components/ui/form";
+import { ServiceActionForm } from "@/components/care/forms/ServiceActionForm";
+import { ServiceActionData, getDefaultServiceAction } from "@/types/serviceAction";
+import { useBranchServices } from "@/data/hooks/useBranchServices";
+import { useTenant } from "@/contexts/TenantContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { getUserDisplayName } from "@/utils/userDisplayName";
 
 interface AddServiceActionDialogProps {
   open: boolean;
@@ -58,6 +20,7 @@ interface AddServiceActionDialogProps {
   onSave: (data: any) => void;
   clientId: string;
   carePlanId?: string;
+  branchId?: string;
   isLoading?: boolean;
 }
 
@@ -67,232 +30,138 @@ export const AddServiceActionDialog: React.FC<AddServiceActionDialogProps> = ({
   onSave,
   clientId,
   carePlanId,
+  branchId,
   isLoading = false,
 }) => {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const { organization } = useTenant();
+  const { data: services } = useBranchServices(branchId, organization?.id);
+  const { data: currentUser } = useUserRole();
+
+  const form = useForm<{ temp_service_action: ServiceActionData }>({
     defaultValues: {
-      service_name: "",
-      service_category: "",
-      provider_name: "",
-      frequency: "",
-      duration: "",
-      schedule_details: "",
-      goals: "",
-      progress_status: "active",
-      notes: "",
+      temp_service_action: getDefaultServiceAction(),
     },
   });
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        temp_service_action: getDefaultServiceAction(),
+      });
+    }
+  }, [open, form]);
+
+  const formatDuration = (action: ServiceActionData): string => {
+    if (action.schedule_type === 'shift' && action.shift_times?.length) {
+      return action.shift_times.join(', ');
+    }
+    if (action.start_time && action.end_time) {
+      return `${action.start_time} - ${action.end_time}`;
+    }
+    return 'As needed';
+  };
+
+  const formatScheduleDetails = (action: ServiceActionData): string => {
+    const parts: string[] = [];
+    
+    if (action.schedule_type === 'shift' && action.shift_times?.length) {
+      parts.push(`Shifts: ${action.shift_times.join(', ')}`);
+    } else if (action.schedule_type === 'time_specific') {
+      if (action.start_time || action.end_time) {
+        parts.push(`Time: ${action.start_time || '--'} - ${action.end_time || '--'}`);
+      }
+    }
+    
+    if (action.selected_days?.length) {
+      parts.push(`Days: ${action.selected_days.join(', ')}`);
+    }
+    
+    if (action.instructions) {
+      parts.push(`Instructions: ${action.instructions}`);
+    }
+    
+    return parts.join(' | ') || '';
+  };
+
+  const formatDate = (date: Date | string | null): string | null => {
+    if (!date) return null;
+    if (typeof date === 'string') {
+      return date.split('T')[0];
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleSave = () => {
+    const actionData = form.getValues("temp_service_action");
+    
+    // Validate required field
+    if (!actionData?.action_name) {
+      return;
+    }
+
+    // Transform ServiceActionData to database format
     const formattedData = {
       client_id: clientId,
       care_plan_id: carePlanId || null,
-      service_name: values.service_name,
-      service_category: values.service_category,
-      provider_name: values.provider_name,
-      frequency: values.frequency,
-      duration: values.duration,
-      schedule_details: values.schedule_details || null,
-      goals: values.goals ? values.goals.split('\n').filter(g => g.trim()) : [],
-      progress_status: values.progress_status,
-      start_date: values.start_date.toISOString().split('T')[0],
-      end_date: values.end_date ? values.end_date.toISOString().split('T')[0] : null,
-      next_scheduled_date: values.next_scheduled_date ? values.next_scheduled_date.toISOString().split('T')[0] : null,
-      notes: values.notes || null,
+      service_name: actionData.action_name,
+      service_category: actionData.action_type || 'new',
+      provider_name: getUserDisplayName(currentUser) || 'Care Team',
+      frequency: actionData.frequency || 'As needed',
+      duration: formatDuration(actionData),
+      schedule_details: formatScheduleDetails(actionData),
+      goals: actionData.required_written_outcome && actionData.written_outcome 
+        ? [actionData.written_outcome] 
+        : null,
+      progress_status: actionData.status || 'active',
+      start_date: formatDate(actionData.start_date) || new Date().toISOString().split('T')[0],
+      end_date: formatDate(actionData.end_date),
+      notes: actionData.notes || null,
     };
     
     onSave(formattedData);
-    form.reset();
+  };
+
+  const handleCancel = () => {
+    form.reset({
+      temp_service_action: getDefaultServiceAction(),
+    });
+    onOpenChange(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      form.reset();
+      form.reset({
+        temp_service_action: getDefaultServiceAction(),
+      });
     }
     onOpenChange(newOpen);
   };
 
+  // Transform services to the format expected by ServiceActionForm
+  const formattedServices = services?.map(service => ({
+    id: service.id,
+    title: service.title,
+  })) || [];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Service Action</DialogTitle>
-          <DialogDescription>
-            Create a new service action for this client.
-          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="service_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter service name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="service_category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="personal-care">Personal Care</SelectItem>
-                        <SelectItem value="medical-care">Medical Care</SelectItem>
-                        <SelectItem value="domestic-support">Domestic Support</SelectItem>
-                        <SelectItem value="social-activities">Social Activities</SelectItem>
-                        <SelectItem value="transportation">Transportation</SelectItem>
-                        <SelectItem value="therapy">Therapy</SelectItem>
-                        <SelectItem value="nutrition">Nutrition</SelectItem>
-                        <SelectItem value="mobility-assistance">Mobility Assistance</SelectItem>
-                        <SelectItem value="medication-management">Medication Management</SelectItem>
-                        <SelectItem value="safety-monitoring">Safety Monitoring</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="provider_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Provider Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter provider name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            <ServiceActionForm
+              form={form}
+              fieldPrefix="temp_service_action"
+              services={formattedServices}
+              onSave={handleSave}
+              onCancel={handleCancel}
+              isEditing={false}
+              actionNumber={1}
             />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="as-needed">As Needed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 2 hours, 30 minutes" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="start_date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter additional notes..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Service Action"}
-              </Button>
-            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

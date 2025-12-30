@@ -16,7 +16,7 @@ import { useClientVaccinations } from "@/hooks/useClientVaccinations";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { VaccinationDialog } from "@/components/care/dialogs/VaccinationDialog";
-import { AddServiceActionV2Dialog } from "@/components/care/dialogs/AddServiceActionV2Dialog";
+import { AddServiceActionDialog } from "@/components/care/dialogs/AddServiceActionDialog";
 import { ClientAddressSection } from "@/components/clients/address/ClientAddressSection";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -1425,7 +1425,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             />
           )}
           
-          <AddServiceActionV2Dialog
+          <AddServiceActionDialog
             open={isAddServiceActionOpen}
             onOpenChange={setIsAddServiceActionOpen}
             onSave={handleSaveServiceAction}
