@@ -269,10 +269,6 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
         <p className="text-gray-600">
           Upload and organize important care plan documentation and files.
         </p>
-        {/* Debug info - remove in production */}
-        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-          Debug: Branch ID: {branchId || 'Missing'} | Client ID: {clientId || 'Missing'} | User: {user?.email || 'Not logged in'}
-        </div>
       </div>
 
       <Form {...form}>

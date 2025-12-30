@@ -23,9 +23,12 @@ export interface ClientDocument {
   created_at: string;
   updated_at: string;
   client_id: string;
+  // Added for document source tracking
+  source?: 'client_details' | 'care_plan';
+  category?: string | null;
 }
 
-// Fetch client documents
+// Fetch client documents from both client_documents and documents tables
 export const useClientDocuments = (clientId: string) => {
   return useQuery({
     queryKey: ['client-documents', clientId],
@@ -37,18 +40,58 @@ export const useClientDocuments = (clientId: string) => {
 
       console.log(`[useClientDocuments] Fetching documents for client: ${clientId}`);
 
-      const { data, error } = await supabase
+      // Fetch from client_documents table
+      const { data: clientDocs, error: clientDocsError } = await supabase
         .from('client_documents')
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching client documents:', error);
-        throw error;
+      if (clientDocsError) {
+        console.error('Error fetching client_documents:', clientDocsError);
       }
 
-      return data || [];
+      // Fetch from documents table (Care Plan uploads)
+      const { data: unifiedDocs, error: unifiedDocsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+      if (unifiedDocsError) {
+        console.error('Error fetching documents:', unifiedDocsError);
+      }
+
+      // Transform unified documents to match ClientDocument interface
+      const transformedUnifiedDocs: ClientDocument[] = (unifiedDocs || []).map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.type || 'other',
+        file_path: doc.file_path,
+        file_size: doc.file_size,
+        uploaded_by: doc.uploaded_by_name || 'Unknown',
+        upload_date: doc.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        client_id: doc.client_id,
+        source: 'care_plan' as const,
+        category: doc.category
+      }));
+
+      // Mark client_documents with their source
+      const transformedClientDocs: ClientDocument[] = (clientDocs || []).map(doc => ({
+        ...doc,
+        source: 'client_details' as const,
+        category: null
+      }));
+
+      // Merge and sort by created_at
+      const allDocs = [...transformedClientDocs, ...transformedUnifiedDocs]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      console.log(`[useClientDocuments] Total documents: ${allDocs.length} (${transformedClientDocs.length} from client_documents, ${transformedUnifiedDocs.length} from documents)`);
+
+      return allDocs;
     },
     enabled: Boolean(clientId),
   });

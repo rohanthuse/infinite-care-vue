@@ -371,10 +371,10 @@ export const useUnifiedDocuments = (branchId: string) => {
         }
       } else {
         // For public and branch access, create one document record
-        // DO NOT set client_id or staff_id - visibility is controlled by access_level only
+        // Set client_id if provided in uploadData (e.g., from Care Plan wizard)
         documentsToCreate.push({
           ...baseDocumentData,
-          client_id: null,
+          client_id: (uploadData as any).client_id || null,
           staff_id: null
         });
       }
