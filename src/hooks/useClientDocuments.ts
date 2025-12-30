@@ -3,6 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Helper to detect storage bucket from file path
+const getStorageBucket = (filePath: string): string => {
+  if (filePath.startsWith('client-documents/')) return 'client-documents';
+  if (filePath.startsWith('agreement-files/')) return 'agreement-files';
+  if (filePath.startsWith('staff-documents/')) return 'staff-documents';
+  // Default to 'documents' bucket (used by wizard/unified document uploads)
+  return 'documents';
+};
+
 export interface ClientDocument {
   id: string;
   name: string;
@@ -258,10 +267,14 @@ export const useViewClientDocument = () => {
         throw new Error('Could not open new tab. Please check your popup blocker settings.');
       }
 
+      // Detect correct bucket based on file path
+      const bucket = getStorageBucket(filePath);
+      console.log('Using storage bucket:', bucket, 'for path:', filePath);
+
       try {
         // First try to download as blob to avoid ERR_BLOCKED_BY_CLIENT
         const { data: fileData, error: downloadError } = await supabase.storage
-          .from('client-documents')
+          .from(bucket)
           .download(filePath);
 
         if (!downloadError && fileData) {
@@ -282,7 +295,7 @@ export const useViewClientDocument = () => {
 
       // Fallback to signed URL if blob download fails
       const { data, error } = await supabase.storage
-        .from('client-documents')
+        .from(bucket)
         .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (error) {
@@ -310,8 +323,12 @@ export const useDownloadClientDocument = () => {
     mutationFn: async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
       console.log('Downloading client document:', filePath);
 
+      // Detect correct bucket based on file path
+      const bucket = getStorageBucket(filePath);
+      console.log('Using storage bucket:', bucket, 'for path:', filePath);
+
       const { data, error } = await supabase.storage
-        .from('client-documents')
+        .from(bucket)
         .download(filePath);
 
       if (error) {
