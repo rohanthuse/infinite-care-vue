@@ -363,15 +363,13 @@ export class ReportExporter {
     // Add first page header
     addFullHeader();
     
-    // Column widths optimized for 7 columns: Date, Start, End, Client, Carer, Type, Status
+    // Column widths optimized for 5 columns: Date & Time, Client, Carer, Type, Status
     const columnStyles: Record<number, { cellWidth: number }> = {
-      0: { cellWidth: 22 },  // Date
-      1: { cellWidth: 16 },  // Start
-      2: { cellWidth: 16 },  // End
-      3: { cellWidth: 45 },  // Client
-      4: { cellWidth: 40 },  // Carer
-      5: { cellWidth: 22 },  // Type
-      6: { cellWidth: 22 },  // Status
+      0: { cellWidth: 50 },  // Date & Time (wider for combined format)
+      1: { cellWidth: 48 },  // Client
+      2: { cellWidth: 42 },  // Carer
+      3: { cellWidth: 22 },  // Type
+      4: { cellWidth: 22 },  // Status
     };
     
     // Build body data - allow text wrapping instead of truncating
@@ -592,15 +590,13 @@ export class ReportExporter {
     // Add first page header
     addFullHeader();
     
-    // Column widths for 7 columns
+    // Column widths optimized for 5 columns: Date & Time, Client, Carer, Type, Status
     const columnStyles: Record<number, { cellWidth: number }> = {
-      0: { cellWidth: 22 },
-      1: { cellWidth: 16 },
-      2: { cellWidth: 16 },
-      3: { cellWidth: 45 },
-      4: { cellWidth: 40 },
-      5: { cellWidth: 22 },
-      6: { cellWidth: 22 },
+      0: { cellWidth: 50 },  // Date & Time (wider for combined format)
+      1: { cellWidth: 48 },  // Client
+      2: { cellWidth: 42 },  // Carer
+      3: { cellWidth: 22 },  // Type
+      4: { cellWidth: 22 },  // Status
     };
     
     // Build body data
