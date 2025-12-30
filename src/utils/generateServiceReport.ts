@@ -52,6 +52,14 @@ export interface GenerateServiceReportData {
     status: string;
   }>;
   createdBy: string;
+  assessmentData?: {
+    clientMood?: string;
+    clientEngagement?: string;
+    activitiesUndertaken?: string;
+    carerObservations?: string;
+    clientFeedback?: string;
+    nextVisitPreparations?: string;
+  };
 }
 
 export function generateServiceReportFromVisit(data: GenerateServiceReportData) {
@@ -97,6 +105,10 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
   
   const observations = observationParts.join('\n\n');
 
+  // Use assessment data if provided, otherwise fall back to generated values
+  const finalObservations = data.assessmentData?.carerObservations || observations || undefined;
+  const finalActivities = data.assessmentData?.activitiesUndertaken || activitiesPerformed;
+
   return {
     client_id: data.visitRecord.client_id,
     staff_id: data.visitRecord.staff_id,
@@ -112,10 +124,14 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     medication_notes: medicationNotes,
     incident_occurred: hasIncidents,
     incident_details: incidentDetails,
-    carer_observations: observations || undefined,
-    activities_undertaken: activitiesPerformed,
-    // Set to 'pending' - carer needs to complete mood/engagement fields
-    status: 'pending' as const,
+    carer_observations: finalObservations,
+    activities_undertaken: finalActivities,
+    client_mood: data.assessmentData?.clientMood || undefined,
+    client_engagement: data.assessmentData?.clientEngagement || undefined,
+    client_feedback: data.assessmentData?.clientFeedback || undefined,
+    next_visit_preparations: data.assessmentData?.nextVisitPreparations || undefined,
+    // Set to 'completed' when assessment data is provided (all fields captured)
+    status: (data.assessmentData?.clientMood && data.assessmentData?.clientEngagement) ? 'completed' as const : 'pending' as const,
     visible_to_client: false,
     created_by: data.createdBy,
   };
