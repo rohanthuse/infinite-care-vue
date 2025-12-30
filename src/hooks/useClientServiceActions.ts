@@ -22,6 +22,7 @@ export interface ClientServiceAction {
   notes?: string;
   created_at: string;
   updated_at: string;
+  source?: 'care_plan' | 'client_details';
 }
 
 export const useClientServiceActions = (clientId: string) => {
@@ -41,7 +42,11 @@ export const useClientServiceActions = (clientId: string) => {
         throw error;
       }
 
-      return data as ClientServiceAction[];
+      // Add source indicator based on care_plan_id
+      return (data || []).map(action => ({
+        ...action,
+        source: action.care_plan_id ? 'care_plan' : 'client_details'
+      })) as ClientServiceAction[];
     },
     enabled: !!clientId,
   });
