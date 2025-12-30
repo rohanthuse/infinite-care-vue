@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { 
   CheckCircle, AlertCircle, FileText, User, Activity, Target, 
@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   hasAboutMe,
   hasMedicalInfo,
+  hasDiagnosisInfo,
   hasNews2Monitoring,
   hasMedicationSchedule,
   hasMedicationAdministration,
@@ -32,11 +33,13 @@ import {
   hasKeyContacts,
   hasAnyValue,
 } from "@/utils/carePlanCompletionUtils";
+import { useMedicationsByCarePlan } from "@/hooks/useMedications";
 
 interface WizardStep14ReviewProps {
   form: UseFormReturn<any>;
   clientId?: string;
   isChild?: boolean;
+  effectiveCarePlanId?: string;
 }
 
 interface Section {
@@ -56,8 +59,24 @@ interface RequirementItem {
   stepToFix?: string;
 }
 
-export function WizardStep14Review({ form, clientId, isChild = false }: WizardStep14ReviewProps) {
+export function WizardStep14Review({ form, clientId, isChild = false, effectiveCarePlanId }: WizardStep14ReviewProps) {
   const formData = form.watch();
+  
+  // Fetch DB medications to get accurate count
+  const { data: dbMedications = [] } = useMedicationsByCarePlan(effectiveCarePlanId);
+  
+  // Calculate effective medication count (DB + any unsaved local meds)
+  const effectiveMedicationCount = useMemo(() => {
+    const localMeds = formData.medical_info?.medication_manager?.medications || [];
+    const dbMedNames = new Set(dbMedications.map((m: any) => `${m.name}-${m.dosage}-${m.frequency}`.toLowerCase()));
+    
+    // Count unique local meds not already in DB
+    const uniqueLocalCount = localMeds.filter((m: any) => 
+      !dbMedNames.has(`${m.name}-${m.dosage}-${m.frequency}`.toLowerCase())
+    ).length;
+    
+    return dbMedications.length + uniqueLocalCount;
+  }, [dbMedications, formData.medical_info?.medication_manager?.medications]);
 
   // Use unified validation functions for consistent status across the app
   const getSectionStatus = (sectionId: string, sectionData: any): "completed" | "empty" => {
@@ -65,13 +84,14 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
       case "about_me":
         return hasAboutMe(sectionData) ? "completed" : "empty";
       case "medical_info":
-        return hasMedicalInfo(sectionData) ? "completed" : "empty";
+        // Use hasDiagnosisInfo for proper diagnosis/medical_info detection
+        return hasDiagnosisInfo(formData) ? "completed" : "empty";
       case "news2_monitoring":
         return hasNews2Monitoring(formData.medical_info) ? "completed" : "empty";
       case "medication_schedule":
-        return hasMedicationSchedule(formData.medical_info) ? "completed" : "empty";
+        return hasMedicationSchedule(formData.medical_info, effectiveMedicationCount) ? "completed" : "empty";
       case "medication":
-        return hasMedicationSchedule(formData.medical_info) ? "completed" : "empty";
+        return hasMedicationSchedule(formData.medical_info, effectiveMedicationCount) ? "completed" : "empty";
       case "admin_medication":
         return hasMedicationAdministration(formData) ? "completed" : "empty";
       case "consent":
@@ -137,7 +157,7 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
       id: "medical_info",
       title: "Diagnosis",
       icon: ClipboardList,
-      data: formData.medical_info
+      data: formData.diagnosis ?? formData.medical_info
     },
     {
       id: "news2_monitoring",
@@ -156,8 +176,8 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
       icon: Calendar,
       data: formData.medical_info?.medication_manager,
       status: formData.medical_info?.medication_manager?.applicable !== false 
-        ? (formData.medical_info?.medication_manager?.medications?.length > 0 
-            ? `${formData.medical_info?.medication_manager?.medications?.length} medication(s) scheduled` 
+        ? (effectiveMedicationCount > 0 
+            ? `${effectiveMedicationCount} medication(s) scheduled` 
             : 'No medications scheduled')
         : 'Not Applicable'
     },
@@ -167,8 +187,8 @@ export function WizardStep14Review({ form, clientId, isChild = false }: WizardSt
       icon: Pill,
       data: formData.medical_info?.medication_manager?.medications,
       status: formData.medical_info?.medication_manager?.applicable !== false 
-        ? (formData.medical_info?.medication_manager?.medications?.length > 0 
-            ? `Applicable (${formData.medical_info?.medication_manager?.medications?.length} medication${formData.medical_info?.medication_manager?.medications?.length !== 1 ? 's' : ''})` 
+        ? (effectiveMedicationCount > 0 
+            ? `Applicable (${effectiveMedicationCount} medication${effectiveMedicationCount !== 1 ? 's' : ''})` 
             : 'Applicable (No medications added)')
         : 'Not Applicable'
     },

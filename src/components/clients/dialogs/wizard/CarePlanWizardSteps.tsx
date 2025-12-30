@@ -79,15 +79,15 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
         return <WizardStepKeyContacts form={form} />;
       case 18:
         // Only render Behavior Support for child/young person clients
-        return isChild ? <BehaviorSupportTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
+        return isChild ? <BehaviorSupportTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
       case 19:
         // Only render Education & Development for child/young person clients
-        return isChild ? <EducationDevelopmentTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
+        return isChild ? <EducationDevelopmentTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
       case 20:
         // Only render Safeguarding & Risks for child/young person clients
-        return isChild ? <SafeguardingRisksTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
+        return isChild ? <SafeguardingRisksTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
       case 21:
-        return <WizardStep14Review form={form} clientId={clientId} isChild={isChild} />;
+        return <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
         return <WizardStep1BasicInfo form={form} />;
