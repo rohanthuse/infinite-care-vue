@@ -2,7 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 
@@ -82,7 +82,7 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
           <DialogTitle>Medication Details</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh] pr-4">
+        <div className="max-h-[70vh] overflow-y-auto pr-4">
           <div className="space-y-6">
             {/* Section 1: Basic Information */}
             <div>
@@ -178,7 +178,7 @@ export function MedicationDetailsDialog({ isOpen, onClose, medication }: Medicat
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter>
           <Button onClick={onClose}>Close</Button>
