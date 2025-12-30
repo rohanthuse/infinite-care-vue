@@ -18,7 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarEvent } from '@/types/calendar';
 import { ReportExporter } from '@/utils/reportExporter';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { FileText, Download } from 'lucide-react';
 
 interface CalendarExportDialogProps {
@@ -27,6 +27,7 @@ interface CalendarExportDialogProps {
   events: CalendarEvent[];
   currentDate: Date;
   branchName?: string;
+  branchId?: string;
 }
 
 export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
@@ -35,6 +36,7 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
   events,
   currentDate,
   branchName,
+  branchId,
 }) => {
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
   const [includeDetails, setIncludeDetails] = useState(true);
@@ -46,32 +48,34 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
     setIsExporting(true);
     
     try {
-      // Prepare export data
+      // Prepare export data with improved structure
       const exportData = events.map(event => ({
-        Title: event.title,
-        Type: event.type,
-        Status: event.status,
-        'Start Time': format(event.startTime, 'MMM d, yyyy HH:mm'),
-        'End Time': format(event.endTime, 'MMM d, yyyy HH:mm'),
-        Branch: event.branchName,
-        Location: event.location || 'Not specified',
+        Date: format(event.startTime, 'dd/MM/yyyy'),
+        Time: `${format(event.startTime, 'HH:mm')} - ${format(event.endTime, 'HH:mm')}`,
+        'Client/Title': event.title,
+        'Carer/Staff': event.participants?.map(p => p.name).join(', ') || 'Not assigned',
+        Type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
+        Status: event.status?.charAt(0).toUpperCase() + (event.status?.slice(1) || ''),
+        Branch: event.branchName || branchName || '-',
+        Location: event.location || '-',
         ...(includeParticipants && {
           Participants: event.participants?.map(p => p.name).join(', ') || 'None'
         }),
         ...(includeDetails && {
-          Priority: event.priority,
+          Priority: event.priority || 'Normal',
         }),
-        ...(includeConflicts && event.conflictsWith?.length && {
-          Conflicts: event.conflictsWith.length > 0 ? `${event.conflictsWith.length} conflicts` : 'None'
+        ...(includeConflicts && {
+          Conflicts: event.conflictsWith?.length ? `${event.conflictsWith.length} conflict(s)` : 'None'
         }),
       }));
 
       const columns = [
-        'Title',
-        'Type', 
+        'Date',
+        'Time',
+        'Client/Title',
+        'Carer/Staff', 
+        'Type',
         'Status',
-        'Start Time',
-        'End Time',
         'Branch',
         'Location',
         ...(includeParticipants ? ['Participants'] : []),
@@ -84,14 +88,22 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
         data: exportData,
         columns,
         branchName,
+        branchId,
         dateRange: {
-          from: currentDate,
-          to: currentDate
+          from: startOfMonth(currentDate),
+          to: endOfMonth(currentDate)
+        },
+        metadata: {
+          exportedRecords: events.length,
+          filters: {
+            month: format(currentDate, 'MMMM yyyy'),
+            branch: branchName || 'All Branches'
+          }
         }
       };
 
       if (exportFormat === 'pdf') {
-        ReportExporter.exportToPDF(exportOptions);
+        await ReportExporter.exportCalendarToPDF(exportOptions);
       } else {
         ReportExporter.exportToCSV(exportOptions);
       }
