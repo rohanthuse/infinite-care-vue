@@ -314,6 +314,11 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       pharmacy_name: db?.pharmacy_name || cp?.pharmacy_name || '',
       pharmacy_address: db?.pharmacy_address || cp?.pharmacy_address || '',
       pharmacy_phone: db?.pharmacy_phone || cp?.pharmacy_phone || '',
+      // Desired Outcomes
+      personal_goals: db?.personal_goals || cp?.personal_goals || '',
+      desired_outcomes: db?.desired_outcomes || cp?.desired_outcomes || '',
+      success_measures: db?.success_measures || cp?.success_measures || '',
+      priority_areas: db?.priority_areas || cp?.priority_areas || '',
       _source: cp?.source,
     };
   }, [personalInfo, carePlanRelatedInfo]);
@@ -439,10 +444,10 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         pharmacy_address: mergedRelatedInfo.pharmacy_address,
         pharmacy_phone: mergedRelatedInfo.pharmacy_phone,
         pharmacy_ods_code: personalInfo?.pharmacy_ods_code || '',
-        personal_goals: personalInfo?.personal_goals || '',
-        desired_outcomes: personalInfo?.desired_outcomes || '',
-        success_measures: personalInfo?.success_measures || '',
-        priority_areas: personalInfo?.priority_areas || ''
+        personal_goals: mergedRelatedInfo.personal_goals,
+        desired_outcomes: mergedRelatedInfo.desired_outcomes,
+        success_measures: mergedRelatedInfo.success_measures,
+        priority_areas: mergedRelatedInfo.priority_areas
       });
     }
   }, [personalInfo, carePlanRelatedInfo, mergedRelatedInfo]);

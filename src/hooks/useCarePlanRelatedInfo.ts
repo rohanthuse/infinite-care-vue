@@ -37,10 +37,23 @@ export interface CarePlanRelatedInfo {
   pharmacy_address?: string;
   pharmacy_phone?: string;
   
+  // Desired Outcomes
+  personal_goals?: string;
+  desired_outcomes?: string;
+  success_measures?: string;
+  priority_areas?: string;
+  
   // Metadata
   source: 'care_plan_draft' | 'care_plan';
   care_plan_id?: string;
   care_plan_status?: string;
+}
+
+interface CarePlanGoal {
+  description?: string;
+  target_date?: string | null;
+  priority?: string;
+  measurable_outcome?: string;
 }
 
 interface CarePlanAutoSaveData {
@@ -75,6 +88,7 @@ interface CarePlanAutoSaveData {
   personal_info?: {
     religion?: string;
   };
+  goals?: CarePlanGoal[];
 }
 
 const yesNoToBoolean = (value: string | boolean | undefined): boolean | undefined => {
@@ -113,8 +127,29 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
   const gpInfo = autoSaveData.gp_info || {};
   const pharmacyInfo = autoSaveData.pharmacy_info || {};
   const personalInfo = autoSaveData.personal_info || {};
+  const goals = autoSaveData.goals || [];
 
   const isDraft = carePlan.status === 'draft' || carePlan.status === 'pending_approval' || carePlan.status === 'pending_client_approval';
+
+  // Transform goals array into flat text fields for Desired Outcomes
+  const personalGoals = goals
+    .filter(g => g.description)
+    .map((g, i) => `${i + 1}. ${g.description}`)
+    .join('\n') || undefined;
+
+  const successMeasures = goals
+    .filter(g => g.measurable_outcome)
+    .map((g, i) => `${i + 1}. ${g.measurable_outcome}`)
+    .join('\n') || undefined;
+
+  const priorityAreas = goals
+    .filter(g => g.priority === 'high' && g.description)
+    .map((g, i) => `${i + 1}. ${g.description}`)
+    .join('\n') || undefined;
+
+  const desiredOutcomes = goals.length > 0 
+    ? `${goals.length} care goal(s) defined in Care Plan` 
+    : undefined;
 
   return {
     // Background & Identity
@@ -150,6 +185,12 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
     pharmacy_name: pharmacyInfo.pharmacy_name || undefined,
     pharmacy_address: pharmacyInfo.pharmacy_address || undefined,
     pharmacy_phone: pharmacyInfo.pharmacy_phone || undefined,
+    
+    // Desired Outcomes
+    personal_goals: personalGoals,
+    desired_outcomes: desiredOutcomes,
+    success_measures: successMeasures,
+    priority_areas: priorityAreas,
     
     // Metadata
     source: isDraft ? 'care_plan_draft' : 'care_plan',
