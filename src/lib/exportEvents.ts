@@ -2747,22 +2747,62 @@ export const exportClientProfileToPDF = async (
       }
     }
     
-    // Section 15: Notes (if selected)
-    if (sections.notes && clientData.additional_information) {
-      await addSectionHeader('Additional Notes');
-      
-      pdf.setDrawColor(220, 220, 220);
-      pdf.setFillColor(252, 252, 252);
-      
-      pdf.setFontSize(9);
-      pdf.setFont(undefined, 'normal');
-      const splitNotes = pdf.splitTextToSize(clientData.additional_information, 160);
-      
-      const boxHeight = (splitNotes.length * 5) + 10;
-      pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
-      
-      pdf.text(splitNotes, leftMargin + 5, currentY + 7);
-      currentY += boxHeight + 10;
+    // Section 15: Notes (if selected) - Enhanced with client_notes table
+    if (sections.notes) {
+      // Fetch notes from client_notes table
+      const { data: clientNotes } = await supabase
+        .from('client_notes')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if ((clientNotes && clientNotes.length > 0) || clientData.additional_information) {
+        await addSectionHeader('Care Notes');
+
+        // Display notes from client_notes table
+        if (clientNotes && clientNotes.length > 0) {
+          const noteRows = clientNotes.map((n: any) => [
+            n.created_at ? format(new Date(n.created_at), 'PP') : 'N/A',
+            n.title || 'Note',
+            n.author || 'N/A',
+            (n.content || '').substring(0, 80) + ((n.content?.length || 0) > 80 ? '...' : '')
+          ]);
+
+          autoTable(pdf, {
+            head: [['Date', 'Title', 'Author', 'Content']],
+            body: noteRows,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 8;
+        }
+
+        // Also include additional_information if available
+        if (clientData.additional_information) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Additional Information:', leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setDrawColor(220, 220, 220);
+          pdf.setFillColor(252, 252, 252);
+          
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'normal');
+          const splitNotes = pdf.splitTextToSize(clientData.additional_information, 160);
+          
+          const boxHeight = (splitNotes.length * 5) + 10;
+          pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
+          
+          pdf.text(splitNotes, leftMargin + 5, currentY + 7);
+          currentY += boxHeight + 10;
+        }
+      }
     }
     
     // Section 16: Care Plans (if selected) - Enhanced
@@ -3119,6 +3159,196 @@ export const exportClientProfileToPDF = async (
         autoTable(pdf, {
           head: [['Assessment', 'Date', 'Status', 'Next Review']],
           body: compRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 25: NEWS2 Assessments (if selected)
+    if (sections.news2Assessments) {
+      // First get NEWS2 patient record for this client
+      const { data: news2Patient } = await (supabase
+        .from('news2_patients' as any)
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('status', 'active')
+        .maybeSingle() as any);
+
+      if (news2Patient) {
+        const { data: news2Data } = await (supabase
+          .from('news2_observations' as any)
+          .select('*')
+          .eq('news2_patient_id', news2Patient.id)
+          .order('recorded_at', { ascending: false })
+          .limit(15) as any);
+
+        if (news2Data && news2Data.length > 0) {
+          await addSectionHeader('NEWS2 Assessments');
+
+          const news2Rows = news2Data.map((n: any) => [
+            n.recorded_at ? format(new Date(n.recorded_at), 'PP') : 'N/A',
+            n.total_score?.toString() || 'N/A',
+            n.risk_level || 'N/A',
+            `RR:${n.respiratory_rate || '-'} O2:${n.oxygen_saturation || '-'}%`,
+            `BP:${n.systolic_bp || '-'}/${n.diastolic_bp || '-'} HR:${n.pulse_rate || '-'}`,
+            `${n.temperature || '-'}°C`
+          ]);
+
+          autoTable(pdf, {
+            head: [['Date', 'Score', 'Risk', 'Resp/O2', 'BP/Pulse', 'Temp']],
+            body: news2Rows,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 7, cellPadding: 2 },
+            headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 10;
+        }
+      }
+    }
+
+    // Section 26: Activities (if selected)
+    if (sections.activities) {
+      // Fetch activities via care plans for this client
+      const { data: carePlanIds } = await supabase
+        .from('client_care_plans')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (carePlanIds && carePlanIds.length > 0) {
+        const ids = carePlanIds.map(cp => cp.id);
+        const { data: activitiesData } = await supabase
+          .from('client_activities')
+          .select('*')
+          .in('care_plan_id', ids)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (activitiesData && activitiesData.length > 0) {
+          await addSectionHeader('Activities');
+
+          const activityRows = activitiesData.map((a: any) => [
+            a.name || 'N/A',
+            (a.description || 'N/A').substring(0, 50) + ((a.description?.length || 0) > 50 ? '...' : ''),
+            a.frequency || 'N/A',
+            a.status || 'N/A'
+          ]);
+
+          autoTable(pdf, {
+            head: [['Activity', 'Description', 'Frequency', 'Status']],
+            body: activityRows,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 10;
+        }
+      }
+    }
+
+    // Section 27: Service Reports (if selected)
+    if (sections.serviceReports) {
+      const { data: serviceReportsData } = await (supabase
+        .from('client_service_reports' as any)
+        .select('*')
+        .eq('client_id', clientId)
+        .order('service_date', { ascending: false })
+        .limit(15) as any);
+
+      if (serviceReportsData && serviceReportsData.length > 0) {
+        await addSectionHeader('Service Reports');
+
+        const reportRows = serviceReportsData.map((r: any) => [
+          r.service_date ? format(new Date(r.service_date), 'PP') : 'N/A',
+          r.service_duration_minutes ? `${r.service_duration_minutes} min` : 'N/A',
+          r.client_mood || 'N/A',
+          r.client_engagement || 'N/A',
+          r.incident_occurred ? 'Yes' : 'No',
+          r.status || 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Date', 'Duration', 'Mood', 'Engagement', 'Incident', 'Status']],
+          body: reportRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 28: Reviews (if selected)
+    if (sections.reviews) {
+      const { data: reviewsData } = await (supabase
+        .from('reviews' as any)
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(10) as any);
+
+      if (reviewsData && reviewsData.length > 0) {
+        await addSectionHeader('Client Reviews');
+
+        const reviewRows = reviewsData.map((r: any) => [
+          r.service_date ? format(new Date(r.service_date), 'PP') : (r.created_at ? format(new Date(r.created_at), 'PP') : 'N/A'),
+          r.service_type || 'N/A',
+          r.rating ? `${r.rating}/5` : 'N/A',
+          (r.comment || 'No comment').substring(0, 60) + ((r.comment?.length || 0) > 60 ? '...' : '')
+        ]);
+
+        autoTable(pdf, {
+          head: [['Date', 'Service', 'Rating', 'Comment']],
+          body: reviewRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // Section 29: Events & Logs (if selected)
+    if (sections.eventsLogs) {
+      const { data: eventsData } = await (supabase
+        .from('client_events_logs' as any)
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(15) as any);
+
+      if (eventsData && eventsData.length > 0) {
+        await addSectionHeader('Events & Incident Logs');
+
+        const eventRows = eventsData.map((e: any) => [
+          e.event_date ? format(new Date(e.event_date), 'PP') : 
+            (e.created_at ? format(new Date(e.created_at), 'PP') : 'N/A'),
+          e.event_type || 'N/A',
+          e.title || 'N/A',
+          e.severity || 'N/A',
+          e.status || 'N/A'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Date', 'Type', 'Title', 'Severity', 'Status']],
+          body: eventRows,
           startY: currentY,
           theme: 'striped',
           styles: { fontSize: 8, cellPadding: 2 },
