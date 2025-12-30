@@ -53,7 +53,6 @@ const carerModuleShortcuts: ModuleShortcut[] = [
   { name: "Leave", keywords: ["leave", "time off", "holiday", "vacation", "absence"], path: "/leave", icon: CalendarOff, category: "Schedule" },
 
   // Clients & Care
-  { name: "Clients", keywords: ["client", "patient", "service user", "customer"], path: "/clients", icon: Users, category: "Care" },
   { name: "Care Plans", keywords: ["care plan", "careplan", "care", "plan", "support"], path: "/careplans", icon: FileText, category: "Care" },
 
   // Tasks & Work
