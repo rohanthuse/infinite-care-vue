@@ -44,13 +44,13 @@ export const CarerEssentialsTab: React.FC<CarerEssentialsTabProps> = ({ carerId 
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'complete':
-        return { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50', badge: 'bg-green-100 text-green-800' };
+        return { icon: CheckCircle, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', badge: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' };
       case 'expiring':
-        return { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50', badge: 'bg-amber-100 text-amber-800' };
+        return { icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' };
       case 'pending':
-        return { icon: Clock, color: 'text-red-600', bg: 'bg-red-50', badge: 'bg-red-100 text-red-800' };
+        return { icon: Clock, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', badge: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' };
       default:
-        return { icon: Clock, color: 'text-gray-600', bg: 'bg-gray-50', badge: 'bg-gray-100 text-gray-800' };
+        return { icon: Clock, color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-50 dark:bg-gray-800', badge: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' };
     }
   };
 
@@ -152,7 +152,7 @@ export const CarerEssentialsTab: React.FC<CarerEssentialsTabProps> = ({ carerId 
                         
                         <div className="flex items-center gap-2">
                           <StatusIcon className={`h-5 w-5 ${statusInfo.color}`} />
-                          <Badge className={statusInfo.badge}>
+                          <Badge variant="custom" className={statusInfo.badge}>
                             {item.status === 'complete' && 'Complete'}
                             {item.status === 'expiring' && 'Expiring Soon'}
                             {item.status === 'expired' && 'Expired'}
