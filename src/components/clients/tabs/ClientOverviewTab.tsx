@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatDistance } from "date-fns";
 import { formatCurrency } from "@/utils/currencyFormatter";
-import { useServiceRates } from "@/hooks/useAccountingData";
+import { useClientRateAssignments } from "@/hooks/useClientRateAssignments";
 import { useClientReviews } from "@/hooks/useClientReviews";
 import { useMedicationsByClient } from "@/hooks/useMedications";
 import { useClientEvents } from "@/hooks/useClientEvents";
@@ -20,7 +20,7 @@ interface ClientOverviewTabProps {
 }
 
 export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, branchId }) => {
-  const { data: serviceRates, isLoading: isLoadingRates } = useServiceRates(branchId);
+  const { data: clientRateAssignments, isLoading: isLoadingRates } = useClientRateAssignments(client.id);
   const { data: reviews = [] } = useClientReviews(client.id);
   const { data: medications = [] } = useMedicationsByClient(client.id);
   const { data: clientEvents = [] } = useClientEvents(client.id);
@@ -260,34 +260,34 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
               <div className="flex items-center justify-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
-            ) : serviceRates && serviceRates.length > 0 ? (
+            ) : clientRateAssignments && clientRateAssignments.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  {serviceRates.length} service rate{serviceRates.length !== 1 ? 's' : ''} configured
+                  {clientRateAssignments.length} service rate{clientRateAssignments.length !== 1 ? 's' : ''} assigned
                 </p>
                 <div className="space-y-1">
-                  {serviceRates.slice(0, 3).map((rate) => (
-                    <div key={rate.id} className="flex justify-between text-sm">
-                      <span>{rate.service_name}</span>
-                      <span className="font-medium">{formatCurrency(rate.amount)}</span>
+                  {clientRateAssignments.slice(0, 3).map((assignment) => (
+                    <div key={assignment.id} className="flex justify-between text-sm">
+                      <span>{assignment.service_rate?.service_name || 'Unknown Service'}</span>
+                      <span className="font-medium">{formatCurrency(assignment.service_rate?.amount || 0)}</span>
                     </div>
                   ))}
-                  {serviceRates.length > 3 && (
+                  {clientRateAssignments.length > 3 && (
                     <p className="text-sm text-muted-foreground">
-                      +{serviceRates.length - 3} more...
+                      +{clientRateAssignments.length - 3} more...
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No service rates configured</p>
+              <p className="text-sm text-muted-foreground">No service rates assigned to this client</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Service Rates Table */}
-      {serviceRates && serviceRates.length > 0 && (
+      {clientRateAssignments && clientRateAssignments.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>All Service Rates</CardTitle>
@@ -299,20 +299,20 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
                   <TableHead>Service</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Effective From</TableHead>
-                  <TableHead>Effective To</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {serviceRates.map((rate) => (
-                  <TableRow key={rate.id}>
-                    <TableCell className="font-medium">{rate.service_name}</TableCell>
-                    <TableCell>{rate.rate_type}</TableCell>
-                    <TableCell>{formatCurrency(rate.amount)}</TableCell>
-                    <TableCell>{formatDate(rate.effective_from)}</TableCell>
-                    <TableCell>{rate.effective_to ? formatDate(rate.effective_to) : 'Ongoing'}</TableCell>
-                    <TableCell>{getStatusBadge(rate.status)}</TableCell>
+                {clientRateAssignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-medium">{assignment.service_rate?.service_name || 'Unknown'}</TableCell>
+                    <TableCell>{assignment.service_rate?.rate_type || '-'}</TableCell>
+                    <TableCell>{formatCurrency(assignment.service_rate?.amount || 0)}</TableCell>
+                    <TableCell>{formatDate(assignment.start_date)}</TableCell>
+                    <TableCell>{assignment.end_date ? formatDate(assignment.end_date) : 'Ongoing'}</TableCell>
+                    <TableCell>{getStatusBadge(assignment.is_active ? 'active' : 'inactive')}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
