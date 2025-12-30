@@ -76,7 +76,7 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 16:
         return <WizardStepConsent form={form} />;
       case 17:
-        return <WizardStepKeyContacts form={form} />;
+        return <WizardStepKeyContacts form={form} clientId={clientId} />;
       case 18:
         // Only render Behavior Support for child/young person clients
         return isChild ? <BehaviorSupportTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;

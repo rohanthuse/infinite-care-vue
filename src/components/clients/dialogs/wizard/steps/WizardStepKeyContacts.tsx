@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, Users, Phone, Mail, MapPin, Eye, Pencil, Trash2, X, UserPlus } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,9 +16,11 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useClientKeyContacts, CreateClientKeyContactData } from "@/hooks/useClientKeyContacts";
 
 interface WizardStepKeyContactsProps {
   form: UseFormReturn<any>;
+  clientId?: string;
 }
 
 const CONTACT_TYPES = [
@@ -87,15 +89,53 @@ type ContactFormData = z.infer<typeof contactFormSchema>;
 
 interface Contact extends ContactFormData {
   id: string;
+  db_id?: string; // Database ID for synced contacts
 }
 
-export function WizardStepKeyContacts({ form }: WizardStepKeyContactsProps) {
+export function WizardStepKeyContacts({ form, clientId }: WizardStepKeyContactsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const hasInitializedRef = useRef(false);
+
+  // Use database hook for two-way sync
+  const { 
+    contacts: dbContacts, 
+    isLoading: isLoadingContacts,
+    createContact, 
+    updateContact, 
+    deleteContact: deleteDbContact,
+    isCreating,
+    isUpdating,
+    isDeleting
+  } = useClientKeyContacts(clientId || '');
 
   const keyContacts: Contact[] = form.watch("key_contacts") || [];
+
+  // Initialize form with database contacts on first load
+  useEffect(() => {
+    if (clientId && dbContacts.length > 0 && !hasInitializedRef.current) {
+      // Map database contacts to form format
+      const mappedContacts: Contact[] = dbContacts.map(c => ({
+        id: c.id,
+        db_id: c.id,
+        first_name: c.first_name,
+        surname: c.surname,
+        relationship: c.relationship || '',
+        is_next_of_kin: c.is_next_of_kin,
+        gender: c.gender || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        contact_type: c.contact_type,
+        address: c.address || '',
+        preferred_communication: c.preferred_communication || '',
+        notes: c.notes || '',
+      }));
+      form.setValue("key_contacts", mappedContacts);
+      hasInitializedRef.current = true;
+    }
+  }, [clientId, dbContacts, form]);
 
   const contactForm = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -154,16 +194,71 @@ export function WizardStepKeyContacts({ form }: WizardStepKeyContactsProps) {
     
     if (editingIndex !== null) {
       // Update existing contact
+      const existingContact = current[editingIndex];
       const updated = [...current];
-      updated[editingIndex] = { ...data, id: current[editingIndex]?.id || crypto.randomUUID() };
+      const newContact = { ...data, id: existingContact?.id || crypto.randomUUID(), db_id: existingContact?.db_id };
+      updated[editingIndex] = newContact;
       form.setValue("key_contacts", updated);
+      
+      // Sync to database if we have a clientId and db_id
+      if (clientId && existingContact?.db_id) {
+        updateContact({
+          id: existingContact.db_id,
+          first_name: data.first_name,
+          surname: data.surname,
+          relationship: data.relationship || undefined,
+          is_next_of_kin: data.is_next_of_kin,
+          gender: data.gender || undefined,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
+          contact_type: data.contact_type,
+          address: data.address || undefined,
+          preferred_communication: data.preferred_communication || undefined,
+          notes: data.notes || undefined,
+        });
+      } else if (clientId) {
+        // Create in database if updating a contact that wasn't synced yet
+        const contactData: CreateClientKeyContactData = {
+          client_id: clientId,
+          first_name: data.first_name,
+          surname: data.surname,
+          relationship: data.relationship || undefined,
+          is_next_of_kin: data.is_next_of_kin,
+          gender: data.gender || undefined,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
+          contact_type: data.contact_type,
+          address: data.address || undefined,
+          preferred_communication: data.preferred_communication || undefined,
+          notes: data.notes || undefined,
+        };
+        createContact(contactData);
+      }
       toast.success("Contact updated successfully");
     } else {
       // Add new contact
-      form.setValue("key_contacts", [
-        ...current,
-        { ...data, id: crypto.randomUUID() }
-      ]);
+      const newId = crypto.randomUUID();
+      const newContact = { ...data, id: newId };
+      form.setValue("key_contacts", [...current, newContact]);
+      
+      // Sync to database if we have a clientId
+      if (clientId) {
+        const contactData: CreateClientKeyContactData = {
+          client_id: clientId,
+          first_name: data.first_name,
+          surname: data.surname,
+          relationship: data.relationship || undefined,
+          is_next_of_kin: data.is_next_of_kin,
+          gender: data.gender || undefined,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
+          contact_type: data.contact_type,
+          address: data.address || undefined,
+          preferred_communication: data.preferred_communication || undefined,
+          notes: data.notes || undefined,
+        };
+        createContact(contactData);
+      }
       toast.success("Contact added successfully");
     }
     
@@ -174,6 +269,13 @@ export function WizardStepKeyContacts({ form }: WizardStepKeyContactsProps) {
   const handleDelete = () => {
     if (deleteIndex !== null) {
       const current = form.getValues("key_contacts") || [];
+      const contactToDelete = current[deleteIndex];
+      
+      // Delete from database if synced
+      if (clientId && contactToDelete?.db_id) {
+        deleteDbContact(contactToDelete.db_id);
+      }
+      
       form.setValue("key_contacts", current.filter((_: any, i: number) => i !== deleteIndex));
       toast.success("Contact deleted successfully");
       setDeleteIndex(null);
