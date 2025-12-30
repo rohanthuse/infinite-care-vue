@@ -3259,6 +3259,75 @@ export type Database = {
           },
         ]
       }
+      client_key_contacts: {
+        Row: {
+          address: string | null
+          client_id: string
+          contact_type: string
+          created_at: string | null
+          email: string | null
+          first_name: string
+          gender: string | null
+          id: string
+          is_next_of_kin: boolean | null
+          notes: string | null
+          phone: string | null
+          preferred_communication: string | null
+          relationship: string | null
+          surname: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          client_id: string
+          contact_type: string
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          gender?: string | null
+          id?: string
+          is_next_of_kin?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          preferred_communication?: string | null
+          relationship?: string | null
+          surname: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          client_id?: string
+          contact_type?: string
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          gender?: string | null
+          id?: string
+          is_next_of_kin?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          preferred_communication?: string | null
+          relationship?: string | null
+          surname?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_key_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_key_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_medical_info: {
         Row: {
           allergies: string[] | null
