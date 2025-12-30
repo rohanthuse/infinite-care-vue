@@ -801,7 +801,7 @@ export function CarePlanCreationWizard({
         ) : (
           <div className="flex flex-1 min-h-0">
             {/* Sidebar - Hidden on mobile, visible on lg+ */}
-            <div className="hidden lg:block flex-shrink-0">
+            <div className="hidden lg:block flex-shrink-0 h-full overflow-hidden">
         {clientProfile?.first_name && clientProfile?.last_name && (
           <div className="flex items-center gap-2 mb-4">
             <User className="h-4 w-4" />

@@ -224,12 +224,50 @@ const CarerVisitWorkflow = () => {
     return jsonData?.goals || [];
   }, [normalizedGoals, jsonData?.goals]);
   
+  // Helper function to determine shift from booking start time
+  const getShiftFromTime = (startTime: string | Date): string[] => {
+    const hour = new Date(startTime).getHours();
+    
+    // Morning: 6 AM - 12 PM (6-11)
+    if (hour >= 6 && hour < 12) return ['morning', 'any_time'];
+    
+    // Afternoon: 12 PM - 5 PM (12-16)
+    if (hour >= 12 && hour < 17) return ['afternoon', 'any_time'];
+    
+    // Evening: 5 PM - 9 PM (17-20)
+    if (hour >= 17 && hour < 21) return ['evening', 'any_time'];
+    
+    // Night: 9 PM - 6 AM (21-5)
+    return ['night', 'any_time'];
+  };
+
   const carePlanActivities = useMemo(() => {
-    if (normalizedActivities && normalizedActivities.length > 0) {
-      return normalizedActivities;
+    // Get the current booking's shift
+    const currentShifts = currentAppointment?.start_time 
+      ? getShiftFromTime(currentAppointment.start_time) 
+      : [];
+    
+    // Get raw activities from normalized tables or JSON
+    let rawActivities = normalizedActivities && normalizedActivities.length > 0
+      ? normalizedActivities
+      : (jsonData?.activities || []);
+    
+    // If we have a booking time, filter activities by time_of_day
+    if (currentShifts.length > 0 && rawActivities.length > 0) {
+      rawActivities = rawActivities.filter((activity: any) => {
+        const activityTimes = activity.time_of_day;
+        
+        // If no time_of_day specified, show the activity (backwards compatibility)
+        if (!activityTimes || activityTimes.length === 0) return true;
+        
+        // Check if activity's time_of_day includes the current shift or 'any_time'
+        const timesArray = Array.isArray(activityTimes) ? activityTimes : [activityTimes];
+        return timesArray.some((time: string) => currentShifts.includes(time));
+      });
     }
-    return jsonData?.activities || [];
-  }, [normalizedActivities, jsonData?.activities]);
+    
+    return rawActivities;
+  }, [normalizedActivities, jsonData?.activities, currentAppointment?.start_time]);
   
   // Handler for goal status/progress updates
   const handleGoalUpdate = async (goal: any, newStatus: string, newProgress?: number) => {

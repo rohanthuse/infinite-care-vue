@@ -10,6 +10,8 @@ export interface ClientActivity {
   description?: string;
   frequency: string;
   status: string;
+  time_of_day?: string[];
+  duration?: string;
   created_at: string;
   updated_at: string;
 }
