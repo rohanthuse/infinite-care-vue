@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, User, AlertTriangle, Ban, Shield } from "lucide-react";
+import { Clock, User, AlertTriangle, Ban, Shield, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ConflictingBooking {
@@ -31,6 +31,7 @@ interface BookingOverlapAlertProps {
   availableCarers: Array<{ id: string; name: string; initials: string }>;
   onChooseDifferentCarer: () => void;
   onModifyTime: () => void;
+  onProceedWithoutCarer?: () => void;
 }
 
 export function BookingOverlapAlert({
@@ -43,6 +44,7 @@ export function BookingOverlapAlert({
   availableCarers,
   onChooseDifferentCarer,
   onModifyTime,
+  onProceedWithoutCarer,
 }: BookingOverlapAlertProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -126,6 +128,7 @@ export function BookingOverlapAlert({
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Choose a different carer who is available</li>
                   <li>• Modify the booking time to avoid conflicts</li>
+                  <li>• Create booking without carer (assign later)</li>
                   <li>• Cancel this booking attempt</li>
                 </ul>
               </div>
@@ -148,6 +151,16 @@ export function BookingOverlapAlert({
               Modify Time
             </AlertDialogAction>
           </div>
+          
+          {onProceedWithoutCarer && (
+            <AlertDialogAction
+              onClick={onProceedWithoutCarer}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Save Without Carer
+            </AlertDialogAction>
+          )}
           
           <AlertDialogCancel className="w-full">Cancel</AlertDialogCancel>
         </AlertDialogFooter>
