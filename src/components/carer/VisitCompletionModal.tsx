@@ -46,6 +46,18 @@ export const VisitCompletionModal: React.FC<VisitCompletionModalProps> = ({
   onClose,
 }) => {
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showCancelOption, setShowCancelOption] = useState(false);
+
+  // Show cancel option after 15 seconds of completing status
+  useEffect(() => {
+    if (status === 'completing') {
+      setShowCancelOption(false);
+      const timer = setTimeout(() => setShowCancelOption(true), 15000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowCancelOption(false);
+    }
+  }, [status]);
 
   // Start countdown when success and next booking available
   useEffect(() => {
@@ -97,6 +109,19 @@ export const VisitCompletionModal: React.FC<VisitCompletionModalProps> = ({
               <p className="text-sm text-muted-foreground text-center">
                 {completionStep}
               </p>
+              
+              {showCancelOption && (
+                <div className="text-center pt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={onClose}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Taking too long? Cancel and try again
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         )}
