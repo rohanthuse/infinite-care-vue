@@ -171,16 +171,16 @@ const CarerMyTasks: React.FC = () => {
                           <p className="text-sm text-blue-600 font-medium">Client: {event.client_name}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <Badge className={getSeverityColor(event.severity)}>
+                          <Badge variant="custom" className={getSeverityColor(event.severity)}>
                             {event.severity}
                           </Badge>
-                          <Badge className={getStatusColor(event.status)}>
+                          <Badge variant="custom" className={getStatusColor(event.status)}>
                             {event.status}
                           </Badge>
                           <Badge variant="outline">
                             {event.event_type}
                           </Badge>
-                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800">
+                          <Badge variant="custom" className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800">
                             {getAssignmentType(event)}
                           </Badge>
                         </div>
