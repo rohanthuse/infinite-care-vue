@@ -68,6 +68,9 @@ export interface Booking {
     visit_end_time: string | null;
     status: string;
   }>;
+  // Address fields
+  location_address?: string | null;
+  clientAddress?: string;
 }
 
 export interface Client {

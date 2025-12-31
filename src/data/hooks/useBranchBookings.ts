@@ -2,6 +2,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface ClientAddressDB {
+  address_line_1: string;
+  address_line_2?: string | null;
+  city: string;
+  state_county?: string | null;
+  postcode: string;
+  country?: string | null;
+  is_default: boolean | null;
+}
+
 export interface BookingDB {
   id: string;
   client_id: string | null;
@@ -37,6 +47,13 @@ export interface BookingDB {
     visit_end_time: string | null;
     status: string;
   }>;
+  clients?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    address: string | null;
+    client_addresses: ClientAddressDB[];
+  } | null;
 }
 
 export async function fetchBranchBookings(branchId?: string) {
@@ -54,6 +71,21 @@ export async function fetchBranchBookings(branchId?: string) {
       revenue, service_id, created_at, status, notes, location_address,
       cancellation_request_status,
       reschedule_request_status,
+      clients!client_id (
+        id,
+        first_name,
+        last_name,
+        address,
+        client_addresses (
+          address_line_1,
+          address_line_2,
+          city,
+          state_county,
+          postcode,
+          country,
+          is_default
+        )
+      ),
       booking_unavailability_requests!booking_id (
         id,
         status,
@@ -85,11 +117,12 @@ export async function fetchBranchBookings(branchId?: string) {
     throw error;
   }
   
-  // Map bookings to include service_ids array
+  // Map bookings to include service_ids array and client data
   const mappedData = (data || []).map((booking: any) => ({
     ...booking,
     service_ids: booking.booking_services?.map((bs: any) => bs.service_id) || 
                  (booking.service_id ? [booking.service_id] : []),
+    clients: booking.clients || null,
   }));
   
   console.log("[fetchBranchBookings] Successfully fetched", mappedData.length, "bookings");
