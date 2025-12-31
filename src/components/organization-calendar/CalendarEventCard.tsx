@@ -80,55 +80,101 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
 
   const EventIcon = getEventIcon(event.type);
 
+  // Extract client name from event
+  const getClientName = (): string => {
+    const clientParticipant = event.participants?.find(p => p.role === 'client');
+    if (clientParticipant) return clientParticipant.name;
+    return event.title || 'Unknown Client';
+  };
+
+  // Extract carer/staff names from event
+  const getCarerNames = (): string => {
+    const staffParticipants = event.participants?.filter(p => p.role === 'staff' || p.role === 'carer');
+    if (!staffParticipants || staffParticipants.length === 0) return 'Not Assigned';
+    if (staffParticipants.length === 1) return staffParticipants[0].name;
+    return staffParticipants.map(p => p.name).join(', ');
+  };
+
   if (compact) {
     return (
-      <div
-        className={`p-2 rounded-md border-l-4 ${getEventColor(event.type)} cursor-pointer hover:shadow-sm transition-shadow min-w-[200px] max-w-[300px]`}
-        onClick={handleClick}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <EventIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <span className="text-xs font-medium text-foreground truncate">
-              {event.title}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {/* Late/Missed indicators */}
-            {event.isMissed && (
-              <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-            )}
-            {event.isLateStart && !event.isMissed && (
-              <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-            )}
-            <div className={`w-2 h-2 rounded-full ${getStatusColor(event.status)} flex-shrink-0`} />
-          </div>
-        </div>
-        
-        {showTime && (
-          <div className="mt-1 flex items-center gap-1">
-            <Clock className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {format(new Date(event.startTime), 'HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
-            </span>
-            {/* Show late duration in compact view */}
-            {event.isLateStart && event.lateStartMinutes && event.lateStartMinutes > 0 && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                (+{event.lateStartMinutes}m late)
+      <TooltipProvider>
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <div
+              className={`p-2 rounded-md border-l-4 ${getEventColor(event.type)} cursor-pointer hover:shadow-sm transition-shadow min-w-[200px] max-w-[300px]`}
+              onClick={handleClick}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <EventIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs font-medium text-foreground truncate">
+                    {event.title}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {event.isMissed && (
+                    <XCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+                  )}
+                  {event.isLateStart && !event.isMissed && (
+                    <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                  )}
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(event.status)} flex-shrink-0`} />
+                </div>
+              </div>
+              
+              {showTime && (
+                <div className="mt-1 flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(event.startTime), 'HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
+                  </span>
+                  {event.isLateStart && event.lateStartMinutes && event.lateStartMinutes > 0 && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      (+{event.lateStartMinutes}m late)
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {event.participants && event.participants.length > 0 && (
+                <div className="mt-1 flex items-center gap-1">
+                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {event.participants.length} participant{event.participants.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <div className="text-sm">
+                <span className="font-medium">Client:</span> {getClientName()}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-500 flex-shrink-0" />
+              <div className="text-sm">
+                <span className="font-medium">Carer:</span> {getCarerNames()}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm">
+                {format(new Date(event.startTime), 'HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
               </span>
+            </div>
+            {event.location && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm truncate">{event.location}</span>
+              </div>
             )}
-          </div>
-        )}
-        
-        {event.participants && event.participants.length > 0 && (
-          <div className="mt-1 flex items-center gap-1">
-            <Users className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {event.participants.length} participant{event.participants.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
-      </div>
+            <p className="text-xs text-muted-foreground pt-1 border-t border-border">Click to view details</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
