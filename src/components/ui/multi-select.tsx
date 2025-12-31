@@ -161,7 +161,18 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 z-50 bg-white dark:bg-gray-800 shadow-md border" align="start">
-        <Command>
+        <Command
+          filter={(value, search) => {
+            if (!search) return 1;
+            // Find the option by value to get its label for matching
+            const option = options.find(opt => opt.value === value);
+            const labelToMatch = option?.label?.toLowerCase() || value.toLowerCase();
+            const normalizedSearch = search.toLowerCase().trim();
+            // Match if label or value contains search string
+            if (labelToMatch.includes(normalizedSearch) || value.toLowerCase().includes(normalizedSearch)) return 1;
+            return 0;
+          }}
+        >
           <CommandInput 
             placeholder={searchPlaceholder} 
             value={searchValue}
@@ -211,6 +222,7 @@ export function MultiSelect({
                 <CommandItem
                   key={option.value}
                   value={option.value}
+                  keywords={[option.label]}
                   onSelect={() => handleSelect(option.value)}
                 >
                   <Check
