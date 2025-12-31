@@ -83,10 +83,33 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
       } finally {
         setIsSaving(false);
       }
-    }, 5000); // Auto-save after 5 seconds of no typing
+    }, 1500); // Auto-save after 1.5 seconds of no typing
 
     return () => clearTimeout(timeoutId);
   }, [visitNotes, visitRecordId, visitRecord?.visit_summary, updateVisitRecord]);
+
+  // Auto-save goal updates with debouncing
+  useEffect(() => {
+    const pendingUpdates = Object.entries(goalUpdates);
+    if (pendingUpdates.length === 0 || !goals) return;
+
+    const timeoutId = setTimeout(() => {
+      pendingUpdates.forEach(([goalId, update]) => {
+        const goal = goals.find(g => g.id === goalId);
+        if (goal && (update.progress !== undefined || update.notes)) {
+          handleGoalUpdate(
+            goalId, 
+            update.progress ?? goal.progress ?? 0,
+            update.notes ?? ''
+          );
+        }
+      });
+      // Clear pending updates after save
+      setGoalUpdates({});
+    }, 2000); // 2-second debounce for goal updates
+
+    return () => clearTimeout(timeoutId);
+  }, [goalUpdates, goals]);
 
   const handleGoalUpdate = async (goalId: string, progress: number, notes: string) => {
     try {

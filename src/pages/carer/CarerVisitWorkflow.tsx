@@ -512,6 +512,8 @@ const CarerVisitWorkflow = () => {
   const [clientSignature, setClientSignature] = useState<string | null>(null);
   const [carerSignature, setCarerSignature] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [notesIsSaving, setNotesIsSaving] = useState(false);
+  const [notesLastSaved, setNotesLastSaved] = useState<Date | null>(null);
   const [photoAdded, setPhotoAdded] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   
@@ -668,6 +670,32 @@ const CarerVisitWorkflow = () => {
       }
     }
   }, [visitRecord, clientSignature, carerSignature]);
+
+  // Auto-save visit notes with debouncing
+  useEffect(() => {
+    // Skip if no visit record or notes haven't changed from loaded value
+    if (!visitRecord?.id || notes === (visitRecord.visit_notes || '')) return;
+    // Skip in view-only mode
+    if (isViewOnly) return;
+
+    const timeoutId = setTimeout(async () => {
+      setNotesIsSaving(true);
+      try {
+        await updateVisitRecord.mutateAsync({
+          id: visitRecord.id,
+          updates: { visit_notes: notes }
+        });
+        setNotesLastSaved(new Date());
+        console.log('[CarerVisitWorkflow] Auto-saved visit notes');
+      } catch (error) {
+        console.error('[CarerVisitWorkflow] Error auto-saving notes:', error);
+      } finally {
+        setNotesIsSaving(false);
+      }
+    }, 2000); // 2-second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [notes, visitRecord?.id, visitRecord?.visit_notes, isViewOnly]);
   
   // Timer functionality
   useEffect(() => {
@@ -2986,7 +3014,21 @@ const CarerVisitWorkflow = () => {
               <CardContent>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="visitNotes">Additional Notes</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="visitNotes">Additional Notes</Label>
+                      {notesIsSaving && (
+                        <span className="text-sm text-blue-600 flex items-center gap-1">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                          Saving...
+                        </span>
+                      )}
+                      {notesLastSaved && !notesIsSaving && (
+                        <span className="text-sm text-green-600 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Saved at {format(notesLastSaved, 'HH:mm')}
+                        </span>
+                      )}
+                    </div>
                     <Textarea
                       id="visitNotes"
                       value={notes}
@@ -2995,7 +3037,7 @@ const CarerVisitWorkflow = () => {
                       rows={8}
                       className="min-h-[200px]"
                     />
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Use this space to document any observations, client feedback, or important information for the next visit.
                     </p>
                   </div>
