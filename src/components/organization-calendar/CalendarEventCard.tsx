@@ -17,7 +17,8 @@ import {
   User,
   FileText,
   AlertTriangle,
-  XCircle
+  XCircle,
+  Building2
 } from 'lucide-react';
 import { CalendarEvent } from '@/types/calendar';
 import { EventContextMenu } from './EventContextMenu';
@@ -87,12 +88,18 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
     return event.title || 'Unknown Client';
   };
 
-  // Extract carer/staff names from event
-  const getCarerNames = (): string => {
+  // Extract all carer/staff names from event
+  const getCarerNames = (): string[] => {
     const staffParticipants = event.participants?.filter(p => p.role === 'staff' || p.role === 'carer');
-    if (!staffParticipants || staffParticipants.length === 0) return 'Not Assigned';
-    if (staffParticipants.length === 1) return staffParticipants[0].name;
-    return staffParticipants.map(p => p.name).join(', ');
+    if (!staffParticipants || staffParticipants.length === 0) return ['Not Assigned'];
+    return staffParticipants.map(p => p.name);
+  };
+
+  // Extract branch admin names from event
+  const getBranchAdminNames = (): string[] => {
+    const adminParticipants = event.participants?.filter(p => p.role === 'branch_admin');
+    if (!adminParticipants || adminParticipants.length === 0) return [];
+    return adminParticipants.map(p => p.name);
   };
 
   if (compact) {
@@ -146,31 +153,59 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
               )}
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
+          <TooltipContent side="top" className="max-w-sm p-3 space-y-2">
+            {/* Client */}
+            <div className="flex items-start gap-2">
+              <User className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div className="text-sm">
                 <span className="font-medium">Client:</span> {getClientName()}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-purple-500 flex-shrink-0" />
+            
+            {/* Carers */}
+            <div className="flex items-start gap-2">
+              <Users className="h-4 w-4 text-purple-500 flex-shrink-0 mt-0.5" />
               <div className="text-sm">
-                <span className="font-medium">Carer:</span> {getCarerNames()}
+                <span className="font-medium">Carer{getCarerNames().length > 1 ? 's' : ''}:</span>
+                <div className="ml-0">
+                  {getCarerNames().map((name, idx) => (
+                    <div key={idx} className="text-muted-foreground">{name}</div>
+                  ))}
+                </div>
               </div>
             </div>
+            
+            {/* Branch Admins - only show if there are any */}
+            {getBranchAdminNames().length > 0 && (
+              <div className="flex items-start gap-2">
+                <Building2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <span className="font-medium">Branch Admin{getBranchAdminNames().length > 1 ? 's' : ''}:</span>
+                  <div className="ml-0">
+                    {getBranchAdminNames().map((name, idx) => (
+                      <div key={idx} className="text-muted-foreground">{name}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Time */}
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-sm">
                 {format(new Date(event.startTime), 'HH:mm')} - {format(new Date(event.endTime), 'HH:mm')}
               </span>
             </div>
+            
+            {/* Location */}
             {event.location && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-sm truncate">{event.location}</span>
               </div>
             )}
+            
             <p className="text-xs text-muted-foreground pt-1 border-t border-border">Click to view details</p>
           </TooltipContent>
         </Tooltip>
