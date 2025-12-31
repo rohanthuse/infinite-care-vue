@@ -817,15 +817,22 @@ export function ViewBookingDialog({
           <Separator />
 
           {/* Location Information */}
-          {booking?.location_address && (
+          {(booking?.location_address || booking?.clientAddress) && (
             <>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <MapPin className="h-4 w-4" />
                   Location
                 </div>
                 <div className="pl-6">
-                  <p className="text-sm text-gray-600 break-words">{booking.location_address}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 break-words">
+                    {booking.location_address || booking.clientAddress}
+                  </p>
+                  {!booking.location_address && booking.clientAddress && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Client's default address)
+                    </p>
+                  )}
                 </div>
               </div>
 

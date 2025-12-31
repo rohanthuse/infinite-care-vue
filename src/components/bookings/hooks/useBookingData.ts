@@ -15,6 +15,7 @@ import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyData
 import { formatInUserTimezone, getUserTimezone } from '@/utils/timezoneUtils';
 import { toZonedTime } from 'date-fns-tz';
 import { format } from 'date-fns';
+import { getClientDisplayAddress } from '@/utils/addressUtils';
 export function useBookingData(branchId?: string) {
   const { user, loading: authLoading, error: authError } = useAuthSafe();
   
@@ -240,6 +241,13 @@ export function useBookingData(branchId?: string) {
             cancellation_request_status: bk.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
             reschedule_request_status: bk.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,
             visit_records: bk.visit_records || [],
+            // Address fields
+            location_address: bk.location_address,
+            clientAddress: getClientDisplayAddress(
+              bk.location_address,
+              bk.clients?.address,
+              bk.clients?.client_addresses
+            ),
           };
 
           // Debug logging for request statuses
