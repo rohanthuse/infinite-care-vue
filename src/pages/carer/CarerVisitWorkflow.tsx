@@ -405,6 +405,9 @@ const CarerVisitWorkflow = () => {
           progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0),
           notes: goal.notes || null,
         });
+        // Invalidate queries to refresh data from database
+        queryClient.invalidateQueries({ queryKey: ['care-plan-goals', activeCareplan?.id] });
+        queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', activeCareplan?.id] });
       } else {
         // Existing goal: Just update
         console.log('[handleGoalUpdate] Updating existing goal:', goal.id);
@@ -476,6 +479,9 @@ const CarerVisitWorkflow = () => {
           frequency: activity.frequency || 'daily',
           status: newStatus,
         });
+        // Invalidate queries to refresh data from database
+        queryClient.invalidateQueries({ queryKey: ['client-activities', activeCareplan?.id] });
+        queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', activeCareplan?.id] });
       } else {
         // Existing activity: Just update
         console.log('[handleActivityUpdate] Updating existing activity:', activity.id);
@@ -572,81 +578,10 @@ const CarerVisitWorkflow = () => {
     }
   }, [currentAppointment, visitRecord, visitLoading, carerContext?.staffId, autoCreateVisitRecord, autoCreateAttempted, isViewOnly]);
 
-  // Auto-load care plan goals and activities as visit tasks when visit record is created
-  useEffect(() => {
-    const loadCarePlanTasks = async () => {
-      if (!visitRecord?.id || isViewOnly || carePlanTasksLoaded) return;
-      if (carePlanGoals?.length === 0 && carePlanActivities?.length === 0) return;
-      
-      // Check if tasks already exist for this visit (prevent duplicates)
-      const { data: existingTasks, error: checkError } = await supabase
-        .from('visit_tasks')
-        .select('id')
-        .eq('visit_record_id', visitRecord.id)
-        .limit(1);
-      
-      if (checkError) {
-        console.error('[CarerVisitWorkflow] Error checking existing tasks:', checkError);
-        return;
-      }
-      
-      // If tasks already exist, skip loading
-      if (existingTasks && existingTasks.length > 0) {
-        console.log('[CarerVisitWorkflow] Tasks already exist, skipping auto-load');
-        setCarePlanTasksLoaded(true);
-        return;
-      }
-      
-      console.log('[CarerVisitWorkflow] Loading care plan items as visit tasks');
-      setCarePlanTasksLoaded(true);
-      
-      const tasksToAdd: Array<{
-        visit_record_id: string;
-        task_category: string;
-        task_name: string;
-        task_description?: string;
-        is_completed: boolean;
-        priority: 'low' | 'medium' | 'high' | 'urgent';
-      }> = [];
-      
-      // Add goals as tasks
-      carePlanGoals?.forEach((goal: any) => {
-        tasksToAdd.push({
-          visit_record_id: visitRecord.id,
-          task_category: 'Goal',
-          task_name: goal.description || goal.name || 'Care Plan Goal',
-          task_description: goal.notes || undefined,
-          is_completed: false,
-          priority: 'medium' as const,
-        });
-      });
-      
-      // Add activities as tasks (already filtered by time)
-      carePlanActivities?.forEach((activity: any) => {
-        tasksToAdd.push({
-          visit_record_id: visitRecord.id,
-          task_category: 'Activity',
-          task_name: activity.name || 'Care Plan Activity',
-          task_description: activity.description || undefined,
-          is_completed: false,
-          priority: 'medium' as const,
-        });
-      });
-      
-      // Bulk insert if tasks exist
-      if (tasksToAdd.length > 0) {
-        const { error } = await supabase.from('visit_tasks').insert(tasksToAdd);
-        if (error) {
-          console.error('[CarerVisitWorkflow] Error loading care plan tasks:', error);
-        } else {
-          console.log('[CarerVisitWorkflow] Successfully loaded', tasksToAdd.length, 'care plan tasks');
-          queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord.id] });
-        }
-      }
-    };
-    
-    loadCarePlanTasks();
-  }, [visitRecord?.id, carePlanGoals, carePlanActivities, isViewOnly, carePlanTasksLoaded, queryClient]);
+  // NOTE: Goals and Activities are NOT loaded into visit_tasks anymore.
+  // They are displayed in their own dedicated tabs (Goals, Activities).
+  // Only admin-assigned tasks should appear in the Tasks tab.
+  // This effect is removed to prevent data mixing between tabs.
 
   // Check if visit has been started and initialize data
   useEffect(() => {
