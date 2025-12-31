@@ -715,7 +715,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleOverlapChooseDifferentCarer = () => {
+    // Close the overlap alert
     setOverlapAlertOpen(false);
+    
     // Clear pending booking data's carer selection to prompt user to choose new carer
     if (pendingBookingData) {
       setPendingBookingData({
@@ -724,13 +726,20 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         staff_ids: []
       });
     }
-    // Dialog stays open - user can select new carer
+    
+    // Explicitly reopen the booking dialog so user can select a different carer
+    setNewBookingDialogOpen(true);
+    
     toast.info("Please select a different carer for this booking");
   };
 
   const handleOverlapModifyTime = () => {
+    // Close the overlap alert
     setOverlapAlertOpen(false);
-    // Dialog stays open - user can modify time
+    
+    // Explicitly reopen the booking dialog so user can modify the time
+    setNewBookingDialogOpen(true);
+    
     toast.info("Please adjust the booking time to avoid conflicts");
   };
 
@@ -764,14 +773,22 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
   // Add handlers for update overlaps
   const handleUpdateOverlapChooseDifferentCarer = () => {
+    // Close the overlap alert
     setUpdateOverlapAlertOpen(false);
-    // Keep the edit dialog open to allow carer selection
+    
+    // Explicitly reopen the edit dialog so user can select a different carer
+    setEditBookingDialogOpen(true);
+    
     toast.info("Please select a different carer in the edit dialog");
   };
 
   const handleUpdateOverlapModifyTime = () => {
+    // Close the overlap alert
     setUpdateOverlapAlertOpen(false);
-    // Keep the edit dialog open to allow time modification
+    
+    // Explicitly reopen the edit dialog so user can modify the time
+    setEditBookingDialogOpen(true);
+    
     toast.info("Please adjust the appointment times in the edit dialog");
   };
 
