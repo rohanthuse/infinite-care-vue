@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Check, ChevronDown, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -106,6 +106,13 @@ export function MultiSelect({
   const allSelected = selected.length === options.length && options.length > 0;
   const selectedOptions = options.filter(option => selected.includes(option.value));
 
+  // Memoized lookup map for reliable filtering
+  const optionsMap = useMemo(() => {
+    const map = new Map<string, MultiSelectOption>();
+    options.forEach(opt => map.set(opt.value, opt));
+    return map;
+  }, [options]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -160,12 +167,16 @@ export function MultiSelect({
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 z-50 bg-white dark:bg-gray-800 shadow-md border" align="start">
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] min-w-[300px] p-0 z-50 bg-popover shadow-md border" 
+        align="start"
+        style={{ maxHeight: '350px' }}
+      >
         <Command
           filter={(value, search) => {
             if (!search) return 1;
-            // Find the option by value to get its label for matching
-            const option = options.find(opt => opt.value === value);
+            // Use memoized map for reliable lookup
+            const option = optionsMap.get(value);
             const labelToMatch = option?.label?.toLowerCase() || value.toLowerCase();
             const normalizedSearch = search.toLowerCase().trim();
             // Match if label or value contains search string
@@ -189,7 +200,7 @@ export function MultiSelect({
               </button>
             </div>
           )}
-          <CommandList>
+          <CommandList className="max-h-[200px] overflow-y-auto">
             <CommandEmpty>
               {showAddOption ? null : emptyText}
             </CommandEmpty>
