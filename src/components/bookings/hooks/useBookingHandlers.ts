@@ -734,6 +734,34 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     toast.info("Please adjust the booking time to avoid conflicts");
   };
 
+  const handleOverlapProceedWithoutCarer = () => {
+    if (!pendingBookingData) {
+      toast.error("No pending booking data found");
+      return;
+    }
+    
+    console.log("[useBookingHandlers] Creating booking without carer assignment due to conflict");
+    
+    // Create booking with null carer
+    const unassignedBookingData = {
+      ...pendingBookingData,
+      carerId: null,
+      staff_ids: [],
+    };
+    
+    // Close the overlap dialog
+    setOverlapAlertOpen(false);
+    setOverlapData(null);
+    setPendingBookingData(null);
+    
+    // Proceed with creation
+    proceedWithBookingCreation(unassignedBookingData);
+    
+    toast.success("Booking created as unassigned", {
+      description: "You can assign a carer later when availability is confirmed."
+    });
+  };
+
   // Add handlers for update overlaps
   const handleUpdateOverlapChooseDifferentCarer = () => {
     setUpdateOverlapAlertOpen(false);
@@ -745,6 +773,33 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setUpdateOverlapAlertOpen(false);
     // Keep the edit dialog open to allow time modification
     toast.info("Please adjust the appointment times in the edit dialog");
+  };
+
+  const handleUpdateOverlapProceedWithoutCarer = () => {
+    if (!pendingUpdateData) {
+      toast.error("No pending update data found");
+      return;
+    }
+    
+    console.log("[useBookingHandlers] Updating booking without carer assignment due to conflict");
+    
+    // Update booking with null carer
+    const unassignedUpdateData = {
+      ...pendingUpdateData,
+      carerId: null,
+    };
+    
+    // Close the overlap dialog
+    setUpdateOverlapAlertOpen(false);
+    setUpdateOverlapData(null);
+    setPendingUpdateData(null);
+    
+    // Proceed with update
+    proceedWithBookingUpdate(unassignedUpdateData);
+    
+    toast.success("Booking updated as unassigned", {
+      description: "You can assign a carer later when availability is confirmed."
+    });
   };
 
   const isCheckingOverlap = isChecking || isValidatingUpdate || isEnhancedValidating || isVerifying;
@@ -772,8 +827,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     handleCreateBooking,
     handleOverlapChooseDifferentCarer,
     handleOverlapModifyTime,
+    handleOverlapProceedWithoutCarer,
     handleUpdateOverlapChooseDifferentCarer,
     handleUpdateOverlapModifyTime,
+    handleUpdateOverlapProceedWithoutCarer,
     createMultipleBookingsMutation,
     updateBookingMutation,
     forceRefresh
