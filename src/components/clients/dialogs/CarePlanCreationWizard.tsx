@@ -423,6 +423,13 @@ export function CarePlanCreationWizard({
             // Handle array fields with safety checks
             if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities', 'staff_ids'].includes(key)) {
               value = initializeArrayField(value);
+              
+              // DEFENSIVE: Don't overwrite existing data with empty arrays
+              const currentValue = form.getValues(key as any);
+              if (Array.isArray(currentValue) && currentValue.length > 0 && value.length === 0) {
+                console.warn(`[Draft Loading] Skipping empty ${key} - preserving existing data with ${currentValue.length} items`);
+                return; // Skip this field
+              }
             }
             // Handle equipment field specially to preserve backward compatibility
             else if (key === 'equipment') {

@@ -61,6 +61,12 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
     
     const formActions = watchedServiceActions || [];
     
+    // Skip if we already have local data and form is empty (prevent erasing)
+    if (savedActions.length > 0 && formActions.length === 0 && hasInitializedRef.current) {
+      console.log('[WizardStep12ServiceActions] Skipping empty form data - preserving local state');
+      return;
+    }
+    
     // Only rehydrate if form has actions and local state differs
     if (formActions.length > 0) {
       const validActions = formActions.filter(
@@ -74,13 +80,14 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
           validActions[0]?.id !== savedActions[0]?.id);
       
       if (needsUpdate && validActions.length > 0) {
+        console.log('[WizardStep12ServiceActions] Rehydrating from form data:', validActions.length, 'actions');
         isHydratingFromFormRef.current = true;
         const mappedActions = validActions.map(mapActionToServiceActionData);
         setSavedActions(mappedActions);
         hasInitializedRef.current = true;
       }
     }
-  }, [watchedServiceActions, showForm]);
+  }, [watchedServiceActions, showForm, savedActions.length]);
 
   // Sync savedActions to form (only when change originated locally, not from hydration)
   useEffect(() => {

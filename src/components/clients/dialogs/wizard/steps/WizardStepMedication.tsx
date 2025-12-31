@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface WizardStepMedicationProps {
   form: UseFormReturn<any>;
@@ -22,6 +23,7 @@ export function WizardStepMedication({
   effectiveCarePlanId
 }: WizardStepMedicationProps) {
   const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false);
+  const queryClient = useQueryClient();
   
   // Dialog states
   const [selectedMedication, setSelectedMedication] = useState<any>(null);
@@ -61,18 +63,25 @@ export function WizardStepMedication({
         time_of_day: medication.time_of_day || null
       }, {
         onSuccess: () => {
-          // Remove local medication from form state after successful DB save
-          // The database version will be fetched via existingMedications query
-          const updatedMedications = form.getValues("medical_info.medication_manager.medications") || [];
-          const filteredMedications = updatedMedications.filter((med: any) => med.id !== medication.id);
-          form.setValue("medical_info.medication_manager.medications", filteredMedications);
-          toast.success("Medication added successfully");
+          // Wait for the query to invalidate and refetch before removing from local state
+          // This prevents a race condition where local state is cleared before DB data loads
+          queryClient.invalidateQueries({ queryKey: ['medications-by-care-plan', effectiveCarePlanId] }).then(() => {
+            // Remove local medication from form state after successful DB save
+            // The database version will be fetched via existingMedications query
+            const updatedMedications = form.getValues("medical_info.medication_manager.medications") || [];
+            const filteredMedications = updatedMedications.filter((med: any) => med.id !== medication.id);
+            form.setValue("medical_info.medication_manager.medications", filteredMedications);
+            toast.success("Medication added successfully");
+          });
         },
         onError: (error) => {
           console.error("Failed to save medication:", error);
           toast.error("Failed to save medication to database");
         }
       });
+    } else {
+      // No care plan ID yet, just show success for local save
+      toast.success("Medication added (will be saved with care plan)");
     }
   };
 
