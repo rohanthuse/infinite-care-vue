@@ -7,6 +7,7 @@ export interface CarePlanSummaryGoal {
   status: string;
   progress: number | null;
   notes: string | null;
+  time_of_day?: string[] | null;
 }
 
 export interface CarePlanSummaryActivity {
@@ -15,6 +16,7 @@ export interface CarePlanSummaryActivity {
   description: string | null;
   frequency: string;
   status: string;
+  time_of_day?: string[] | null;
 }
 
 export interface CarePlanSummaryMedication {
@@ -26,6 +28,7 @@ export interface CarePlanSummaryMedication {
   notes: string | null;
   start_date: string | null;
   end_date: string | null;
+  time_of_day?: string[] | null;
 }
 
 export interface CarePlanSummaryTask {
@@ -94,71 +97,137 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     };
   }
 
-  // Parse auto_save_data JSON for goals, activities, and medications
+  // Parse auto_save_data JSON for fallback
   const autoSaveData = carePlan.auto_save_data as Record<string, any> | null;
-  
-  // Extract goals from auto_save_data
-  const jsonGoals = autoSaveData?.goals || [];
-  const parsedGoals: CarePlanSummaryGoal[] = Array.isArray(jsonGoals) 
-    ? jsonGoals.map((g: any, index: number) => ({
-        id: `goal-${index}`,
-        description: g.description || g.goal || '',
-        status: g.status || 'in_progress',
-        progress: g.progress || null,
-        notes: g.measurable_outcome || g.notes || null,
-      }))
-    : [];
 
-  // Extract activities from auto_save_data
-  const jsonActivities = autoSaveData?.activities || [];
-  const parsedActivities: CarePlanSummaryActivity[] = Array.isArray(jsonActivities)
-    ? jsonActivities.map((a: any, index: number) => ({
-        id: `activity-${index}`,
-        name: a.name || a.activity || '',
-        description: a.description || null,
-        frequency: a.frequency || '',
-        status: a.status || 'active',
-      }))
-    : [];
+  // Query database tables (PRIMARY SOURCE) with JSON fallback
+  const [dbMedicationsResult, dbActivitiesResult, dbGoalsResult, tasksResult] = await Promise.all([
+    supabase
+      .from('client_medications')
+      .select('*')
+      .eq('care_plan_id', carePlan.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('client_activities')
+      .select('*')
+      .eq('care_plan_id', carePlan.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('client_care_plan_goals')
+      .select('*')
+      .eq('care_plan_id', carePlan.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('tasks')
+      .select('id, title, description, status, priority, due_date, notes, category')
+      .eq('client_id', clientId)
+      .in('status', ['pending', 'in_progress', 'todo'])
+      .order('due_date', { ascending: true })
+      .limit(10),
+  ]);
 
-  // Extract medications from auto_save_data (medical_info.medication_manager.medications)
-  const jsonMedications = autoSaveData?.medical_info?.medication_manager?.medications || [];
-  const parsedMedications: CarePlanSummaryMedication[] = Array.isArray(jsonMedications)
-    ? jsonMedications.map((m: any) => ({
-        id: m.id || `med-${Date.now()}-${Math.random()}`,
-        name: m.name || '',
-        dosage: m.dosage || '',
-        frequency: m.frequency || '',
-        status: m.status || 'active',
-        notes: m.instruction || m.notes || null,
-        start_date: m.start_date || null,
-        end_date: m.end_date || null,
-      }))
-    : [];
+  const dbMedications = dbMedicationsResult.data || [];
+  const dbActivities = dbActivitiesResult.data || [];
+  const dbGoals = dbGoalsResult.data || [];
+  const tasks = tasksResult.data || [];
 
-  // Fetch tasks from tasks table (tasks are stored separately)
-  const { data: tasksData } = await supabase
-    .from('tasks')
-    .select('id, title, description, status, priority, due_date, notes, category')
-    .eq('client_id', clientId)
-    .in('status', ['pending', 'in_progress', 'todo'])
-    .order('due_date', { ascending: true })
-    .limit(10);
+  // MEDICATIONS: Use database first, fall back to JSON
+  let parsedMedications: CarePlanSummaryMedication[] = [];
+  if (dbMedications.length > 0) {
+    parsedMedications = dbMedications.map((m) => ({
+      id: m.id,
+      name: m.name || '',
+      dosage: m.dosage || '',
+      frequency: m.frequency || '',
+      status: m.status || 'active',
+      notes: m.instruction || m.notes || null,
+      start_date: m.start_date || null,
+      end_date: m.end_date || null,
+      time_of_day: m.time_of_day || null,
+    }));
+  } else {
+    const jsonMedications = autoSaveData?.medical_info?.medication_manager?.medications || [];
+    parsedMedications = Array.isArray(jsonMedications)
+      ? jsonMedications.map((m: any) => ({
+          id: m.id || `med-${Date.now()}-${Math.random()}`,
+          name: m.name || '',
+          dosage: m.dosage || '',
+          frequency: m.frequency || '',
+          status: m.status || 'active',
+          notes: m.instruction || m.notes || null,
+          start_date: m.start_date || null,
+          end_date: m.end_date || null,
+          time_of_day: m.time_of_day || null,
+        }))
+      : [];
+  }
 
-  const tasks = tasksData || [];
+  // ACTIVITIES: Use database first, fall back to JSON
+  let parsedActivities: CarePlanSummaryActivity[] = [];
+  if (dbActivities.length > 0) {
+    parsedActivities = dbActivities.map((a) => ({
+      id: a.id,
+      name: a.name || '',
+      description: a.description || null,
+      frequency: a.frequency || '',
+      status: a.status || 'active',
+      time_of_day: a.time_of_day || null,
+    }));
+  } else {
+    const jsonActivities = autoSaveData?.activities || [];
+    parsedActivities = Array.isArray(jsonActivities)
+      ? jsonActivities.map((a: any, index: number) => ({
+          id: `activity-${index}`,
+          name: a.name || a.activity || '',
+          description: a.description || null,
+          frequency: a.frequency || '',
+          status: a.status || 'active',
+          time_of_day: a.time_of_day || null,
+        }))
+      : [];
+  }
+
+  // GOALS: Use database first, fall back to JSON
+  let parsedGoals: CarePlanSummaryGoal[] = [];
+  if (dbGoals.length > 0) {
+    parsedGoals = dbGoals.map((g) => ({
+      id: g.id,
+      description: g.description || '',
+      status: g.status || 'in_progress',
+      progress: g.progress || null,
+      notes: g.notes || null,
+      time_of_day: g.time_of_day || null,
+    }));
+  } else {
+    const jsonGoals = autoSaveData?.goals || [];
+    parsedGoals = Array.isArray(jsonGoals)
+      ? jsonGoals.map((g: any, index: number) => ({
+          id: `goal-${index}`,
+          description: g.description || g.goal || '',
+          status: g.status || 'in_progress',
+          progress: g.progress || null,
+          notes: g.measurable_outcome || g.notes || null,
+          time_of_day: g.time_of_day || null,
+        }))
+      : [];
+  }
 
   const completedGoals = parsedGoals.filter(g => g.status === 'completed').length;
   const activeActivities = parsedActivities.filter(a => a.status === 'active').length;
   const activeMedications = parsedMedications.filter(m => m.status === 'active').length;
   const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo').length;
 
-  console.log('[useClientCarePlanSummary] Summary from auto_save_data:', {
+  console.log('[useClientCarePlanSummary] Summary with database priority:', {
     carePlanId: carePlan.id,
-    goals: parsedGoals.length,
-    activities: parsedActivities.length,
-    medications: parsedMedications.length,
+    medicationsFromDb: dbMedications.length,
+    activitiesFromDb: dbActivities.length,
+    goalsFromDb: dbGoals.length,
+    totalMedications: parsedMedications.length,
+    totalActivities: parsedActivities.length,
+    totalGoals: parsedGoals.length,
     tasks: tasks.length,
-    autoSaveDataKeys: autoSaveData ? Object.keys(autoSaveData) : [],
   });
 
   return {

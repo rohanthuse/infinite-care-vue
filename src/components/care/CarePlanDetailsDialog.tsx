@@ -216,9 +216,15 @@ export const CarePlanDetailsDialog: React.FC<CarePlanDetailsDialogProps> = ({
                               <span className="font-medium">{med.frequency}</span>
                             </div>
                           </div>
-                          {(med.start_date || med.end_date) && (
+                          {med.time_of_day && med.time_of_day.length > 0 && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                               <Clock className="h-3 w-3" />
+                              <span className="capitalize">Scheduled: {med.time_of_day.join(', ')}</span>
+                            </div>
+                          )}
+                          {(med.start_date || med.end_date) && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                              <Calendar className="h-3 w-3" />
                               <span>
                                 {formatDate(med.start_date) || 'N/A'} - {formatDate(med.end_date) || 'Ongoing'}
                               </span>
@@ -264,6 +270,12 @@ export const CarePlanDetailsDialog: React.FC<CarePlanDetailsDialogProps> = ({
                               {goal.status}
                             </Badge>
                           </div>
+                          {goal.time_of_day && goal.time_of_day.length > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                              <Clock className="h-3 w-3" />
+                              <span className="capitalize">Scheduled: {goal.time_of_day.join(', ')}</span>
+                            </div>
+                          )}
                           {goal.progress !== null && (
                             <div className="mb-2">
                               <div className="flex items-center justify-between text-xs mb-1">
@@ -317,6 +329,12 @@ export const CarePlanDetailsDialog: React.FC<CarePlanDetailsDialogProps> = ({
                             <span className="text-muted-foreground">Frequency:</span>{' '}
                             <span className="font-medium">{activity.frequency}</span>
                           </div>
+                          {activity.time_of_day && activity.time_of_day.length > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                              <Clock className="h-3 w-3" />
+                              <span className="capitalize">Scheduled: {activity.time_of_day.join(', ')}</span>
+                            </div>
+                          )}
                           {activity.description && (
                             <div className="mt-2 pt-2 border-t">
                               <p className="text-xs font-medium text-muted-foreground">Description:</p>
