@@ -254,7 +254,7 @@ const ClientAppointments = () => {
     <div className="space-y-6">
       {/* Debug info for development */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
+        <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-3 text-xs text-foreground">
           <strong>Debug Info:</strong> Client ID: {clientId}, Total appointments: {appointments?.length || 0}, 
           Upcoming: {upcomingAppointments.length}, Completed: {completedAppointments.length}
         </div>
@@ -308,7 +308,7 @@ const ClientAppointments = () => {
                         <span className="text-sm">{appointment.provider_name}</span>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(appointment.status)}>
+                    <Badge variant="custom" className={getStatusColor(appointment.status)}>
                       {formatAppointmentStatus(appointment.status)}
                     </Badge>
                   </div>
@@ -512,7 +512,7 @@ const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, for
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={getStatusColor(appointment.status)}>
+            <Badge variant="custom" className={getStatusColor(appointment.status)}>
               {formatAppointmentStatus(appointment.status)}
             </Badge>
           </div>

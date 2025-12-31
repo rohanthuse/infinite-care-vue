@@ -151,7 +151,7 @@ const ClientCarePlans = () => {
               )}
             </p>
           </div>
-          <Button variant="outline" onClick={handlePrintPlan} className="gap-2 bg-white hover:bg-gray-50">
+          <Button variant="outline" onClick={handlePrintPlan} className="gap-2 bg-white dark:bg-muted hover:bg-gray-50 dark:hover:bg-muted/80">
             <Printer className="h-4 w-4" />
             Print All
           </Button>
@@ -352,7 +352,7 @@ const ClientCarePlans = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`w-full font-semibold transition-all ${changeRequestInfo.hasRequest ? "border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100" : "hover:bg-gray-50"}`}
+                  className={`w-full font-semibold transition-all ${changeRequestInfo.hasRequest ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50" : "hover:bg-gray-50 dark:hover:bg-muted"}`}
                   onClick={() => handleOpenChangeRequestDialog(carePlan)}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
