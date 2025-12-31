@@ -62,6 +62,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateBookingServices, useBookingServices } from "@/hooks/useBookingServices";
 import { notifyBookingCancelled } from "@/utils/bookingNotifications";
 import { AdvancedCancellationDialog, CancellationData } from "./AdvancedCancellationDialog";
+import { MultiCarerDeleteDialog } from "./MultiCarerDeleteDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -206,6 +207,9 @@ export function EditBookingDialog({
   const [isCancelling, setIsCancelling] = useState(false);
   const [previousStatus, setPreviousStatus] = useState<string>("");
   
+  // Multi-carer delete dialog state
+  const [showMultiCarerDeleteDialog, setShowMultiCarerDeleteDialog] = useState(false);
+  
   // Track all related booking records for this appointment
   const [relatedBookingRecords, setRelatedBookingRecords] = React.useState<Array<{
     id: string;
@@ -276,6 +280,66 @@ export function EditBookingDialog({
       clearTimeout(safetyTimeout);
       onOpenChange(false);
     }
+  };
+
+  // Handle delete for single carer in multi-carer booking
+  const handleDeleteSingleCarer = async (bookingId: string, carerName: string) => {
+    console.log('[EditBookingDialog] Deleting single carer booking:', bookingId, carerName);
+    
+    try {
+      const carerRecord = relatedBookingRecords.find(r => r.id === bookingId);
+      await deleteBooking.mutateAsync({
+        bookingId,
+        clientId: booking.clientId || booking.client_id,
+        staffId: carerRecord?.staff_id,
+      });
+      
+      toast.success(`Removed ${carerName} from this booking`);
+      setShowMultiCarerDeleteDialog(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('[EditBookingDialog] Failed to delete single carer:', error);
+    }
+  };
+
+  // Handle delete for all carers (entire appointment)
+  const handleDeleteAllCarers = async (bookingIds: string[]) => {
+    console.log('[EditBookingDialog] Deleting all carer bookings:', bookingIds);
+    
+    try {
+      for (const bookingId of bookingIds) {
+        const carerRecord = relatedBookingRecords.find(r => r.id === bookingId);
+        await deleteBooking.mutateAsync({
+          bookingId,
+          clientId: booking.clientId || booking.client_id,
+          staffId: carerRecord?.staff_id,
+        });
+      }
+      
+      toast.success('Entire 2:1 appointment deleted');
+      setShowMultiCarerDeleteDialog(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('[EditBookingDialog] Failed to delete all carers:', error);
+    }
+  };
+
+  // Handle reassign carer (close delete dialog, focus on staff selection)
+  const handleReassignCarer = (bookingId: string, carerName: string) => {
+    console.log('[EditBookingDialog] Reassigning carer:', bookingId, carerName);
+    setShowMultiCarerDeleteDialog(false);
+    toast.info(`Select a new carer to replace ${carerName}`, {
+      duration: 4000,
+    });
+  };
+
+  // Check if this is a multi-carer booking and open appropriate dialog
+  const handleDeleteClick = () => {
+    if (relatedBookingRecords.length > 1) {
+      // Multi-carer booking - show selection dialog
+      setShowMultiCarerDeleteDialog(true);
+    }
+    // For single carer, the AlertDialog will handle it via AlertDialogTrigger
   };
 
   // Handle cancellation with advanced workflow
@@ -1356,43 +1420,74 @@ export function EditBookingDialog({
           isLoading={isCancelling}
         />
 
+        {/* Multi-Carer Delete Dialog */}
+        <MultiCarerDeleteDialog
+          open={showMultiCarerDeleteDialog}
+          onOpenChange={setShowMultiCarerDeleteDialog}
+          booking={{
+            id: booking.id,
+            clientName: booking.clientName || 'Unknown Client',
+            start_time: booking.start_time,
+            end_time: booking.end_time,
+            date: booking.date,
+          }}
+          assignedCarers={relatedBookingRecords}
+          onDeleteSingleCarer={handleDeleteSingleCarer}
+          onDeleteAllCarers={handleDeleteAllCarers}
+          onReassignCarer={handleReassignCarer}
+          isDeleting={deleteBooking.isPending}
+        />
+
         <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
           <div className="flex flex-col sm:flex-row gap-3 w-full">
             {canDelete && (
               <div className="flex justify-start w-full sm:w-auto">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button type="button" variant="danger" size="sm">
-                      Delete Booking
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    {deleteBooking.isPending && (
-                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                          <p className="text-sm text-muted-foreground">Deleting booking...</p>
-                        </div>
-                      </div>
-                    )}
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this booking? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
-                      <Button
-                        onClick={handleDelete}
-                        disabled={deleteBooking.isPending}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        {deleteBooking.isPending ? "Deleting..." : "Delete"}
+                {/* For multi-carer bookings, use the multi-carer dialog */}
+                {relatedBookingRecords.length > 1 ? (
+                  <Button 
+                    type="button" 
+                    variant="danger" 
+                    size="sm"
+                    onClick={handleDeleteClick}
+                  >
+                    Delete Booking
+                  </Button>
+                ) : (
+                  /* For single-carer bookings, use the simple AlertDialog */
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="danger" size="sm">
+                        Delete Booking
                       </Button>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      {deleteBooking.isPending && (
+                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                            <p className="text-sm text-muted-foreground">Deleting booking...</p>
+                          </div>
+                        </div>
+                      )}
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this booking? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
+                        <Button
+                          onClick={handleDelete}
+                          disabled={deleteBooking.isPending}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {deleteBooking.isPending ? "Deleting..." : "Delete"}
+                        </Button>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             )}
             
