@@ -284,6 +284,26 @@ const CarerVisitWorkflow = () => {
   const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
   
+  // Fetch database medications for merging with JSON
+  const { data: dbMedications, isLoading: dbMedicationsLoading } = useQuery({
+    queryKey: ['care-plan-db-medications', activeCareplan?.id],
+    queryFn: async () => {
+      if (!activeCareplan?.id) return [];
+      const { data, error } = await supabase
+        .from('client_medications')
+        .select('*')
+        .eq('care_plan_id', activeCareplan.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('[CarerVisitWorkflow] Error fetching medications:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!activeCareplan?.id,
+  });
+  
   // Mutations for goals and activities
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
@@ -353,19 +373,55 @@ const CarerVisitWorkflow = () => {
     return rawActivities;
   }, [normalizedActivities, jsonData?.activities, currentAppointment?.start_time]);
 
-  // Care plan medications filtered by time slot (from JSON when no database medications)
+  // Care plan medications: Merge database and JSON, then filter by time slot
   const carePlanMedications = useMemo((): any[] => {
     // Get the current booking's shift
     const currentShifts = currentAppointment?.start_time 
       ? getShiftFromTime(currentAppointment.start_time) 
       : [];
     
-    // Get medications from JSON data
-    let rawMedications: any[] = jsonData?.medications || [];
+    // Merge database medications with JSON medications
+    let allMedications: any[] = [];
+    
+    // Add database medications first (normalized format)
+    if (dbMedications && dbMedications.length > 0) {
+      allMedications = dbMedications.map((m: any) => ({
+        id: m.id,
+        name: m.name || '',
+        dosage: m.dosage || '',
+        frequency: m.frequency || '',
+        instructions: m.instruction || m.notes || '',
+        status: m.status || 'active',
+        time_of_day: m.time_of_day || [],
+        source: 'database',
+      }));
+    }
+    
+    // Add JSON medications that aren't already in database
+    const jsonMedications = jsonData?.medications || [];
+    if (jsonMedications.length > 0) {
+      const dbMedNames = new Set(allMedications.map(m => m.name.toLowerCase().trim()));
+      
+      jsonMedications.forEach((med: any) => {
+        const medName = (med.name || '').toLowerCase().trim();
+        if (medName && !dbMedNames.has(medName)) {
+          allMedications.push({
+            id: med.id || `json-med-${Date.now()}-${Math.random()}`,
+            name: med.name || '',
+            dosage: med.dosage || '',
+            frequency: med.frequency || '',
+            instructions: med.instructions || med.instruction || '',
+            status: med.status || 'active',
+            time_of_day: med.time_of_day || [],
+            source: 'json',
+          });
+        }
+      });
+    }
     
     // If we have a booking time, filter medications by time_of_day
-    if (currentShifts.length > 0 && rawMedications.length > 0) {
-      rawMedications = rawMedications.filter((medication: any) => {
+    if (currentShifts.length > 0 && allMedications.length > 0) {
+      allMedications = allMedications.filter((medication: any) => {
         const medTimes = medication.time_of_day;
         
         // If no time_of_day specified, show the medication (backwards compatibility)
@@ -377,8 +433,8 @@ const CarerVisitWorkflow = () => {
       });
     }
     
-    return rawMedications;
-  }, [jsonData?.medications, currentAppointment?.start_time]);
+    return allMedications;
+  }, [dbMedications, jsonData?.medications, currentAppointment?.start_time]);
 
   // Helper to get current shift label for display
   const getCurrentShiftLabel = () => {

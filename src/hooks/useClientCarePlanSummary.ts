@@ -133,8 +133,10 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
   const dbGoals = dbGoalsResult.data || [];
   const tasks = tasksResult.data || [];
 
-  // MEDICATIONS: Use database first, fall back to JSON
+  // MEDICATIONS: Merge database records with any unsaved JSON medications
   let parsedMedications: CarePlanSummaryMedication[] = [];
+  
+  // First, add all database medications
   if (dbMedications.length > 0) {
     parsedMedications = dbMedications.map((m) => ({
       id: m.id,
@@ -147,11 +149,19 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
       end_date: m.end_date || null,
       time_of_day: m.time_of_day || null,
     }));
-  } else {
-    const jsonMedications = autoSaveData?.medical_info?.medication_manager?.medications || [];
-    parsedMedications = Array.isArray(jsonMedications)
-      ? jsonMedications.map((m: any) => ({
-          id: m.id || `med-${Date.now()}-${Math.random()}`,
+  }
+  
+  // Then, add any JSON medications that aren't already in database (by matching name)
+  const jsonMedications = autoSaveData?.medical_info?.medication_manager?.medications || [];
+  if (Array.isArray(jsonMedications)) {
+    const dbMedicationNames = new Set(parsedMedications.map(m => m.name.toLowerCase().trim()));
+    
+    jsonMedications.forEach((m: any) => {
+      const medName = (m.name || '').toLowerCase().trim();
+      // Only add if not already in database
+      if (medName && !dbMedicationNames.has(medName)) {
+        parsedMedications.push({
+          id: m.id || `json-med-${Date.now()}-${Math.random()}`,
           name: m.name || '',
           dosage: m.dosage || '',
           frequency: m.frequency || '',
@@ -160,12 +170,15 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
           start_date: m.start_date || null,
           end_date: m.end_date || null,
           time_of_day: m.time_of_day || null,
-        }))
-      : [];
+        });
+      }
+    });
   }
 
-  // ACTIVITIES: Use database first, fall back to JSON
+  // ACTIVITIES: Merge database records with any unsaved JSON activities
   let parsedActivities: CarePlanSummaryActivity[] = [];
+  
+  // First, add all database activities
   if (dbActivities.length > 0) {
     parsedActivities = dbActivities.map((a) => ({
       id: a.id,
@@ -175,22 +188,33 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
       status: a.status || 'active',
       time_of_day: a.time_of_day || null,
     }));
-  } else {
-    const jsonActivities = autoSaveData?.activities || [];
-    parsedActivities = Array.isArray(jsonActivities)
-      ? jsonActivities.map((a: any, index: number) => ({
+  }
+  
+  // Then, add any JSON activities that aren't already in database (by matching name)
+  const jsonActivities = autoSaveData?.activities || [];
+  if (Array.isArray(jsonActivities)) {
+    const dbActivityNames = new Set(parsedActivities.map(a => a.name.toLowerCase().trim()));
+    
+    jsonActivities.forEach((a: any, index: number) => {
+      const activityName = (a.name || a.activity || '').toLowerCase().trim();
+      // Only add if not already in database
+      if (activityName && !dbActivityNames.has(activityName)) {
+        parsedActivities.push({
           id: `activity-${index}`,
           name: a.name || a.activity || '',
           description: a.description || null,
           frequency: a.frequency || '',
           status: a.status || 'active',
           time_of_day: a.time_of_day || null,
-        }))
-      : [];
+        });
+      }
+    });
   }
 
-  // GOALS: Use database first, fall back to JSON
+  // GOALS: Merge database records with any unsaved JSON goals
   let parsedGoals: CarePlanSummaryGoal[] = [];
+  
+  // First, add all database goals
   if (dbGoals.length > 0) {
     parsedGoals = dbGoals.map((g) => ({
       id: g.id,
@@ -200,18 +224,27 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
       notes: g.notes || null,
       time_of_day: g.time_of_day || null,
     }));
-  } else {
-    const jsonGoals = autoSaveData?.goals || [];
-    parsedGoals = Array.isArray(jsonGoals)
-      ? jsonGoals.map((g: any, index: number) => ({
+  }
+  
+  // Then, add any JSON goals that aren't already in database (by matching description)
+  const jsonGoals = autoSaveData?.goals || [];
+  if (Array.isArray(jsonGoals)) {
+    const dbGoalDescriptions = new Set(parsedGoals.map(g => g.description.toLowerCase().trim()));
+    
+    jsonGoals.forEach((g: any, index: number) => {
+      const goalDesc = (g.description || g.goal || '').toLowerCase().trim();
+      // Only add if not already in database
+      if (goalDesc && !dbGoalDescriptions.has(goalDesc)) {
+        parsedGoals.push({
           id: `goal-${index}`,
           description: g.description || g.goal || '',
           status: g.status || 'in_progress',
           progress: g.progress || null,
           notes: g.measurable_outcome || g.notes || null,
           time_of_day: g.time_of_day || null,
-        }))
-      : [];
+        });
+      }
+    });
   }
 
   const completedGoals = parsedGoals.filter(g => g.status === 'completed').length;
