@@ -14,6 +14,7 @@ import { useVisitVitals } from "@/hooks/useVisitVitals";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { useCreateServiceReport } from "@/hooks/useServiceReports";
 import { generateServiceReportFromVisit } from "@/utils/generateServiceReport";
+import { withTimeout } from "@/utils/promiseTimeout";
 import { VisitCompletionModal } from "@/components/carer/VisitCompletionModal";
 import {
   Clock,
@@ -1276,31 +1277,50 @@ const CarerVisitWorkflow = () => {
     setCompletionError(undefined);
     setNextBooking(null);
     
+    // Global timeout to prevent infinite hangs (2 minutes)
+    const globalTimeoutId = setTimeout(() => {
+      console.error('Global completion timeout reached after 2 minutes');
+      setCompletionError('The visit completion process is taking too long. Please try again or contact support.');
+      setCompletionStatus('error');
+      setIsCompletingVisit(false);
+    }, 120000);
+
     try {
-      // Step 1: Complete visit record
+      // Step 1: Complete visit record - with 30s timeout
       console.log('Step 1: Completing visit record...');
       setCompletionStep('Saving signatures and visit data...');
       setCompletionProgress(20);
       
-      const completedVisit = await completeVisit.mutateAsync({
-        visitRecordId: visitRecord.id,
-        visitNotes: notes,
-        clientSignature: clientSignature || undefined,
-        staffSignature: carerSignature || undefined,
-        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks completed, ${medications?.filter(m => m.is_administered).length || 0} medications administered, and ${events?.length || 0} events recorded.`,
-        visitPhotos: uploadedPhotos,
-      });
+      const completedVisit = await withTimeout(
+        completeVisit.mutateAsync({
+          visitRecordId: visitRecord.id,
+          visitNotes: notes,
+          clientSignature: clientSignature || undefined,
+          staffSignature: carerSignature || undefined,
+          visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks completed, ${medications?.filter(m => m.is_administered).length || 0} medications administered, and ${events?.length || 0} events recorded.`,
+          visitPhotos: uploadedPhotos,
+        }),
+        30000,
+        'Saving visit data timed out. Please check your connection and try again.'
+      );
 
-      // Step 2: Fetch booking details for service report
+      // Step 2: Fetch booking details for service report - with 15s timeout
       console.log('Step 2: Fetching organization ID for service report...');
       setCompletionStep('Preparing service report...');
       setCompletionProgress(40);
       
-      const { data: bookingData } = await supabase
-        .from('bookings')
-        .select('branch_id, branches(organization_id)')
-        .eq('id', currentAppointment.id)
-        .single();
+      const bookingResult = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('bookings')
+            .select('branch_id, branches(organization_id)')
+            .eq('id', currentAppointment.id)
+            .single()
+        ),
+        15000,
+        'Fetching booking details timed out.'
+      );
+      const bookingData = bookingResult.data;
 
       // Step 3: Generate and create service report
       console.log('Step 3: Generating service report...');
@@ -1340,38 +1360,55 @@ const CarerVisitWorkflow = () => {
         },
       });
 
-      // Step 4: Upsert service report (update if exists, create if not)
+      // Step 4: Upsert service report (update if exists, create if not) - with 30s timeout
       console.log('Step 4: Upserting service report in database...');
       setCompletionStep('Saving service report...');
       setCompletionProgress(70);
       
       // Check if report already exists for this booking
-      const { data: existingReport } = await supabase
-        .from('client_service_reports')
-        .select('id')
-        .eq('booking_id', currentAppointment.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const existingReportResult = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('client_service_reports')
+            .select('id')
+            .eq('booking_id', currentAppointment.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ),
+        15000,
+        'Checking for existing report timed out.'
+      );
+      const existingReport = existingReportResult.data;
       
       if (existingReport) {
-        // Update existing report
+        // Update existing report - with 30s timeout
         console.log('Updating existing service report:', existingReport.id);
-        const { error: updateError } = await supabase
-          .from('client_service_reports')
-          .update({
-            ...serviceReportData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingReport.id);
+        const updateResult = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from('client_service_reports')
+              .update({
+                ...serviceReportData,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingReport.id)
+          ),
+          30000,
+          'Updating service report timed out.'
+        );
         
-        if (updateError) throw updateError;
+        if (updateResult.error) throw updateResult.error;
       } else {
-        // Create new report
-        await createServiceReport.mutateAsync(serviceReportData);
+        // Create new report - with 30s timeout
+        await withTimeout(
+          createServiceReport.mutateAsync(serviceReportData),
+          30000,
+          'Creating service report timed out.'
+        );
       }
 
-      // Step 5: Update booking status
+      // Step 5: Update booking status - with 30s timeout
       console.log('Step 5: Updating booking status to completed...');
       setCompletionStep('Marking booking as complete...');
       setCompletionProgress(85);
@@ -1384,9 +1421,13 @@ const CarerVisitWorkflow = () => {
         location: undefined
       };
 
-      await bookingAttendance.mutateAsync(attendanceData);
+      await withTimeout(
+        bookingAttendance.mutateAsync(attendanceData),
+        30000,
+        'Marking booking as complete timed out.'
+      );
       
-      // Step 6: Check for next booking
+      // Step 6: Check for next booking - with 10s timeout (non-critical)
       console.log('Step 6: Checking for next scheduled booking...');
       setCompletionStep('Checking for next client...');
       setCompletionProgress(95);
@@ -1396,23 +1437,29 @@ const CarerVisitWorkflow = () => {
       const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
       
       try {
-        const { data: nextBookings } = await supabase
-          .from('bookings')
-          .select(`
-            id,
-            start_time,
-            end_time,
-            status,
-            clients(first_name, last_name)
-          `)
-          .eq('staff_id', user.id)
-          .gte('start_time', todayStart)
-          .lte('start_time', todayEnd)
-          .in('status', ['scheduled', 'confirmed'])
-          .order('start_time', { ascending: true })
-          .limit(1);
+        const nextBookingsResult = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from('bookings')
+              .select(`
+                id,
+                start_time,
+                end_time,
+                status,
+                clients(first_name, last_name)
+              `)
+              .eq('staff_id', user.id)
+              .gte('start_time', todayStart)
+              .lte('start_time', todayEnd)
+              .in('status', ['scheduled', 'confirmed'])
+              .order('start_time', { ascending: true })
+              .limit(1)
+          ),
+          10000,
+          'Next booking check timed out.'
+        );
         
-        const foundNextBooking = nextBookings?.[0] || null;
+        const foundNextBooking = nextBookingsResult.data?.[0] || null;
         setNextBooking(foundNextBooking);
       } catch (nextBookingError) {
         // Don't fail completion if next booking query fails
@@ -1420,17 +1467,20 @@ const CarerVisitWorkflow = () => {
         setNextBooking(null);
       }
       
-      // Success!
+      // Success! Clear global timeout
+      clearTimeout(globalTimeoutId);
       console.log('Visit completion successful!');
       setCompletionProgress(100);
       setCompletionStep('Complete!');
       setCompletionStatus('success');
       
     } catch (error: any) {
+      clearTimeout(globalTimeoutId);
       console.error('Error completing visit:', error);
       
-      // Retry logic for timeout errors
-      if ((error?.message?.includes('timeout') || error?.code === '57014') && retryCount < 2) {
+      // Retry logic for timeout errors (but not our custom timeout messages)
+      const isDbTimeout = (error?.message?.includes('timeout') && !error?.message?.includes('timed out.')) || error?.code === '57014';
+      if (isDbTimeout && retryCount < 2) {
         const delayMs = Math.pow(2, retryCount) * 1500;
         setCompletionStep(`Database busy, retrying in ${delayMs / 1000}s...`);
         await new Promise(r => setTimeout(r, delayMs));
@@ -1443,9 +1493,11 @@ const CarerVisitWorkflow = () => {
       
       if (error instanceof Error || error?.message) {
         const message = error.message || error?.message;
-        if (message.includes('policy') || message.includes('permission')) {
+        if (message.includes('timed out')) {
+          errorMessage = message; // Use our custom timeout message
+        } else if (message.includes('policy') || message.includes('permission')) {
           errorMessage = 'Permission denied. Please check your access rights or contact your administrator.';
-        } else if (message.includes('network') || message.includes('fetch')) {
+        } else if (message.includes('network') || message.includes('fetch') || message.includes('Failed to fetch')) {
           errorMessage = 'Network error. Please check your internet connection and try again.';
         } else if (message.includes('timeout')) {
           errorMessage = 'The request timed out. The server may be busy. Please try again.';
@@ -1457,6 +1509,7 @@ const CarerVisitWorkflow = () => {
       setCompletionError(errorMessage);
       setCompletionStatus('error');
     } finally {
+      clearTimeout(globalTimeoutId);
       setIsCompletingVisit(false);
     }
   };
