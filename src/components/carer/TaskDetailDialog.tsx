@@ -291,16 +291,16 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
              
              {/* Client Visibility Settings */}
              {(client && client !== "no-client") && (
-               <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                 <h4 className="font-medium text-blue-900">Client Visibility</h4>
+              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                 <h4 className="font-medium text-blue-900 dark:text-blue-200">Client Visibility</h4>
                  <div className="space-y-3">
                    <div className="flex items-center justify-between">
                      <div className="space-y-0.5">
                        <Label htmlFor="editClientVisible" className="text-sm font-medium">
                          Visible to Client
                        </Label>
-                       <p className="text-xs text-gray-600">
-                         Allow the client to see this task in their dashboard
+                        <p className="text-xs text-muted-foreground">
+                          Allow the client to see this task in their dashboard
                        </p>
                      </div>
                      <Switch
@@ -316,8 +316,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                          <Label htmlFor="editClientCanComplete" className="text-sm font-medium">
                            Client Can Mark Complete
                          </Label>
-                         <p className="text-xs text-gray-600">
-                           Allow the client to mark this task as completed
+                          <p className="text-xs text-muted-foreground">
+                            Allow the client to mark this task as completed
                          </p>
                        </div>
                        <Switch
@@ -335,14 +335,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-600">Priority:</span>
+                 <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Priority:</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   task?.priority === "high" || task?.priority === "urgent"
-                    ? "bg-red-100 text-red-700" 
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300" 
                     : task?.priority === "medium"
-                    ? "bg-amber-100 text-amber-700" 
-                    : "bg-green-100 text-green-700"
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300" 
+                    : "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
                 }`}>
                   {task?.priority}
                 </span>
@@ -350,25 +350,25 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
               
               {task?.due_date && (
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-600">Due:</span>
+                   <Clock className="h-4 w-4 text-muted-foreground" />
+                   <span className="text-muted-foreground">Due:</span>
                   <span>{formatTaskDate(task.due_date)}</span>
                 </div>
               )}
               
               {task?.client && (
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-600">Client:</span>
+                   <User className="h-4 w-4 text-muted-foreground" />
+                   <span className="text-muted-foreground">Client:</span>
                   <span>{task.client}</span>
                 </div>
               )}
               
               {task?.category && (
                 <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-600">Category:</span>
-                  <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">
+                   <Tag className="h-4 w-4 text-muted-foreground" />
+                   <span className="text-muted-foreground">Category:</span>
+                   <span className="px-2 py-1 rounded-full bg-muted text-foreground text-xs">
                     {task.category}
                   </span>
                 </div>

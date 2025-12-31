@@ -49,13 +49,13 @@ const CarerOverview: React.FC = () => {
     switch (priority?.toLowerCase()) {
       case 'high':
       case 'urgent':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300';
       case 'low':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -89,10 +89,10 @@ const CarerOverview: React.FC = () => {
     <div className="w-full min-w-0 max-w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">
             Welcome back, {carerProfile?.first_name || 'Carer'}
           </h1>
-          <p className="text-sm md:text-base text-gray-600">
+          <p className="text-sm md:text-base text-muted-foreground">
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
@@ -172,12 +172,12 @@ const CarerOverview: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Unable to load improvement areas. Please refresh the page or contact support if the issue persists.
                 </p>
-                <details className="mt-2 text-xs text-gray-500">
+                <details className="mt-2 text-xs text-muted-foreground">
                   <summary className="cursor-pointer">Technical Details</summary>
-                  <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                  <pre className="mt-2 p-2 bg-muted rounded overflow-auto">
                     {JSON.stringify(improvementAreasError, null, 2)}
                   </pre>
                 </details>
@@ -195,9 +195,9 @@ const CarerOverview: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600">
-                    Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
-                  </p>
+                <p className="text-sm text-muted-foreground">
+                  Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
+                </p>
                 </CardContent>
               </Card>
             )
@@ -225,7 +225,7 @@ const CarerOverview: React.FC = () => {
                 <CardTitle>Today's Attendance</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Loading attendance data...</p>
+                <p className="text-muted-foreground">Loading attendance data...</p>
               </CardContent>
             </Card>
           )}
@@ -287,9 +287,9 @@ const CarerOverview: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500">No upcoming appointments</p>
-                <p className="text-sm text-gray-400">Your appointments will appear here</p>
+                <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No upcoming appointments</p>
+                <p className="text-sm text-muted-foreground">Your appointments will appear here</p>
               </div>
             )}
           </CardContent>
@@ -324,7 +324,7 @@ const CarerOverview: React.FC = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate">{task.title}</div>
-                      <div className="text-sm text-gray-500 flex flex-wrap items-center gap-2 sm:gap-4">
+                      <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2 sm:gap-4">
                         {task.client && (
                           <span className="flex items-center gap-1">
                             <User className="h-3 w-3 flex-shrink-0" />
@@ -343,7 +343,7 @@ const CarerOverview: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0`}>
+                  <Badge variant="custom" className={`${getPriorityColor(task.priority)} flex-shrink-0`}>
                     {task.priority}
                   </Badge>
                 </div>
@@ -358,9 +358,9 @@ const CarerOverview: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500">No pending tasks</p>
-              <p className="text-sm text-gray-400">Your tasks will appear here when assigned</p>
+              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No pending tasks</p>
+              <p className="text-sm text-muted-foreground">Your tasks will appear here when assigned</p>
             </div>
           )}
         </CardContent>

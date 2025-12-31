@@ -231,16 +231,16 @@ const CarerAppointments: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
       case 'in-progress':
         return 'bg-blue-600 text-white';
       case 'assigned':
       case 'scheduled':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
