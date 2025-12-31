@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { UseFormReturn } from "react-hook-form";
+import React, { useState, useEffect, useRef } from "react";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { Plus, Clock } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -31,43 +31,78 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
 
-  // Initialize saved plans from form data on mount
-  useEffect(() => {
-    const existingPlans = form.getValues("service_plans") || [];
-    // Map existing plans and mark them as saved
-    const mappedPlans = existingPlans
-      .filter((p: ServicePlanData) => p.is_saved || p.caption || p.service_name || (p.service_names && p.service_names.length > 0))
-      .map((plan: any) => ({
-        ...plan,
-        id: plan.id || crypto.randomUUID(),
-        caption: plan.caption || '',
-        service_ids: plan.service_ids || (plan.service_id ? [plan.service_id] : []),
-        service_names: plan.service_names || (plan.service_name ? [plan.service_name] : []),
-        service_id: plan.service_id || '',
-        service_name: plan.service_name || plan.name || '',
-        authority: plan.authority || '',
-        authority_category: plan.authority_category || '',
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        start_time: plan.start_time || '',
-        end_time: plan.end_time || '',
-        selected_days: plan.selected_days || [],
-        frequency: plan.frequency || '',
-        location: plan.location || '',
-        note: plan.note || plan.notes || '',
-        status: plan.status || 'active',
-        registered_on: plan.registered_on,
-        registered_by: plan.registered_by,
-        registered_by_name: plan.registered_by_name || '',
-        is_saved: true,
-      }));
-    if (mappedPlans.length > 0) {
-      setSavedPlans(mappedPlans);
-    }
-  }, []);
+  // Refs to prevent infinite loop and track initialization
+  const isHydratingFromFormRef = useRef(false);
+  const hasInitializedRef = useRef(false);
 
-  // Sync saved plans back to form whenever they change
+  // Watch form field for changes (draft loading after mount)
+  const watchedServicePlans = useWatch({ control: form.control, name: "service_plans" });
+
+  // Rehydrate savedPlans when form field changes (e.g., draft loads after mount)
   useEffect(() => {
+    // Skip if currently showing the add/edit form (don't interrupt user)
+    if (showForm) return;
+    
+    const formPlans = watchedServicePlans || [];
+    
+    // Skip if we already have local data and form is empty (prevent erasing)
+    if (savedPlans.length > 0 && formPlans.length === 0 && hasInitializedRef.current) {
+      console.log('[WizardStep11ServicePlans] Skipping empty form data - preserving local state');
+      return;
+    }
+    
+    // Only rehydrate if form has plans
+    if (formPlans.length > 0) {
+      const validPlans = formPlans.filter(
+        (p: ServicePlanData) => p.is_saved || p.caption || p.service_name || (p.service_names && p.service_names.length > 0)
+      );
+      
+      // Check if we need to update (compare by length and first id as quick check)
+      const needsUpdate = 
+        validPlans.length !== savedPlans.length ||
+        (validPlans.length > 0 && savedPlans.length > 0 && 
+          validPlans[0]?.id !== savedPlans[0]?.id);
+      
+      if (needsUpdate && validPlans.length > 0) {
+        console.log('[WizardStep11ServicePlans] Rehydrating from form data:', validPlans.length, 'plans');
+        isHydratingFromFormRef.current = true;
+        const mappedPlans = validPlans.map((plan: any) => ({
+          ...plan,
+          id: plan.id || crypto.randomUUID(),
+          caption: plan.caption || '',
+          service_ids: plan.service_ids || (plan.service_id ? [plan.service_id] : []),
+          service_names: plan.service_names || (plan.service_name ? [plan.service_name] : []),
+          service_id: plan.service_id || '',
+          service_name: plan.service_name || plan.name || '',
+          authority: plan.authority || '',
+          authority_category: plan.authority_category || '',
+          start_date: plan.start_date,
+          end_date: plan.end_date,
+          start_time: plan.start_time || '',
+          end_time: plan.end_time || '',
+          selected_days: plan.selected_days || [],
+          frequency: plan.frequency || '',
+          location: plan.location || '',
+          note: plan.note || plan.notes || '',
+          status: plan.status || 'active',
+          registered_on: plan.registered_on,
+          registered_by: plan.registered_by,
+          registered_by_name: plan.registered_by_name || '',
+          is_saved: true,
+        }));
+        setSavedPlans(mappedPlans);
+        hasInitializedRef.current = true;
+      }
+    }
+  }, [watchedServicePlans, showForm, savedPlans.length]);
+
+  // Sync saved plans back to form (only when change originated locally, not from hydration)
+  useEffect(() => {
+    if (isHydratingFromFormRef.current) {
+      // Reset flag, skip writing back to form
+      isHydratingFromFormRef.current = false;
+      return;
+    }
     form.setValue("service_plans", savedPlans);
   }, [savedPlans, form]);
 
