@@ -32,8 +32,14 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
     clients,
     isLoading,
     setSearchTerm,
-    resetPage
+    resetPage,
+    setClientStatus
   } = useSearchableClients(branchId);
+
+  // Ensure only active clients are shown for new bookings
+  React.useEffect(() => {
+    setClientStatus('active');
+  }, [setClientStatus]);
 
   // Debounced search
   React.useEffect(() => {

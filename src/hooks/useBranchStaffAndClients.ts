@@ -48,8 +48,9 @@ export const useBranchStaffAndClients = (branchId: string) => {
 
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, email')
-        .eq('branch_id', branchId);
+        .select('id, first_name, last_name, email, status')
+        .eq('branch_id', branchId)
+        .eq('status', 'Active');
 
       if (error) throw error;
       return data || [];
