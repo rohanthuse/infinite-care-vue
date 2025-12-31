@@ -38,13 +38,13 @@ export const CarerAppointmentDetailDialog = ({
       case 'assigned':
         return 'bg-blue-600 text-white border-blue-700';
       case 'in-progress':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800';
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
@@ -63,22 +63,22 @@ export const CarerAppointmentDetailDialog = ({
       case 'pending':
         return {
           label: 'Unavailability Requested',
-          className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+          className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-800'
         };
       case 'approved':
         return {
           label: 'Unavailability Approved',
-          className: 'bg-green-100 text-green-800 border-green-200'
+          className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
         };
       case 'rejected':
         return {
           label: 'Unavailability Rejected',
-          className: 'bg-red-100 text-red-800 border-red-200'
+          className: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
         };
       case 'reassigned':
         return {
           label: 'Booking Reassigned',
-          className: 'bg-blue-100 text-blue-800 border-blue-200'
+          className: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800'
         };
       default:
         return null;
@@ -176,13 +176,13 @@ export const CarerAppointmentDetailDialog = ({
               {appointment.service_names && appointment.service_names.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {appointment.service_names.map((serviceName: string, idx: number) => (
-                    <Badge key={idx} variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                    <Badge key={idx} variant="custom" className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800">
                       {serviceName}
                     </Badge>
                   ))}
                 </div>
               ) : appointment.services?.title ? (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                <Badge variant="custom" className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800">
                   {appointment.services.title}
                 </Badge>
               ) : (
@@ -259,9 +259,9 @@ export const CarerAppointmentDetailDialog = ({
                   )}
                   
                   {appointment.unavailability_request.admin_notes && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <span className="text-sm font-medium text-blue-900">Admin Response</span>
-                      <p className="text-sm mt-1 text-blue-800">{appointment.unavailability_request.admin_notes}</p>
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                      <span className="text-sm font-medium text-blue-900 dark:text-blue-200">Admin Response</span>
+                      <p className="text-sm mt-1 text-blue-800 dark:text-blue-300">{appointment.unavailability_request.admin_notes}</p>
                     </div>
                   )}
                   

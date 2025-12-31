@@ -107,14 +107,14 @@ const CarerSchedule: React.FC = () => {
     switch (normalizedStatus?.toLowerCase()) {
       case 'completed':
       case 'done':
-        return 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300';
+        return 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 dark:from-emerald-950/30 dark:to-emerald-900/30 dark:border-emerald-800';
       case 'in-progress':
-        return 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300';
+        return 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 dark:from-blue-950/30 dark:to-blue-900/30 dark:border-blue-800';
       case 'assigned':
       case 'scheduled':
-        return 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300';
+        return 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 dark:from-amber-950/30 dark:to-amber-900/30 dark:border-amber-800';
       default:
-        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300';
+        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 dark:from-gray-900/30 dark:to-gray-800/30 dark:border-gray-700';
     }
   };
 
@@ -128,26 +128,26 @@ const CarerSchedule: React.FC = () => {
     switch (request.status) {
       case 'pending':
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
+          <Badge variant="custom" className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-800 text-xs">
             <AlertCircle className="h-3 w-3 mr-1" />
             Unavailability Requested
           </Badge>
         );
       case 'approved':
         return (
-          <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+          <Badge variant="custom" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800 text-xs">
             Unavailability Approved
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
+          <Badge variant="custom" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800 text-xs">
             Unavailability Rejected
           </Badge>
         );
       case 'reassigned':
         return (
-          <Badge className="bg-blue-600 text-white border-blue-700 text-xs">
+          <Badge variant="custom" className="bg-blue-600 text-white border-blue-700 text-xs">
             Reassigned
           </Badge>
         );
@@ -385,7 +385,7 @@ const CarerSchedule: React.FC = () => {
         <CardContent className="pt-6">{periodAppointments.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-sm text-gray-700">Appointments</h4>
+                <h4 className="font-medium text-sm text-foreground">Appointments</h4>
                 {periodAppointments.length > 8 && (
                   <Button 
                     variant="ghost" 
@@ -402,7 +402,7 @@ const CarerSchedule: React.FC = () => {
                 {visibleAppointments.map((appointment) => (
                   <div 
                     key={appointment.id} 
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
                     onClick={() => {
                       setSelectedAppointment(appointment);
                       setShowAppointmentDialog(true);
@@ -413,13 +413,13 @@ const CarerSchedule: React.FC = () => {
                         <div className="font-medium">
                           {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
                         </div>
-                        <div className="text-gray-600">
+                        <div className="text-muted-foreground">
                           {formatAppointmentDate(appointment.start_time)}
                         </div>
                       </div>
                       <div className="text-sm">
                         <div className="font-medium">{appointment.client_name}</div>
-                        <div className="text-gray-600">
+                        <div className="text-muted-foreground">
                           {appointment.service_names && appointment.service_names.length > 1 
                             ? `${appointment.service_names[0]} +${appointment.service_names.length - 1} more`
                             : appointment.service_name}

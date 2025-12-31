@@ -45,10 +45,10 @@ const CarerCarePlans: React.FC = () => {
     return (
       <div className="w-full min-w-0 max-w-full space-y-6">
         <h1 className="text-xl md:text-2xl font-bold">My Care Plans</h1>
-        <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
+        <div className="text-center py-12 bg-card border border-border rounded-lg">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plans</h3>
-          <p className="text-gray-600">{error.message}</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Error loading care plans</h3>
+          <p className="text-muted-foreground">{error.message}</p>
         </div>
       </div>
     );
@@ -144,7 +144,7 @@ const CarerCarePlans: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-gray-500">{carePlan.type}</div>
+                  <div className="text-sm text-muted-foreground">{carePlan.type}</div>
                   <Badge variant={carePlan.isDirectlyAssigned ? "default" : "secondary"} className="text-xs">
                     {carePlan.assignmentType}
                   </Badge>
@@ -152,12 +152,12 @@ const CarerCarePlans: React.FC = () => {
                 
                 <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                   <div>
-                    <div className="text-gray-500">Created:</div>
-                    <div>{format(carePlan.dateCreated, "MMM d, yyyy")}</div>
+                    <div className="text-muted-foreground">Created:</div>
+                    <div className="text-foreground">{format(carePlan.dateCreated, "MMM d, yyyy")}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">Updated:</div>
-                    <div>{format(carePlan.lastUpdated, "MMM d, yyyy")}</div>
+                    <div className="text-muted-foreground">Updated:</div>
+                    <div className="text-foreground">{format(carePlan.lastUpdated, "MMM d, yyyy")}</div>
                   </div>
                 </div>
                 
@@ -175,7 +175,7 @@ const CarerCarePlans: React.FC = () => {
                       </div>
                     ))}
                     {carePlan.tasks.length > 3 && (
-                      <div className="text-sm text-gray-500 pl-5">+ {carePlan.tasks.length - 3} more tasks</div>
+                      <div className="text-sm text-muted-foreground pl-5">+ {carePlan.tasks.length - 3} more tasks</div>
                     )}
                   </div>
                 </div>
@@ -183,12 +183,12 @@ const CarerCarePlans: React.FC = () => {
             </Card>
           ))
         ) : (
-          <div className="col-span-1 md:col-span-3 py-12 text-center bg-white border border-gray-200 rounded-lg">
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-              <FileText className="h-6 w-6 text-gray-500" />
+          <div className="col-span-1 md:col-span-3 py-12 text-center bg-card border border-border rounded-lg">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <FileText className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">No care plans assigned</h3>
-            <p className="text-gray-500 mt-2">
+            <h3 className="text-lg font-medium text-foreground">No care plans assigned</h3>
+            <p className="text-muted-foreground mt-2">
               {searchQuery ? "Try a different search term" : "You have no care plans assigned at this time"}
             </p>
           </div>

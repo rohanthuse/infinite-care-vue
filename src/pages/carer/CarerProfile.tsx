@@ -260,11 +260,11 @@ const CarerProfile: React.FC = () => {
     if (!status) return <Badge variant="secondary">Unknown</Badge>;
     const normalizedStatus = status.toLowerCase();
     if (normalizedStatus.includes('active')) {
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0">Active</Badge>;
+      return <Badge variant="custom" className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/70 border-0">Active</Badge>;
     } else if (normalizedStatus.includes('pending')) {
-      return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-0">Pending</Badge>;
+      return <Badge variant="custom" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:hover:bg-yellow-900/70 border-0">Pending</Badge>;
     } else if (normalizedStatus.includes('inactive')) {
-      return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0">Inactive</Badge>;
+      return <Badge variant="custom" className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border-0">Inactive</Badge>;
     } else {
       return <Badge variant="secondary">{status}</Badge>;
     }
@@ -326,25 +326,25 @@ const CarerProfile: React.FC = () => {
             <h2 className="text-xl font-semibold text-center">
               {carerProfile.first_name} {carerProfile.last_name}
             </h2>
-            <p className="text-gray-500 text-center">{carerProfile.specialization || "Care Specialist"}</p>
+            <p className="text-muted-foreground text-center">{carerProfile.specialization || "Care Specialist"}</p>
             {getStatusBadge(carerProfile.status)}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{carerProfile.email || "Not provided"}</span>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{carerProfile.email || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{carerProfile.phone || "Not provided"}</span>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{carerProfile.phone || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{carerProfile.address || "Not provided"}</span>
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{carerProfile.address || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{carerProfile.experience || "Not specified"}</span>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{carerProfile.experience || "Not specified"}</span>
             </div>
           </CardContent>
         </Card>

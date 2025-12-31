@@ -84,7 +84,7 @@ const CarerAttendance: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading your attendance status...</p>
+                  <p className="text-muted-foreground">Loading your attendance status...</p>
                 </div>
               </CardContent>
             </Card>
@@ -157,17 +157,17 @@ const CarerAttendance: React.FC = () => {
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         record.status === 'present' 
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                           : record.status === 'late'
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'
                           : record.status === 'absent'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-700'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                       }`}>
                         {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right text-sm text-gray-500">
+                    <TableCell className="text-right text-sm text-muted-foreground">
                       {record.notes || '-'}
                     </TableCell>
                   </TableRow>
@@ -176,8 +176,8 @@ const CarerAttendance: React.FC = () => {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">No attendance records found.</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-muted-foreground">No attendance records found.</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Your attendance will appear here once you start checking in.
               </p>
             </div>

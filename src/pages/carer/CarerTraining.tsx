@@ -121,25 +121,25 @@ const CarerTraining: React.FC = () => {
   // Get the appropriate status badge class
   const getStatusColor = (status: TrainingStatus): string => {
     switch (status) {
-      case "completed": return "bg-green-100 text-green-700";
+      case "completed": return "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300";
       case "in-progress": return "bg-blue-600 text-white";
-      case "expired": return "bg-red-100 text-red-700";
-      case "not-started": return "bg-gray-100 text-gray-700";
-      case "paused": return "bg-yellow-100 text-yellow-700";
-      case "under-review": return "bg-purple-100 text-purple-700";
-      case "failed": return "bg-red-100 text-red-700";
-      case "renewal-required": return "bg-orange-100 text-orange-700";
-      default: return "bg-gray-100 text-gray-700";
+      case "expired": return "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300";
+      case "not-started": return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+      case "paused": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300";
+      case "under-review": return "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300";
+      case "failed": return "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300";
+      case "renewal-required": return "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300";
+      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
     }
   };
 
   const getCategoryColor = (category: TrainingCategory): string => {
     switch (category) {
       case "core": return "bg-blue-600 text-white border-blue-700";
-      case "mandatory": return "bg-red-100 text-red-700 border-red-200";
-      case "specialized": return "bg-purple-100 text-purple-700 border-purple-200";
-      case "optional": return "bg-gray-100 text-gray-700 border-gray-200";
-      default: return "bg-gray-100 text-gray-700 border-gray-200";
+      case "mandatory": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800";
+      case "specialized": return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800";
+      case "optional": return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+      default: return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
     }
   };
   
@@ -203,17 +203,17 @@ const CarerTraining: React.FC = () => {
             <Progress value={stats.completionPercentage} className="h-2" />
             
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-green-50 p-3 rounded-md">
-                <div className="text-green-600 font-bold text-xl">{stats.completedCount}</div>
-                <div className="text-xs text-gray-600">Completed</div>
+              <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-md">
+                <div className="text-green-600 dark:text-green-400 font-bold text-xl">{stats.completedCount}</div>
+                <div className="text-xs text-muted-foreground">Completed</div>
               </div>
-              <div className="bg-blue-50 p-3 rounded-md">
-                <div className="text-blue-600 font-bold text-xl">{stats.inProgressCount}</div>
-                <div className="text-xs text-gray-600">In Progress</div>
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md">
+                <div className="text-blue-600 dark:text-blue-400 font-bold text-xl">{stats.inProgressCount}</div>
+                <div className="text-xs text-muted-foreground">In Progress</div>
               </div>
-              <div className="bg-amber-50 p-3 rounded-md">
-                <div className="text-amber-600 font-bold text-xl">{stats.expiredCount}</div>
-                <div className="text-xs text-gray-600">Expired</div>
+              <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md">
+                <div className="text-amber-600 dark:text-amber-400 font-bold text-xl">{stats.expiredCount}</div>
+                <div className="text-xs text-muted-foreground">Expired</div>
               </div>
             </div>
 
@@ -236,32 +236,32 @@ const CarerTraining: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.totalCourses}</div>
-                <div className="text-sm text-gray-500">Total Courses</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalCourses}</div>
+                <div className="text-sm text-muted-foreground">Total Courses</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.completedCount}</div>
-                <div className="text-sm text-gray-500">Completed</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completedCount}</div>
+                <div className="text-sm text-muted-foreground">Completed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{stats.inProgressCount}</div>
-                <div className="text-sm text-gray-500">In Progress</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.inProgressCount}</div>
+                <div className="text-sm text-muted-foreground">In Progress</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-600">{stats.pendingCount}</div>
-                <div className="text-sm text-gray-500">Not Started</div>
+                <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.pendingCount}</div>
+                <div className="text-sm text-muted-foreground">Not Started</div>
               </div>
             </div>
             
             {stats.expiredCount > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-red-600" />
-                  <span className="font-medium text-red-800">
+                  <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <span className="font-medium text-red-800 dark:text-red-300">
                     {stats.expiredCount} training course{stats.expiredCount !== 1 ? 's' : ''} expired
                   </span>
                 </div>
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                   Please renew expired training to maintain compliance.
                 </p>
               </div>
@@ -325,7 +325,7 @@ const CarerTraining: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{training.title}</CardTitle>
                     <Badge 
-                      variant="outline"
+                      variant="custom"
                       className={`text-xs ${getStatusColor(record.status)}`}
                     >
                       {record.status.replace('-', ' ')}
@@ -343,13 +343,13 @@ const CarerTraining: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                     {training.description || 'No description available'}
                   </p>
                   
                   <div className="space-y-3">
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">Progress</div>
+                      <div className="text-sm text-muted-foreground mb-1">Progress</div>
                       <div className="flex items-center gap-2">
                         <Progress value={calculateTrainingProgress(record)} className="h-2 flex-grow" />
                         <span className="text-sm font-medium">{calculateTrainingProgress(record)}%</span>
@@ -364,7 +364,7 @@ const CarerTraining: React.FC = () => {
                     )}
                     
                     {record.expiry_date && (
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className={isExpiringSoon(record.expiry_date) ? "text-amber-600 font-medium" : ""}>
                           {isExpiringSoon(record.expiry_date) ? "Expires soon: " : "Valid until: "}
@@ -374,8 +374,8 @@ const CarerTraining: React.FC = () => {
                     )}
 
                     {training.valid_for_months && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-500" />
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
                         <span>Valid for {training.valid_for_months} months</span>
                       </div>
                     )}

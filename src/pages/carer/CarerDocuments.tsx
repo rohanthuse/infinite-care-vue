@@ -367,10 +367,10 @@ const CarerDocuments: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      'completed': { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
+      'completed': { bg: 'bg-green-100 dark:bg-green-900/50', text: 'text-green-700 dark:text-green-300', label: 'Completed' },
       'in-progress': { bg: 'bg-blue-600', text: 'text-white', label: 'In Progress' },
-      'not-started': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Not Started' },
-      'expired': { bg: 'bg-red-100', text: 'text-red-700', label: 'Expired' },
+      'not-started': { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300', label: 'Not Started' },
+      'expired': { bg: 'bg-red-100 dark:bg-red-900/50', text: 'text-red-700 dark:text-red-300', label: 'Expired' },
     };
     
     const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap['not-started'];
