@@ -129,70 +129,152 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
 
     const { data: bookings, error: bookingsError } = await bookingsQuery;
 
+    // Fetch branch admins for the target branches
+    const { data: branchAdminLinks } = await supabase
+      .from('admin_branches')
+      .select('branch_id, admin_id')
+      .in('branch_id', targetBranchIds);
+
+    // Fetch profiles for the admin IDs
+    const adminIds = branchAdminLinks?.map(a => a.admin_id) || [];
+    const uniqueAdminIds = [...new Set(adminIds)];
+    
+    let adminProfiles: Array<{ id: string; first_name: string; last_name: string }> = [];
+    if (uniqueAdminIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', uniqueAdminIds);
+      adminProfiles = profiles || [];
+    }
+
+    // Create a map of branch_id -> admin names
+    const branchAdminMap = new Map<string, Array<{ id: string; name: string }>>();
+    if (branchAdminLinks) {
+      branchAdminLinks.forEach(link => {
+        const profile = adminProfiles.find(p => p.id === link.admin_id);
+        if (profile && link.branch_id) {
+          if (!branchAdminMap.has(link.branch_id)) {
+            branchAdminMap.set(link.branch_id, []);
+          }
+          branchAdminMap.get(link.branch_id)!.push({
+            id: profile.id,
+            name: `${profile.first_name} ${profile.last_name}`
+          });
+        }
+      });
+    }
+
     if (bookingsError) {
       console.error('[fetchOrganizationCalendarEvents] Bookings error:', bookingsError);
     } else if (bookings) {
-      const bookingEvents = bookings.map(booking => {
+      // Group bookings by client_id + start_time + end_time + service_id to aggregate multi-carer assignments
+      const bookingGroups = new Map<string, typeof bookings>();
+      
+      bookings.forEach(booking => {
+        // Create a composite key for grouping related bookings
+        const groupKey = `${booking.client_id || 'no-client'}-${booking.start_time}-${booking.end_time}-${booking.service_id || 'no-service'}`;
+        
+        if (!bookingGroups.has(groupKey)) {
+          bookingGroups.set(groupKey, []);
+        }
+        bookingGroups.get(groupKey)!.push(booking);
+      });
+      
+      // Create one CalendarEvent per group, aggregating all staff
+      const bookingEvents = Array.from(bookingGroups.values()).map(groupedBookings => {
+        const primaryBooking = groupedBookings[0];
+        
         // JavaScript automatically converts UTC ISO strings to local timezone
-        const startTime = new Date(booking.start_time);
-        const endTime = new Date(booking.end_time);
+        const startTime = new Date(primaryBooking.start_time);
+        const endTime = new Date(primaryBooking.end_time);
 
         // Debug logging for timezone conversion verification
         console.log('[useOrganizationCalendar] Booking time conversion:', {
-          bookingId: booking.id,
-          raw_start_time: booking.start_time,
-          raw_end_time: booking.end_time,
+          bookingId: primaryBooking.id,
+          raw_start_time: primaryBooking.start_time,
+          raw_end_time: primaryBooking.end_time,
           parsed_start_time: startTime.toISOString(),
           parsed_end_time: endTime.toISOString(),
           local_start_time: format(startTime, 'yyyy-MM-dd HH:mm'),
           local_end_time: format(endTime, 'yyyy-MM-dd HH:mm'),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          totalCarers: groupedBookings.length
         });
 
         // Get visit record data if available
-        const visitRecord = booking.visit_records?.[0];
+        const visitRecord = primaryBooking.visit_records?.[0];
         
-        return {
-        id: booking.id,
-        type: 'booking' as const,
-        title: booking.clients 
-          ? `${booking.clients.first_name} ${booking.clients.last_name}` 
-          : 'Appointment',
-        startTime,
-        endTime,
-        status: (booking.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
-        branchId: booking.branch_id,
-        branchName: booking.branches?.name || 'Unknown Branch',
-        participants: [
-          ...(booking.clients ? [{
-            id: booking.clients.id,
-            name: `${booking.clients.first_name} ${booking.clients.last_name}`,
-            role: 'client'
-          }] : []),
-          ...(booking.staff ? [{
-            id: booking.staff.id,
-            name: `${booking.staff.first_name} ${booking.staff.last_name}`,
-            role: 'staff'
-          }] : [{
+        // Aggregate all staff from grouped bookings
+        const allStaff: Array<{ id: string; name: string; role: string }> = [];
+        const seenStaffIds = new Set<string>();
+        
+        groupedBookings.forEach(booking => {
+          if (booking.staff && booking.staff_id && !seenStaffIds.has(booking.staff_id)) {
+            seenStaffIds.add(booking.staff_id);
+            allStaff.push({
+              id: booking.staff.id,
+              name: `${booking.staff.first_name} ${booking.staff.last_name}`,
+              role: 'carer'
+            });
+          }
+        });
+        
+        // If no staff assigned, add placeholder
+        if (allStaff.length === 0) {
+          allStaff.push({
             id: 'unassigned',
             name: 'Needs Carer Assignment',
-            role: 'staff'
-          }])
-        ],
-        location: booking.branches?.name,
-        priority: 'medium' as const,
-        clientId: booking.client_id,
-        staffIds: booking.staff_id ? [booking.staff_id] : [],
-        // Late/Missed tracking fields
-        isLateStart: booking.is_late_start || false,
-        isMissed: booking.is_missed || false,
-        lateStartMinutes: booking.late_start_minutes || visitRecord?.arrival_delay_minutes || 0,
-        actualStartTime: visitRecord?.visit_start_time || undefined,
-        lateArrivalReason: visitRecord?.late_arrival_reason || undefined
-      };
+            role: 'carer'
+          });
+        }
+        
+        // Get branch admins for this booking's branch
+        const branchAdminsForBooking = primaryBooking.branch_id 
+          ? branchAdminMap.get(primaryBooking.branch_id) || []
+          : [];
+        
+        return {
+          id: primaryBooking.id,
+          type: 'booking' as const,
+          title: primaryBooking.clients 
+            ? `${primaryBooking.clients.first_name} ${primaryBooking.clients.last_name}` 
+            : 'Appointment',
+          startTime,
+          endTime,
+          status: (primaryBooking.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+          branchId: primaryBooking.branch_id,
+          branchName: primaryBooking.branches?.name || 'Unknown Branch',
+          participants: [
+            // Client
+            ...(primaryBooking.clients ? [{
+              id: primaryBooking.clients.id,
+              name: `${primaryBooking.clients.first_name} ${primaryBooking.clients.last_name}`,
+              role: 'client'
+            }] : []),
+            // All carers/staff
+            ...allStaff,
+            // Branch admins
+            ...branchAdminsForBooking.map(admin => ({
+              id: admin.id,
+              name: admin.name,
+              role: 'branch_admin'
+            }))
+          ],
+          location: primaryBooking.branches?.name,
+          priority: 'medium' as const,
+          clientId: primaryBooking.client_id,
+          staffIds: Array.from(seenStaffIds),
+          // Late/Missed tracking fields
+          isLateStart: primaryBooking.is_late_start || false,
+          isMissed: primaryBooking.is_missed || false,
+          lateStartMinutes: primaryBooking.late_start_minutes || visitRecord?.arrival_delay_minutes || 0,
+          actualStartTime: visitRecord?.visit_start_time || undefined,
+          lateArrivalReason: visitRecord?.late_arrival_reason || undefined
+        };
       });
       
-    events.push(...bookingEvents);
+      events.push(...bookingEvents);
     }
 
     // Fetch scheduled agreements
