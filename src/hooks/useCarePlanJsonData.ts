@@ -164,10 +164,10 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         time_of_day: med.time_of_day || [],
       }));
 
-      // Transform tasks from personal_care and activities
+      // Transform tasks from personal_care ONLY (not activities - those belong in Activities tab)
       const tasks: TransformedTask[] = [];
       
-      // Extract from personal_care.items
+      // Extract from personal_care.items only
       if (autoSaveData.personal_care?.items) {
         autoSaveData.personal_care.items.forEach((item: any, index: number) => {
           if (item.description || item.name) {
@@ -176,20 +176,6 @@ export const useCarePlanJsonData = (carePlanId: string) => {
               care_plan_id: data.id,
               task_category: 'Personal Care',
               task_name: item.description || item.name,
-            });
-          }
-        });
-      }
-
-      // Extract from activities
-      if (autoSaveData.activities) {
-        autoSaveData.activities.forEach((act: any, index: number) => {
-          if (act.name || act.description) {
-            tasks.push({
-              id: `json-task-act-${index}`,
-              care_plan_id: data.id,
-              task_category: 'Activity',
-              task_name: act.name || act.description,
             });
           }
         });
