@@ -91,8 +91,13 @@ export function UnifiedScheduleView({
 
     const { draggableId, source, destination } = result;
     
+    // Extract actual booking ID from prefixed draggableId
+    // Format: "client-{bookingId}-{idx}" or "staff-{bookingId}-{idx}"
+    const bookingIdMatch = draggableId.match(/^(?:client|staff)-(.+)-\d+$/);
+    const actualBookingId = bookingIdMatch ? bookingIdMatch[1] : draggableId;
+    
     // Find the booking being dragged
-    const booking = bookings.find(b => b.id === draggableId);
+    const booking = bookings.find(b => b.id === actualBookingId);
     if (!booking) return;
 
     // Determine if this is a staff or client drop
