@@ -287,7 +287,7 @@ const ClientProfile = () => {
   if (authError || !authData?.client) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Unable to load profile. Please try again.</div>
+        <div className="text-red-500 dark:text-red-400">Unable to load profile. Please try again.</div>
       </div>
     );
   }

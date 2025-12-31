@@ -334,7 +334,7 @@ const ClientServiceReports = () => {
                             </div>
                           </div>
                           <div className="mt-2 md:mt-0">
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-0">
+                            <Badge variant="custom" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-0">
                               {service.completed}/{service.goals} Goals {service.goals === 1 ? 'Completed' : 'Completed'}
                             </Badge>
                           </div>
