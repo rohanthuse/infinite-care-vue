@@ -173,7 +173,7 @@ export function MedicationCalendar({ medications, onAddMedication }: MedicationC
             return (
               <div 
                 key={date.toISOString()} 
-                className={`h-20 border-r border-b p-1 relative ${
+                className={`h-20 border-r border-b p-1 relative overflow-hidden ${
                   isCurrentDay ? 'bg-primary/5' : 'hover:bg-muted/30'
                 }`}
               >
@@ -184,7 +184,7 @@ export function MedicationCalendar({ medications, onAddMedication }: MedicationC
                 </div>
                 
                 {/* Medication badges */}
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 overflow-hidden max-h-[52px]">
                   {dayMedications.slice(0, 2).map((medication, index) => (
                     <HoverCard key={`${medication.name}-${index}`}>
                       <HoverCardTrigger asChild>
@@ -243,7 +243,7 @@ export function MedicationCalendar({ medications, onAddMedication }: MedicationC
                   
                   {/* Show overflow indicator */}
                   {dayMedications.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs block truncate w-full text-center">
                       +{dayMedications.length - 2} more
                     </Badge>
                   )}
