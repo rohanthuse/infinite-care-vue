@@ -522,7 +522,7 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
               </div>
 
               {/* LPA Holder Details - shown when LPA is Yes */}
-              {form.watch("about_me.has_lpa") === "yes" && (
+              {form.watch("about_me.has_lpa") === true && (
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                   <h4 className="font-medium text-sm">LPA Holder Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
