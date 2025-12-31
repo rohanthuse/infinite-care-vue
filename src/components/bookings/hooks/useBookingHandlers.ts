@@ -828,6 +828,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setEditBookingDialogOpen,
     selectedBooking,
     newBookingData,
+    pendingBookingData, // Export for recurring booking restoration
     overlapAlertOpen,
     setOverlapAlertOpen,
     overlapData,
