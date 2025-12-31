@@ -159,6 +159,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     setEditBookingDialogOpen,
     selectedBooking,
     newBookingData,
+    pendingBookingData, // For recurring booking restoration after conflict
     overlapAlertOpen,
     setOverlapAlertOpen,
     overlapData,
@@ -538,7 +539,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         services={services}
         onCreateBooking={handleCreateBooking}
         branchId={branchId}
-        prefilledData={newBookingData}
+        prefilledData={pendingBookingData || newBookingData}
         preSelectedClientId={selectedClientIds.length === 1 ? selectedClientIds[0] : undefined}
         isCreating={createMultipleBookingsMutation.isPending}
       />

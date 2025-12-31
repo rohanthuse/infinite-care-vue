@@ -168,6 +168,27 @@ interface NewBookingDialogProps {
     endTime?: string;
     clientId?: string;
     carerId?: string;
+    // Extended fields for recurring booking restoration
+    bookingMode?: "single" | "recurring";
+    carerIds?: string[];
+    assignLater?: boolean;
+    fromDate?: Date;
+    untilDate?: Date;
+    recurrenceFrequency?: string;
+    schedules?: Array<{
+      startTime: string;
+      endTime: string;
+      services?: string[];
+      mon?: boolean;
+      tue?: boolean;
+      wed?: boolean;
+      thu?: boolean;
+      fri?: boolean;
+      sat?: boolean;
+      sun?: boolean;
+    }>;
+    notes?: string;
+    locationAddress?: string;
   };
   preSelectedClientId?: string;
   isCreating?: boolean;
@@ -272,15 +293,16 @@ export function NewBookingDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      bookingMode: "single", // Default to single booking mode
-      clientId: "",
-      carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
-      assignLater: false,
-      fromDate: prefilledData?.date || new Date(),
-      untilDate: prefilledData?.date || new Date(),
-      recurrenceFrequency: "1", // Default to weekly
-      notes: "",
-      schedules: [
+      bookingMode: prefilledData?.bookingMode || "single",
+      clientId: prefilledData?.clientId || "",
+      carerIds: prefilledData?.carerIds || (prefilledData?.carerId ? [prefilledData.carerId] : []),
+      assignLater: prefilledData?.assignLater || false,
+      fromDate: prefilledData?.fromDate || prefilledData?.date || new Date(),
+      untilDate: prefilledData?.untilDate || prefilledData?.date || new Date(),
+      recurrenceFrequency: (prefilledData?.recurrenceFrequency as "1" | "2" | "3" | "4") || "1",
+      notes: prefilledData?.notes || "",
+      locationAddress: prefilledData?.locationAddress || "",
+      schedules: prefilledData?.schedules || [
         {
           startTime: prefilledData?.startTime || "09:00",
           endTime: prefilledData?.endTime || 
@@ -288,11 +310,40 @@ export function NewBookingDialog({
               `${String(Math.floor((parseInt(prefilledData.startTime.split(':')[0]) + 1) % 24)).padStart(2, '0')}:${prefilledData.startTime.split(':')[1]}` 
               : "10:00"),
           services: [],
-          ...getDefaultDaysForDate(prefilledData?.date),
+          ...getDefaultDaysForDate(prefilledData?.fromDate || prefilledData?.date),
         },
       ],
     },
   });
+  
+  // Restore form state when dialog opens with prefilled recurring booking data
+  useEffect(() => {
+    if (open && prefilledData?.bookingMode) {
+      console.log("[NewBookingDialog] Restoring form with prefilled data:", prefilledData);
+      form.reset({
+        bookingMode: prefilledData.bookingMode,
+        clientId: prefilledData.clientId || "",
+        carerIds: prefilledData.carerIds || [],
+        assignLater: prefilledData.assignLater || false,
+        fromDate: prefilledData.fromDate || new Date(),
+        untilDate: prefilledData.untilDate || new Date(),
+        recurrenceFrequency: (prefilledData.recurrenceFrequency as "1" | "2" | "3" | "4") || "1",
+        notes: prefilledData.notes || "",
+        locationAddress: prefilledData.locationAddress || "",
+        schedules: prefilledData.schedules || [{
+          startTime: "09:00",
+          endTime: "10:00",
+          services: [],
+          mon: false, tue: false, wed: false, thu: false, fri: false, sat: false, sun: false,
+        }],
+      });
+      
+      // Update schedule count if multiple schedules
+      if (prefilledData.schedules?.length) {
+        setScheduleCount(prefilledData.schedules.length);
+      }
+    }
+  }, [open, prefilledData]);
   
   // Watch the fromDate to check leave availability (must be after form declaration)
   const watchedFromDate = form.watch("fromDate");
