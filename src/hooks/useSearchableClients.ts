@@ -82,7 +82,7 @@ const fetchSearchableClients = async ({
 
 export const useSearchableClients = (branchId: string) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [clientStatus, setClientStatus] = useState<'all' | 'active' | 'former'>('all');
+  const [clientStatus, setClientStatus] = useState<'all' | 'active' | 'former'>('active');
   const [page, setPage] = useState(0);
   const limit = 100;
 
@@ -167,6 +167,7 @@ export const useRecentClients = (branchId: string, limit = 5) => {
         .from('clients')
         .select('id, first_name, last_name, pin_code, status, created_at')
         .eq('branch_id', branchId)
+        .eq('status', 'Active')
         .order('created_at', { ascending: false })
         .limit(limit);
 

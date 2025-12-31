@@ -37,8 +37,9 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, email, phone, address, date_of_birth, emergency_contact, emergency_phone, gp_details, mobility_status, communication_preferences, age_group')
+        .select('id, first_name, last_name, email, phone, address, date_of_birth, emergency_contact, emergency_phone, gp_details, mobility_status, communication_preferences, age_group, status')
         .eq('branch_id', branchId)
+        .eq('status', 'Active')
         .order('last_name');
       
       if (error) throw error;
