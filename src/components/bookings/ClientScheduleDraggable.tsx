@@ -95,8 +95,8 @@ export function ClientScheduleDraggable({
             
             return (
               <Draggable 
-                key={`${block.booking.id}-${idx}`} 
-                draggableId={block.booking.id} 
+                key={`client-${block.booking.id}-${idx}`} 
+                draggableId={`client-${block.booking.id}-${idx}`} 
                 index={idx}
                 isDragDisabled={isDragDisabled}
               >

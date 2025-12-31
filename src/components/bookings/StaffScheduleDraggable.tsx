@@ -96,8 +96,8 @@ export function StaffScheduleDraggable({
             
             return (
               <Draggable 
-                key={`${block.booking.id}-${idx}`} 
-                draggableId={block.booking.id} 
+                key={`staff-${block.booking.id}-${idx}`} 
+                draggableId={`staff-${block.booking.id}-${idx}`} 
                 index={idx}
                 isDragDisabled={
                   block.booking.status === 'training' || 
