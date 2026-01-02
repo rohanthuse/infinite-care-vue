@@ -134,10 +134,12 @@ export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionP
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="service-view-button pointer-events-auto gap-1"
                           onClick={() => handleView(action)}
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
+                          <span>View</span>
                         </Button>
                       </TableCell>
                     </TableRow>

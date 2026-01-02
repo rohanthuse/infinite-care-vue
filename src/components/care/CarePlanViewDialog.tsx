@@ -603,7 +603,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     const readOnlyStyles = `[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_input]:cursor-not-allowed
          [&_textarea]:pointer-events-none [&_textarea]:bg-muted/50 [&_textarea]:cursor-not-allowed
          [&_select]:pointer-events-none [&_button[role=combobox]]:pointer-events-none [&_button[role=combobox]]:bg-muted/50 [&_button[role=combobox]]:cursor-not-allowed
-         [&_button:not(.sidebar-nav-button):not(.document-action-button)]:pointer-events-none [&_button:not(.sidebar-nav-button):not(.document-action-button)]:opacity-50 [&_button:not(.sidebar-nav-button):not(.document-action-button)]:cursor-not-allowed`;
+         [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:pointer-events-none [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:opacity-50 [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:cursor-not-allowed`;
 
     return (
       <div 
