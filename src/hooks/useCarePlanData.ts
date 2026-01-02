@@ -41,6 +41,9 @@ export interface CarePlanWithDetails extends CarePlanData {
     status: string;
     progress?: number;
     notes?: string;
+    priority?: string;
+    target_date?: string;
+    measurable_outcome?: string;
   }>;
   activities?: Array<{
     id: string;
@@ -48,6 +51,8 @@ export interface CarePlanWithDetails extends CarePlanData {
     description?: string;
     frequency: string;
     status: string;
+    duration?: string;
+    time_of_day?: string[];
   }>;
   medications?: Array<{
     id: string;
@@ -57,6 +62,8 @@ export interface CarePlanWithDetails extends CarePlanData {
     start_date: string;
     end_date?: string;
     status: string;
+    instructions?: string;
+    time_of_day?: string[];
   }>;
   care_plan_type?: string;
   priority?: string;
@@ -65,6 +72,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   notes?: string;
   isDirectlyAssigned?: boolean; // Flag to indicate if directly assigned to carer
   // Additional care plan details
+  auto_save_data?: Record<string, any> | null; // Preserve raw auto_save_data for View/Edit
   personal_info?: any;
   medical_info?: any;
   personal_care?: any;
@@ -73,12 +81,78 @@ export interface CarePlanWithDetails extends CarePlanData {
   consent?: any;
   general?: any;
   hobbies?: any;
+  key_contacts?: any[]; // Key contacts from DB and JSON merged
   risk_assessments?: any[];
   service_actions?: any[];
   service_plans?: any[];
-  equipment?: any[];
+  equipment?: any;
   documents?: any[];
 }
+
+// Helper function to merge JSON data with unique DB records (JSON-First strategy)
+const mergeWithDatabase = <T extends Record<string, any>>(
+  jsonItems: T[],
+  dbItems: T[],
+  matchKey: 'name' | 'description' | 'id' = 'name'
+): T[] => {
+  const allItems = [...jsonItems];
+  const existingKeys = new Set(
+    jsonItems.map(item => {
+      if (matchKey === 'description') return item.description?.toLowerCase()?.trim();
+      if (matchKey === 'name') return (item.name || item.action_name)?.toLowerCase()?.trim();
+      return item.id;
+    }).filter(Boolean)
+  );
+  
+  // Add unique DB records that don't exist in JSON
+  dbItems.forEach(dbItem => {
+    const itemKey = matchKey === 'description' 
+      ? dbItem.description?.toLowerCase()?.trim()
+      : matchKey === 'name' 
+        ? (dbItem.name || dbItem.action_name)?.toLowerCase()?.trim()
+        : dbItem.id;
+    
+    if (itemKey && !existingKeys.has(itemKey)) {
+      allItems.push(dbItem);
+    }
+  });
+  
+  return allItems;
+};
+
+// Helper function to normalize equipment structure (handle both old array and new object formats)
+const normalizeEquipmentStructure = (equipment: any): any => {
+  if (Array.isArray(equipment)) {
+    // Old format - array of equipment items
+    return {
+      equipment_blocks: equipment.map((item: any, index: number) => ({
+        id: item.id || `equipment-${index}`,
+        equipment_name: item.equipment_name || item.name || '',
+        equipment_type: item.equipment_type || item.type || '',
+        quantity: item.quantity || 1,
+        location: item.location || '',
+        maintenance_required: item.maintenance_required || false,
+        maintenance_schedule: item.maintenance_schedule || '',
+        maintenance_notes: item.maintenance_notes || '',
+        supplier: item.supplier || '',
+        notes: item.notes || item.additional_notes || '',
+      })),
+      moving_handling: {},
+      environment_checks: {},
+      home_repairs: {}
+    };
+  } else if (equipment && typeof equipment === 'object') {
+    // New format - object with nested structures
+    return {
+      equipment_blocks: Array.isArray(equipment.equipment_blocks) ? equipment.equipment_blocks : [],
+      moving_handling: equipment.moving_handling || {},
+      environment_checks: equipment.environment_checks || {},
+      home_repairs: equipment.home_repairs || {}
+    };
+  }
+  
+  return { equipment_blocks: [], moving_handling: {}, environment_checks: {}, home_repairs: {} };
+};
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetails> => {
   console.log(`[fetchCarePlanData] Input care plan ID: ${carePlanId}`);
@@ -160,6 +234,12 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     throw error;
   }
 
+  // Fetch key contacts from database
+  const { data: dbKeyContacts } = await supabase
+    .from('client_key_contacts')
+    .select('*')
+    .eq('client_id', data.client_id);
+
   // Helper function to normalize personal info from multiple sources
   const normalizePersonalInfo = (autoSaveData: Record<string, any>, clientData: any) => {
     const personalInfoFromAutoSave = autoSaveData.personal_info || {};
@@ -191,37 +271,61 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
   // Extract data from auto_save_data if available - Enhanced extraction
   const autoSaveData = typeof data.auto_save_data === 'object' && data.auto_save_data !== null ? data.auto_save_data as Record<string, any> : {};
   
-  // Extract goals from auto_save_data if not available from joined table
+  // Extract goals from auto_save_data (JSON-First)
   const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
-    id: `goal-${index}`,
+    id: `json-goal-${index}`,
     description: goal.description || goal.goal_description || '',
     status: goal.status || 'active',
     progress: goal.progress || 0,
-    notes: goal.notes || goal.additional_notes || ''
+    notes: goal.notes || goal.additional_notes || '',
+    priority: goal.priority || 'medium',
+    target_date: goal.target_date || null,
+    measurable_outcome: goal.measurable_outcome || null,
   })) : [];
 
-  // Extract medications from auto_save_data if not available from joined table - Enhanced
-  const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
-    id: `med-${index}`,
+  // Extract medications from auto_save_data - check all possible locations (JSON-First)
+  const medicationsSource = autoSaveData.medications || 
+    autoSaveData.medical_info?.medication_manager?.medications ||
+    autoSaveData.medical_info?.medications || 
+    [];
+  const medicationsFromAutoSave = Array.isArray(medicationsSource) ? medicationsSource.map((med: any, index: number) => ({
+    id: med.id || `json-med-${index}`,
     name: med.medication_name || med.name || '',
     dosage: med.dosage || '',
     frequency: med.frequency || '',
     start_date: med.start_date || '',
     end_date: med.end_date || '',
-    status: med.status || 'active'
+    status: med.status || 'active',
+    instructions: med.instructions || med.instruction || '',
+    time_of_day: med.time_of_day || [],
   })) : [];
 
   // Enhanced medication manager extraction
   const medicationManagerFromAutoSave = autoSaveData.medical_info?.medication_manager || {};
 
-  // Extract activities from auto_save_data if not available from joined table
+  // Extract activities from auto_save_data (JSON-First)
   const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
-    id: `activity-${index}`,
+    id: `json-activity-${index}`,
     name: activity.activity_name || activity.name || '',
     description: activity.description || '',
     frequency: activity.frequency || '',
-    status: activity.status || 'active'
+    status: activity.status || 'active',
+    duration: activity.duration || '',
+    time_of_day: Array.isArray(activity.time_of_day) ? activity.time_of_day : (activity.time_of_day ? [activity.time_of_day] : []),
   })) : [];
+
+  // Extract key contacts from auto_save_data
+  const keyContactsFromAutoSave = Array.isArray(autoSaveData.key_contacts) ? autoSaveData.key_contacts : [];
+  
+  // Merge key contacts: JSON first, then add unique DB records
+  const mergedKeyContacts = mergeWithDatabase(
+    keyContactsFromAutoSave,
+    (dbKeyContacts || []).map(contact => ({
+      ...contact,
+      name: `${contact.first_name || ''} ${contact.surname || ''}`.trim(),
+    })),
+    'name'
+  );
 
   // Enhanced extraction of complex nested structures
   const extractComplexData = (key: string, defaultValue: any = []) => {
@@ -231,15 +335,70 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     return defaultValue;
   };
 
+  // Merge goals: JSON-First with unique DB records
+  const dbGoalsTransformed = (data.goals || []).map((goal: any) => ({
+    id: goal.id,
+    description: goal.description || '',
+    status: goal.status || 'active',
+    progress: goal.progress || 0,
+    notes: goal.notes || '',
+  }));
+  const mergedGoals = mergeWithDatabase(goalsFromAutoSave, dbGoalsTransformed, 'description');
+
+  // Merge activities: JSON-First with unique DB records
+  const dbActivitiesTransformed = (data.activities || []).map((activity: any) => ({
+    id: activity.id,
+    name: activity.name || '',
+    description: activity.description || '',
+    frequency: activity.frequency || '',
+    status: activity.status || 'active',
+  }));
+  const mergedActivities = mergeWithDatabase(activitiesFromAutoSave, dbActivitiesTransformed, 'name');
+
+  // Merge medications: JSON-First with unique DB records  
+  const dbMedicationsTransformed = (data.medications || []).map((med: any) => ({
+    id: med.id,
+    name: med.name || '',
+    dosage: med.dosage || '',
+    frequency: med.frequency || '',
+    start_date: med.start_date || '',
+    end_date: med.end_date || '',
+    status: med.status || 'active',
+  }));
+  const mergedMedications = mergeWithDatabase(medicationsFromAutoSave, dbMedicationsTransformed, 'name');
+
+  // Log data source analysis for debugging
+  console.log('[fetchCarePlanData] Data source analysis:', {
+    carePlanId,
+    dbGoalsCount: data.goals?.length || 0,
+    jsonGoalsCount: goalsFromAutoSave.length,
+    mergedGoalsCount: mergedGoals.length,
+    dbActivitiesCount: data.activities?.length || 0,
+    jsonActivitiesCount: activitiesFromAutoSave.length,
+    mergedActivitiesCount: mergedActivities.length,
+    dbMedicationsCount: data.medications?.length || 0,
+    jsonMedicationsCount: medicationsFromAutoSave.length,
+    mergedMedicationsCount: mergedMedications.length,
+    dbKeyContactsCount: dbKeyContacts?.length || 0,
+    jsonKeyContactsCount: keyContactsFromAutoSave.length,
+    mergedKeyContactsCount: mergedKeyContacts.length,
+    riskAssessmentsCount: extractComplexData('risk_assessments', []).length,
+    serviceActionsCount: extractComplexData('service_actions', []).length,
+    servicePlansCount: extractComplexData('service_plans', []).length,
+  });
+
   // Transform the data to handle potential null staff relations and extract data from auto_save_data - Enhanced
   const transformedData: CarePlanWithDetails = {
     ...data,
+    auto_save_data: autoSaveData, // Preserve raw auto_save_data for View/Edit
     staff: data.staff || null,
     client_acknowledgment_ip: data.client_acknowledgment_ip as string | null,
-    // Use auto_save_data if joined tables are empty
-    goals: data.goals?.length > 0 ? data.goals : goalsFromAutoSave,
-    medications: data.medications?.length > 0 ? data.medications : medicationsFromAutoSave,
-    activities: data.activities?.length > 0 ? data.activities : activitiesFromAutoSave,
+    // Use JSON-First Merged strategy for goals, activities, medications
+    goals: mergedGoals,
+    medications: mergedMedications,
+    activities: mergedActivities,
+    // Add merged key contacts
+    key_contacts: mergedKeyContacts,
     // Enhanced basic field extraction from auto_save_data
     care_plan_type: autoSaveData.care_plan_type || data.care_plan_type,
     priority: autoSaveData.priority || data.priority,
@@ -254,7 +413,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       ...autoSaveData.medical_info || {},
       medication_manager: {
         ...medicationManagerFromAutoSave,
-        medications: medicationsFromAutoSave.length > 0 ? medicationsFromAutoSave : (medicationManagerFromAutoSave.medications || []),
+        medications: mergedMedications,
       },
       admin_medication: autoSaveData.medical_info?.admin_medication || {},
     },
@@ -336,18 +495,8 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       registered_by_name: plan.registered_by_name || '',
       is_saved: true,
     })),
-    equipment: extractComplexData('equipment', []).map((item: any) => ({
-      ...item,
-      equipment_name: item.equipment_name || item.name,
-      equipment_type: item.equipment_type || item.type,
-      quantity: item.quantity || 1,
-      location: item.location || '',
-      maintenance_required: item.maintenance_required || false,
-      maintenance_schedule: item.maintenance_schedule || '',
-      maintenance_notes: item.maintenance_notes || '',
-      supplier: item.supplier || '',
-      notes: item.notes || item.additional_notes || '',
-    })),
+    // Normalize equipment structure to handle both old array and new object formats
+    equipment: normalizeEquipmentStructure(autoSaveData.equipment),
     documents: extractComplexData('documents', []).map((doc: any) => ({
       ...doc,
       name: doc.name || doc.document_name || doc.file_name,
@@ -578,6 +727,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
 
     return {
       ...item,
+      auto_save_data: autoSaveData, // Override with parsed version to satisfy type
       staff: item.staff || null,
       client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
       // Use auto_save_data if joined tables are empty
@@ -599,7 +749,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       risk_assessments: riskAssessmentsFromAutoSave,
       service_actions: serviceActionsFromAutoSave,
       service_plans: servicePlansFromAutoSave,
-      equipment: equipmentFromAutoSave,
+      equipment: normalizeEquipmentStructure(autoSaveData.equipment),
       documents: documentsFromAutoSave
     };
   });
@@ -714,6 +864,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
 
     return {
       ...item,
+      auto_save_data: autoSaveData, // Override with parsed version to satisfy type
       staff: item.staff || null,
       client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
       // Use auto_save_data if joined tables are empty
@@ -735,7 +886,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
       risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
       service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
       service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
-      equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
+      equipment: normalizeEquipmentStructure(autoSaveData.equipment),
       documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : [],
       // Add a flag to indicate if this is directly assigned or branch-level
       isDirectlyAssigned: item.staff_id === staffId
