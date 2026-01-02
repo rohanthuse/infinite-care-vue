@@ -1,7 +1,6 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Calendar, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { Check, X } from 'lucide-react';
 import {
   FormControl,
   FormField,
@@ -12,12 +11,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -26,10 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { DaySelector } from '@/components/care/forms/DaySelector';
 import { TimePickerField } from '@/components/care/forms/TimePickerField';
 import { ShiftSelector } from '@/components/care/forms/ShiftSelector';
+import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { 
   EXISTING_ACTIONS_OPTIONS, 
   ACTION_FREQUENCY_OPTIONS 
@@ -321,34 +314,13 @@ export function ServiceActionForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Start Date *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick date</span>
-                          )}
-                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <EnhancedDatePicker
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date) => field.onChange(date)}
+                      placeholder="DD/MM/YYYY"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -357,40 +329,28 @@ export function ServiceActionForm({
             <FormField
               control={form.control}
               name={`${fieldPrefix}.end_date`}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick date</span>
-                          )}
-                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={field.onChange}
-                        initialFocus
+              render={({ field }) => {
+                const startDate = form.watch(`${fieldPrefix}.start_date`);
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>End Date *</FormLabel>
+                    <FormControl>
+                      <EnhancedDatePicker
+                        value={field.value ? new Date(field.value) : undefined}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="DD/MM/YYYY"
+                        disabled={(date) => {
+                          if (startDate) {
+                            return date < new Date(startDate);
+                          }
+                          return false;
+                        }}
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
           </div>
 
