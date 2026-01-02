@@ -610,6 +610,10 @@ export function ClientScheduleCalendar({
     if (status.booking) {
       const statusLabel = getBookingStatusLabel(status.booking.status);
       const statusColor = getBookingStatusColor(status.booking.status, 'light');
+      const allCarerNames = (status.booking as any).allCarerNames || [];
+      const singleCarerName = status.booking.carerName;
+      const hasMultipleCarers = allCarerNames.length > 1;
+      const hasAssignedCarer = allCarerNames.length > 0 || (singleCarerName && singleCarerName.trim() !== '');
       
       return (
         <div className="space-y-2">
@@ -620,10 +624,24 @@ export function ClientScheduleCalendar({
             </Badge>
           </div>
           <div className="space-y-1 text-sm">
-            <p>
-              <span className="font-medium">Carer{(status.booking as any).allCarerNames?.length > 1 ? 's' : ''}:</span>{' '}
-              {(status.booking as any).allCarerNames?.join(', ') || status.booking.carerName}
-            </p>
+            {/* Carer Assignment Section */}
+            <div>
+              <span className="font-medium">
+                {hasMultipleCarers ? 'Assigned Carers:' : 'Assigned Carer:'}
+              </span>
+              {!hasAssignedCarer ? (
+                <span className="text-muted-foreground ml-1">Not assigned yet</span>
+              ) : hasMultipleCarers ? (
+                <ul className="mt-1 ml-4 list-disc space-y-0.5">
+                  {allCarerNames.map((name: string, idx: number) => (
+                    <li key={idx}>{name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="ml-1">{allCarerNames[0] || singleCarerName}</span>
+              )}
+            </div>
+            
             <p><span className="font-medium">Time:</span> {status.booking.startTime} - {status.booking.endTime}</p>
             {status.booking.notes && (
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
@@ -920,18 +938,34 @@ export function ClientScheduleCalendar({
                                 )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="text-sm space-y-1">
+                            <TooltipContent className="bg-popover text-popover-foreground border border-border shadow-lg p-3 rounded-md">
+                              <div className="text-sm space-y-2">
                                 {requestColors.hasRequest && (
-                                  <div className={`font-bold ${requestColors.iconColor} mb-2`}>
+                                  <div className={`font-bold ${requestColors.iconColor} mb-2 pb-2 border-b`}>
                                     ⚠️ {requestColors.tooltip}
                                   </div>
                                 )}
+                                
+                                {/* Carer Assignment Section */}
                                 <div>
-                                  <strong>Staff:</strong> {(booking as any).allCarerNames?.join(', ') || booking.carerName}
+                                  <span className="font-medium">
+                                    {(booking as any).allCarerNames?.length > 1 ? 'Assigned Carers:' : 'Assigned Carer:'}
+                                  </span>
+                                  {!(booking as any).allCarerNames?.length && !booking.carerName ? (
+                                    <span className="text-muted-foreground ml-1">Not assigned yet</span>
+                                  ) : (booking as any).allCarerNames?.length > 1 ? (
+                                    <ul className="mt-1 ml-4 list-disc space-y-0.5">
+                                      {(booking as any).allCarerNames.map((name: string, idx: number) => (
+                                        <li key={idx}>{name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <span className="ml-1">{(booking as any).allCarerNames?.[0] || booking.carerName}</span>
+                                  )}
                                 </div>
-                                <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
-                                <div><strong>Status:</strong> {booking.status}</div>
+                                
+                                <div><span className="font-medium">Time:</span> {booking.startTime} - {booking.endTime}</div>
+                                <div><span className="font-medium">Status:</span> {booking.status}</div>
                               </div>
                             </TooltipContent>
                           </Tooltip>
