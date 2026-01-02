@@ -1,14 +1,38 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Download, Calendar } from 'lucide-react';
+import { FileText, Download, Calendar, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useViewClientDocument, useDownloadClientDocument } from '@/hooks/useClientDocuments';
+import { toast } from 'sonner';
 
 interface DocumentsSectionProps {
   documents: any[];
 }
 
 export function DocumentsSection({ documents }: DocumentsSectionProps) {
+  const viewDocumentMutation = useViewClientDocument();
+  const downloadDocumentMutation = useDownloadClientDocument();
+
+  const handleViewDocument = (doc: any) => {
+    const filePath = doc.storage_path || doc.file_path;
+    if (filePath) {
+      viewDocumentMutation.mutate({ filePath });
+    } else {
+      toast.error('Document file path not available');
+    }
+  };
+
+  const handleDownloadDocument = (doc: any) => {
+    const filePath = doc.storage_path || doc.file_path;
+    const fileName = doc.name || doc.file_name || 'document';
+    if (filePath) {
+      downloadDocumentMutation.mutate({ filePath, fileName });
+    } else {
+      toast.error('Document file path not available');
+    }
+  };
+
   if (!documents || documents.length === 0) {
     return (
       <Card>
@@ -62,11 +86,32 @@ export function DocumentsSection({ documents }: DocumentsSectionProps) {
                   </div>
                 </div>
                 {(doc.storage_path || doc.file_path) && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={doc.storage_path || doc.file_path} download>
-                      <Download className="h-4 w-4" />
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewDocument(doc)}
+                      disabled={viewDocumentMutation.isPending}
+                    >
+                      {viewDocumentMutation.isPending ? (
+                        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDownloadDocument(doc)}
+                      disabled={downloadDocumentMutation.isPending}
+                    >
+                      {downloadDocumentMutation.isPending ? (
+                        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
