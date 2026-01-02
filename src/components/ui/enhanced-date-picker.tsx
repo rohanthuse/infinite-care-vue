@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format, parse, isValid } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,38 +62,79 @@ export function EnhancedDatePicker({
 }: EnhancedDatePickerProps) {
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const lastExternalValueRef = useRef<Date | undefined>(undefined);
 
-  // Sync input value with prop value
+  // Sync input value with prop value - only when external value changes
   useEffect(() => {
-    if (value) {
-      setInputValue(format(value, "dd/MM/yyyy"));
-    } else {
-      setInputValue("");
+    // Check if the external value actually changed (not from our own onChange)
+    const externalChanged = value !== lastExternalValueRef.current;
+    
+    if (externalChanged) {
+      if (value) {
+        setInputValue(format(value, "dd/MM/yyyy"));
+        setHasError(false);
+      } else {
+        setInputValue("");
+        setHasError(false);
+      }
+      lastExternalValueRef.current = value;
     }
   }, [value]);
+
+  const attemptParsing = () => {
+    if (!inputValue.trim()) {
+      onChange(undefined);
+      setHasError(false);
+      lastExternalValueRef.current = undefined;
+      return;
+    }
+
+    const parsedDate = parseFlexibleDate(inputValue);
+    
+    if (parsedDate) {
+      if (disabled && disabled(parsedDate)) {
+        // Date is disabled (e.g., before fromDate)
+        setHasError(true);
+      } else {
+        setHasError(false);
+        onChange(parsedDate);
+        setInputValue(format(parsedDate, "dd/MM/yyyy"));
+        lastExternalValueRef.current = parsedDate;
+      }
+    } else {
+      // Invalid format - show error but keep input for user to fix
+      setHasError(true);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
+    setHasError(false); // Clear error while typing
     
-    // Try to parse the date as user types
-    const parsedDate = parseFlexibleDate(newValue);
-    if (parsedDate && (!disabled || !disabled(parsedDate))) {
-      onChange(parsedDate);
-    } else if (!newValue.trim()) {
+    // Only clear the value if input is empty
+    if (!newValue.trim()) {
       onChange(undefined);
+      lastExternalValueRef.current = undefined;
     }
   };
 
   const handleInputBlur = () => {
-    // On blur, if we have a valid date, format it nicely
-    if (value) {
-      setInputValue(format(value, "dd/MM/yyyy"));
+    attemptParsing();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      attemptParsing();
     }
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
     onChange(date);
+    lastExternalValueRef.current = date;
+    setHasError(false);
     setIsOpen(false);
   };
 
@@ -103,8 +144,12 @@ export function EnhancedDatePicker({
         value={inputValue}
         onChange={handleInputChange}
         onBlur={handleInputBlur}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="rounded-r-none border-r-0"
+        className={cn(
+          "rounded-r-none border-r-0",
+          hasError && "border-destructive focus-visible:ring-destructive"
+        )}
       />
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
@@ -124,6 +169,7 @@ export function EnhancedDatePicker({
             onSelect={handleCalendarSelect}
             disabled={disabled}
             initialFocus
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
