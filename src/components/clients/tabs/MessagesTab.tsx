@@ -30,7 +30,10 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
   const { data: messages = [], isLoading: messagesLoading } = useClientThreadMessages(selectedThreadId || '');
   const sendMessageMutation = useSendMessageToClient();
   const { data: currentUser } = useUserRole();
-  const { data: clientRecipients = [], isLoading: recipientsLoading } = useClientMessageRecipients(clientId);
+  // Only fetch recipients when composer is open (lazy loading)
+  const { data: clientRecipients = [], isLoading: recipientsLoading } = useClientMessageRecipients(
+    showComposer ? clientId : ''
+  );
 
   // Fetch scheduled messages for selected thread
   const { data: scheduledMessages = [] } = useQuery({
@@ -111,8 +114,17 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
   if (threadsLoading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-muted-foreground">Loading messages...</div>
+        <CardContent className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-3 animate-pulse">
+              <div className="w-10 h-10 bg-muted rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+                <div className="h-3 bg-muted rounded w-2/3" />
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     );
