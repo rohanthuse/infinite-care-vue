@@ -247,6 +247,11 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
           services (
             id,
             title
+          ),
+          clients (
+            id,
+            first_name,
+            last_name
           )
         `)
         .eq('id', event.id)
@@ -274,6 +279,9 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
           : 'Not assigned',
         carerId: fullBooking.staff_id,
         clientId: fullBooking.client_id,
+        clientName: fullBooking.clients
+          ? `${fullBooking.clients.first_name} ${fullBooking.clients.last_name}`
+          : 'Unknown Client',
       };
       
       setSelectedEvent(event);
