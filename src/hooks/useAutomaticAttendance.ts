@@ -123,7 +123,9 @@ export const useAutomaticAttendance = (options?: { silent?: boolean }) => {
         }
 
         if (existingRecord.check_out_time) {
-          throw new Error('Already checked out for today');
+          // Return existing record instead of throwing - allows visit completion to proceed
+          console.log('[useAutomaticAttendance] Already checked out today, returning existing record');
+          return existingRecord;
         }
 
         // Calculate hours worked

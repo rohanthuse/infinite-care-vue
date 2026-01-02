@@ -1262,6 +1262,12 @@ const CarerVisitWorkflow = () => {
   const handleCompleteVisit = async (retryCount = 0) => {
     console.log('Starting visit completion process...');
     
+    // Check connectivity before starting
+    if (!navigator.onLine) {
+      toast.error('No internet connection. Please check your network and try again.');
+      return;
+    }
+    
     if (!currentAppointment || !user?.id || !visitRecord) {
       const missingData = [];
       if (!currentAppointment) missingData.push('appointment');
@@ -1440,11 +1446,17 @@ const CarerVisitWorkflow = () => {
         location: undefined
       };
 
-      await withTimeout(
-        bookingAttendance.mutateAsync(attendanceData),
-        30000,
-        'Marking booking as complete timed out.'
-      );
+      // Make attendance processing non-blocking - don't fail completion if this step fails
+      try {
+        await withTimeout(
+          bookingAttendance.mutateAsync(attendanceData),
+          30000,
+          'Marking booking as complete timed out.'
+        );
+      } catch (attendanceError) {
+        console.warn('Attendance update failed, continuing with completion:', attendanceError);
+        // Don't throw - allow visit completion to proceed
+      }
       
       // Step 6: Check for next booking - with 10s timeout (non-critical)
       console.log('Step 6: Checking for next scheduled booking...');
@@ -1497,6 +1509,9 @@ const CarerVisitWorkflow = () => {
       clearTimeout(globalTimeoutId);
       console.error('Error completing visit:', error);
       
+      // ALWAYS reset loading state immediately on error
+      setIsCompletingVisit(false);
+      
       // Retry logic for timeout errors (but not our custom timeout messages)
       const isDbTimeout = (error?.message?.includes('timeout') && !error?.message?.includes('timed out.')) || error?.code === '57014';
       if (isDbTimeout && retryCount < 2) {
@@ -1514,7 +1529,7 @@ const CarerVisitWorkflow = () => {
         const message = error.message || error?.message;
         if (message.includes('timed out')) {
           errorMessage = message; // Use our custom timeout message
-        } else if (message.includes('policy') || message.includes('permission')) {
+        } else if (message.includes('policy') || message.includes('permission') || message.includes('row-level security')) {
           errorMessage = 'Permission denied. Please check your access rights or contact your administrator.';
         } else if (message.includes('network') || message.includes('fetch') || message.includes('Failed to fetch')) {
           errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -1527,9 +1542,11 @@ const CarerVisitWorkflow = () => {
       
       setCompletionError(errorMessage);
       setCompletionStatus('error');
+      // Ensure modal stays visible with error state
+      setShowCompletionModal(true);
     } finally {
       clearTimeout(globalTimeoutId);
-      setIsCompletingVisit(false);
+      // Loading state already handled in catch block, only clear here for success path
     }
   };
 
