@@ -59,48 +59,29 @@ export const useClientMessageThreads = (clientId: string) => {
         return [];
       }
 
-      let threadIds: string[] = [];
+      // Run all thread ID searches in parallel for better performance
+      const clientName = client?.first_name && client?.last_name 
+        ? `${client.first_name} ${client.last_name}`.trim() 
+        : '';
 
-      // Strategy 1: Try auth_user_id if available
-      if (client?.auth_user_id) {
-        const { data: participantThreads } = await supabase
-          .from('message_participants')
-          .select('thread_id')
-          .eq('user_id', client.auth_user_id);
+      const [authThreadsResult, nameThreadsResult, emailThreadsResult] = await Promise.all([
+        client?.auth_user_id 
+          ? supabase.from('message_participants').select('thread_id').eq('user_id', client.auth_user_id)
+          : Promise.resolve({ data: [] }),
+        clientName 
+          ? supabase.from('message_participants').select('thread_id').eq('user_type', 'client').ilike('user_name', `%${clientName}%`)
+          : Promise.resolve({ data: [] }),
+        client?.email 
+          ? supabase.from('message_participants').select('thread_id').eq('user_type', 'client').ilike('user_name', `%${client.email}%`)
+          : Promise.resolve({ data: [] })
+      ]);
 
-        if (participantThreads?.length) {
-          threadIds = participantThreads.map(p => p.thread_id);
-        }
-      }
-
-      // Strategy 2: Also search by client name in participants (for messages sent via Communication module)
-      if (client?.first_name && client?.last_name) {
-        const clientName = `${client.first_name} ${client.last_name}`.trim();
-        const { data: nameParticipantThreads } = await supabase
-          .from('message_participants')
-          .select('thread_id')
-          .eq('user_type', 'client')
-          .ilike('user_name', `%${clientName}%`);
-
-        if (nameParticipantThreads?.length) {
-          const additionalThreadIds = nameParticipantThreads.map(p => p.thread_id);
-          threadIds = [...new Set([...threadIds, ...additionalThreadIds])];
-        }
-      }
-
-      // Strategy 3: Search by email in participants
-      if (client?.email) {
-        const { data: emailParticipantThreads } = await supabase
-          .from('message_participants')
-          .select('thread_id')
-          .eq('user_type', 'client')
-          .ilike('user_name', `%${client.email}%`);
-
-        if (emailParticipantThreads?.length) {
-          const additionalThreadIds = emailParticipantThreads.map(p => p.thread_id);
-          threadIds = [...new Set([...threadIds, ...additionalThreadIds])];
-        }
-      }
+      // Combine and deduplicate thread IDs
+      const threadIds = [...new Set([
+        ...(authThreadsResult.data?.map(p => p.thread_id) || []),
+        ...(nameThreadsResult.data?.map(p => p.thread_id) || []),
+        ...(emailThreadsResult.data?.map(p => p.thread_id) || [])
+      ])];
 
       if (threadIds.length === 0) {
         return [];
@@ -137,79 +118,111 @@ export const useClientMessageThreads = (clientId: string) => {
         ? threads 
         : threads.filter(t => !t.admin_only);
 
-      // Process threads
-      const processedThreads = await Promise.all(
-        visibleThreads.map(async (thread) => {
-          // Get latest message
-          const { data: latestMessage } = await supabase
-            .from('messages')
-            .select(`
-              id,
-              sender_id,
-              content,
-              created_at
-            `)
-            .eq('thread_id', thread.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+      const visibleThreadIds = visibleThreads.map(t => t.id);
+      
+      if (visibleThreadIds.length === 0) {
+        return [];
+      }
 
-          // Get unread count (messages not read by current user if they're part of conversation)
-          const { data: allMessages } = await supabase
-            .from('messages')
-            .select('id')
-            .eq('thread_id', thread.id);
+      // Batch fetch all data for visible threads in parallel
+      const [latestMessagesResult, allMessagesResult] = await Promise.all([
+        // Get latest messages for ALL threads at once
+        supabase
+          .from('messages')
+          .select('id, thread_id, sender_id, content, created_at')
+          .in('thread_id', visibleThreadIds)
+          .order('created_at', { ascending: false }),
+        // Get all message IDs for unread count calculation
+        supabase
+          .from('messages')
+          .select('id, thread_id')
+          .in('thread_id', visibleThreadIds)
+      ]);
 
-          const { data: readMessages } = await supabase
+      const latestMessages = latestMessagesResult.data || [];
+      const allMessages = allMessagesResult.data || [];
+
+      // Get read statuses for all messages in one query
+      const allMessageIds = allMessages.map(m => m.id);
+      const { data: readMessages } = allMessageIds.length > 0 
+        ? await supabase
             .from('message_read_status')
             .select('message_id')
             .eq('user_id', currentUser.id)
-            .in('message_id', allMessages?.map(m => m.id) || []);
+            .in('message_id', allMessageIds)
+        : { data: [] };
 
-          const unreadCount = (allMessages?.length || 0) - (readMessages?.length || 0);
+      const readMessageIds = new Set(readMessages?.map(r => r.message_id) || []);
 
-          // Process participants
-          const participants = thread.message_participants?.map(p => ({
-            id: p.user_id,
-            name: p.user_name || 'Unknown User',
-            type: p.user_type || 'user'
-          })) || [];
+      // Group messages by thread for efficient lookup
+      const messagesByThread = new Map<string, typeof allMessages>();
+      const latestByThread = new Map<string, typeof latestMessages[0]>();
+      
+      allMessages.forEach(m => {
+        if (!messagesByThread.has(m.thread_id)) {
+          messagesByThread.set(m.thread_id, []);
+        }
+        messagesByThread.get(m.thread_id)!.push(m);
+      });
 
-          // Get sender name for latest message
-          let senderName = 'Unknown';
-          if (latestMessage) {
-            const sender = participants.find(p => p.id === latestMessage.sender_id);
-            senderName = sender?.name || 'Unknown';
-          }
+      latestMessages.forEach(m => {
+        if (!latestByThread.has(m.thread_id)) {
+          latestByThread.set(m.thread_id, m);
+        }
+      });
 
-          // Filter out the client from participant list for display
-          const clientUserId = client?.auth_user_id;
-          const displayParticipants = clientUserId 
-            ? participants.filter(p => p.id !== clientUserId)
-            : participants.filter(p => p.type !== 'client');
+      // Process threads locally (no more individual API calls per thread)
+      const processedThreads = visibleThreads.map((thread) => {
+        const latestMessage = latestByThread.get(thread.id);
+        const threadMessages = messagesByThread.get(thread.id) || [];
+        
+        // Calculate unread count locally
+        const unreadCount = threadMessages.filter(m => !readMessageIds.has(m.id)).length;
 
-          return {
-            id: thread.id,
-            subject: thread.subject,
-            participants: displayParticipants,
-            lastMessage: latestMessage ? {
-              id: latestMessage.id,
-              content: latestMessage.content,
-              senderName,
-              timestamp: new Date(latestMessage.created_at)
-            } : undefined,
-            unreadCount,
-            createdAt: thread.created_at,
-            updatedAt: thread.updated_at,
-            adminOnly: thread.admin_only
-          };
-        })
-      );
+        // Process participants
+        const participants = thread.message_participants?.map(p => ({
+          id: p.user_id,
+          name: p.user_name || 'Unknown User',
+          type: p.user_type || 'user'
+        })) || [];
+
+        // Get sender name for latest message
+        let senderName = 'Unknown';
+        if (latestMessage) {
+          const sender = participants.find(p => p.id === latestMessage.sender_id);
+          senderName = sender?.name || 'Unknown';
+        }
+
+        // Filter out the client from participant list for display
+        const clientUserId = client?.auth_user_id;
+        const displayParticipants = clientUserId 
+          ? participants.filter(p => p.id !== clientUserId)
+          : participants.filter(p => p.type !== 'client');
+
+        return {
+          id: thread.id,
+          subject: thread.subject,
+          participants: displayParticipants,
+          lastMessage: latestMessage ? {
+            id: latestMessage.id,
+            content: latestMessage.content,
+            senderName,
+            timestamp: new Date(latestMessage.created_at)
+          } : undefined,
+          unreadCount,
+          createdAt: thread.created_at,
+          updatedAt: thread.updated_at,
+          adminOnly: thread.admin_only
+        };
+      });
 
       return processedThreads;
     },
     enabled: !!clientId && !!currentUser,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 60000,        // Data considered fresh for 1 minute
+    gcTime: 300000,          // Keep in cache for 5 minutes
+    refetchInterval: 60000,  // Poll every 60 seconds instead of 30
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -277,6 +290,9 @@ export const useClientThreadMessages = (threadId: string) => {
       });
     },
     enabled: !!threadId && !!currentUser,
+    staleTime: 30000,        // Messages fresh for 30 seconds
+    gcTime: 120000,          // Keep in cache for 2 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
