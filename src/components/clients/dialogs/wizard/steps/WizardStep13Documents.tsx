@@ -537,6 +537,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="document-action-button pointer-events-auto"
                           onClick={() => handleViewDocument(form.watch(`documents.${index}.file_path`))}
                           disabled={viewDocumentMutation.isPending}
                         >
@@ -547,6 +548,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="document-action-button pointer-events-auto"
                           onClick={() => handleDownloadDocument(
                             form.watch(`documents.${index}.file_path`),
                             form.watch(`documents.${index}.name`)

@@ -107,6 +107,7 @@ export function ServicePlansTable({
                       type="button"
                       variant="ghost"
                       size="sm"
+                      className="service-view-button pointer-events-auto"
                       onClick={() => handleView(index)}
                       title="View Details"
                     >
