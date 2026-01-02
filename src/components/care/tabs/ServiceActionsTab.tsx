@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { Settings, Plus } from "lucide-react";
+import { Settings, Plus, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientServiceAction } from "@/hooks/useClientServiceActions";
+import { ViewServiceActionDialog } from "@/components/care/dialogs/ViewServiceActionDialog";
+import { ServiceActionData } from "@/types/serviceAction";
 
 interface ServiceActionsTabProps {
   serviceActions: ClientServiceAction[] | any[];
@@ -40,6 +42,14 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
   serviceActions, 
   onAddServiceAction 
 }) => {
+  const [viewingAction, setViewingAction] = useState<ServiceActionData | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const handleView = (action: any) => {
+    setViewingAction(action as ServiceActionData);
+    setViewDialogOpen(true);
+  };
+
   const formatDate = (date: any) => {
     if (!date) return '—';
     try {
@@ -121,6 +131,7 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
                     <TableHead className="font-semibold">Shift / Time</TableHead>
                     <TableHead className="font-semibold">Days</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -153,11 +164,24 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
                         </TableCell>
                         <TableCell>
                           <Badge 
-                            variant={status === 'active' ? 'default' : 'secondary'}
-                            className={status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                            variant="custom"
+                            className={status === 'active' 
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}
                           >
                             {status === 'active' ? 'Active' : status === 'inactive' ? 'Inactive' : status}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleView(action)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -168,6 +192,12 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({
           )}
         </CardContent>
       </Card>
+
+      <ViewServiceActionDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        action={viewingAction}
+      />
     </div>
   );
 };
