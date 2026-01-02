@@ -338,8 +338,8 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
         onOpenChange={setShowRenewDialog}
         tenant={tenant}
         onSuccess={() => {
-          // Parent will refresh data
-          onOpenChange(false);
+          // Renewal dialog closes itself; keep Tenant Details open
+          // Parent queries are invalidated so data will refresh automatically
         }}
       />
     </Dialog>

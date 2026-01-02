@@ -40,7 +40,7 @@ serve(async (req) => {
     console.log('[renew-subscription] Validating session token...');
     const { data: sessionData, error: sessionError } = await supabase
       .from('system_sessions')
-      .select('user_id, expires_at')
+      .select('system_user_id, expires_at')
       .eq('session_token', session_token)
       .maybeSingle();
 
@@ -68,7 +68,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[renew-subscription] Session valid for user:', sessionData.user_id);
+    console.log('[renew-subscription] Session valid for user:', sessionData.system_user_id);
 
     // Get current organization data
     const { data: org, error: orgError } = await supabase
@@ -116,10 +116,10 @@ serve(async (req) => {
     // Log renewal action
     try {
       await supabase.from('system_audit_logs').insert({
-        action_type: 'subscription_renewed',
-        entity_type: 'organization',
-        entity_id: organization_id,
-        performed_by: sessionData.user_id,
+        system_user_id: sessionData.system_user_id,
+        action: 'subscription_renewed',
+        resource_type: 'organization',
+        resource_id: organization_id,
         details: {
           previous_expiry: org.subscription_expires_at,
           new_expiry: newExpiry.toISOString(),
@@ -127,7 +127,6 @@ serve(async (req) => {
           notes,
           plan_updated: plan_id && plan_id !== org.subscription_plan_id,
         },
-        created_at: new Date().toISOString(),
       });
     } catch (auditError) {
       console.error('[renew-subscription] Audit log error:', auditError);
