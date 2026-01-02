@@ -18,20 +18,25 @@ const resolveBucketAndPath = (input: string): { bucket: string; objectPath: stri
     return { bucket: 'documents', objectPath: '' };
   }
 
+  // Strip query strings (e.g., ?token=..., ?t=...)
+  let cleanInput = input.split('?')[0];
+  
   // Case 1: Full Supabase storage URL
   // Example: https://xxx.supabase.co/storage/v1/object/public/documents/branchId/file.pdf
-  const urlPattern = /storage\/v1\/object\/(?:public|sign)\/([^\/]+)\/(.+)/;
-  const urlMatch = input.match(urlPattern);
+  // Also handles signed URLs: /storage/v1/object/sign/bucket/path
+  const urlPattern = /storage\/v1\/object\/(?:public|sign|authenticated)\/([^\/]+)\/(.+)/;
+  const urlMatch = cleanInput.match(urlPattern);
   if (urlMatch) {
     const [, bucket, objectPath] = urlMatch;
-    console.log('[resolveBucketAndPath] Extracted from URL:', { bucket, objectPath, original: input });
-    return { bucket, objectPath: decodeURIComponent(objectPath) };
+    const decodedPath = decodeURIComponent(objectPath);
+    console.log('[resolveBucketAndPath] Extracted from URL:', { bucket, objectPath: decodedPath, original: input });
+    return { bucket, objectPath: decodedPath };
   }
 
   // Case 2: Check if path starts with a known bucket prefix
   for (const bucket of KNOWN_BUCKETS) {
-    if (input.startsWith(`${bucket}/`)) {
-      const objectPath = input.slice(bucket.length + 1); // Remove bucket prefix
+    if (cleanInput.startsWith(`${bucket}/`)) {
+      const objectPath = cleanInput.slice(bucket.length + 1); // Remove bucket prefix
       console.log('[resolveBucketAndPath] Stripped bucket prefix:', { bucket, objectPath, original: input });
       return { bucket, objectPath };
     }
@@ -41,8 +46,8 @@ const resolveBucketAndPath = (input: string): { bucket: string; objectPath: stri
   // client-documents bucket uses paths like: clientId/filename
   // documents bucket (wizard uploads) uses paths like: branchId/clientId/filename or branchId/filename
   const bucket = 'documents'; // Default bucket for care plan documents
-  console.log('[resolveBucketAndPath] Using default bucket:', { bucket, objectPath: input, original: input });
-  return { bucket, objectPath: input };
+  console.log('[resolveBucketAndPath] Using default bucket:', { bucket, objectPath: cleanInput, original: input });
+  return { bucket, objectPath: cleanInput };
 };
 
 // Legacy helper for backward compatibility (used by other parts of the app)
