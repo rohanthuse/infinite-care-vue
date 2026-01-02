@@ -135,3 +135,6 @@ verify_jwt = false
 
 [functions.sync-care-plan-data]
 verify_jwt = false
+
+[functions.renew-subscription]
+verify_jwt = false

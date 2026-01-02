@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-system-session-token',
 };
 
 interface RenewalRequest {
@@ -15,7 +15,10 @@ interface RenewalRequest {
 }
 
 serve(async (req) => {
+  console.log('[renew-subscription] Request received:', req.method);
+  
   if (req.method === 'OPTIONS') {
+    console.log('[renew-subscription] Handling CORS preflight');
     return new Response('ok', { headers: corsHeaders });
   }
 
