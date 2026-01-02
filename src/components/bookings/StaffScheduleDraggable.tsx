@@ -95,91 +95,90 @@ export function StaffScheduleDraggable({
                block.booking.unavailability_request.status === 'approved');
             
             return (
-              <Draggable 
-                key={`staff-${block.booking.id}-${idx}`} 
-                draggableId={`staff-${block.booking.id}-${idx}`} 
-                index={idx}
-                isDragDisabled={
-                  block.booking.status === 'training' || 
-                  block.booking.status === 'meeting'
-                }
-              >
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className={`
-                      absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-grab active:cursor-grabbing transition-all
-                      border border-gray-300 dark:border-gray-600 rounded-sm
-                      ${needsReassignment ? 'bg-amber-100 border-amber-500' : colorClass}
-                      ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
-                      ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
-                      ${snapshot.isDragging ? 'shadow-xl opacity-95 rotate-2 scale-105 ring-2 ring-primary' : ''}
-                      ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
-                    `}
-                    style={{ 
-                      left: `${block.leftPosition + 1}px`,
-                      width: `${Math.max(block.width - 2, 18)}px`,
-                      height: '62px',
-                      marginTop: '1px',
-                      zIndex: snapshot.isDragging ? 1000 : (isSelected ? 2 : 1),
-                      ...provided.draggableProps.style
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!snapshot.isDragging && onViewBooking) {
-                        onViewBooking(block.booking);
-                      }
-                    }}
-                  >
-                    {needsReassignment && (
-                      <div className="absolute top-0 right-0 bg-amber-500 text-white px-1.5 py-0.5 text-[9px] font-bold rounded-bl flex items-center gap-0.5 z-20">
-                        <AlertTriangle className="h-2.5 w-2.5" />
-                        Reassign
-                      </div>
-                    )}
-                    {onBookingSelect && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
-                      <div 
-                        className="absolute top-1 left-1 z-10 pointer-events-auto"
+              <Tooltip key={`staff-${block.booking.id}-${idx}`}>
+                <Draggable 
+                  draggableId={`staff-${block.booking.id}-${idx}`} 
+                  index={idx}
+                  isDragDisabled={
+                    block.booking.status === 'training' || 
+                    block.booking.status === 'meeting'
+                  }
+                >
+                  {(provided, snapshot) => (
+                    <TooltipTrigger asChild>
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`
+                          absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-grab active:cursor-grabbing transition-all
+                          border border-gray-300 dark:border-gray-600 rounded-sm
+                          ${needsReassignment ? 'bg-amber-100 border-amber-500' : colorClass}
+                          ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
+                          ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
+                          ${snapshot.isDragging ? 'shadow-xl opacity-95 rotate-2 scale-105 ring-2 ring-primary' : ''}
+                          ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
+                        `}
+                        style={{ 
+                          left: `${block.leftPosition + 1}px`,
+                          width: `${Math.max(block.width - 2, 18)}px`,
+                          height: '62px',
+                          marginTop: '1px',
+                          zIndex: snapshot.isDragging ? 1000 : (isSelected ? 2 : 1),
+                          ...provided.draggableProps.style
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onBookingSelect(block.booking, !isSelected);
+                          if (!snapshot.isDragging && onViewBooking) {
+                            onViewBooking(block.booking);
+                          }
                         }}
                       >
-                        <Checkbox
-                          checked={isSelected}
-                          className="h-4 w-4 bg-background border-2"
-                        />
-                      </div>
-                    )}
+                        {needsReassignment && (
+                          <div className="absolute top-0 right-0 bg-amber-500 text-white px-1.5 py-0.5 text-[9px] font-bold rounded-bl flex items-center gap-0.5 z-20">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            Reassign
+                          </div>
+                        )}
+                        {onBookingSelect && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
+                          <div 
+                            className="absolute top-1 left-1 z-10 pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onBookingSelect(block.booking, !isSelected);
+                            }}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              className="h-4 w-4 bg-background border-2"
+                            />
+                          </div>
+                        )}
 
-                    {block.booking.status === 'training' && (
-                      <div className="absolute top-1 left-1 z-10 pointer-events-none">
-                        <GraduationCap className="h-3 w-3 text-amber-700" />
-                      </div>
-                    )}
+                        {block.booking.status === 'training' && (
+                          <div className="absolute top-1 left-1 z-10 pointer-events-none">
+                            <GraduationCap className="h-3 w-3 text-amber-700" />
+                          </div>
+                        )}
 
-                    {block.booking.status === 'meeting' && (
-                      <div className="absolute top-1 left-1 z-10 pointer-events-none">
-                        <CalendarCheck className="h-3 w-3 text-indigo-700" />
-                      </div>
-                    )}
+                        {block.booking.status === 'meeting' && (
+                          <div className="absolute top-1 left-1 z-10 pointer-events-none">
+                            <CalendarCheck className="h-3 w-3 text-indigo-700" />
+                          </div>
+                        )}
 
-                    {block.booking.notes && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
-                      <div 
-                        className="absolute top-1 right-1 z-10 pointer-events-none"
-                        title="Has notes"
-                      >
-                        <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
-                          <StickyNote className="h-3 w-3" />
-                        </div>
-                      </div>
-                    )}
+                        {block.booking.notes && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
+                          <div 
+                            className="absolute top-1 right-1 z-10 pointer-events-none"
+                            title="Has notes"
+                          >
+                            <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                              <StickyNote className="h-3 w-3" />
+                            </div>
+                          </div>
+                        )}
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex flex-col items-center justify-center px-1 w-full pointer-events-none">
+                        <div className="flex flex-col items-center justify-center px-1 w-full">
                           <div className="font-semibold truncate w-full text-center">
                             {block.booking.clientName}
                           </div>
@@ -189,40 +188,40 @@ export function StaffScheduleDraggable({
                             {isSplitFirst && <span className="text-blue-600">→</span>}
                           </div>
                         </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
-                        <div className="text-xs space-y-1">
-                          {block.booking.status === 'training' && (
-                            <div className="flex items-center gap-1 font-semibold text-amber-700 mb-2">
-                              <GraduationCap className="h-3 w-3" />
-                              <span>Training Session</span>
-                            </div>
-                          )}
-                          
-                          {block.booking.status === 'meeting' && (
-                            <div className="flex items-center gap-1 font-semibold text-indigo-700 mb-2">
-                              <CalendarCheck className="h-3 w-3" />
-                              <span>External Meeting</span>
-                            </div>
-                          )}
-                          
-                          {renderTooltipContent({ type: block.status, booking: block.booking }, staffName)}
-                        </div>
-                        {block.booking.splitIndicator === 'continues-next-day' && (
-                          <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
-                            ⚠️ Continues to next day until {block.booking.originalEndTime}
-                          </div>
-                        )}
-                        {block.booking.splitIndicator === 'continued-from-previous-day' && (
-                          <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
-                            ⚠️ Started previous day at {block.booking.originalStartTime}
-                          </div>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
+                      </div>
+                    </TooltipTrigger>
+                  )}
+                </Draggable>
+                <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
+                  <div className="text-xs space-y-1">
+                    {block.booking.status === 'training' && (
+                      <div className="flex items-center gap-1 font-semibold text-amber-700 mb-2">
+                        <GraduationCap className="h-3 w-3" />
+                        <span>Training Session</span>
+                      </div>
+                    )}
+                    
+                    {block.booking.status === 'meeting' && (
+                      <div className="flex items-center gap-1 font-semibold text-indigo-700 mb-2">
+                        <CalendarCheck className="h-3 w-3" />
+                        <span>External Meeting</span>
+                      </div>
+                    )}
+                    
+                    {renderTooltipContent({ type: block.status, booking: block.booking }, staffName)}
                   </div>
-                )}
-              </Draggable>
+                  {block.booking.splitIndicator === 'continues-next-day' && (
+                    <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                      ⚠️ Continues to next day until {block.booking.originalEndTime}
+                    </div>
+                  )}
+                  {block.booking.splitIndicator === 'continued-from-previous-day' && (
+                    <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                      ⚠️ Started previous day at {block.booking.originalStartTime}
+                    </div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
           {provided.placeholder}
