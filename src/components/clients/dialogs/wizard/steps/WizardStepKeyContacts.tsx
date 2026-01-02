@@ -375,6 +375,7 @@ export function WizardStepKeyContacts({ form, clientId }: WizardStepKeyContactsP
                               type="button"
                               variant="ghost"
                               size="sm"
+                              className="service-view-button pointer-events-auto"
                               onClick={() => openViewModal(index)}
                               title="View"
                             >

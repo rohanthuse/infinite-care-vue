@@ -657,10 +657,20 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         <DialogContent 
           className="z-[70] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col"
           onPointerDownOutside={(e) => {
+            // Allow interactions with nested dialogs (e.g., View popups for Service Plans/Actions/Contacts)
+            const target = e.target as HTMLElement;
+            if (target?.closest('[data-radix-portal]') || target?.closest('[role="dialog"]')) {
+              return; // Don't prevent - this is a nested dialog
+            }
             // Prevent accidental closes when clicking outside
             e.preventDefault();
           }}
           onInteractOutside={(e) => {
+            // Allow interactions with nested dialogs (e.g., View popups for Service Plans/Actions/Contacts)
+            const target = e.target as HTMLElement;
+            if (target?.closest('[data-radix-portal]') || target?.closest('[role="dialog"]')) {
+              return; // Don't prevent - this is a nested dialog
+            }
             // Additional safety to prevent interaction issues
             e.preventDefault();
           }}
