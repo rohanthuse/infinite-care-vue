@@ -1090,6 +1090,7 @@ export function ViewBookingDialog({
           onOpenChange(false);
         }}
         isDeleting={deleteBooking.isPending || deleteMultipleBookings.isPending}
+        onForceDeleteSuccess={() => onOpenChange(false)}
       />
 
       {/* Approval Dialog for Cancellation/Reschedule */}
