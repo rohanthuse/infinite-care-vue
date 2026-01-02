@@ -34,12 +34,19 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   // Refs to prevent infinite loop and track initialization
   const isHydratingFromFormRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const justSavedRef = useRef(false); // Prevents rehydration race condition after save/delete
 
   // Watch form field for changes (draft loading after mount)
   const watchedServicePlans = useWatch({ control: form.control, name: "service_plans" });
 
   // Rehydrate savedPlans when form field changes (e.g., draft loads after mount)
   useEffect(() => {
+    // Skip if we just saved/deleted (prevents race condition overwriting local changes)
+    if (justSavedRef.current) {
+      console.log('[WizardStep11ServicePlans] Skipping rehydration - just saved/deleted');
+      return;
+    }
+    
     // Skip if currently showing the add/edit form (don't interrupt user)
     if (showForm) return;
     
@@ -151,9 +158,11 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   };
 
   const handleDelete = (index: number) => {
+    justSavedRef.current = true; // Block rehydration
     const updated = savedPlans.filter((_, i) => i !== index);
     setSavedPlans(updated);
     toast.success("Service plan removed");
+    setTimeout(() => { justSavedRef.current = false; }, 100); // Reset after effects complete
   };
 
   const validatePlan = (plan: ServicePlanData): boolean => {
