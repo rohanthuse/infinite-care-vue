@@ -619,7 +619,7 @@ export function ClientScheduleCalendar({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-medium">{clientName}</p>
-            <Badge className={statusColor}>
+            <Badge variant="custom" className={statusColor}>
               {statusLabel}
             </Badge>
           </div>
@@ -941,7 +941,7 @@ export function ClientScheduleCalendar({
                             <TooltipContent className="bg-popover text-popover-foreground border border-border shadow-lg p-3 rounded-md">
                               <div className="text-sm space-y-2">
                                 {requestColors.hasRequest && (
-                                  <div className={`font-bold ${requestColors.iconColor} mb-2 pb-2 border-b`}>
+                                  <div className="font-bold text-amber-700 dark:text-amber-400 mb-2 pb-2 border-b">
                                     ⚠️ {requestColors.tooltip}
                                   </div>
                                 )}
@@ -1111,9 +1111,9 @@ export function ClientScheduleCalendar({
                               </div>
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
                             {requestColors.hasRequest && (
-                              <div className={`font-bold ${requestColors.iconColor} mb-2 pb-2 border-b`}>
+                              <div className="font-bold text-amber-700 dark:text-amber-400 mb-2 pb-2 border-b">
                                 ⚠️ {requestColors.tooltip}
                               </div>
                             )}

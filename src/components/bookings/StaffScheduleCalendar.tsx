@@ -791,7 +791,7 @@ export function StaffScheduleCalendar({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-medium">{staffName}</p>
-            <Badge className={statusColor}>
+            <Badge variant="custom" className={statusColor}>
               {statusLabel}
             </Badge>
           </div>
