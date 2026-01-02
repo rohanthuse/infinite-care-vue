@@ -195,14 +195,14 @@ export function StaffScheduleDraggable({
                 <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
                   <div className="text-xs space-y-1">
                     {block.booking.status === 'training' && (
-                      <div className="flex items-center gap-1 font-semibold text-amber-700 mb-2">
+                      <div className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 mb-2">
                         <GraduationCap className="h-3 w-3" />
                         <span>Training Session</span>
                       </div>
                     )}
                     
                     {block.booking.status === 'meeting' && (
-                      <div className="flex items-center gap-1 font-semibold text-indigo-700 mb-2">
+                      <div className="flex items-center gap-1 font-semibold text-indigo-700 dark:text-indigo-400 mb-2">
                         <CalendarCheck className="h-3 w-3" />
                         <span>External Meeting</span>
                       </div>

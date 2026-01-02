@@ -195,7 +195,7 @@ export function ClientScheduleDraggable({
                 <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
                   <div className="text-xs space-y-1">
                     {requestColors.hasRequest && (
-                      <div className={`font-bold ${requestColors.iconColor} mb-2 pb-2 border-b`}>
+                      <div className="font-bold text-amber-700 dark:text-amber-400 mb-2 pb-2 border-b">
                         ⚠️ {requestColors.tooltip}
                       </div>
                     )}
