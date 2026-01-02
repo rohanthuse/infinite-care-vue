@@ -50,12 +50,20 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
   // Ref to prevent infinite loop between form sync effects
   const isHydratingFromFormRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  // Ref to prevent rehydration immediately after local save/delete/toggle
+  const justSavedRef = useRef(false);
 
   // Watch form field for changes (draft loading after mount)
   const watchedServiceActions = useWatch({ control: form.control, name: "service_actions" });
 
   // Rehydrate savedActions when form field changes (e.g., draft loads after mount)
   useEffect(() => {
+    // Skip if we just saved/deleted/toggled (prevents race condition overwriting local changes)
+    if (justSavedRef.current) {
+      console.log('[WizardStep12ServiceActions] Skipping rehydration - just saved');
+      return;
+    }
+    
     // Skip if currently showing the add/edit form (don't interrupt user)
     if (showForm) return;
     
@@ -129,6 +137,9 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
         : getUserDisplayName(currentUser),
     };
 
+    // Set flag BEFORE updating state to prevent rehydration effect from running
+    justSavedRef.current = true;
+
     if (editingIndex !== null) {
       // Update existing action
       const updated = [...savedActions];
@@ -143,6 +154,11 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
     form.setValue("temp_service_action", null);
     setShowForm(false);
     setEditingIndex(null);
+    
+    // Reset flag after a short delay to allow effects to complete
+    setTimeout(() => {
+      justSavedRef.current = false;
+    }, 100);
   };
 
   const handleCancelForm = () => {
@@ -159,17 +175,21 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
   };
 
   const handleDelete = (index: number) => {
+    justSavedRef.current = true;
     const updated = savedActions.filter((_, i) => i !== index);
     setSavedActions(updated);
+    setTimeout(() => { justSavedRef.current = false; }, 100);
   };
 
   const handleToggleStatus = (index: number) => {
+    justSavedRef.current = true;
     const updated = [...savedActions];
     updated[index] = {
       ...updated[index],
       status: updated[index].status === 'active' ? 'inactive' : 'active',
     };
     setSavedActions(updated);
+    setTimeout(() => { justSavedRef.current = false; }, 100);
   };
 
   return (
