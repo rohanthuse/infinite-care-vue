@@ -30,6 +30,7 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
+  const [formKey, setFormKey] = useState(0); // Key to force form re-render on "Save & Add Another"
 
   // Refs to prevent infinite loop and track initialization
   const isHydratingFromFormRef = useRef(false);
@@ -196,10 +197,13 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
   };
 
   const handleSave = () => {
+    justSavedRef.current = true; // Block rehydration
+    
     const allPlans = form.getValues("service_plans") || [];
     const planData = allPlans[currentPlanIndex];
     
     if (!validatePlan(planData)) {
+      justSavedRef.current = false;
       return;
     }
 
@@ -229,13 +233,18 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
 
     setShowForm(false);
     setEditingIndex(null);
+    
+    setTimeout(() => { justSavedRef.current = false; }, 100);
   };
 
   const handleSaveAndAddAnother = () => {
+    justSavedRef.current = true; // Block rehydration
+    
     const allPlans = form.getValues("service_plans") || [];
     const planData = allPlans[currentPlanIndex];
     
     if (!validatePlan(planData)) {
+      justSavedRef.current = false;
       return;
     }
 
@@ -249,20 +258,28 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
       is_saved: true,
     };
 
-    // Add new plan
+    // Add new plan to saved state
     const updatedPlans = [...savedPlans, enrichedPlan];
     setSavedPlans(updatedPlans);
     toast.success("Service plan saved");
 
-    // Immediately open new form
+    // Create fresh plan for the next entry
     const newPlan = getDefaultServicePlan(
       accountingSettings?.authority_category || '',
       accountingSettings?.authority_category || ''
     );
-    setCurrentPlanIndex(updatedPlans.length);
+    
+    // Update form with saved plans + new empty plan
+    const newIndex = updatedPlans.length;
     form.setValue("service_plans", [...updatedPlans, newPlan]);
+    setCurrentPlanIndex(newIndex);
     setEditingIndex(null);
-    // Form stays open for the next plan
+    
+    // Force form component to remount with fresh state
+    setFormKey(prev => prev + 1);
+    
+    // Reset protection flag after React effects complete
+    setTimeout(() => { justSavedRef.current = false; }, 100);
   };
 
   const handleCancel = () => {
@@ -324,6 +341,7 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
           {showForm && (
             <div className="max-h-[60vh] overflow-y-auto pr-2">
               <ServicePlanForm
+                key={`service-plan-form-${formKey}`}
                 form={form}
                 fieldPrefix={`service_plans.${currentPlanIndex}`}
                 services={services}
