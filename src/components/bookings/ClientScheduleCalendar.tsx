@@ -290,7 +290,7 @@ export function ClientScheduleCalendar({
         return {
           id: client.id,
           name: client.name,
-          address: 'Address not available',
+          address: client.address || 'Address not available',
           weekBookings,
           totalWeekHours,
           contractedHours: 40
@@ -524,7 +524,7 @@ export function ClientScheduleCalendar({
         return {
           id: client.id,
           name: client.name,
-          address: 'Address not available',
+          address: client.address || 'Address not available',
           carePackage: 'Standard Care',
           schedule,
           bookingBlocks,

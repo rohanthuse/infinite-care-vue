@@ -1,5 +1,6 @@
 
 import { Client, Carer, Booking } from "../BookingTimeGrid";
+import { getClientDisplayAddress } from "@/utils/addressUtils";
 
 // Helper for consistent name and initials with fallback
 export function safeName(first: any, last: any, fallback = "Unknown") {
@@ -23,12 +24,20 @@ export function mapDBClientToClient(db: any): Client {
   const name = safeName(firstName, lastName);
   const initials = db.avatar_initials || safeInitials(firstName, lastName);
   
+  // Get address using priority fallback: structured addresses > legacy address
+  const address = getClientDisplayAddress(
+    null, // No booking-specific location
+    db.address, // Legacy address field
+    db.client_addresses // Structured addresses from join
+  );
+  
   const mappedClient = {
     id: db.id,
     name,
     initials,
     bookings: [],
     bookingCount: 0,
+    address: address || undefined,
   };
   
   console.log("[mapDBClientToClient] Mapped to:", mappedClient);
