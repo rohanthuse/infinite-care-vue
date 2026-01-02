@@ -44,6 +44,7 @@ interface DeleteBookingConfirmationDialogProps {
   onDeleteSingle: () => Promise<void>;
   onDeleteMultiple: (bookingIds: string[], bookings: any[]) => Promise<void>;
   isDeleting: boolean;
+  onForceDeleteSuccess?: () => void;
 }
 
 interface ClientBooking {
@@ -64,6 +65,7 @@ export function DeleteBookingConfirmationDialog({
   onDeleteSingle,
   onDeleteMultiple,
   isDeleting,
+  onForceDeleteSuccess,
 }: DeleteBookingConfirmationDialogProps) {
   const [deleteMode, setDeleteMode] = useState<'single' | 'all-client'>('single');
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -199,6 +201,7 @@ export function DeleteBookingConfirmationDialog({
           staffId: booking.carerId,
         });
         onOpenChange(false);
+        onForceDeleteSuccess?.();
       } else {
         await onDeleteSingle();
       }
