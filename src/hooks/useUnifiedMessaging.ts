@@ -14,6 +14,9 @@ export interface UnifiedContact {
   unread: number;
   email?: string;
   role?: string;
+  canMessage?: boolean; // false if no auth account
+  clientDbId?: string; // client's database ID for lookup
+  hasAuthAccount?: boolean;
 }
 
 export interface UnifiedMessage {
@@ -103,38 +106,41 @@ export const useAvailableContacts = () => {
             .eq('status', 'active');
 
           if (clients) {
-            // For each client, find their auth user ID
+            // For each client, find their auth user ID (if they have one)
             for (const client of clients) {
-              if (!client.email) continue;
-              
-              // Find auth user ID by email - clients should have auth accounts
-              const { data: authUsers } = await supabase
-                .from('user_roles')
-                .select(`
-                  user_id,
-                  profiles!inner (
-                    id,
-                    email
-                  )
-                `)
-                .eq('role', 'client')
-                .eq('profiles.email', client.email);
-              
-              const authUser = authUsers?.[0];
-              if (!authUser) {
-                console.warn(`[useAvailableContacts] Client ${client.email} has no auth user - skipping`);
-                continue; // Skip clients without auth accounts
+              // Find auth user ID by email - clients may or may not have auth accounts
+              let authUser = null;
+              if (client.email) {
+                const { data: authUsers } = await supabase
+                  .from('user_roles')
+                  .select(`
+                    user_id,
+                    profiles!inner (
+                      id,
+                      email
+                    )
+                  `)
+                  .eq('role', 'client')
+                  .eq('profiles.email', client.email);
+                
+                authUser = authUsers?.[0];
               }
               
+              const hasAuthAccount = !!authUser;
+              
+              // Include ALL clients - use auth ID if available, else use client DB ID
               contacts.push({
-                id: authUser.user_id, // Use auth user ID instead of client DB ID
+                id: authUser?.user_id || client.id, // Use auth ID if exists, else DB ID
+                clientDbId: client.id, // Always store the DB ID for lookup
                 name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client',
                 avatar: `${client.first_name?.charAt(0) || 'C'}${client.last_name?.charAt(0) || 'L'}`,
                 type: 'client' as const,
                 status: 'online' as const,
                 unread: 0,
                 email: client.email,
-                role: 'client'
+                role: 'client',
+                canMessage: hasAuthAccount, // Can only deliver messages if they have auth
+                hasAuthAccount
               });
             }
           }
