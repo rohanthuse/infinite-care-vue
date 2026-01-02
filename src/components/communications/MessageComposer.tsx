@@ -302,12 +302,18 @@ export const MessageComposer = ({
         // Deduplicate recipients
         const uniqueRecipients = [...new Set(recipients)];
         
-        // Filter to only valid recipients for messaging (those with auth accounts)
+        // For Admin Eyes Only messages, allow ALL recipients (internal notes)
+        // For standard messages, require auth accounts for delivery
         const messageableRecipients = uniqueRecipients.filter(id => {
           const contact = availableContacts.find(c => {
             const recipientContact = c as ClientMessageRecipient;
             return (recipientContact.auth_user_id && recipientContact.auth_user_id === id) || c.id === id;
           });
+          // Admin-only messages can be saved against any client (internal notes)
+          if (adminEyesOnly) {
+            return true;
+          }
+          // Standard messages require auth account for delivery
           return contact?.canMessage !== false;
         });
         
@@ -318,20 +324,31 @@ export const MessageComposer = ({
           return;
         }
         
-        // Show warning if some recipients were skipped (no authentication)
-        if (skippedCount > 0) {
+        // Show warning only for non-admin messages when recipients are skipped
+        if (skippedCount > 0 && !adminEyesOnly) {
           toast.warning(`${skippedCount} recipient(s) skipped (account setup required). Sending to ${messageableRecipients.length} valid recipient(s).`);
         }
+        
+        // Check if any recipients lack auth accounts (for informational toast later)
+        const hasUnregisteredRecipients = uniqueRecipients.some(id => {
+          const contact = availableContacts.find(c => {
+            const recipientContact = c as ClientMessageRecipient;
+            return (recipientContact.auth_user_id && recipientContact.auth_user_id === id) || c.id === id;
+          }) as any;
+          return contact?.canMessage === false || contact?.hasAuthAccount === false;
+        });
         
         const recipientData = messageableRecipients.map(recipientId => {
           const contact = availableContacts.find(c => {
             const recipientContact = c as ClientMessageRecipient;
             return (recipientContact.auth_user_id && recipientContact.auth_user_id === recipientId) || c.id === recipientId;
-          });
+          }) as any;
           return {
             id: recipientId,
             name: contact?.name || 'Unknown',
-            type: contact?.type || 'branch_admin'
+            type: contact?.type || 'branch_admin',
+            clientDbId: contact?.clientDbId || null,
+            hasAuthAccount: contact?.hasAuthAccount ?? true
           };
         });
 
@@ -354,6 +371,11 @@ export const MessageComposer = ({
             .map(([method, _]) => method),
           otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined
         });
+        
+        // Show informational toast for admin-only messages to unregistered clients
+        if (adminEyesOnly && hasUnregisteredRecipients) {
+          toast.info("Admin-only message saved internally – not delivered to client portal");
+        }
       }
       
       // Reset form
