@@ -724,7 +724,22 @@ export function ViewBookingDialog({
 
           {/* Client Information */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <User className="h-4 w-4" />
+              Client
+            </div>
+            <div className="pl-6">
+              <span className="text-sm font-medium text-foreground">
+                {booking.clientName || 'Unknown Client'}
+              </span>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Assigned Staff Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <User className="h-4 w-4" />
               Assigned Staff
             </div>
