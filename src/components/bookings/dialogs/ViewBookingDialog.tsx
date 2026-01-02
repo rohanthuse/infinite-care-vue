@@ -45,7 +45,7 @@ export function ViewBookingDialog({
   const deleteBooking = useDeleteBooking(branchId);
   const deleteMultipleBookings = useDeleteMultipleBookings(branchId);
   const { data: userRole } = useUserRole();
-  const [relatedBookings, setRelatedBookings] = React.useState<any[]>([]);
+  // relatedBookings state removed - services now handled via booking_services junction table
   const [assignedStaff, setAssignedStaff] = React.useState<Array<{
     id: string;
     name: string;
@@ -307,37 +307,7 @@ export function ViewBookingDialog({
           setAssignedStaff(uniqueStaff);
         }
         
-        // Fetch related bookings (different services for same staff in same batch)
-        // This is for the "Additional Services" section
-        if (booking?.created_at) {
-          const createdAt = new Date(booking.created_at);
-          const startWindow = new Date(createdAt.getTime() - 2000);
-          const endWindow = new Date(createdAt.getTime() + 2000);
-          
-          const { data: relatedServices, error: servicesError } = await supabase
-            .from('bookings')
-            .select(`
-              id,
-              service_id,
-              start_time,
-              end_time,
-              services (
-                id,
-                title
-              )
-            `)
-            .eq('client_id', booking.clientId || booking.client_id)
-            .eq('staff_id', booking.carerId || booking.staff_id)
-            .gte('created_at', startWindow.toISOString())
-            .lte('created_at', endWindow.toISOString())
-            .neq('id', booking.id)
-            .neq('service_id', booking.service_id) // Different service
-            .order('start_time', { ascending: true });
-          
-          if (!servicesError && relatedServices) {
-            setRelatedBookings(relatedServices);
-          }
-        }
+        // Related bookings query removed - services now handled via booking_services junction table
       } catch (error) {
         console.error('[ViewBookingDialog] Error fetching related data:', error);
       }
@@ -1012,39 +982,6 @@ export function ViewBookingDialog({
                 </div>
               )}
               
-              {/* Related services from other bookings in same session */}
-              {relatedBookings.length > 0 && (
-                <>
-                  <div className="text-xs text-muted-foreground font-medium mt-2">
-                    Additional Services (Same Booking Session):
-                  </div>
-                  {relatedBookings.map((relatedBooking) => {
-                    const relatedService = services.find(s => s.id === relatedBooking.service_id);
-                    const relatedStart = parseISO(relatedBooking.start_time);
-                    const relatedEnd = parseISO(relatedBooking.end_time);
-                    const relatedStartTime = formatInTimeZone(relatedStart, getUserTimezone(), 'HH:mm');
-                    const relatedEndTime = formatInTimeZone(relatedEnd, getUserTimezone(), 'HH:mm');
-                    
-                    return (
-                      <div key={relatedBooking.id} className="p-2 bg-muted rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <span className="text-sm font-medium">
-                              {relatedService?.title || "Unknown Service"}
-                            </span>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {relatedStartTime} - {relatedEndTime}
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            Related
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
             </div>
           </div>
 
