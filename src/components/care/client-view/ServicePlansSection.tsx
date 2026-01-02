@@ -107,10 +107,12 @@ export function ServicePlansSection({ servicePlans }: ServicePlansSectionProps) 
                           type="button"
                           variant="ghost"
                           size="sm"
+                          className="service-view-button pointer-events-auto gap-1"
                           onClick={() => handleView(plan)}
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
+                          <span>View</span>
                         </Button>
                       </TableCell>
                     </TableRow>
