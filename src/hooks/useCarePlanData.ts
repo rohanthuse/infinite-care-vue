@@ -240,6 +240,12 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     .select('*')
     .eq('client_id', data.client_id);
 
+  // Fetch service actions from database for this care plan
+  const { data: dbServiceActions } = await supabase
+    .from('client_service_actions')
+    .select('*')
+    .eq('care_plan_id', data.id);
+
   // Helper function to normalize personal info from multiple sources
   const normalizePersonalInfo = (autoSaveData: Record<string, any>, clientData: any) => {
     const personalInfoFromAutoSave = autoSaveData.personal_info || {};
@@ -367,6 +373,65 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
   }));
   const mergedMedications = mergeWithDatabase(medicationsFromAutoSave, dbMedicationsTransformed, 'name');
 
+  // Extract service actions from auto_save_data (JSON-First)
+  const serviceActionsFromAutoSave = Array.isArray(autoSaveData.service_actions) 
+    ? autoSaveData.service_actions.map((action: any, index: number) => ({
+        id: action.id || `json-action-${index}`,
+        action_name: action.action_name || action.action || action.name || action.service_name || '',
+        action_type: action.action_type || 'new',
+        start_date: action.start_date || null,
+        end_date: action.end_date || null,
+        schedule_type: action.schedule_type || 'shift',
+        shift_times: action.shift_times || [],
+        start_time: action.start_time || '',
+        end_time: action.end_time || '',
+        selected_days: action.selected_days || [],
+        frequency: action.frequency || '',
+        status: action.status || 'active',
+        notes: action.notes || '',
+        has_instructions: action.has_instructions || false,
+        instructions: action.instructions || '',
+        required_written_outcome: action.required_written_outcome || false,
+        written_outcome: action.written_outcome || '',
+        is_service_specific: action.is_service_specific || false,
+        linked_service_id: action.linked_service_id || '',
+        linked_service_name: action.linked_service_name || '',
+        registered_on: action.registered_on,
+        registered_by: action.registered_by,
+        registered_by_name: action.registered_by_name || '',
+      })) 
+    : [];
+
+  // Transform DB service actions to match expected format
+  const dbServiceActionsTransformed = (dbServiceActions || []).map((action: any) => ({
+    id: action.id,
+    action_name: action.service_name || '',
+    action_type: action.service_category || 'new',
+    start_date: action.start_date || null,
+    end_date: action.end_date || null,
+    schedule_type: action.schedule_details?.includes('Shifts:') ? 'shift' : 'time_specific',
+    shift_times: [],
+    start_time: action.start_time || '',
+    end_time: action.end_time || '',
+    selected_days: [],
+    frequency: action.frequency || '',
+    status: action.progress_status || 'active',
+    notes: action.notes || '',
+    has_instructions: !!action.instructions,
+    instructions: action.instructions || action.schedule_details || '',
+    required_written_outcome: false,
+    written_outcome: '',
+    is_service_specific: false,
+    linked_service_id: '',
+    linked_service_name: '',
+    registered_on: action.created_at,
+    registered_by: action.created_by,
+    registered_by_name: '',
+  }));
+
+  // Merge service actions: JSON-First with unique DB records
+  const mergedServiceActions = mergeWithDatabase(serviceActionsFromAutoSave, dbServiceActionsTransformed, 'name');
+
   // Log data source analysis for debugging
   console.log('[fetchCarePlanData] Data source analysis:', {
     carePlanId,
@@ -382,8 +447,10 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     dbKeyContactsCount: dbKeyContacts?.length || 0,
     jsonKeyContactsCount: keyContactsFromAutoSave.length,
     mergedKeyContactsCount: mergedKeyContacts.length,
+    dbServiceActionsCount: dbServiceActions?.length || 0,
+    jsonServiceActionsCount: serviceActionsFromAutoSave.length,
+    mergedServiceActionsCount: mergedServiceActions.length,
     riskAssessmentsCount: extractComplexData('risk_assessments', []).length,
-    serviceActionsCount: extractComplexData('service_actions', []).length,
     servicePlansCount: extractComplexData('service_plans', []).length,
   });
 
@@ -446,7 +513,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       notes: assessment.notes || assessment.additional_notes || '',
       assessment_date: assessment.assessment_date ? new Date(assessment.assessment_date).toISOString().split('T')[0] : null,
     })),
-    service_actions: extractComplexData('service_actions', []).map((action: any) => ({
+    service_actions: mergedServiceActions.map((action: any) => ({
       ...action,
       id: action.id || crypto.randomUUID(),
       action_type: action.action_type || 'new',
