@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Send, Users, Clock, ArrowLeft, MessageCirclePlus } from 'lucide-react';
+import { MessageCircle, Send, Users, Clock, ArrowLeft, MessageCirclePlus, ShieldAlert } from 'lucide-react';
 import { useClientMessageThreads, useClientThreadMessages, useSendMessageToClient } from '@/hooks/useClientProfileMessaging';
 import { MessageComposer } from '@/components/communications/MessageComposer';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -199,11 +199,17 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
                             </span>
                           </div>
                           <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium text-sm">{message.senderName}</span>
                               <Badge variant="outline" className="text-xs">
                                 {message.senderType}
                               </Badge>
+                              {message.adminEyesOnly && (
+                                <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                  <ShieldAlert className="h-3 w-3 mr-1" />
+                                  Admin Only
+                                </Badge>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 {format(message.timestamp, 'MMM d, yyyy at h:mm a')}
                               </span>
@@ -314,8 +320,14 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="font-medium">{thread.subject}</h4>
+                        {thread.adminOnly && (
+                          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                            <ShieldAlert className="h-3 w-3 mr-1" />
+                            Admin Only
+                          </Badge>
+                        )}
                         {thread.unreadCount > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             {thread.unreadCount} new

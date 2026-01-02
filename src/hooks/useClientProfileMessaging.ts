@@ -19,6 +19,7 @@ export interface ClientMessageThread {
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  adminOnly?: boolean;
 }
 
 export interface ClientMessage {
@@ -31,6 +32,7 @@ export interface ClientMessage {
   timestamp: Date;
   hasAttachments: boolean;
   attachments?: any[];
+  adminEyesOnly?: boolean;
 }
 
 // Get message threads for a specific client
@@ -42,36 +44,75 @@ export const useClientMessageThreads = (clientId: string) => {
     queryFn: async (): Promise<ClientMessageThread[]> => {
       if (!clientId || !currentUser) return [];
 
-      // First get the client's auth_user_id
+      // Check if current user is an admin
+      const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'branch_admin';
+
+      // First get the client's auth_user_id and basic info
       const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('auth_user_id')
+        .select('auth_user_id, first_name, last_name, email')
         .eq('id', clientId)
         .single();
 
-      if (clientError || !client?.auth_user_id) {
-        console.error('Client not found or no auth_user_id:', clientError);
+      if (clientError) {
+        console.error('Client not found:', clientError);
         return [];
       }
 
-      // Get threads where this client is a participant
-      const { data: participantThreads, error: participantError } = await supabase
-        .from('message_participants')
-        .select('thread_id')
-        .eq('user_id', client.auth_user_id);
+      let threadIds: string[] = [];
 
-      if (participantError || !participantThreads?.length) {
+      // Strategy 1: Try auth_user_id if available
+      if (client?.auth_user_id) {
+        const { data: participantThreads } = await supabase
+          .from('message_participants')
+          .select('thread_id')
+          .eq('user_id', client.auth_user_id);
+
+        if (participantThreads?.length) {
+          threadIds = participantThreads.map(p => p.thread_id);
+        }
+      }
+
+      // Strategy 2: Also search by client name in participants (for messages sent via Communication module)
+      if (client?.first_name && client?.last_name) {
+        const clientName = `${client.first_name} ${client.last_name}`.trim();
+        const { data: nameParticipantThreads } = await supabase
+          .from('message_participants')
+          .select('thread_id')
+          .eq('user_type', 'client')
+          .ilike('user_name', `%${clientName}%`);
+
+        if (nameParticipantThreads?.length) {
+          const additionalThreadIds = nameParticipantThreads.map(p => p.thread_id);
+          threadIds = [...new Set([...threadIds, ...additionalThreadIds])];
+        }
+      }
+
+      // Strategy 3: Search by email in participants
+      if (client?.email) {
+        const { data: emailParticipantThreads } = await supabase
+          .from('message_participants')
+          .select('thread_id')
+          .eq('user_type', 'client')
+          .ilike('user_name', `%${client.email}%`);
+
+        if (emailParticipantThreads?.length) {
+          const additionalThreadIds = emailParticipantThreads.map(p => p.thread_id);
+          threadIds = [...new Set([...threadIds, ...additionalThreadIds])];
+        }
+      }
+
+      if (threadIds.length === 0) {
         return [];
       }
 
-      const threadIds = participantThreads.map(p => p.thread_id);
-
-      // Get thread details
+      // Get thread details including admin_only flag
       const { data: threads, error: threadsError } = await supabase
         .from('message_threads')
         .select(`
           id,
           subject,
+          admin_only,
           created_at,
           updated_at,
           last_message_at,
@@ -91,9 +132,14 @@ export const useClientMessageThreads = (clientId: string) => {
 
       if (!threads) return [];
 
+      // Filter threads based on admin_only visibility
+      const visibleThreads = isAdmin 
+        ? threads 
+        : threads.filter(t => !t.admin_only);
+
       // Process threads
       const processedThreads = await Promise.all(
-        threads.map(async (thread) => {
+        visibleThreads.map(async (thread) => {
           // Get latest message
           const { data: latestMessage } = await supabase
             .from('messages')
@@ -136,10 +182,16 @@ export const useClientMessageThreads = (clientId: string) => {
             senderName = sender?.name || 'Unknown';
           }
 
+          // Filter out the client from participant list for display
+          const clientUserId = client?.auth_user_id;
+          const displayParticipants = clientUserId 
+            ? participants.filter(p => p.id !== clientUserId)
+            : participants.filter(p => p.type !== 'client');
+
           return {
             id: thread.id,
             subject: thread.subject,
-            participants: participants.filter(p => p.id !== client.auth_user_id), // Exclude the client from participant list for display
+            participants: displayParticipants,
             lastMessage: latestMessage ? {
               id: latestMessage.id,
               content: latestMessage.content,
@@ -148,7 +200,8 @@ export const useClientMessageThreads = (clientId: string) => {
             } : undefined,
             unreadCount,
             createdAt: thread.created_at,
-            updatedAt: thread.updated_at
+            updatedAt: thread.updated_at,
+            adminOnly: thread.admin_only
           };
         })
       );
@@ -169,6 +222,9 @@ export const useClientThreadMessages = (threadId: string) => {
     queryFn: async (): Promise<ClientMessage[]> => {
       if (!threadId || !currentUser) return [];
 
+      // Check if current user is an admin
+      const isAdmin = currentUser.role === 'super_admin' || currentUser.role === 'branch_admin';
+
       const { data: messages, error } = await supabase
         .from('messages')
         .select(`
@@ -179,6 +235,7 @@ export const useClientThreadMessages = (threadId: string) => {
           content,
           has_attachments,
           attachments,
+          admin_eyes_only,
           created_at
         `)
         .eq('thread_id', threadId)
@@ -191,13 +248,18 @@ export const useClientThreadMessages = (threadId: string) => {
 
       if (!messages) return [];
 
+      // Filter messages - hide admin_eyes_only from non-admins
+      const visibleMessages = isAdmin 
+        ? messages 
+        : messages.filter(m => !m.admin_eyes_only);
+
       // Get participant names
       const { data: participants } = await supabase
         .from('message_participants')
         .select('user_id, user_name')
         .eq('thread_id', threadId);
 
-      return messages.map(message => {
+      return visibleMessages.map(message => {
         const participant = participants?.find(p => p.user_id === message.sender_id);
         
         return {
@@ -209,7 +271,8 @@ export const useClientThreadMessages = (threadId: string) => {
           content: message.content,
           timestamp: new Date(message.created_at),
           hasAttachments: message.has_attachments,
-          attachments: (message.attachments as any[]) || []
+          attachments: (message.attachments as any[]) || [],
+          adminEyesOnly: message.admin_eyes_only
         };
       });
     },
