@@ -288,6 +288,7 @@ export const ClientKeyContactsTab: React.FC<ClientKeyContactsTabProps> = ({ clie
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="service-view-button pointer-events-auto"
                           onClick={() => handleView(contact)}
                         >
                           <Eye className="h-4 w-4" />
