@@ -37,6 +37,7 @@ import { useSearchParams } from "react-router-dom";
 import { parseISO, isValid } from "date-fns";
 import { useBookingDebug } from "./hooks/useBookingDebug";
 import { useQuery } from "@tanstack/react-query";
+import { BookingStatusLegend } from "./BookingStatusLegend";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -438,6 +439,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             )}
           </TabsTrigger>
         </TabsList>
+        
+        {/* Booking Status Color Legend */}
+        <BookingStatusLegend />
         
         <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
           <DateNavigation 
