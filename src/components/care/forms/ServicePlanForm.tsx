@@ -1,7 +1,6 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Calendar, Check, X, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { Check, X, Plus } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -12,12 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -27,11 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { DaySelector } from "@/components/care/forms/DaySelector";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
 import { FREQUENCY_OPTIONS, ServicePlanData } from "@/types/servicePlan";
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 
 interface ServicePlanFormProps {
   form: UseFormReturn<any>;
@@ -80,29 +73,6 @@ export function ServicePlanForm({
     form.setValue(`${fieldPrefix}.selected_days`, days);
   };
 
-  const handleDateInputChange = (field: any, dateString: string) => {
-    if (dateString) {
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        field.onChange(date);
-      }
-    } else {
-      field.onChange(null);
-    }
-  };
-
-  const formatDateForInput = (value: Date | string | null | undefined): string => {
-    if (!value) return '';
-    try {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        return format(date, "yyyy-MM-dd");
-      }
-    } catch {
-      return '';
-    }
-    return '';
-  };
 
   return (
     <Card className="border-l-4 border-l-primary">
@@ -141,29 +111,13 @@ export function ServicePlanForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Start Date *</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={formatDateForInput(field.value)}
-                      onChange={(e) => handleDateInputChange(field, e.target.value)}
-                      className="flex-1"
+                  <FormControl>
+                    <EnhancedDatePicker
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date) => field.onChange(date)}
+                      placeholder="DD/MM/YYYY"
                     />
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" type="button">
-                          <Calendar className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -172,35 +126,30 @@ export function ServicePlanForm({
             <FormField
               control={form.control}
               name={`${fieldPrefix}.end_date`}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date *</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={formatDateForInput(field.value)}
-                      onChange={(e) => handleDateInputChange(field, e.target.value)}
-                      className="flex-1"
-                    />
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" type="button">
-                          <Calendar className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const startDate = form.watch(`${fieldPrefix}.start_date`);
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>End Date *</FormLabel>
+                    <FormControl>
+                      <EnhancedDatePicker
+                        value={field.value ? new Date(field.value) : undefined}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="DD/MM/YYYY"
+                        disabled={(date) => {
+                          if (startDate) {
+                            const start = new Date(startDate);
+                            start.setHours(0, 0, 0, 0);
+                            return date < start;
+                          }
+                          return false;
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
           </div>
         </div>
