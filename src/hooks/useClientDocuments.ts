@@ -3,13 +3,52 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Helper to detect storage bucket from file path
+// Known storage buckets in the application
+const KNOWN_BUCKETS = ['documents', 'client-documents', 'agreement-files', 'staff-documents'];
+
+/**
+ * Resolves bucket and object path from various input formats:
+ * 1. Full Supabase URL: https://xxx.supabase.co/storage/v1/object/public/documents/path/file.pdf
+ * 2. Bucket-prefixed path: documents/branchId/file.pdf
+ * 3. Plain object key: branchId/file.pdf (assumes 'documents' bucket)
+ */
+const resolveBucketAndPath = (input: string): { bucket: string; objectPath: string } => {
+  if (!input) {
+    console.error('[resolveBucketAndPath] Empty input provided');
+    return { bucket: 'documents', objectPath: '' };
+  }
+
+  // Case 1: Full Supabase storage URL
+  // Example: https://xxx.supabase.co/storage/v1/object/public/documents/branchId/file.pdf
+  const urlPattern = /storage\/v1\/object\/(?:public|sign)\/([^\/]+)\/(.+)/;
+  const urlMatch = input.match(urlPattern);
+  if (urlMatch) {
+    const [, bucket, objectPath] = urlMatch;
+    console.log('[resolveBucketAndPath] Extracted from URL:', { bucket, objectPath, original: input });
+    return { bucket, objectPath: decodeURIComponent(objectPath) };
+  }
+
+  // Case 2: Check if path starts with a known bucket prefix
+  for (const bucket of KNOWN_BUCKETS) {
+    if (input.startsWith(`${bucket}/`)) {
+      const objectPath = input.slice(bucket.length + 1); // Remove bucket prefix
+      console.log('[resolveBucketAndPath] Stripped bucket prefix:', { bucket, objectPath, original: input });
+      return { bucket, objectPath };
+    }
+  }
+
+  // Case 3: Plain object key - determine bucket from path structure
+  // client-documents bucket uses paths like: clientId/filename
+  // documents bucket (wizard uploads) uses paths like: branchId/clientId/filename or branchId/filename
+  const bucket = 'documents'; // Default bucket for care plan documents
+  console.log('[resolveBucketAndPath] Using default bucket:', { bucket, objectPath: input, original: input });
+  return { bucket, objectPath: input };
+};
+
+// Legacy helper for backward compatibility (used by other parts of the app)
 const getStorageBucket = (filePath: string): string => {
-  if (filePath.startsWith('client-documents/')) return 'client-documents';
-  if (filePath.startsWith('agreement-files/')) return 'agreement-files';
-  if (filePath.startsWith('staff-documents/')) return 'staff-documents';
-  // Default to 'documents' bucket (used by wizard/unified document uploads)
-  return 'documents';
+  const { bucket } = resolveBucketAndPath(filePath);
+  return bucket;
 };
 
 export interface ClientDocument {
@@ -301,7 +340,15 @@ export const useDeleteClientDocument = () => {
 export const useViewClientDocument = () => {
   return useMutation({
     mutationFn: async ({ filePath }: { filePath: string }) => {
-      console.log('Viewing client document:', filePath);
+      console.log('[useViewClientDocument] Input filePath:', filePath);
+
+      // Resolve bucket and clean object path from various input formats
+      const { bucket, objectPath } = resolveBucketAndPath(filePath);
+      console.log('[useViewClientDocument] Resolved:', { bucket, objectPath });
+
+      if (!objectPath) {
+        throw new Error('Invalid document path provided');
+      }
 
       // Open a blank tab immediately to avoid popup blockers
       const newTab = window.open('about:blank', '_blank');
@@ -310,15 +357,11 @@ export const useViewClientDocument = () => {
         throw new Error('Could not open new tab. Please check your popup blocker settings.');
       }
 
-      // Detect correct bucket based on file path
-      const bucket = getStorageBucket(filePath);
-      console.log('Using storage bucket:', bucket, 'for path:', filePath);
-
       try {
         // First try to download as blob to avoid ERR_BLOCKED_BY_CLIENT
         const { data: fileData, error: downloadError } = await supabase.storage
           .from(bucket)
-          .download(filePath);
+          .download(objectPath);
 
         if (!downloadError && fileData) {
           // Create blob URL and navigate to it
@@ -332,18 +375,34 @@ export const useViewClientDocument = () => {
           
           return;
         }
+        
+        // Log the specific error for debugging
+        if (downloadError) {
+          console.warn('[useViewClientDocument] Blob download failed:', {
+            error: downloadError.message,
+            bucket,
+            objectPath,
+            originalInput: filePath
+          });
+        }
       } catch (blobError) {
-        console.warn('Blob download failed, falling back to signed URL:', blobError);
+        console.warn('[useViewClientDocument] Blob download exception:', blobError);
       }
 
       // Fallback to signed URL if blob download fails
       const { data, error } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+        .createSignedUrl(objectPath, 3600); // 1 hour expiry
 
       if (error) {
         newTab.close();
-        throw new Error(`Failed to create document URL: ${error.message}`);
+        console.error('[useViewClientDocument] Signed URL failed:', {
+          error: error.message,
+          bucket,
+          objectPath,
+          originalInput: filePath
+        });
+        throw new Error(`Failed to access document. The file may not exist or you may not have permission.`);
       }
 
       if (data?.signedUrl) {
@@ -354,7 +413,7 @@ export const useViewClientDocument = () => {
       }
     },
     onError: (error) => {
-      console.error('View error:', error);
+      console.error('[useViewClientDocument] Error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to view document');
     },
   });
@@ -364,19 +423,28 @@ export const useViewClientDocument = () => {
 export const useDownloadClientDocument = () => {
   return useMutation({
     mutationFn: async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
-      console.log('Downloading client document:', filePath);
+      console.log('[useDownloadClientDocument] Input:', { filePath, fileName });
 
-      // Detect correct bucket based on file path
-      const bucket = getStorageBucket(filePath);
-      console.log('Using storage bucket:', bucket, 'for path:', filePath);
+      // Resolve bucket and clean object path from various input formats
+      const { bucket, objectPath } = resolveBucketAndPath(filePath);
+      console.log('[useDownloadClientDocument] Resolved:', { bucket, objectPath });
+
+      if (!objectPath) {
+        throw new Error('Invalid document path provided');
+      }
 
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(filePath);
+        .download(objectPath);
 
       if (error) {
-        console.error('Download error:', error);
-        throw new Error(`Failed to download file: ${error.message}`);
+        console.error('[useDownloadClientDocument] Download failed:', {
+          error: error.message,
+          bucket,
+          objectPath,
+          originalInput: filePath
+        });
+        throw new Error(`Failed to download file. The file may not exist or you may not have permission.`);
       }
 
       // Create download link
@@ -393,7 +461,7 @@ export const useDownloadClientDocument = () => {
       toast.success('Download started');
     },
     onError: (error) => {
-      console.error('Download error:', error);
+      console.error('[useDownloadClientDocument] Error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to download document');
     },
   });

@@ -502,7 +502,9 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       name: doc.name || doc.document_name || doc.file_name,
       type: doc.type || doc.document_type,
       uploaded_date: doc.uploaded_date || doc.created_at,
-      file_path: doc.file_path || doc.url || doc.storage_path,
+      // Prefer storage_path over file_path, and file_path over url (url may be a full URL)
+      storage_path: doc.storage_path || doc.file_path || doc.url,
+      file_path: doc.storage_path || doc.file_path || doc.url,
       notes: doc.notes || doc.description || '',
     }))
   };
