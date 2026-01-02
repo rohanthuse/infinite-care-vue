@@ -90,25 +90,33 @@ export function DocumentsSection({ documents }: DocumentsSectionProps) {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className="document-action-button pointer-events-auto gap-1"
                       onClick={() => handleViewDocument(doc)}
                       disabled={viewDocumentMutation.isPending}
                     >
                       {viewDocumentMutation.isPending ? (
                         <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <>
+                          <Eye className="h-4 w-4" />
+                          <span>View</span>
+                        </>
                       )}
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className="document-action-button pointer-events-auto gap-1"
                       onClick={() => handleDownloadDocument(doc)}
                       disabled={downloadDocumentMutation.isPending}
                     >
                       {downloadDocumentMutation.isPending ? (
                         <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                       ) : (
-                        <Download className="h-4 w-4" />
+                        <>
+                          <Download className="h-4 w-4" />
+                          <span>Download</span>
+                        </>
                       )}
                     </Button>
                   </div>
