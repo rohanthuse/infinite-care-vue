@@ -79,6 +79,7 @@ export interface Client {
   initials: string;
   bookingCount: number;
   bookings?: Booking[];
+  address?: string;
 }
 
 export interface Carer {

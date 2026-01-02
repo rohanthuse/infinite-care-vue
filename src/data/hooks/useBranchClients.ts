@@ -35,7 +35,18 @@ const fetchBranchClients = async ({
 
     let query = supabase
         .from('clients')
-        .select('*', { count: 'exact' })
+        .select(`
+            *,
+            client_addresses (
+                address_line_1,
+                address_line_2,
+                city,
+                state_county,
+                postcode,
+                country,
+                is_default
+            )
+        `, { count: 'exact' })
         .eq('branch_id', branchId);
 
     if (searchTerm) {
