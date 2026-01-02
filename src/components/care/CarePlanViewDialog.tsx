@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -280,19 +281,39 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       is_saved: true,
     })),
     
-    // Equipment - Enhanced with detailed maintenance and supplier info
-    equipment: safeArray(carePlan.equipment?.length > 0 ? carePlan.equipment : autoSaveData.equipment).map((item: any) => ({
-      ...item,
-      equipment_name: item.equipment_name || item.name,
-      equipment_type: item.equipment_type || item.type,
-      quantity: item.quantity || 1,
-      location: item.location || '',
-      maintenance_required: item.maintenance_required || false,
-      maintenance_schedule: item.maintenance_schedule || '',
-      maintenance_notes: item.maintenance_notes || '',
-      supplier: item.supplier || '',
-      notes: item.notes || item.additional_notes || '',
-    })),
+    // Equipment - Handle both old array and new object structure
+    equipment: (() => {
+      const equipData = carePlan.equipment || autoSaveData.equipment;
+      
+      // If already in new object format with equipment_blocks
+      if (equipData && typeof equipData === 'object' && !Array.isArray(equipData) && equipData.equipment_blocks) {
+        return equipData;
+      }
+      
+      // If array format (old), convert to new structure
+      if (Array.isArray(equipData)) {
+        return {
+          equipment_blocks: equipData.map((item: any) => ({
+            ...item,
+            equipment_name: item.equipment_name || item.name,
+            equipment_type: item.equipment_type || item.type,
+            quantity: item.quantity || 1,
+            location: item.location || '',
+            maintenance_required: item.maintenance_required || false,
+            maintenance_schedule: item.maintenance_schedule || '',
+            maintenance_notes: item.maintenance_notes || '',
+            supplier: item.supplier || '',
+            notes: item.notes || item.additional_notes || '',
+          })),
+          moving_handling: {},
+          environment_checks: {},
+          home_repairs: {}
+        };
+      }
+      
+      // Default empty structure
+      return { equipment_blocks: [], moving_handling: {}, environment_checks: {}, home_repairs: {} };
+    })(),
     
     // Service Plans - Enhanced with all required fields
     service_plans: safeArray(carePlan.service_plans?.length > 0 ? carePlan.service_plans : autoSaveData.service_plans).map((plan: any) => ({
@@ -327,8 +348,8 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       ...safeObject(autoSaveData.consent),
     },
     
-    // Key Contacts
-    key_contacts: safeArray(autoSaveData.key_contacts || (carePlan as any).key_contacts),
+    // Key Contacts - Use merged data from CarePlanWithDetails
+    key_contacts: safeArray(carePlan.key_contacts || autoSaveData.key_contacts),
     
     // GP Information
     gp_info: {
@@ -398,8 +419,15 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     return colors[status as keyof typeof colors] || colors.draft;
   };
 
-  const handleEditToggle = () => {
+  const queryClient = useQueryClient();
+
+  const handleEditToggle = async () => {
     console.log('[CarePlanViewDialog] Opening edit wizard for care plan:', carePlanId);
+    
+    // Force refresh care plan data before editing to ensure latest data
+    await queryClient.invalidateQueries({ queryKey: ['care-plan', carePlanId] });
+    await queryClient.invalidateQueries({ queryKey: ['care-plan-draft', carePlanId] });
+    
     // Trigger wizard opening directly
     setIsOpeningWizard(true);
     
