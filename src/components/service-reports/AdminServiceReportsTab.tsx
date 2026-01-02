@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useClientServiceReports } from '@/hooks/useServiceReports';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { CreateServiceReportDialog } from './CreateServiceReportDialog';
 import { ViewServiceReportDialog } from './ViewServiceReportDialog';
-import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, Edit, Download, MessageSquare, List } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, Edit, Download, MessageSquare, List, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ExportServiceReportsDialog } from './ExportServiceReportsDialog';
 import { toast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface AdminServiceReportsTabProps {
   clientId: string;
@@ -60,6 +62,8 @@ export function AdminServiceReportsTab({
   });
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   if (isLoading) {
     return (
@@ -80,10 +84,35 @@ export function AdminServiceReportsTab({
     );
   }
 
+  // Filter reports based on search term
+  const filteredReports = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) return reports;
+    
+    const searchLower = debouncedSearchTerm.toLowerCase().trim();
+    
+    return reports.filter(report => {
+      // Filter by staff/carer name
+      const staffName = `${report.staff?.first_name || ''} ${report.staff?.last_name || ''}`.toLowerCase();
+      if (staffName.includes(searchLower)) return true;
+      
+      // Filter by service date (formatted)
+      const dateStr = format(new Date(report.service_date), 'MMMM d yyyy').toLowerCase();
+      if (dateStr.includes(searchLower)) return true;
+      
+      // Filter by services provided
+      const servicesStr = (report.services_provided || []).join(' ').toLowerCase();
+      if (servicesStr.includes(searchLower)) return true;
+      
+      return false;
+    });
+  }, [reports, debouncedSearchTerm]);
+
   // Get reports for current month
   const now = new Date();
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthReports = reports.filter(r => new Date(r.service_date) >= thisMonthStart);
+  const filteredThisMonthReports = useMemo(() => {
+    return filteredReports.filter(r => new Date(r.service_date) >= thisMonthStart);
+  }, [filteredReports, thisMonthStart]);
 
   const openViewDialog = (report: any) => {
     setViewReportDialog({
@@ -137,7 +166,7 @@ export function AdminServiceReportsTab({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">Service Reports Management</h3>
           <p className="text-sm text-muted-foreground">
@@ -153,23 +182,62 @@ export function AdminServiceReportsTab({
         </Button>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search by staff name, date, or service..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 w-full sm:max-w-md"
+        />
+        {searchTerm && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+            onClick={() => setSearchTerm('')}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all" className="flex items-center gap-2">
             <List className="h-4 w-4" />
-            All Reports ({reports.length})
+            All Reports ({filteredReports.length})
           </TabsTrigger>
           <TabsTrigger value="this-month" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            This Month ({thisMonthReports.length})
+            This Month ({filteredThisMonthReports.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {reports.length === 0 ? (
-            <EmptyState message="No service reports yet" />
+          {filteredReports.length === 0 ? (
+            debouncedSearchTerm ? (
+              <Card className="p-6">
+                <div className="text-center text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No reports found matching "{debouncedSearchTerm}"</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => setSearchTerm('')}
+                    className="mt-2"
+                  >
+                    Clear search
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <EmptyState message="No service reports yet" />
+            )
           ) : (
-            reports.map(report => (
+            filteredReports.map(report => (
               <ServiceReportCard 
                 key={report.id} 
                 report={report} 
@@ -183,10 +251,26 @@ export function AdminServiceReportsTab({
         </TabsContent>
 
         <TabsContent value="this-month" className="space-y-4">
-          {thisMonthReports.length === 0 ? (
-            <EmptyState message="No service reports this month" />
+          {filteredThisMonthReports.length === 0 ? (
+            debouncedSearchTerm ? (
+              <Card className="p-6">
+                <div className="text-center text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No reports found matching "{debouncedSearchTerm}"</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => setSearchTerm('')}
+                    className="mt-2"
+                  >
+                    Clear search
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <EmptyState message="No service reports this month" />
+            )
           ) : (
-            thisMonthReports.map(report => (
+            filteredThisMonthReports.map(report => (
               <ServiceReportCard 
                 key={report.id} 
                 report={report} 
