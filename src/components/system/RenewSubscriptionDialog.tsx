@@ -55,6 +55,13 @@ export const RenewSubscriptionDialog: React.FC<RenewSubscriptionDialogProps> = (
       const sessionToken = getSystemSessionToken();
       if (!sessionToken) throw new Error('No system session found');
 
+      console.log('[RenewSubscription] Invoking edge function with:', {
+        organization_id: tenant.id,
+        plan_id: form.plan_id,
+        duration_months: form.duration_months,
+        hasSessionToken: !!sessionToken,
+      });
+
       const { data, error } = await supabase.functions.invoke('renew-subscription', {
         body: { 
           session_token: sessionToken,
@@ -65,8 +72,16 @@ export const RenewSubscriptionDialog: React.FC<RenewSubscriptionDialogProps> = (
         }
       });
 
-      if (error) throw error;
-      if (!(data as any)?.success) throw new Error((data as any)?.error || 'Renewal failed');
+      console.log('[RenewSubscription] Response:', { data, error });
+
+      if (error) {
+        console.error('[RenewSubscription] Edge function error:', error);
+        throw new Error(error.message || 'Failed to connect to renewal service');
+      }
+      if (!(data as any)?.success) {
+        console.error('[RenewSubscription] Renewal failed:', data);
+        throw new Error((data as any)?.error || 'Renewal failed');
+      }
       return data;
     },
     onSuccess: () => {
@@ -77,6 +92,7 @@ export const RenewSubscriptionDialog: React.FC<RenewSubscriptionDialogProps> = (
       onOpenChange(false);
     },
     onError: (err: any) => {
+      console.error('[RenewSubscription] Mutation error:', err);
       toast.error(err?.message || 'Failed to renew subscription');
     }
   });

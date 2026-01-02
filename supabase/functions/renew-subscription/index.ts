@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-system-session-token',
 };
 
@@ -16,10 +17,13 @@ interface RenewalRequest {
 
 serve(async (req) => {
   console.log('[renew-subscription] Request received:', req.method);
+  console.log('[renew-subscription] Origin:', req.headers.get('origin'));
+  console.log('[renew-subscription] Access-Control-Request-Headers:', req.headers.get('access-control-request-headers'));
   
+  // Handle CORS preflight with proper 204 response
   if (req.method === 'OPTIONS') {
-    console.log('[renew-subscription] Handling CORS preflight');
-    return new Response('ok', { headers: corsHeaders });
+    console.log('[renew-subscription] Handling CORS preflight - returning 204');
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
@@ -33,15 +37,38 @@ serve(async (req) => {
     console.log('[renew-subscription] Processing renewal:', { organization_id, duration_months });
 
     // Verify system session token
+    console.log('[renew-subscription] Validating session token...');
     const { data: sessionData, error: sessionError } = await supabase
       .from('system_sessions')
       .select('user_id, expires_at')
       .eq('session_token', session_token)
-      .single();
+      .maybeSingle();
 
-    if (sessionError || !sessionData || new Date(sessionData.expires_at) < new Date()) {
-      throw new Error('Invalid or expired session token');
+    if (sessionError) {
+      console.error('[renew-subscription] Session query error:', sessionError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Session validation failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
+
+    if (!sessionData) {
+      console.error('[renew-subscription] No session found for token');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid session token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    if (new Date(sessionData.expires_at) < new Date()) {
+      console.error('[renew-subscription] Session expired:', sessionData.expires_at);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Session token expired - please sign in again' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    console.log('[renew-subscription] Session valid for user:', sessionData.user_id);
 
     // Get current organization data
     const { data: org, error: orgError } = await supabase
