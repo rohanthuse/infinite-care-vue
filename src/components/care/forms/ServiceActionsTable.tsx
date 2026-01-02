@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Eye, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ServiceActionData, SHIFT_OPTIONS } from '@/types/serviceAction';
+import { ViewServiceActionDialog } from '@/components/care/dialogs/ViewServiceActionDialog';
 
 const DAYS_OF_WEEK_SHORT: Record<string, string> = {
   mon: 'Mon',
@@ -49,6 +50,13 @@ export function ServiceActionsTable({
   readOnly = false,
 }: ServiceActionsTableProps) {
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [viewingAction, setViewingAction] = useState<ServiceActionData | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const handleView = (index: number) => {
+    setViewingAction(actions[index]);
+    setViewDialogOpen(true);
+  };
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return '—';
@@ -99,7 +107,7 @@ export function ServiceActionsTable({
               <TableHead className="font-semibold">Shift / Time</TableHead>
               <TableHead className="font-semibold">Days</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
-              {!readOnly && <TableHead className="font-semibold text-right">Actions</TableHead>}
+              <TableHead className="font-semibold text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,47 +132,66 @@ export function ServiceActionsTable({
                     {action.status === 'active' ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                {!readOnly && (
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onToggleStatus(index)}
-                        title={action.status === 'active' ? 'Deactivate' : 'Activate'}
-                      >
-                        {action.status === 'active' ? (
-                          <ToggleRight className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="h-4 w-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(index)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteIndex(index)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                )}
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleView(index)}
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {!readOnly && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onToggleStatus(index)}
+                          title={action.status === 'active' ? 'Deactivate' : 'Activate'}
+                        >
+                          {action.status === 'active' ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(index)}
+                          title="Edit"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteIndex(index)}
+                          className="text-destructive hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <ViewServiceActionDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        action={viewingAction}
+      />
 
       <AlertDialog open={deleteIndex !== null} onOpenChange={() => setDeleteIndex(null)}>
         <AlertDialogContent>

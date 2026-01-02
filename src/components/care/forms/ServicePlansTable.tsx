@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ServicePlanData } from "@/types/servicePlan";
+import { ViewServicePlanDialog } from "@/components/care/dialogs/ViewServicePlanDialog";
 
 interface ServicePlansTableProps {
   plans: ServicePlanData[];
@@ -26,6 +27,14 @@ export function ServicePlansTable({
   onDelete, 
   readOnly = false 
 }: ServicePlansTableProps) {
+  const [viewingPlan, setViewingPlan] = useState<ServicePlanData | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const handleView = (index: number) => {
+    setViewingPlan(plans[index]);
+    setViewDialogOpen(true);
+  };
+
   const formatDate = (date: Date | string | null | undefined): string => {
     if (!date) return "—";
     try {
@@ -54,68 +63,91 @@ export function ServicePlansTable({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">Caption</TableHead>
-            <TableHead className="font-semibold">Service Name</TableHead>
-            <TableHead className="font-semibold">Start Date</TableHead>
-            <TableHead className="font-semibold">End Date</TableHead>
-            <TableHead className="font-semibold">Registered On</TableHead>
-            <TableHead className="font-semibold">Registered By</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
-            {!readOnly && <TableHead className="font-semibold text-right">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {plans.map((plan, index) => (
-            <TableRow key={plan.id || index}>
-              <TableCell className="font-medium">{plan.caption || "—"}</TableCell>
-              <TableCell>
-                {plan.service_names && plan.service_names.length > 0 
-                  ? plan.service_names.join(", ") 
-                  : plan.service_name || "—"}
-              </TableCell>
-              <TableCell>{formatDate(plan.start_date)}</TableCell>
-              <TableCell>{formatDate(plan.end_date)}</TableCell>
-              <TableCell>{formatDateTime(plan.registered_on)}</TableCell>
-              <TableCell>{plan.registered_by_name && plan.registered_by_name !== 'Unknown' ? plan.registered_by_name : "—"}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={plan.status === 'active' ? 'default' : 'secondary'}
-                  className={plan.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
-                >
-                  {plan.status === 'active' ? 'Active' : plan.status === 'inactive' ? 'Inactive' : 'Active'}
-                </Badge>
-              </TableCell>
-              {!readOnly && (
+    <>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold">Caption</TableHead>
+              <TableHead className="font-semibold">Service Name</TableHead>
+              <TableHead className="font-semibold">Start Date</TableHead>
+              <TableHead className="font-semibold">End Date</TableHead>
+              <TableHead className="font-semibold">Registered On</TableHead>
+              <TableHead className="font-semibold">Registered By</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {plans.map((plan, index) => (
+              <TableRow key={plan.id || index}>
+                <TableCell className="font-medium">{plan.caption || "—"}</TableCell>
+                <TableCell>
+                  {plan.service_names && plan.service_names.length > 0 
+                    ? plan.service_names.join(", ") 
+                    : plan.service_name || "—"}
+                </TableCell>
+                <TableCell>{formatDate(plan.start_date)}</TableCell>
+                <TableCell>{formatDate(plan.end_date)}</TableCell>
+                <TableCell>{formatDateTime(plan.registered_on)}</TableCell>
+                <TableCell>{plan.registered_by_name && plan.registered_by_name !== 'Unknown' ? plan.registered_by_name : "—"}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="custom"
+                    className={plan.status === 'active' 
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}
+                  >
+                    {plan.status === 'active' ? 'Active' : plan.status === 'inactive' ? 'Inactive' : 'Active'}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-1">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => onEdit?.(index)}
+                      onClick={() => handleView(index)}
+                      title="View Details"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete?.(index)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!readOnly && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit?.(index)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete?.(index)}
+                          className="text-destructive hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <ViewServicePlanDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        plan={viewingPlan}
+      />
+    </>
   );
 }

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckSquare } from 'lucide-react';
+import { CheckSquare, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ViewServiceActionDialog } from '@/components/care/dialogs/ViewServiceActionDialog';
+import { ServiceActionData } from '@/types/serviceAction';
 
 interface ServiceActionsSectionProps {
   serviceActions: any[];
@@ -35,6 +38,13 @@ const DAYS_OF_WEEK_SHORT: Record<string, string> = {
 
 export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionProps) {
   const actions = serviceActions || [];
+  const [viewingAction, setViewingAction] = useState<ServiceActionData | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const handleView = (action: any) => {
+    setViewingAction(action as ServiceActionData);
+    setViewDialogOpen(true);
+  };
 
   const formatDate = (date: any) => {
     if (!date) return '—';
@@ -96,6 +106,7 @@ export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionP
                     <TableHead className="font-semibold">Shift / Time</TableHead>
                     <TableHead className="font-semibold">Days</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -110,11 +121,24 @@ export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionP
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={action.status === 'active' ? 'default' : 'secondary'}
-                          className={action.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                          variant="custom"
+                          className={action.status === 'active' 
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}
                         >
                           {action.status === 'active' ? 'Active' : action.status === 'inactive' ? 'Inactive' : 'Active'}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleView(action)}
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -124,6 +148,12 @@ export function ServiceActionsSection({ serviceActions }: ServiceActionsSectionP
           )}
         </CardContent>
       </Card>
+
+      <ViewServiceActionDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        action={viewingAction}
+      />
     </div>
   );
 }
