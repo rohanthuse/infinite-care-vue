@@ -114,8 +114,12 @@ export function ServiceActionsTable({
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant={action.status === 'active' ? 'default' : 'secondary'}
-                    className={action.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                    variant="custom"
+                    className={
+                      action.status === 'active' 
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    }
                   >
                     {action.status === 'active' ? 'Active' : 'Inactive'}
                   </Badge>
