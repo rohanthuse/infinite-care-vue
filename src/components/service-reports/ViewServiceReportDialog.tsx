@@ -263,6 +263,15 @@ export function ViewServiceReportDialog({
     });
   }, [effectiveTasksRaw]);
 
+  // Filter out Activities and Goals from Task Details - they have their own sections
+  const taskDetailsTasks = React.useMemo(() => {
+    const excludeCategories = ['activity', 'activities', 'goal', 'goals'];
+    return effectiveTasks.filter(task => {
+      const category = (task.task_category || '').toLowerCase().trim();
+      return !excludeCategories.includes(category);
+    });
+  }, [effectiveTasks]);
+
   // Deduplicate medications by normalized name + dosage to handle legacy duplicates
   const effectiveMedications = React.useMemo(() => {
     const seen = new Set<string>();
@@ -583,8 +592,8 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {effectiveTasks && effectiveTasks.length > 0 ? (
-                  <TasksTable tasks={effectiveTasks} />
+                {taskDetailsTasks && taskDetailsTasks.length > 0 ? (
+                  <TasksTable tasks={taskDetailsTasks} />
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
                     <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
