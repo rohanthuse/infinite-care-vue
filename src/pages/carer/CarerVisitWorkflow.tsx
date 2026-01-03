@@ -65,6 +65,8 @@ import { useCarePlanJsonData } from "@/hooks/useCarePlanJsonData";
 import { GoalStatusButton } from "@/components/care/GoalStatusButton";
 import { ActivityStatusButton } from "@/components/care/ActivityStatusButton";
 import { InlineNotesEditor } from "@/components/care/InlineNotesEditor";
+import { MedicationDetailsDialog } from "@/components/care/medication/MedicationDetailsDialog";
+import { Eye } from "lucide-react";
 
 interface NextBookingInfo {
   id: string;
@@ -314,17 +316,29 @@ const CarerVisitWorkflow = () => {
   const [isUpdatingGoal, setIsUpdatingGoal] = useState<string | null>(null);
   const [isUpdatingActivity, setIsUpdatingActivity] = useState<string | null>(null);
   
-  // Merge data: prioritize normalized tables, fall back to JSON data, then filter by time
+  // Merge data: COMBINE normalized tables AND JSON data, then filter by time
   const carePlanGoals = useMemo((): any[] => {
     // Get the current booking's shift
     const currentShifts = currentAppointment?.start_time 
       ? getShiftFromTime(currentAppointment.start_time) 
       : [];
     
-    // Get raw goals from normalized tables or JSON
-    let rawGoals: any[] = normalizedGoals && normalizedGoals.length > 0
-      ? [...normalizedGoals]
-      : [...(jsonData?.goals || [])];
+    // MERGE both sources instead of OR - prevents goals from disappearing
+    let rawGoals: any[] = [];
+    
+    // Add all normalized (database) goals first
+    if (normalizedGoals && normalizedGoals.length > 0) {
+      rawGoals = [...normalizedGoals];
+    }
+    
+    // Add JSON goals that don't exist in database (by description match)
+    const dbGoalDescriptions = new Set(rawGoals.map((g: any) => (g.description || '').toLowerCase().trim()));
+    (jsonData?.goals || []).forEach((jsonGoal: any) => {
+      const goalDesc = (jsonGoal.description || '').toLowerCase().trim();
+      if (!dbGoalDescriptions.has(goalDesc)) {
+        rawGoals.push(jsonGoal);
+      }
+    });
     
     // If we have a booking time, filter goals by time_of_day
     if (currentShifts.length > 0 && rawGoals.length > 0) {
@@ -351,10 +365,22 @@ const CarerVisitWorkflow = () => {
       ? getShiftFromTime(currentAppointment.start_time) 
       : [];
     
-    // Get raw activities from normalized tables or JSON
-    let rawActivities: any[] = normalizedActivities && normalizedActivities.length > 0
-      ? [...normalizedActivities]
-      : [...(jsonData?.activities || [])];
+    // MERGE both sources instead of OR - prevents activities from disappearing when one is started
+    let rawActivities: any[] = [];
+    
+    // Add all normalized (database) activities first
+    if (normalizedActivities && normalizedActivities.length > 0) {
+      rawActivities = [...normalizedActivities];
+    }
+    
+    // Add JSON activities that don't exist in database (by name match)
+    const dbActivityNames = new Set(rawActivities.map((a: any) => (a.name || '').toLowerCase().trim()));
+    (jsonData?.activities || []).forEach((jsonActivity: any) => {
+      const activityName = (jsonActivity.name || '').toLowerCase().trim();
+      if (!dbActivityNames.has(activityName)) {
+        rawActivities.push(jsonActivity);
+      }
+    });
     
     // If we have a booking time, filter activities by time_of_day
     if (currentShifts.length > 0 && rawActivities.length > 0) {
@@ -467,13 +493,19 @@ const CarerVisitWorkflow = () => {
   const handleGoalUpdate = async (goal: any, newStatus: string, newProgress?: number) => {
     if (isUpdatingGoal === goal.id) return; // Prevent duplicate calls
     
+    // Validate care plan exists before proceeding
+    if (!activeCareplan?.id) {
+      toast.error("No active care plan found for this client");
+      return;
+    }
+    
     setIsUpdatingGoal(goal.id);
     try {
       if (goal.id.startsWith('json-')) {
         // First time: Create with all updates
         console.log('[handleGoalUpdate] Creating new goal from JSON:', goal.id);
         await createGoalMutation.mutateAsync({
-          care_plan_id: activeCareplan!.id,
+          care_plan_id: activeCareplan.id,
           description: goal.description,
           status: newStatus,
           progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0),
@@ -507,13 +539,19 @@ const CarerVisitWorkflow = () => {
   const handleGoalNotesUpdate = async (goal: any, notes: string) => {
     if (isUpdatingGoal === goal.id) return; // Prevent duplicate calls
     
+    // Validate care plan exists before proceeding
+    if (!activeCareplan?.id) {
+      toast.error("No active care plan found for this client");
+      return;
+    }
+    
     setIsUpdatingGoal(goal.id);
     try {
       if (goal.id.startsWith('json-')) {
         // First time: Create with notes
         console.log('[handleGoalNotesUpdate] Creating new goal from JSON:', goal.id);
         await createGoalMutation.mutateAsync({
-          care_plan_id: activeCareplan!.id,
+          care_plan_id: activeCareplan.id,
           description: goal.description,
           status: goal.status || 'not-started',
           progress: goal.progress || 0,
@@ -541,13 +579,19 @@ const CarerVisitWorkflow = () => {
   const handleActivityUpdate = async (activity: any, newStatus: string) => {
     if (isUpdatingActivity === activity.id) return; // Prevent duplicate calls
     
+    // Validate care plan exists before proceeding
+    if (!activeCareplan?.id) {
+      toast.error("No active care plan found for this client");
+      return;
+    }
+    
     setIsUpdatingActivity(activity.id);
     try {
       if (activity.id.startsWith('json-')) {
         // First time: Create with all updates
         console.log('[handleActivityUpdate] Creating new activity from JSON:', activity.id);
         await createActivityMutation.mutateAsync({
-          care_plan_id: activeCareplan!.id,
+          care_plan_id: activeCareplan.id,
           name: activity.name,
           description: activity.description || null,
           frequency: activity.frequency || 'daily',
@@ -609,6 +653,10 @@ const CarerVisitWorkflow = () => {
   // Medication notes state
   const [medicationNotes, setMedicationNotes] = useState<Record<string, string>>({});
   const [expandedMedication, setExpandedMedication] = useState<string | null>(null);
+  const [viewMedicationDetails, setViewMedicationDetails] = useState<any>(null);
+  
+  // Track if notes have been initialized from database to prevent overwriting user input
+  const [notesInitialized, setNotesInitialized] = useState(false);
   
   // NEWS2 state
   const [respRate, setRespRate] = useState(16);
@@ -725,7 +773,11 @@ const CarerVisitWorkflow = () => {
 
   useEffect(() => {
     if (visitRecord) {
-      setNotes(visitRecord.visit_notes || "");
+      // Only set notes from visitRecord if not already initialized (prevents overwriting user input)
+      if (!notesInitialized && visitRecord.visit_notes) {
+        setNotes(visitRecord.visit_notes);
+        setNotesInitialized(true);
+      }
       
       // Only load signatures if they don't already exist locally
       if (!clientSignature) {
@@ -743,7 +795,7 @@ const CarerVisitWorkflow = () => {
         setVisitTimer(elapsedSeconds);
       }
     }
-  }, [visitRecord, clientSignature, carerSignature]);
+  }, [visitRecord, clientSignature, carerSignature, notesInitialized]);
 
   // Auto-save visit notes with debouncing
   useEffect(() => {
@@ -2342,7 +2394,21 @@ const CarerVisitWorkflow = () => {
                                       </div>
                                     )}
                                   </div>
-                                  <Badge variant="secondary">Care Plan</Badge>
+                                  <div className="flex flex-col gap-2 items-end">
+                                    <Badge variant="secondary">Care Plan</Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setViewMedicationDetails({
+                                        ...med,
+                                        instruction: med.instructions,
+                                      })}
+                                      className="h-8"
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      View Details
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -3703,6 +3769,13 @@ const CarerVisitWorkflow = () => {
             setShowCompletionModal(false);
           }
         }}
+      />
+
+      {/* Medication Details Dialog */}
+      <MedicationDetailsDialog
+        isOpen={!!viewMedicationDetails}
+        onClose={() => setViewMedicationDetails(null)}
+        medication={viewMedicationDetails}
       />
     </div>
   );
