@@ -117,7 +117,7 @@ export function CreateServiceReportDialog({
     temperature: number;
   } | null>(null);
   const [pendingEventChanges, setPendingEventChanges] = useState<Map<string, { event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }>>(new Map());
-  const [pendingVisitSummary, setPendingVisitSummary] = useState<string | null>(null);
+  const [pendingVisitNotes, setPendingVisitNotes] = useState<string | null>(null);
 
   // State for NEW items (to be saved on submit)
   const [newTasks, setNewTasks] = useState<{ task_category: string; task_name: string; is_completed: boolean; completion_notes: string }[]>([]);
@@ -134,7 +134,7 @@ export function CreateServiceReportDialog({
       setPendingTaskChanges(new Map());
       setPendingMedicationChanges(new Map());
       setPendingEventChanges(new Map());
-      setPendingVisitSummary(null);
+      setPendingVisitNotes(null);
     }
   }, [open]);
 
@@ -843,11 +843,11 @@ export function CreateServiceReportDialog({
           }
         }
 
-        // Save visit summary
-        if (pendingVisitSummary !== null && effectiveVisitRecordId) {
+        // Save visit notes (user-entered)
+        if (pendingVisitNotes !== null && effectiveVisitRecordId) {
           await supabase
             .from('visit_records')
-            .update({ visit_summary: pendingVisitSummary })
+            .update({ visit_notes: pendingVisitNotes })
             .eq('id', effectiveVisitRecordId);
         }
 
@@ -1111,10 +1111,11 @@ export function CreateServiceReportDialog({
                 <CardContent className="space-y-4">
                   {mode === 'edit' ? (
                     <EditableVisitSummary
-                      visitSummary={visitRecord?.visit_summary}
+                      visitNotes={visitRecord?.visit_notes}
+                      systemSummary={visitRecord?.visit_summary}
                       servicesProvided={existingReport?.services_provided}
                       serviceName={preSelectedBooking?.service_name}
-                      onSummaryChange={setPendingVisitSummary}
+                      onNotesChange={setPendingVisitNotes}
                     />
                   ) : (
                     <>
@@ -1134,12 +1135,23 @@ export function CreateServiceReportDialog({
                           )}
                         </div>
                       </div>
+                      {visitRecord?.visit_notes && (
+                        <>
+                          <Separator />
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Carer Visit Notes</p>
+                            <p className="text-sm bg-muted/50 p-3 rounded-md">
+                              {visitRecord.visit_notes}
+                            </p>
+                          </div>
+                        </>
+                      )}
                       {visitRecord?.visit_summary && (
                         <>
                           <Separator />
                           <div>
-                            <p className="text-sm text-muted-foreground mb-2">Visit Notes</p>
-                            <p className="text-sm bg-muted/50 p-3 rounded-md">
+                            <p className="text-sm text-muted-foreground mb-2">System Summary</p>
+                            <p className="text-sm bg-muted/30 p-3 rounded-md text-muted-foreground italic">
                               {visitRecord.visit_summary}
                             </p>
                           </div>
