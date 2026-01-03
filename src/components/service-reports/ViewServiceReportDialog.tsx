@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { useVisitMedications } from '@/hooks/useVisitMedications';
 import { useVisitVitals } from '@/hooks/useVisitVitals';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
 import { useUpdateServiceReport } from '@/hooks/useServiceReports';
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -211,6 +212,43 @@ export function ViewServiceReportDialog({
     },
     enabled: !!safeReport?.client_id && open,
   });
+
+  // Fetch care plan JSON data for fallback tasks and medications
+  const { data: carePlanJsonData } = useCarePlanJsonData(clientCarePlan?.id || '');
+
+  // Transform care plan tasks for fallback when visit_tasks is empty
+  const carePlanTasksFallback = useMemo(() => {
+    if (!carePlanJsonData?.tasks || carePlanJsonData.tasks.length === 0) return [];
+    return carePlanJsonData.tasks.map(task => ({
+      id: task.id,
+      task_category: task.task_category,
+      task_name: task.task_name,
+      is_completed: false,
+      completed_at: undefined,
+      notes: undefined,
+      priority: 'medium',
+    }));
+  }, [carePlanJsonData?.tasks]);
+
+  // Transform care plan medications for fallback when visit_medications is empty
+  const carePlanMedicationsFallback = useMemo(() => {
+    if (!carePlanJsonData?.medications || carePlanJsonData.medications.length === 0) return [];
+    return carePlanJsonData.medications.map(med => ({
+      id: med.id,
+      medication_name: med.name,
+      dosage: med.dosage,
+      route: undefined,
+      prescribed_time: undefined,
+      is_administered: false,
+      administration_time: undefined,
+      administration_notes: undefined,
+      missed_reason: undefined,
+    }));
+  }, [carePlanJsonData?.medications]);
+
+  // Use visit data if available, otherwise fallback to care plan data
+  const effectiveTasks = tasks.length > 0 ? tasks : carePlanTasksFallback;
+  const effectiveMedications = medications.length > 0 ? medications : carePlanMedicationsFallback;
 
   const isDataLoading = isFetchingReport || visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
 
@@ -490,11 +528,21 @@ export function ViewServiceReportDialog({
                   </div>
                 </div>
 
-                {/* Visit Summary Text */}
+                {/* Carer Visit Notes (Primary - what carer actually wrote) */}
+                {visitRecord?.visit_notes && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Carer Visit Notes</p>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                      {visitRecord.visit_notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* System Summary (Secondary - auto-generated) */}
                 {visitRecord?.visit_summary && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Visit Summary</p>
-                    <p className="text-sm bg-muted/50 p-3 rounded-md">
+                    <p className="text-sm text-muted-foreground mb-2">System Summary</p>
+                    <p className="text-sm bg-muted/30 p-3 rounded-md text-muted-foreground italic">
                       {visitRecord.visit_summary}
                     </p>
                   </div>
@@ -511,11 +559,11 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {tasks && tasks.length > 0 ? (
+                {effectiveTasks && effectiveTasks.length > 0 ? (
                   <TasksTable tasks={(() => {
                     // Deduplicate tasks by category + normalized name to handle legacy duplicates
                     const seen = new Set<string>();
-                    return tasks.filter(task => {
+                    return effectiveTasks.filter(task => {
                       const key = `${task.task_category}:${(task.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ')}`;
                       if (seen.has(key)) return false;
                       seen.add(key);
@@ -540,8 +588,8 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {medications && medications.length > 0 ? (
-                  <MedicationsTable medications={medications} />
+                {effectiveMedications && effectiveMedications.length > 0 ? (
+                  <MedicationsTable medications={effectiveMedications} />
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
                     <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
