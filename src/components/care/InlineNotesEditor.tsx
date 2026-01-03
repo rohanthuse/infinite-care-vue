@@ -72,7 +72,7 @@ export const InlineNotesEditor = ({
   return (
     <div className="space-y-2">
       {notes ? (
-        <div className="bg-muted/50 rounded-md p-3 text-sm text-muted-foreground">
+        <div className="bg-muted/50 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap">
           {notes}
         </div>
       ) : (
@@ -88,7 +88,7 @@ export const InlineNotesEditor = ({
         className="h-8"
       >
         <Edit className="w-3 h-3 mr-1" />
-        Add Notes
+        {notes ? 'Edit Notes' : 'Add Notes'}
       </Button>
     </div>
   );

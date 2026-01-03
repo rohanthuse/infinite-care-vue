@@ -43,7 +43,14 @@ export const ActivityStatusButton = ({
           disabled={disabled}
           className="h-7"
         >
-          Mark Complete
+          {disabled ? (
+            <>
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1" />
+              Updating...
+            </>
+          ) : (
+            'Mark Complete'
+          )}
         </Button>
       </div>
     );
@@ -58,8 +65,17 @@ export const ActivityStatusButton = ({
       disabled={disabled}
       className="h-7"
     >
-      <Clock className="w-3 h-3 mr-1" />
-      Start Activity
+      {disabled ? (
+        <>
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-1" />
+          Updating...
+        </>
+      ) : (
+        <>
+          <Clock className="w-3 h-3 mr-1" />
+          Start Activity
+        </>
+      )}
     </Button>
   );
 };
