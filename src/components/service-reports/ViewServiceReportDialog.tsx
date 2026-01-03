@@ -245,8 +245,30 @@ export function ViewServiceReportDialog({
   }, [carePlanJsonData?.medications]);
 
   // Use visit data if available, otherwise fallback to care plan data
-  const effectiveTasks = tasks.length > 0 ? tasks : carePlanTasksFallback;
-  const effectiveMedications = medications.length > 0 ? medications : carePlanMedicationsFallback;
+  const effectiveTasksRaw = tasks.length > 0 ? tasks : carePlanTasksFallback;
+  const effectiveMedicationsRaw = medications.length > 0 ? medications : carePlanMedicationsFallback;
+
+  // Deduplicate tasks by category + normalized name to handle legacy duplicates
+  const effectiveTasks = React.useMemo(() => {
+    const seen = new Set<string>();
+    return effectiveTasksRaw.filter(task => {
+      const key = `${task.task_category}:${(task.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ')}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [effectiveTasksRaw]);
+
+  // Deduplicate medications by normalized name + dosage to handle legacy duplicates
+  const effectiveMedications = React.useMemo(() => {
+    const seen = new Set<string>();
+    return effectiveMedicationsRaw.filter(med => {
+      const key = `${(med.medication_name || '').toLowerCase().trim()}:${(med.dosage || '').toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [effectiveMedicationsRaw]);
 
   const isDataLoading = isFetchingReport || visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
 
@@ -558,16 +580,7 @@ export function ViewServiceReportDialog({
               </CardHeader>
               <CardContent>
                 {effectiveTasks && effectiveTasks.length > 0 ? (
-                  <TasksTable tasks={(() => {
-                    // Deduplicate tasks by category + normalized name to handle legacy duplicates
-                    const seen = new Set<string>();
-                    return effectiveTasks.filter(task => {
-                      const key = `${task.task_category}:${(task.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ')}`;
-                      if (seen.has(key)) return false;
-                      seen.add(key);
-                      return true;
-                    });
-                  })()} />
+                  <TasksTable tasks={effectiveTasks} />
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
                     <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />

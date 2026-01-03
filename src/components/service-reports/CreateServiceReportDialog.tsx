@@ -219,7 +219,18 @@ export function CreateServiceReportDialog({
   });
 
   // Use visit medications if available, otherwise fallback to care plan medications
-  const visitMedications = visitMedicationsRaw.length > 0 ? visitMedicationsRaw : carePlanMedications;
+  const visitMedicationsWithFallback = visitMedicationsRaw.length > 0 ? visitMedicationsRaw : carePlanMedications;
+
+  // Deduplicate medications by normalized name + dosage to handle legacy duplicates
+  const visitMedications = React.useMemo(() => {
+    const seen = new Set<string>();
+    return visitMedicationsWithFallback.filter(med => {
+      const key = `${(med.medication_name || '').toLowerCase().trim()}:${(med.dosage || '').toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [visitMedicationsWithFallback]);
 
   // Fetch visit record details when visitRecordId is provided
   const { data: visitRecord } = useQuery({
@@ -257,7 +268,18 @@ export function CreateServiceReportDialog({
   }, [carePlanJsonData?.tasks]);
 
   // Use visit tasks if available, otherwise fallback to care plan tasks
-  const visitTasks = visitTasksRaw.length > 0 ? visitTasksRaw : carePlanTasksFallback;
+  const visitTasksWithFallback = visitTasksRaw.length > 0 ? visitTasksRaw : carePlanTasksFallback;
+
+  // Deduplicate tasks by category + normalized name to handle legacy duplicates
+  const visitTasks = React.useMemo(() => {
+    const seen = new Set<string>();
+    return visitTasksWithFallback.filter(task => {
+      const key = `${task.task_category}:${(task.task_name || '').toLowerCase().trim().replace(/\s+/g, ' ')}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [visitTasksWithFallback]);
 
   // Fetch visit events (incidents, accidents, observations)
   const { 
