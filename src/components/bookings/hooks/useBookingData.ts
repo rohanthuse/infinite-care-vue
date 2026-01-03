@@ -9,7 +9,9 @@ import {
   mapDBClientToClient, 
   mapDBCarerToCarer,
   getOrCreatePlaceholderClient,
-  getOrCreatePlaceholderCarer
+  getOrCreatePlaceholderCarer,
+  safeName,
+  safeInitials
 } from "../utils/dataMappers";
 import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyDataGenerator";
 import { formatInUserTimezone, getUserTimezone } from '@/utils/timezoneUtils';
@@ -149,9 +151,30 @@ export function useBookingData(branchId?: string) {
       (bookingsDB || []).forEach((bk: any, index: number) => {
         try {
           let client = clientsMap[bk.client_id];
-          let carer = bk.staff_id ? carersMap[bk.staff_id] : null;
-          if (!client && bk.client_id)
+          
+          // If not in clientsMap (e.g., deactivated client), use embedded client data from booking
+          if (!client && bk.client_id && bk.clients) {
+            const embeddedClient = bk.clients;
+            client = {
+              id: embeddedClient.id || bk.client_id,
+              name: safeName(embeddedClient.first_name, embeddedClient.last_name),
+              initials: safeInitials(embeddedClient.first_name, embeddedClient.last_name),
+              bookingCount: 0,
+              bookings: [],
+              address: getClientDisplayAddress(
+                null,
+                embeddedClient.address,
+                embeddedClient.client_addresses
+              ) || undefined,
+            };
+          }
+          
+          // Final fallback for truly missing client data
+          if (!client && bk.client_id) {
             client = getOrCreatePlaceholderClient(bk.client_id);
+          }
+          
+          let carer = bk.staff_id ? carersMap[bk.staff_id] : null;
           // Handle unassigned bookings (staff_id is null) - show "Not Assigned"
           if (!carer) {
             carer = getOrCreatePlaceholderCarer(bk.staff_id);
