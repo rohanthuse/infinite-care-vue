@@ -289,6 +289,15 @@ export function CreateServiceReportDialog({
     });
   }, [visitTasksWithFallback]);
 
+  // Filter out Activities and Goals from Task Details - they have their own sections
+  const taskDetailsTasks = React.useMemo(() => {
+    const excludeCategories = ['activity', 'activities', 'goal', 'goals'];
+    return visitTasks.filter(task => {
+      const category = (task.task_category || '').toLowerCase().trim();
+      return !excludeCategories.includes(category);
+    });
+  }, [visitTasks]);
+
   // Fetch visit events (incidents, accidents, observations)
   const { 
     events: visitEvents = [], 
@@ -1202,7 +1211,7 @@ export function CreateServiceReportDialog({
                 </CardHeader>
                 <CardContent>
                   <EditableTasksTable 
-                    tasks={visitTasks || []} 
+                    tasks={taskDetailsTasks || []} 
                     onTasksChange={setPendingTaskChanges}
                     onAddTask={(task) => setNewTasks(prev => [...prev, task])}
                     allowManualAdd={true}
