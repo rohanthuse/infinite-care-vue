@@ -33,6 +33,7 @@ interface JsonMedication {
   warning?: string;
   side_effect?: string;
   start_date?: string;
+  end_date?: string;
 }
 
 interface JsonTask {
@@ -77,6 +78,15 @@ interface TransformedMedication {
   instructions?: string;
   status: string;
   time_of_day?: string[];  // For time-based filtering
+  route?: string;
+  shape?: string;
+  who_administers?: string;
+  level?: string;
+  warning?: string;
+  side_effect?: string;
+  start_date?: string;
+  end_date?: string;
+  prescriber?: string;
 }
 
 interface TransformedTask {
@@ -162,6 +172,15 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         instructions: med.instructions || med.instruction || null,
         status: med.status || 'active',
         time_of_day: med.time_of_day || [],
+        route: med.route || null,
+        shape: med.shape || null,
+        who_administers: med.who_administers || null,
+        level: med.level || null,
+        warning: med.warning || null,
+        side_effect: med.side_effect || null,
+        start_date: med.start_date || null,
+        end_date: med.end_date || null,
+        prescriber: med.prescriber || null,
       }));
 
       // Transform tasks from personal_care ONLY (not activities - those belong in Activities tab)

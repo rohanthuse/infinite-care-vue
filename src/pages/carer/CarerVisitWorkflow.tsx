@@ -393,6 +393,15 @@ const CarerVisitWorkflow = () => {
         instructions: m.instruction || m.notes || '',
         status: m.status || 'active',
         time_of_day: m.time_of_day || [],
+        route: m.route || '',
+        shape: m.shape || '',
+        who_administers: m.who_administers || '',
+        level: m.level || '',
+        warning: m.warning || '',
+        side_effect: m.side_effect || '',
+        start_date: m.start_date || '',
+        end_date: m.end_date || '',
+        prescriber: m.prescriber || '',
         source: 'database',
       }));
     }
@@ -413,6 +422,15 @@ const CarerVisitWorkflow = () => {
             instructions: med.instructions || med.instruction || '',
             status: med.status || 'active',
             time_of_day: med.time_of_day || [],
+            route: med.route || '',
+            shape: med.shape || '',
+            who_administers: med.who_administers || '',
+            level: med.level || '',
+            warning: med.warning || '',
+            side_effect: med.side_effect || '',
+            start_date: med.start_date || '',
+            end_date: med.end_date || '',
+            prescriber: med.prescriber || '',
             source: 'json',
           });
         }
@@ -2258,7 +2276,7 @@ const CarerVisitWorkflow = () => {
                             {carePlanMedications.map((med) => (
                               <div key={med.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-all">
                                 <div className="flex items-center justify-between">
-                                  <div>
+                                  <div className="flex-1">
                                     <p className="font-medium text-gray-900">{med.name}</p>
                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                                       {med.dosage && <Badge variant="outline">{med.dosage}</Badge>}
@@ -2268,9 +2286,60 @@ const CarerVisitWorkflow = () => {
                                           {med.time_of_day.join(', ')}
                                         </Badge>
                                       )}
+                                      {med.route && (
+                                        <Badge variant="outline" className="capitalize">
+                                          {med.route}
+                                        </Badge>
+                                      )}
                                     </div>
+                                    
+                                    {/* Instructions */}
                                     {med.instructions && (
                                       <p className="text-sm text-gray-600 mt-2">{med.instructions}</p>
+                                    )}
+                                    
+                                    {/* Additional Details Grid */}
+                                    <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                                      {med.who_administers && (
+                                        <div>
+                                          <span className="text-muted-foreground">Administered by:</span>
+                                          <span className="ml-1 font-medium">{med.who_administers}</span>
+                                        </div>
+                                      )}
+                                      {med.prescriber && (
+                                        <div>
+                                          <span className="text-muted-foreground">Prescriber:</span>
+                                          <span className="ml-1 font-medium">{med.prescriber}</span>
+                                        </div>
+                                      )}
+                                      {med.start_date && (
+                                        <div>
+                                          <span className="text-muted-foreground">Start:</span>
+                                          <span className="ml-1 font-medium">{format(new Date(med.start_date), 'MMM dd, yyyy')}</span>
+                                        </div>
+                                      )}
+                                      {med.end_date && (
+                                        <div>
+                                          <span className="text-muted-foreground">End:</span>
+                                          <span className="ml-1 font-medium">{format(new Date(med.end_date), 'MMM dd, yyyy')}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Warnings */}
+                                    {med.warning && (
+                                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm">
+                                        <span className="text-amber-700 font-medium">⚠️ Warning: </span>
+                                        <span className="text-amber-600">{med.warning}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Side Effects */}
+                                    {med.side_effect && (
+                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                                        <span className="text-blue-700 font-medium">ℹ️ Side Effects: </span>
+                                        <span className="text-blue-600">{med.side_effect}</span>
+                                      </div>
                                     )}
                                   </div>
                                   <Badge variant="secondary">Care Plan</Badge>
