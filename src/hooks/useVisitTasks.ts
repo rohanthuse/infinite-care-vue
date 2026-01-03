@@ -21,7 +21,7 @@ export interface VisitTask {
 export const useVisitTasks = (visitRecordId?: string) => {
   const queryClient = useQueryClient();
 
-  // Get all tasks for a visit
+  // Get all tasks for a visit - session-stable for long visits
   const { data: tasks, isLoading } = useQuery({
     queryKey: ['visit-tasks', visitRecordId],
     queryFn: async () => {
@@ -37,6 +37,11 @@ export const useVisitTasks = (visitRecordId?: string) => {
       return data as VisitTask[];
     },
     enabled: !!visitRecordId,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Add task to visit
