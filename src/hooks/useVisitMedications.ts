@@ -123,9 +123,26 @@ export const useVisitMedications = (visitRecordId?: string) => {
     },
   });
 
-  // Add common medications for a visit
+  // Add common medications for a visit (idempotent - checks for existing before inserting)
   const addCommonMedications = useMutation({
     mutationFn: async ({ visitRecordId, clientId, visitStartTime }: { visitRecordId: string; clientId: string; visitStartTime?: string }) => {
+      // IDEMPOTENT CHECK: First check if medications already exist for this visit
+      const { data: existingMeds, error: existingError } = await supabase
+        .from('visit_medications')
+        .select('id, medication_id, medication_name')
+        .eq('visit_record_id', visitRecordId);
+
+      if (existingError) {
+        console.error('[useVisitMedications] Error checking existing medications:', existingError);
+        throw existingError;
+      }
+
+      // If medications already exist, skip insertion and return existing ones
+      if (existingMeds && existingMeds.length > 0) {
+        console.log('[useVisitMedications] Medications already loaded for visit, skipping initialization. Count:', existingMeds.length);
+        return existingMeds;
+      }
+
       // Determine time of day from visit start time
       const visitTimeOfDay = visitStartTime 
         ? getTimeOfDayFromTimestamp(visitStartTime) 
