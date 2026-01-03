@@ -330,6 +330,7 @@ const CarerVisitWorkflow = () => {
   // Loading states to prevent duplicate clicks
   const [isUpdatingGoal, setIsUpdatingGoal] = useState<string | null>(null);
   const [isUpdatingActivity, setIsUpdatingActivity] = useState<string | null>(null);
+  const [updatingMedicationId, setUpdatingMedicationId] = useState<string | null>(null);
   
   // Merge data: COMBINE normalized tables AND JSON data, then filter by time
   const carePlanGoals = useMemo((): any[] => {
@@ -602,16 +603,31 @@ const CarerVisitWorkflow = () => {
     
     setIsUpdatingActivity(activity.id);
     try {
+      // Check if this is a JSON-sourced activity that might already exist in database
       if (activity.id.startsWith('json-')) {
-        // First time: Create with all updates
-        console.log('[handleActivityUpdate] Creating new activity from JSON:', activity.id);
-        await createActivityMutation.mutateAsync({
-          care_plan_id: activeCareplan.id,
-          name: activity.name,
-          description: activity.description || null,
-          frequency: activity.frequency || 'daily',
-          status: newStatus,
-        });
+        // First, check if an activity with this name already exists in database
+        const existingActivity = normalizedActivities?.find(
+          (a: any) => a.name?.toLowerCase().trim() === activity.name?.toLowerCase().trim()
+        );
+        
+        if (existingActivity) {
+          // Activity exists in database - update it instead of creating new
+          console.log('[handleActivityUpdate] Found existing activity in database, updating:', existingActivity.id);
+          await updateActivityMutation.mutateAsync({
+            id: existingActivity.id,
+            updates: { status: newStatus }
+          });
+        } else {
+          // Activity doesn't exist - create new
+          console.log('[handleActivityUpdate] Creating new activity from JSON:', activity.id);
+          await createActivityMutation.mutateAsync({
+            care_plan_id: activeCareplan.id,
+            name: activity.name,
+            description: activity.description || null,
+            frequency: activity.frequency || 'daily',
+            status: newStatus,
+          });
+        }
         // Invalidate queries to refresh data from database
         queryClient.invalidateQueries({ queryKey: ['client-activities', activeCareplan?.id] });
         queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', activeCareplan?.id] });
@@ -1063,16 +1079,26 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    if (updatingMedicationId) {
+      toast.info("Please wait for the current medication update to complete");
+      return;
+    }
+    
     const medication = medications?.find(m => m.id === medId);
     console.log('[handleMedicationToggle] Medication found:', medication);
     
     if (medication) {
       console.log('[handleMedicationToggle] Calling mutation to toggle medication');
+      setUpdatingMedicationId(medId);
       administerMedication.mutate({
         medicationId: medId,
         isAdministered: !medication.is_administered,
         notes: customNotes || `Medication ${medication.is_administered ? 'not administered' : 'administered'} at ${format(new Date(), 'HH:mm')}`,
         administeredBy: user?.id,
+      }, {
+        onSettled: () => {
+          setUpdatingMedicationId(null);
+        }
       });
     } else {
       console.error('[handleMedicationToggle] Medication not found!', { medId, medicationsCount: medications?.length });
@@ -1147,13 +1173,15 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
-    if (!visitRecord || !currentAppointment?.client_id) {
-      console.error('[recordNews2Reading] Missing required data', { 
-        visitRecord: visitRecord?.id, 
-        appointmentId: currentAppointment?.id,
-        clientId: currentAppointment?.client_id 
-      });
-      toast.error("Visit record not found. Please refresh the page.");
+    if (!visitRecord?.id) {
+      console.error('[recordNews2Reading] No visit record ID');
+      toast.error("Visit record not yet created. Please start the visit first and wait a moment.", { duration: 5000 });
+      return;
+    }
+    
+    if (!currentAppointment?.client_id) {
+      console.error('[recordNews2Reading] No client ID');
+      toast.error("Client information not available. Please refresh the page.", { duration: 5000 });
       return;
     }
 
@@ -1169,6 +1197,14 @@ const CarerVisitWorkflow = () => {
       temperature: temperature,
       notes: `NEWS2 reading recorded during visit`,
       taken_by: user?.id,
+    }, {
+      onSuccess: () => {
+        toast.success("NEWS2 reading recorded successfully");
+      },
+      onError: (error: any) => {
+        console.error('[recordNews2Reading] Mutation error:', error);
+        toast.error(`Failed to record NEWS2: ${error?.message || 'Unknown error'}`, { duration: 5000 });
+      }
     });
   };
   
@@ -2361,22 +2397,24 @@ const CarerVisitWorkflow = () => {
                         {medications?.filter(med => med.medication_id).length > 0 ? (
                           <div className="space-y-3">
                             {medications.filter(med => med.medication_id).map((med) => (
-                              <div key={med.id} className="border rounded-lg hover:bg-gray-50 transition-all">
+                              <div key={med.id} className={`border rounded-lg hover:bg-gray-50 transition-all ${updatingMedicationId === med.id ? 'opacity-70' : ''}`}>
                                 <div className="flex items-center space-x-3 p-4">
-                                  <Checkbox
-                                    checked={med.is_administered}
-                                    onCheckedChange={() => {
-                                      if (!med.is_administered) {
-                                        setExpandedMedication(med.id);
-                                      }
-                                      handleMedicationToggle(med.id, medicationNotes[med.id]);
-                                    }}
-                                    className="flex-shrink-0"
-                                    disabled={isViewOnly || administerMedication.isPending}
-                                  />
+                                  <div className="flex-shrink-0 relative">
+                                    {updatingMedicationId === med.id ? (
+                                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    ) : (
+                                      <Checkbox
+                                        checked={med.is_administered}
+                                        onCheckedChange={() => {
+                                          handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                        }}
+                                        disabled={isViewOnly || updatingMedicationId !== null}
+                                      />
+                                    )}
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                                           {med.medication_name}
                                         </p>
@@ -2387,9 +2425,9 @@ const CarerVisitWorkflow = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setExpandedMedication(expandedMedication === med.id ? null : med.id)}
-                                        disabled={isViewOnly}
+                                        disabled={isViewOnly || updatingMedicationId === med.id}
                                       >
-                                        {expandedMedication === med.id ? 'Hide Notes' : 'Add Notes'}
+                                        {expandedMedication === med.id ? 'Hide Notes' : (med.administration_notes ? 'Edit Notes' : 'Add Notes')}
                                       </Button>
                                     </div>
                                     {med.prescribed_time && (
@@ -2403,7 +2441,7 @@ const CarerVisitWorkflow = () => {
                                       </p>
                                     )}
                                   </div>
-                                  {med.is_administered && (
+                                  {med.is_administered && updatingMedicationId !== med.id && (
                                     <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                                   )}
                                 </div>
@@ -2584,22 +2622,24 @@ const CarerVisitWorkflow = () => {
                         {medications?.filter(med => !med.medication_id).length > 0 ? (
                           <div className="space-y-3">
                             {medications.filter(med => !med.medication_id).map((med) => (
-                              <div key={med.id} className="border border-purple-200 rounded-lg hover:bg-purple-50 transition-all">
+                              <div key={med.id} className={`border border-purple-200 rounded-lg hover:bg-purple-50 transition-all ${updatingMedicationId === med.id ? 'opacity-70' : ''}`}>
                                 <div className="flex items-center space-x-3 p-4">
-                                  <Checkbox
-                                    checked={med.is_administered}
-                                    onCheckedChange={() => {
-                                      if (!med.is_administered) {
-                                        setExpandedMedication(med.id);
-                                      }
-                                      handleMedicationToggle(med.id, medicationNotes[med.id]);
-                                    }}
-                                    className="flex-shrink-0"
-                                    disabled={isViewOnly || administerMedication.isPending}
-                                  />
+                                  <div className="flex-shrink-0 relative">
+                                    {updatingMedicationId === med.id ? (
+                                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+                                    ) : (
+                                      <Checkbox
+                                        checked={med.is_administered}
+                                        onCheckedChange={() => {
+                                          handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                        }}
+                                        disabled={isViewOnly || updatingMedicationId !== null}
+                                      />
+                                    )}
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                                           {med.medication_name}
                                         </p>
@@ -2610,9 +2650,9 @@ const CarerVisitWorkflow = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setExpandedMedication(expandedMedication === med.id ? null : med.id)}
-                                        disabled={isViewOnly}
+                                        disabled={isViewOnly || updatingMedicationId === med.id}
                                       >
-                                        {expandedMedication === med.id ? 'Hide Notes' : 'Add Notes'}
+                                        {expandedMedication === med.id ? 'Hide Notes' : (med.administration_notes ? 'Edit Notes' : 'Add Notes')}
                                       </Button>
                                     </div>
                                     {med.prescribed_time && (
@@ -2626,7 +2666,7 @@ const CarerVisitWorkflow = () => {
                                       </p>
                                     )}
                                   </div>
-                                  {med.is_administered && (
+                                  {med.is_administered && updatingMedicationId !== med.id && (
                                     <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                                   )}
                                 </div>
@@ -3685,9 +3725,11 @@ const CarerVisitWorkflow = () => {
                     
                     <div>
                       <h4 className="font-medium text-gray-700">Tasks Summary</h4>
-                      <div className="mt-2 text-sm">
+                      <div className="mt-2 text-sm space-y-1">
                         <p><span className="text-gray-500">Completed Tasks:</span> {tasks?.filter(t => t.is_completed).length || 0} of {tasks?.length || 0}</p>
                         <p><span className="text-gray-500">Medications Administered:</span> {medications?.filter(m => m.is_administered).length || 0} of {medications?.length || 0}</p>
+                        <p><span className="text-gray-500">Goals Progress:</span> {carePlanGoals?.filter((g: any) => g.status === 'completed' || g.status === 'achieved').length || 0} of {carePlanGoals?.length || 0}</p>
+                        <p><span className="text-gray-500">Activities Completed:</span> {carePlanActivities?.filter((a: any) => a.status === 'completed').length || 0} of {carePlanActivities?.length || 0}</p>
                         <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings?.length || 0}</p>
                         <p><span className="text-gray-500">Events Recorded:</span> {events?.length || 0}</p>
                       </div>
