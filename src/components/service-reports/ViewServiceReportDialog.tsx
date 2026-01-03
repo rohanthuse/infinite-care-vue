@@ -52,7 +52,8 @@ import {
   ThumbsDown,
   AlertCircle,
   Download,
-  Target
+  Target,
+  Activity
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
@@ -60,6 +61,7 @@ import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { GoalsDisplay } from './view-report/GoalsDisplay';
+import { ActivitiesDisplay } from './view-report/ActivitiesDisplay';
 
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
@@ -660,6 +662,19 @@ export function ViewServiceReportDialog({
               </CardContent>
             </Card>
 
+            {/* Activities Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Care Plan Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActivitiesDisplay carePlanId={clientCarePlan?.id} />
+              </CardContent>
+            </Card>
+
             {/* Carer Visit Details - Editable Section */}
             {isEditable ? (
               <Card className="border-primary/20">
@@ -826,6 +841,30 @@ export function ViewServiceReportDialog({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Carer Visit Notes (Primary - from visit_records) */}
+                    {visitRecord?.visit_notes && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Carer Visit Notes
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                          {visitRecord.visit_notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Activities Undertaken */}
+                    {safeReport.activities_undertaken && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Activities Undertaken
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.activities_undertaken}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Carer Observations */}
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-2">
