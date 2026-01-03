@@ -1284,6 +1284,18 @@ export function CreateServiceReportDialog({
                     />
                   </div>
 
+                </CardContent>
+              </Card>
+
+              {/* Visit Notes Card - Editable */}
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Visit Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
                     name="activities_undertaken"
@@ -1301,18 +1313,7 @@ export function CreateServiceReportDialog({
                       </FormItem>
                     )}
                   />
-                </CardContent>
-              </Card>
 
-              {/* Visit Notes Card - Editable */}
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Visit Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
                     name="carer_observations"
