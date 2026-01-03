@@ -783,7 +783,9 @@ const CarerVisitWorkflow = () => {
   useEffect(() => {
     // Don't initialize medications in view-only mode
     // Use ref to prevent duplicate calls (synchronous update vs async state)
-    if (!isViewOnly && visitRecord && !medicationsInitializedRef.current && currentAppointment?.client_id) {
+    // Secondary guard: also check if medications already exist to prevent redundant calls
+    if (!isViewOnly && visitRecord && !medicationsInitializedRef.current && 
+        currentAppointment?.client_id && (!medications || medications.length === 0)) {
       console.log('Initializing common medications for visit record:', visitRecord.id);
       medicationsInitializedRef.current = true;
       addCommonMedications.mutate({ 
@@ -792,7 +794,7 @@ const CarerVisitWorkflow = () => {
         visitStartTime: currentAppointment.start_time
       });
     }
-  }, [visitRecord?.id, currentAppointment?.client_id, isViewOnly]);
+  }, [visitRecord?.id, currentAppointment?.client_id, isViewOnly, medications?.length]);
 
   // Load existing visit data (but don't overwrite existing signatures)
   // Initialize medication notes from existing data
