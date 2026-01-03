@@ -16,7 +16,7 @@ import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServi
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import { format, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Activity, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +30,8 @@ import { EditableMedicationsTable } from './edit-report/EditableMedicationsTable
 import { EditableNEWS2Form } from './edit-report/EditableNEWS2Form';
 import { EditableEventsList } from './edit-report/EditableEventsList';
 import { EditableVisitSummary } from './edit-report/EditableVisitSummary';
+import { EditableActivitiesSection } from './edit-report/EditableActivitiesSection';
+import { EditableGoalsSection } from './edit-report/EditableGoalsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -124,6 +126,10 @@ export function CreateServiceReportDialog({
   const [newMedications, setNewMedications] = useState<{ medication_name: string; dosage: string; is_administered: boolean; administration_time: string; administration_notes: string; not_administered_reason: string }[]>([]);
   const [newEvents, setNewEvents] = useState<{ event_type: string; event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }[]>([]);
 
+  // State for Activity and Goal changes
+  const [pendingActivityChanges, setPendingActivityChanges] = useState<Map<string, { performed: boolean; duration_minutes: number; notes: string }>>(new Map());
+  const [pendingGoalChanges, setPendingGoalChanges] = useState<Map<string, { status: string; progress: number; notes: string }>>(new Map());
+
   // Reset all pending states when dialog opens to prevent stale data
   useEffect(() => {
     if (open) {
@@ -135,6 +141,8 @@ export function CreateServiceReportDialog({
       setPendingMedicationChanges(new Map());
       setPendingEventChanges(new Map());
       setPendingVisitNotes(null);
+      setPendingActivityChanges(new Map());
+      setPendingGoalChanges(new Map());
     }
   }, [open]);
 
@@ -1197,6 +1205,40 @@ export function CreateServiceReportDialog({
                     tasks={visitTasks || []} 
                     onTasksChange={setPendingTaskChanges}
                     onAddTask={(task) => setNewTasks(prev => [...prev, task])}
+                    allowManualAdd={true}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Activity Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Activity Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EditableActivitiesSection
+                    carePlanId={clientCarePlan?.id}
+                    onActivitiesChange={setPendingActivityChanges}
+                    allowManualAdd={true}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Goal Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Goal Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EditableGoalsSection
+                    carePlanId={clientCarePlan?.id}
+                    onGoalsChange={setPendingGoalChanges}
                     allowManualAdd={true}
                   />
                 </CardContent>
