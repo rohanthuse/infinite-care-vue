@@ -5,27 +5,29 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 interface EditableVisitSummaryProps {
-  visitSummary?: string;
+  visitNotes?: string;
+  systemSummary?: string;
   servicesProvided?: string[];
   serviceName?: string;
-  onSummaryChange: (summary: string) => void;
+  onNotesChange: (notes: string) => void;
 }
 
 export function EditableVisitSummary({
-  visitSummary,
+  visitNotes,
+  systemSummary,
   servicesProvided,
   serviceName,
-  onSummaryChange,
+  onNotesChange,
 }: EditableVisitSummaryProps) {
-  const [summary, setSummary] = useState(visitSummary || '');
+  const [notes, setNotes] = useState(visitNotes || '');
 
   useEffect(() => {
-    setSummary(visitSummary || '');
-  }, [visitSummary]);
+    setNotes(visitNotes || '');
+  }, [visitNotes]);
 
-  const handleSummaryChange = (value: string) => {
-    setSummary(value);
-    onSummaryChange(value);
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    onNotesChange(value);
   };
 
   return (
@@ -50,20 +52,33 @@ export function EditableVisitSummary({
 
       <Separator />
 
-      {/* Editable Visit Summary */}
+      {/* Editable Carer Visit Notes */}
       <div className="space-y-2">
-        <Label htmlFor="visit_summary">Visit Notes</Label>
+        <Label htmlFor="visit_notes">Carer Visit Notes</Label>
         <Textarea
-          id="visit_summary"
-          value={summary}
-          onChange={(e) => handleSummaryChange(e.target.value)}
-          placeholder="Enter visit summary notes..."
+          id="visit_notes"
+          value={notes}
+          onChange={(e) => handleNotesChange(e.target.value)}
+          placeholder="Enter your visit notes..."
           className="min-h-[120px]"
         />
         <p className="text-xs text-muted-foreground">
-          Provide a summary of the visit including key observations and any important information.
+          Your notes about the visit, key observations, and any important information.
         </p>
       </div>
+
+      {/* System Summary (Read-only) */}
+      {systemSummary && (
+        <>
+          <Separator />
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">System Summary</p>
+            <p className="text-sm bg-muted/30 p-3 rounded-md text-muted-foreground italic">
+              {systemSummary}
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
