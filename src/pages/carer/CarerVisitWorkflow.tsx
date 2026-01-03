@@ -197,7 +197,7 @@ const CarerVisitWorkflow = () => {
   const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
   
-  // Fetch real appointment data from database
+  // Fetch real appointment data from database - session-stable for long visits
   const { data: appointmentData, isLoading: appointmentLoading, error: appointmentError } = useQuery({
     queryKey: ['appointment', appointmentId],
     queryFn: async () => {
@@ -222,6 +222,11 @@ const CarerVisitWorkflow = () => {
     },
     enabled: !!appointmentId,
     retry: 1,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Use appointmentData if available, otherwise fall back to location state
@@ -279,6 +284,11 @@ const CarerVisitWorkflow = () => {
       return fallbackData;
     },
     enabled: !!currentAppointment?.client_id,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch goals and activities from both normalized tables and JSON
@@ -286,7 +296,7 @@ const CarerVisitWorkflow = () => {
   const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
   
-  // Fetch database medications for merging with JSON
+  // Fetch database medications for merging with JSON - session-stable
   const { data: dbMedications, isLoading: dbMedicationsLoading } = useQuery({
     queryKey: ['care-plan-db-medications', activeCareplan?.id],
     queryFn: async () => {
@@ -304,6 +314,11 @@ const CarerVisitWorkflow = () => {
       return data || [];
     },
     enabled: !!activeCareplan?.id,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   
   // Mutations for goals and activities
@@ -678,6 +693,12 @@ const CarerVisitWorkflow = () => {
   const [clientFeedback, setClientFeedback] = useState<string>('');
   const [nextVisitPreparations, setNextVisitPreparations] = useState<string>('');
   
+  // Track if Complete tab assessment fields have been initialized
+  const [assessmentInitialized, setAssessmentInitialized] = useState(false);
+  
+  // Refs for debounced save timeouts (to flush before completion)
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Enhanced view-only check: URL param, state, completed status, or existing visit record status
   const isViewOnly = urlViewMode || stateViewOnly || 
     currentAppointment?.status === 'completed' || 
@@ -822,6 +843,106 @@ const CarerVisitWorkflow = () => {
 
     return () => clearTimeout(timeoutId);
   }, [notes, visitRecord?.id, visitRecord?.visit_notes, isViewOnly]);
+  
+  // Load draft assessment data from location_data on mount (once)
+  useEffect(() => {
+    if (visitRecord && !assessmentInitialized && !isViewOnly) {
+      const draft = visitRecord.location_data?.draft_assessment;
+      if (draft) {
+        console.log('[CarerVisitWorkflow] Loading draft assessment from database');
+        if (draft.clientMood && !clientMood) setClientMood(draft.clientMood);
+        if (draft.clientEngagement && !clientEngagement) setClientEngagement(draft.clientEngagement);
+        if (draft.activitiesUndertaken && !activitiesUndertaken) setActivitiesUndertaken(draft.activitiesUndertaken);
+        if (draft.carerObservations && !carerObservations) setCarerObservations(draft.carerObservations);
+        if (draft.clientFeedback && !clientFeedback) setClientFeedback(draft.clientFeedback);
+        if (draft.nextVisitPreparations && !nextVisitPreparations) setNextVisitPreparations(draft.nextVisitPreparations);
+      }
+      setAssessmentInitialized(true);
+    }
+  }, [visitRecord, assessmentInitialized, isViewOnly]);
+  
+  // Auto-save Complete tab assessment fields with debouncing (draft persistence)
+  useEffect(() => {
+    if (!visitRecord?.id || isViewOnly || !assessmentInitialized) return;
+    
+    // Clear any existing timeout
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+    }
+    
+    draftSaveTimeoutRef.current = setTimeout(async () => {
+      const draftAssessment = {
+        clientMood,
+        clientEngagement,
+        activitiesUndertaken,
+        carerObservations,
+        clientFeedback,
+        nextVisitPreparations,
+      };
+      
+      // Only save if there's meaningful data
+      const hasData = Object.values(draftAssessment).some(v => v && v.trim().length > 0);
+      if (!hasData) return;
+      
+      try {
+        const currentLocationData = visitRecord.location_data || {};
+        await updateVisitRecord.mutateAsync({
+          id: visitRecord.id,
+          updates: {
+            location_data: {
+              ...currentLocationData,
+              draft_assessment: draftAssessment,
+            }
+          }
+        });
+        console.log('[CarerVisitWorkflow] Auto-saved assessment draft');
+      } catch (error) {
+        console.error('[CarerVisitWorkflow] Error auto-saving assessment:', error);
+      }
+    }, 2000); // 2-second debounce
+    
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+    };
+  }, [clientMood, clientEngagement, activitiesUndertaken, carerObservations, clientFeedback, nextVisitPreparations, visitRecord?.id, isViewOnly, assessmentInitialized]);
+  
+  // Function to flush all pending draft saves before completion
+  const flushDraftSaves = useCallback(async () => {
+    if (!visitRecord?.id || isViewOnly) return;
+    
+    // Clear pending timeout
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+      draftSaveTimeoutRef.current = null;
+    }
+    
+    // Save all pending data immediately
+    try {
+      const currentLocationData = visitRecord.location_data || {};
+      await updateVisitRecord.mutateAsync({
+        id: visitRecord.id,
+        updates: {
+          visit_notes: notes,
+          location_data: {
+            ...currentLocationData,
+            draft_assessment: {
+              clientMood,
+              clientEngagement,
+              activitiesUndertaken,
+              carerObservations,
+              clientFeedback,
+              nextVisitPreparations,
+            }
+          }
+        }
+      });
+      console.log('[CarerVisitWorkflow] Flushed all draft saves');
+    } catch (error) {
+      console.error('[CarerVisitWorkflow] Error flushing drafts:', error);
+    }
+  }, [visitRecord, notes, clientMood, clientEngagement, activitiesUndertaken, carerObservations, clientFeedback, nextVisitPreparations, isViewOnly, updateVisitRecord]);
   
   // Timer functionality
   useEffect(() => {
@@ -1338,6 +1459,28 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Pre-completion: Flush all pending draft saves
+    console.log('[handleCompleteVisit] Flushing pending draft saves...');
+    await flushDraftSaves();
+    
+    // Pre-completion: Refresh auth session to ensure token is fresh for long sessions
+    console.log('[handleCompleteVisit] Refreshing auth session...');
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.warn('[handleCompleteVisit] Session refresh warning:', sessionError);
+      } else if (session) {
+        // Optionally refresh if token is older than 30 minutes
+        const tokenAge = session.expires_at ? (Date.now() / 1000) - (session.expires_at - 3600) : 0;
+        if (tokenAge > 1800) { // 30 minutes
+          console.log('[handleCompleteVisit] Token is old, refreshing...');
+          await supabase.auth.refreshSession();
+        }
+      }
+    } catch (refreshError) {
+      console.warn('[handleCompleteVisit] Auth refresh failed, continuing:', refreshError);
+    }
+    
     if (!currentAppointment || !user?.id || !visitRecord) {
       const missingData = [];
       if (!currentAppointment) missingData.push('appointment');
@@ -1381,7 +1524,7 @@ const CarerVisitWorkflow = () => {
     }, 120000);
 
     try {
-      // Step 1: Complete visit record - with 30s timeout
+      // Step 1: Complete visit record - with 60s timeout (increased for long sessions)
       console.log('Step 1: Completing visit record...');
       setCompletionStep('Saving signatures and visit data...');
       setCompletionProgress(20);
@@ -1395,7 +1538,7 @@ const CarerVisitWorkflow = () => {
           visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks completed, ${medications?.filter(m => m.is_administered).length || 0} medications administered, and ${events?.length || 0} events recorded.`,
           visitPhotos: uploadedPhotos,
         }),
-        30000,
+        60000, // Increased from 30s to 60s for reliability on slow connections
         'Saving visit data timed out. Please check your connection and try again.'
       );
 
@@ -2912,8 +3055,8 @@ const CarerVisitWorkflow = () => {
             </Card>
           </TabsContent>
 
-          {/* Care Plan Tab */}
-          <TabsContent value="care-plan" className="w-full mt-6">
+          {/* Care Plan Tab - forceMount prevents state loss on tab switch */}
+          <TabsContent value="care-plan" className="w-full mt-6" forceMount>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -3210,8 +3353,8 @@ const CarerVisitWorkflow = () => {
             </Card>
           </TabsContent>
 
-          {/* Notes Tab */}
-          <TabsContent value="notes" className="w-full mt-6">
+          {/* Notes Tab - forceMount prevents state loss on tab switch */}
+          <TabsContent value="notes" className="w-full mt-6" forceMount>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -3325,8 +3468,8 @@ const CarerVisitWorkflow = () => {
             </Card>
           </TabsContent>
 
-          {/* Sign-off Tab */}
-          <TabsContent value="sign-off" className="w-full mt-6">
+          {/* Sign-off Tab - forceMount prevents signature loss on tab switch */}
+          <TabsContent value="sign-off" className="w-full mt-6" forceMount>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -3436,8 +3579,8 @@ const CarerVisitWorkflow = () => {
             </Card>
           </TabsContent>
 
-          {/* Complete Tab */}
-          <TabsContent value="complete" className="w-full mt-6">
+          {/* Complete Tab - forceMount prevents state loss on tab switch */}
+          <TabsContent value="complete" className="w-full mt-6" forceMount>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

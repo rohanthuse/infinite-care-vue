@@ -27,7 +27,7 @@ export interface VisitEvent {
 export const useVisitEvents = (visitRecordId?: string) => {
   const queryClient = useQueryClient();
 
-  // Get all events for a visit
+  // Get all events for a visit - session-stable for long visits
   const { data: events, isLoading } = useQuery({
     queryKey: ['visit-events', visitRecordId],
     queryFn: async () => {
@@ -43,6 +43,11 @@ export const useVisitEvents = (visitRecordId?: string) => {
       return data as VisitEvent[];
     },
     enabled: !!visitRecordId,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Record an event

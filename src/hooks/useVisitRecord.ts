@@ -28,7 +28,7 @@ export const useVisitRecord = (bookingId?: string) => {
   const queryClient = useQueryClient();
   const [isLoadingTimeout, setIsLoadingTimeout] = React.useState(false);
 
-  // Get current visit record for a booking
+  // Get current visit record for a booking - session-stable settings for long visits
   const { data: visitRecord, isLoading: queryLoading } = useQuery({
     queryKey: ['visit-record', bookingId],
     queryFn: async () => {
@@ -63,6 +63,11 @@ export const useVisitRecord = (bookingId?: string) => {
       return completedRecord as VisitRecord | null;
     },
     enabled: !!bookingId,
+    // Session-stable: prevent unnecessary refetches during long visits (10-30 min)
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Timeout handling for loading state

@@ -25,7 +25,7 @@ export interface VisitMedication {
 export const useVisitMedications = (visitRecordId?: string) => {
   const queryClient = useQueryClient();
 
-  // Get all medications for a visit
+  // Get all medications for a visit - session-stable for long visits
   const { data: medications, isLoading } = useQuery({
     queryKey: ['visit-medications', visitRecordId],
     queryFn: async () => {
@@ -41,6 +41,11 @@ export const useVisitMedications = (visitRecordId?: string) => {
       return data as VisitMedication[];
     },
     enabled: !!visitRecordId,
+    // Session-stable: prevent unnecessary refetches during long visits
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Add medication to visit
