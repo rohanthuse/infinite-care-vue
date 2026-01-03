@@ -51,13 +51,17 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertCircle,
-  Download
+  Download,
+  Activity,
+  Target
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
 import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
+import { ActivitiesDisplay } from './view-report/ActivitiesDisplay';
+import { GoalsDisplay } from './view-report/GoalsDisplay';
 
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
@@ -587,6 +591,32 @@ export function ViewServiceReportDialog({
                     <p className="text-sm">No tasks recorded for this visit</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Activity Details Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Activity Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActivitiesDisplay carePlanId={clientCarePlan?.id} />
+              </CardContent>
+            </Card>
+
+            {/* Goal Details Section - Always Show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Goal Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GoalsDisplay carePlanId={clientCarePlan?.id} />
               </CardContent>
             </Card>
 
