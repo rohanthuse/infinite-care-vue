@@ -16,7 +16,7 @@ import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServi
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import { format, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Target } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,8 +30,6 @@ import { EditableMedicationsTable } from './edit-report/EditableMedicationsTable
 import { EditableNEWS2Form } from './edit-report/EditableNEWS2Form';
 import { EditableEventsList } from './edit-report/EditableEventsList';
 import { EditableVisitSummary } from './edit-report/EditableVisitSummary';
-import { EditableGoalsSection } from './edit-report/EditableGoalsSection';
-import { EditableActivitiesSection } from './edit-report/EditableActivitiesSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -120,15 +118,11 @@ export function CreateServiceReportDialog({
   } | null>(null);
   const [pendingEventChanges, setPendingEventChanges] = useState<Map<string, { event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }>>(new Map());
   const [pendingVisitSummary, setPendingVisitSummary] = useState<string | null>(null);
-  const [pendingGoalChanges, setPendingGoalChanges] = useState<Map<string, { status: string; progress: number; notes: string }>>(new Map());
-  const [pendingActivityChanges, setPendingActivityChanges] = useState<Map<string, { performed: boolean; duration_minutes: number; notes: string }>>(new Map());
 
   // State for NEW items (to be saved on submit)
   const [newTasks, setNewTasks] = useState<{ task_category: string; task_name: string; is_completed: boolean; completion_notes: string }[]>([]);
   const [newMedications, setNewMedications] = useState<{ medication_name: string; dosage: string; is_administered: boolean; administration_time: string; administration_notes: string; not_administered_reason: string }[]>([]);
   const [newEvents, setNewEvents] = useState<{ event_type: string; event_title: string; event_description: string; severity: string; follow_up_required: boolean; follow_up_notes: string }[]>([]);
-  const [newGoals, setNewGoals] = useState<{ description: string; status: string; progress: number; notes: string }[]>([]);
-  const [newActivities, setNewActivities] = useState<{ name: string; duration_minutes: number; notes: string }[]>([]);
 
   // Reset all pending states when dialog opens to prevent stale data
   useEffect(() => {
@@ -136,14 +130,10 @@ export function CreateServiceReportDialog({
       setNewTasks([]);
       setNewMedications([]);
       setNewEvents([]);
-      setNewGoals([]);
-      setNewActivities([]);
       setPendingVitalChanges(null);
       setPendingTaskChanges(new Map());
       setPendingMedicationChanges(new Map());
       setPendingEventChanges(new Map());
-      setPendingGoalChanges(new Map());
-      setPendingActivityChanges(new Map());
       setPendingVisitSummary(null);
     }
   }, [open]);
@@ -800,30 +790,6 @@ export function CreateServiceReportDialog({
       }
     }
 
-    // Save NEW goals to care plan
-    if (clientCarePlan?.id) {
-      for (const goal of newGoals) {
-        await supabase.from('client_care_plan_goals').insert({
-          care_plan_id: clientCarePlan.id,
-          description: goal.description,
-          status: goal.status,
-          progress: goal.progress,
-          notes: goal.notes || null,
-        });
-      }
-
-      // Save NEW activities to care plan
-      for (const activity of newActivities) {
-        await supabase.from('client_activities').insert({
-          care_plan_id: clientCarePlan.id,
-          name: activity.name,
-          frequency: 'as-needed',
-          status: 'active',
-          description: activity.notes || null,
-        });
-      }
-    }
-
     // In edit mode, save all pending changes to existing items
     if (mode === 'edit') {
       try {
@@ -1252,42 +1218,6 @@ export function CreateServiceReportDialog({
                     observations={observations || []}
                     onEventsChange={setPendingEventChanges}
                     onAddEvent={(event) => setNewEvents(prev => [...prev, event])}
-                    allowManualAdd={true}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Goals Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Care Plan Goals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EditableGoalsSection 
-                    carePlanId={clientCarePlan?.id}
-                    onGoalsChange={setPendingGoalChanges}
-                    onAddGoal={(goal) => setNewGoals(prev => [...prev, goal])}
-                    allowManualAdd={true}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Activities Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Activities Performed
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EditableActivitiesSection 
-                    carePlanId={clientCarePlan?.id}
-                    onActivitiesChange={setPendingActivityChanges}
-                    onAddActivity={(activity) => setNewActivities(prev => [...prev, activity])}
                     allowManualAdd={true}
                   />
                 </CardContent>
