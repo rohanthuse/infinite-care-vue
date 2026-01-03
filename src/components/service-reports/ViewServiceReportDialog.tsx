@@ -791,14 +791,6 @@ export function ViewServiceReportDialog({
                       </div>
                     </div>
 
-                    {safeReport.activities_undertaken && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Activities Undertaken</p>
-                        <p className="text-sm bg-muted/50 p-3 rounded-md">
-                          {safeReport.activities_undertaken}
-                        </p>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
 
@@ -811,19 +803,7 @@ export function ViewServiceReportDialog({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Carer Visit Notes (Primary - from visit_records) */}
-                    {visitRecord?.visit_notes && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">
-                          Carer Visit Notes
-                        </p>
-                        <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
-                          {visitRecord.visit_notes}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Activities Undertaken */}
+                    {/* Activities Undertaken - to match Edit mode order */}
                     {safeReport.activities_undertaken && (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -857,6 +837,30 @@ export function ViewServiceReportDialog({
                       </div>
                     )}
 
+                    {/* Next Visit Preparations */}
+                    {safeReport.next_visit_preparations && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Next Visit Preparations
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.next_visit_preparations}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Carer Visit Notes (from visit_records - system notes) */}
+                    {visitRecord?.visit_notes && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Carer Visit Notes
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                          {visitRecord.visit_notes}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Medication Notes */}
                     {safeReport.medication_administered && safeReport.medication_notes && (
                       <div>
@@ -878,18 +882,6 @@ export function ViewServiceReportDialog({
                         </p>
                         <p className="text-sm bg-amber-50 dark:bg-amber-950/20 p-3 rounded-md border border-amber-200 dark:border-amber-800">
                           {safeReport.incident_details}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Next Visit Preparations */}
-                    {safeReport.next_visit_preparations && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">
-                          Next Visit Preparations
-                        </p>
-                        <p className="text-sm bg-muted/50 p-3 rounded-md">
-                          {safeReport.next_visit_preparations}
                         </p>
                       </div>
                     )}
