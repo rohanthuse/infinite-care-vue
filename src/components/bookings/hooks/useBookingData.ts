@@ -50,6 +50,7 @@ export function useBookingData(branchId?: string) {
   } = useBranchClients({
     branchId: shouldFetchData ? branchId : undefined,
     searchTerm: "",
+    statusFilter: 'Active',
     page: 1,
     itemsPerPage: 100
   });
