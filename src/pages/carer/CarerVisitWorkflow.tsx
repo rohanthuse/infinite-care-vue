@@ -1731,9 +1731,19 @@ const CarerVisitWorkflow = () => {
       return; // User will be redirected to login
     }
     
-    // Pre-completion: Flush all pending draft saves
+    // Pre-completion: Flush pending draft saves with timeout (non-blocking)
     console.log('[handleCompleteVisit] Flushing pending draft saves...');
-    await flushDraftSaves();
+    try {
+      await Promise.race([
+        flushDraftSaves(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Draft flush timeout')), 5000)
+        )
+      ]);
+    } catch (flushError) {
+      console.warn('[handleCompleteVisit] Draft flush failed, continuing:', flushError);
+      // Don't block completion - data will be captured in the final save
+    }
     
     if (!currentAppointment || !user?.id || !visitRecord) {
       const missingData = [];
@@ -2013,7 +2023,9 @@ const CarerVisitWorkflow = () => {
       setShowCompletionModal(true);
     } finally {
       clearTimeout(globalTimeoutId);
-      // Loading state already handled in catch block, only clear here for success path
+      // CRITICAL: Always reset loading state to prevent stuck button
+      // The completion modal handles the success/error UX separately
+      setIsCompletingVisit(false);
     }
   };
 
