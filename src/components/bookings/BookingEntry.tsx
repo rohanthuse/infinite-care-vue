@@ -56,14 +56,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   // Determine background color based on status
   const statusColors = {
     assigned: "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200",
-    unassigned: "bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 border-2 text-amber-900 dark:text-amber-200",
+    unassigned: "bg-yellow-100 dark:bg-yellow-900/40 border-yellow-400 dark:border-yellow-600 border-2 text-yellow-900 dark:text-yellow-200",
     done: "bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200",
     "in-progress": "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200",
     cancelled: "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200",
     departed: "bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200",
     suspended: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200",
     // Late/missed colors
-    late: "bg-amber-100 dark:bg-amber-900/40 border-amber-500 dark:border-amber-500 border-l-4 text-amber-900 dark:text-amber-200",
+    late: "bg-orange-100 dark:bg-orange-900/40 border-orange-500 dark:border-orange-500 border-l-4 text-orange-900 dark:text-orange-200",
     missed: "bg-red-100 dark:bg-red-900/40 border-red-500 dark:border-red-500 border-l-4 text-red-900 dark:text-red-200",
   };
   
@@ -147,7 +147,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
               isClientView 
-                ? (isUnassigned ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : (hasMultipleCarers ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'))
+                ? (isUnassigned ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' : (hasMultipleCarers ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'))
                 : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
             }`}>
               {primaryInitials}
@@ -208,7 +208,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 text-xs py-1 px-2 rounded-full ${statusColors[booking.status]}`}>
             {booking.status === 'in-progress' && <div className="w-2 h-2 bg-current rounded-full animate-pulse" />}
-            {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />}
+            {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />}
             {booking.status === 'cancelled' && <AlertCircle className="h-3 w-3" />}
             {booking.status === 'done' && <div className="w-2 h-2 bg-current rounded-full" />}
             <span className="font-medium">
@@ -336,7 +336,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 </div>
               )}
                   <div className="font-medium truncate flex items-center">
-                    {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
+                    {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />}
                     <span>{booking.startTime}-{booking.endTime}</span>
                     <Info className="h-3 w-3 ml-1 opacity-60" />
                   </div>
@@ -401,7 +401,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             )}
             <div className="p-1 overflow-hidden h-full flex flex-col">
               <div className="font-medium truncate flex items-center">
-                {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
+                {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />}
                 <span>{booking.startTime}-{booking.endTime}</span>
                 {width > 10 && (
                   <Info className="h-3 w-3 ml-1 opacity-60" />

@@ -336,14 +336,16 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         return "bg-green-500/10 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-0";
       case "assigned":
         return "bg-blue-500/10 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0";
+      case "unassigned":
+        return "bg-yellow-500/10 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-0";
       case "in-progress":
-        return "bg-amber-500/10 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0";
-      case "departed":
         return "bg-purple-500/10 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-0";
+      case "departed":
+        return "bg-teal-500/10 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 border-0";
       case "cancelled":
         return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
       case "late":
-        return "bg-amber-500/10 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0";
+        return "bg-orange-500/10 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 border-0";
       case "missed":
         return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
       default:
