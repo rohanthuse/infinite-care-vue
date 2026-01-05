@@ -15,6 +15,7 @@ import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { useCreateServiceReport } from "@/hooks/useServiceReports";
 import { generateServiceReportFromVisit } from "@/utils/generateServiceReport";
 import { withTimeout } from "@/utils/promiseTimeout";
+import { isValidUUID } from "@/utils/validationUtils";
 import { VisitCompletionModal } from "@/components/carer/VisitCompletionModal";
 import {
   Clock,
@@ -196,6 +197,62 @@ const CarerVisitWorkflow = () => {
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
   const { medications, administerMedication, addMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
+  
+  // Mutation timeout constant to prevent infinite loading states
+  const MUTATION_TIMEOUT_MS = 15000;
+  
+  // Session stability: refresh auth when tab becomes visible after idle
+  useEffect(() => {
+    let lastActivityTime = Date.now();
+    const IDLE_THRESHOLD_MS = 60000; // 1 minute
+    
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const idleTime = Date.now() - lastActivityTime;
+        
+        if (idleTime > IDLE_THRESHOLD_MS) {
+          console.log('[CarerVisitWorkflow] Tab became visible after', Math.round(idleTime/1000), 'seconds of idle - refreshing session');
+          
+          try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error || !session) {
+              console.warn('[CarerVisitWorkflow] Session expired during idle - redirecting to login');
+              toast.error('Your session has expired. Please log in again.');
+              navigate('/carer-login');
+              return;
+            }
+            
+            // Refresh auth token to ensure it's valid
+            await supabase.auth.refreshSession();
+            console.log('[CarerVisitWorkflow] Session refreshed successfully');
+            
+            // Invalidate stale queries to get fresh data
+            queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecord?.id] });
+          } catch (error) {
+            console.error('[CarerVisitWorkflow] Error refreshing session:', error);
+          }
+        }
+        
+        lastActivityTime = Date.now();
+      }
+    };
+    
+    // Also track activity to update lastActivityTime
+    const handleActivity = () => {
+      lastActivityTime = Date.now();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('click', handleActivity);
+    document.addEventListener('keypress', handleActivity);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('click', handleActivity);
+      document.removeEventListener('keypress', handleActivity);
+    };
+  }, [navigate, queryClient, visitRecord?.id]);
   
   // Fetch real appointment data from database - session-stable for long visits
   const { data: appointmentData, isLoading: appointmentLoading, error: appointmentError } = useQuery({
@@ -1092,6 +1149,14 @@ const CarerVisitWorkflow = () => {
     if (medication) {
       console.log('[handleMedicationToggle] Calling mutation to toggle medication');
       setUpdatingMedicationId(medId);
+      
+      // Add timeout protection to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn('[handleMedicationToggle] Mutation timeout - resetting state');
+        setUpdatingMedicationId(null);
+        toast.error('Request timed out. Please try again.');
+      }, MUTATION_TIMEOUT_MS);
+      
       administerMedication.mutate({
         medicationId: medId,
         isAdministered: !medication.is_administered,
@@ -1099,6 +1164,7 @@ const CarerVisitWorkflow = () => {
         administeredBy: user?.id,
       }, {
         onSettled: () => {
+          clearTimeout(timeoutId);
           setUpdatingMedicationId(null);
         }
       });
@@ -1126,12 +1192,20 @@ const CarerVisitWorkflow = () => {
     }
 
     setSyncingDraftMedId(med.id);
+    
+    // Add timeout protection to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('[handleDraftMedicationToggle] Mutation timeout - resetting state');
+      setSyncingDraftMedId(null);
+      toast.error('Request timed out. Please try again.');
+    }, MUTATION_TIMEOUT_MS);
 
     try {
       // Add medication to visit_medications table
+      // Only set medication_id if it's a valid UUID (not temp IDs like "med-", "json-medication-", etc.)
       const newMedData = {
         visit_record_id: visitRecord.id,
-        medication_id: med.id.startsWith('json-') ? undefined : med.id,
+        medication_id: isValidUUID(med.id) ? med.id : undefined,
         medication_name: med.name,
         dosage: med.dosage || '',
         prescribed_time: med.frequency?.includes('morning') ? '08:00' : 
@@ -1147,6 +1221,7 @@ const CarerVisitWorkflow = () => {
       };
 
       await addMedication.mutateAsync(newMedData);
+      clearTimeout(timeoutId);
       
       // Track which draft meds have been synced
       setAdministeredDraftMeds(prev => new Set([...prev, med.id]));
@@ -1156,6 +1231,7 @@ const CarerVisitWorkflow = () => {
         : `${med.name} added to medication tracker`
       );
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('[handleDraftMedicationToggle] Error:', error);
       toast.error('Failed to update medication');
     } finally {
