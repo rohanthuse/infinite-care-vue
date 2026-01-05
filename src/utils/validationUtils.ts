@@ -1,5 +1,12 @@
-
 import { z } from "zod";
+
+// UUID validation regex pattern
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Helper to validate if a string is a valid UUID
+export const isValidUUID = (value: string): boolean => {
+  return UUID_REGEX.test(value);
+};
 
 // Common validation utilities for accounting forms
 export const createDateValidation = (fieldName: string) => {
