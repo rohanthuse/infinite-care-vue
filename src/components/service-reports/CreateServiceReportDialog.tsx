@@ -208,34 +208,20 @@ export function CreateServiceReportDialog({
   // Fetch care plan JSON data for fallback (when no visit record exists)
   const { data: carePlanJsonData } = useCarePlanJsonData(clientCarePlan?.id || '');
 
-  // Fetch client medications directly from care plan for fallback
-  const { data: carePlanMedications = [] } = useQuery({
-    queryKey: ['care-plan-medications-fallback', clientCarePlan?.id],
-    queryFn: async () => {
-      if (!clientCarePlan?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('client_medications')
-        .select('id, name, dosage, frequency')
-        .eq('care_plan_id', clientCarePlan.id)
-        .eq('status', 'active');
-
-      if (error) throw error;
-      
-      // Transform to match visit medication format for display
-      return (data || []).map(med => ({
-        id: `cp-med-${med.id}`,
-        medication_name: med.name,
-        dosage: med.dosage,
-        prescribed_time: '08:00',
-        is_administered: false,
-        administration_time: null,
-        administration_notes: null,
-        missed_reason: null,
-      }));
-    },
-    enabled: !!clientCarePlan?.id && open,
-  });
+  // Transform care plan medications from JSON for fallback (same logic as ViewServiceReportDialog)
+  const carePlanMedicationsFallback = React.useMemo(() => {
+    if (!carePlanJsonData?.medications || carePlanJsonData.medications.length === 0) return [];
+    return carePlanJsonData.medications.map(med => ({
+      id: med.id || `cp-med-${Date.now()}-${Math.random()}`,
+      medication_name: med.name,
+      dosage: med.dosage,
+      prescribed_time: '08:00',
+      is_administered: false,
+      administration_time: null,
+      administration_notes: null,
+      missed_reason: null,
+    }));
+  }, [carePlanJsonData?.medications]);
 
   // Fetch visit medications when visitRecordId is provided
   const { data: visitMedicationsRaw = [] } = useQuery({
@@ -255,8 +241,8 @@ export function CreateServiceReportDialog({
     enabled: !!effectiveVisitRecordId && open,
   });
 
-  // Use visit medications if available, otherwise fallback to care plan medications
-  const visitMedicationsWithFallback = visitMedicationsRaw.length > 0 ? visitMedicationsRaw : carePlanMedications;
+  // Use visit medications if available, otherwise fallback to care plan JSON medications (same as ViewServiceReportDialog)
+  const visitMedicationsWithFallback = visitMedicationsRaw.length > 0 ? visitMedicationsRaw : carePlanMedicationsFallback;
 
   // Deduplicate medications by normalized name + dosage to handle legacy duplicates
   const visitMedications = React.useMemo(() => {
@@ -484,8 +470,15 @@ export function CreateServiceReportDialog({
   }, [mode, open, actualVisitRecordId, existingReport, preSelectedClient?.id]);
 
   // Auto-load care plan medications when dialog opens with no existing medications
+  // Skip auto-load in edit mode with existing report - use fallback instead
   useEffect(() => {
     const loadCarePlanMedications = async () => {
+      // Skip auto-load in edit mode - medications come from visit_medications or carePlanJsonData fallback
+      if (mode === 'edit' && existingReport) {
+        console.log('[CreateServiceReportDialog] Edit mode with existing report - skipping auto-load, using fallback');
+        return;
+      }
+      
       if (!effectiveVisitRecordId || !preSelectedClient?.id) return;
       if (visitMedications && visitMedications.length > 0) return;
       
