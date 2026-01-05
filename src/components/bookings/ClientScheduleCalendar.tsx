@@ -213,11 +213,20 @@ export function ClientScheduleCalendar({
     const allCarerNames = bookings.map(b => b.carerName).filter(Boolean);
     const allCarerIds = bookings.map(b => b.carerId).filter(Boolean);
     
+    // Check if any booking in the group has late/missed status
+    const hasLateStart = bookings.some(b => b.is_late_start === true);
+    const hasMissed = bookings.some(b => b.is_missed === true);
+    const maxLateMinutes = Math.max(...bookings.map(b => b.late_start_minutes || 0));
+    
     return {
       ...firstBooking,
       carerName: allCarerNames.join(', '), // "John Smith, Mary Johnson"
       allCarerNames, // Array for tooltip
       allCarerIds, // Array for reference
+      // Preserve late/missed status from any booking in the group
+      is_late_start: hasLateStart,
+      is_missed: hasMissed,
+      late_start_minutes: maxLateMinutes > 0 ? maxLateMinutes : firstBooking.late_start_minutes,
     };
   };
 

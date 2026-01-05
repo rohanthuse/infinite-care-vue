@@ -189,7 +189,20 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
-      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+      // Handle special late/missed status filters
+      let matchesStatus = false;
+      if (statusFilter === "all") {
+        matchesStatus = true;
+      } else if (statusFilter === "late") {
+        // Filter for late arrivals (is_late_start = true, not missed)
+        matchesStatus = booking.is_late_start === true && !booking.is_missed;
+      } else if (statusFilter === "missed") {
+        // Filter for missed bookings
+        matchesStatus = booking.is_missed === true;
+      } else {
+        matchesStatus = booking.status === statusFilter;
+      }
+      
       const matchesClient = selectedClientIds.length === 0 || selectedClientIds.includes(booking.clientId);
       const matchesCarer = selectedCarerIds.length === 0 || selectedCarerIds.includes(booking.carerId);
       
@@ -207,6 +220,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       }
     });
   }, [bookings, statusFilter, selectedClientIds, selectedCarerIds]);
+  
+  // Handler to view late arrivals or missed bookings in list view
+  const handleViewLateBookings = (type: 'late' | 'missed') => {
+    setStatusFilter(type);
+    setActiveView('list');
+  };
 
   // Handle booking view from list
   const handleViewBooking = async (booking: Booking) => {
@@ -451,6 +470,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
                   selectedDate={selectedDate}
                   viewType={viewType}
                   bookings={filteredBookings}
+                  onViewLateArrivals={() => handleViewLateBookings('late')}
+                  onViewMissed={() => handleViewLateBookings('missed')}
                 />
           
           <DateNavigation 

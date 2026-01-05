@@ -11,6 +11,8 @@ interface LateBookingAlertsBannerProps {
   selectedDate?: Date;
   viewType?: "daily" | "weekly" | "monthly";
   bookings?: Booking[];
+  onViewLateArrivals?: () => void;
+  onViewMissed?: () => void;
   onViewDetails?: () => void;
 }
 
@@ -19,6 +21,8 @@ export const LateBookingAlertsBanner: React.FC<LateBookingAlertsBannerProps> = (
   selectedDate,
   viewType = "daily",
   bookings = [],
+  onViewLateArrivals,
+  onViewMissed,
   onViewDetails
 }) => {
   const triggerProcessing = useTriggerAlertProcessing();
@@ -87,20 +91,26 @@ export const LateBookingAlertsBanner: React.FC<LateBookingAlertsBannerProps> = (
       <AlertDescription className="mt-2">
         <div className="flex flex-wrap items-center gap-4">
           {stats.lateStartCount > 0 && (
-            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <button
+              onClick={onViewLateArrivals}
+              className="flex items-center gap-2 text-amber-700 dark:text-amber-400 hover:underline cursor-pointer bg-transparent border-none p-0"
+            >
               <Clock className="h-4 w-4" />
               <span className="font-medium">
                 {stats.lateStartCount} late arrival{stats.lateStartCount !== 1 ? 's' : ''}
               </span>
-            </div>
+            </button>
           )}
           {stats.missedCount > 0 && (
-            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+            <button
+              onClick={onViewMissed}
+              className="flex items-center gap-2 text-red-700 dark:text-red-400 hover:underline cursor-pointer bg-transparent border-none p-0"
+            >
               <XCircle className="h-4 w-4" />
               <span className="font-medium">
                 {stats.missedCount} missed booking{stats.missedCount !== 1 ? 's' : ''}
               </span>
-            </div>
+            </button>
           )}
           {onViewDetails && (
             <Button 

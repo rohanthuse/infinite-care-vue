@@ -68,6 +68,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   // Compute actual filter counts
   const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
     acc[booking.status] = (acc[booking.status] || 0) + 1;
+    // Also count late and missed bookings
+    if (booking.is_late_start === true && !booking.is_missed) {
+      acc['late'] = (acc['late'] || 0) + 1;
+    }
+    if (booking.is_missed === true) {
+      acc['missed'] = (acc['missed'] || 0) + 1;
+    }
     return acc;
   }, {});
 
@@ -108,7 +115,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       booking.carerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.id?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+    // Handle special late/missed status filters
+    let matchesStatus = false;
+    if (statusFilter === "all") {
+      matchesStatus = true;
+    } else if (statusFilter === "late") {
+      matchesStatus = booking.is_late_start === true && !booking.is_missed;
+    } else if (statusFilter === "missed") {
+      matchesStatus = booking.is_missed === true;
+    } else {
+      matchesStatus = booking.status === statusFilter;
+    }
     
     return matchesSearch && matchesStatus;
   });
@@ -455,6 +472,12 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                   {typeof statusCounts === "object" ? (
                     <Badge className="ml-2">{Object.values(statusCounts).reduce((a, b) => a + b, 0)}</Badge>
                   ) : null}
+                </SelectItem>
+                <SelectItem value="late">
+                  Late Arrivals <Badge className="ml-2 bg-amber-500">{statusCounts.late || 0}</Badge>
+                </SelectItem>
+                <SelectItem value="missed">
+                  Missed <Badge className="ml-2 bg-red-500">{statusCounts.missed || 0}</Badge>
                 </SelectItem>
                 <SelectItem value="assigned">Assigned <Badge className="ml-2">{statusCounts.assigned || 0}</Badge></SelectItem>
                 <SelectItem value="in-progress">In Progress <Badge className="ml-2">{statusCounts["in-progress"] || 0}</Badge></SelectItem>

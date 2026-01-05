@@ -82,6 +82,8 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="late">Late Arrivals</SelectItem>
+              <SelectItem value="missed">Missed</SelectItem>
               <SelectItem value="assigned">Assigned</SelectItem>
               <SelectItem value="unassigned">Unassigned</SelectItem>
               <SelectItem value="done">Done</SelectItem>
