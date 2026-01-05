@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Download, Plus, Search, Filter, Calendar as CalendarIcon, ChevronDown, Users, Clock, MapPin, AlertCircle, FileText, Share2, Copy } from 'lucide-react';
+import { Download, Plus, Search, Filter, Calendar as CalendarIcon, ChevronDown, Users, Clock, MapPin, AlertCircle, FileText, Share2 } from 'lucide-react';
 import { DateNavigation } from '@/components/bookings/DateNavigation';
 import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
@@ -45,7 +45,7 @@ import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalen
 import { ErrorBoundary } from './ErrorBoundary';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { useQueryClient } from '@tanstack/react-query';
-import { ReplicateRotaDialog } from '@/components/bookings/dialogs/ReplicateRotaDialog';
+
 import { LateBookingAlertsBanner } from '@/components/bookings/LateBookingAlertsBanner';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -124,8 +124,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prefilledDate, setPrefilledDate] = useState<Date | null>(null);
-  const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
-  const [eventToReplicate, setEventToReplicate] = useState<CalendarEvent | null>(null);
   const {
     organization
   } = useTenant();
@@ -664,19 +662,7 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     }
   };
   const handleDuplicateEvent = (event: CalendarEvent) => {
-    console.log('Duplicate event:', event);
-    // Open replicate dialog with the selected event
-    if (event.type === 'booking') {
-      setEventToReplicate(event);
-      setReplicateDialogOpen(true);
-    } else {
-      toast.info('Replication is currently only available for bookings');
-    }
-  };
-  
-  const handleOpenReplicateDialog = () => {
-    setEventToReplicate(null);
-    setReplicateDialogOpen(true);
+    toast.info('To replicate bookings, please use the Replicate Rota feature in the Bookings tab');
   };
   const handleAddEvent = (date?: Date, timeSlot?: Date, eventType?: 'agreement' | 'booking' | 'leave' | 'meeting' | 'training') => {
     // Set the prefilled date/time based on what was clicked
@@ -738,10 +724,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleOpenReplicateDialog}>
-            <Copy className="h-4 w-4 mr-2" />
-            Replicate Rota
-          </Button>
 
           <Button variant="outline" size="sm" onClick={handleShareCalendar}>
             <Share2 className="h-4 w-4 mr-2" />
@@ -785,11 +767,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
               <DropdownMenuItem className="cursor-pointer focus:bg-accent focus:text-accent-foreground" onSelect={() => handleNewEvent('leave')}>
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Leave/Holiday
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer focus:bg-accent focus:text-accent-foreground" onSelect={handleOpenReplicateDialog}>
-                <Copy className="h-4 w-4 mr-2" />
-                Replicate Rota
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1232,15 +1209,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
 
       {/* Delete Event Dialog */}
       <DeleteEventDialog open={deleteEventDialogOpen} onOpenChange={setDeleteEventDialogOpen} event={eventToDelete} onConfirm={handleConfirmDeleteEvent} isDeleting={deleteEventMutation.isPending} />
-
-      {/* Replicate Rota Dialog */}
-      <ReplicateRotaDialog 
-        open={replicateDialogOpen} 
-        onOpenChange={setReplicateDialogOpen} 
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id || ''} 
-        currentDate={currentDate}
-        selectedEvent={eventToReplicate}
-      />
       </div>
     </ErrorBoundary>;
 };
