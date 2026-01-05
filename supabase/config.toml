@@ -138,3 +138,6 @@ verify_jwt = false
 
 [functions.renew-subscription]
 verify_jwt = false
+
+[functions.send-carer-schedule]
+verify_jwt = false

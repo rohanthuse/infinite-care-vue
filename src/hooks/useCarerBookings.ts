@@ -18,6 +18,7 @@ export interface CarerBooking {
   service_name?: string;
   client_first_name?: string;
   client_last_name?: string;
+  client_address?: string;
   // Multiple services support
   service_ids?: string[];
   service_names?: string[];
@@ -38,6 +39,15 @@ export interface CarerBooking {
     last_name: string;
     email?: string;
     phone?: string;
+    client_addresses?: {
+      address_line_1: string;
+      address_line_2?: string;
+      city: string;
+      state_county?: string;
+      postcode: string;
+      country?: string;
+      is_default?: boolean;
+    }[];
   };
   services?: {
     id: string;
@@ -58,7 +68,16 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
         first_name,
         last_name,
         email,
-        phone
+        phone,
+        client_addresses (
+          address_line_1,
+          address_line_2,
+          city,
+          state_county,
+          postcode,
+          country,
+          is_default
+        )
       ),
       services (
         id,
@@ -112,9 +131,29 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
     // Get the most recent unavailability request for this booking
     const unavailabilityRequest = booking.booking_unavailability_requests?.[0] || null;
     
+    // Format client address from client_addresses
+    let clientAddress = '';
+    if (booking.clients?.client_addresses && booking.clients.client_addresses.length > 0) {
+      // Prefer default address, otherwise use first one
+      const address = booking.clients.client_addresses.find((a: any) => a.is_default) 
+        || booking.clients.client_addresses[0];
+      if (address) {
+        const parts = [
+          address.address_line_1,
+          address.address_line_2,
+          address.city,
+          address.state_county,
+          address.postcode,
+          address.country
+        ].filter(Boolean);
+        clientAddress = parts.join(', ');
+      }
+    }
+    
     return {
       ...booking,
       client_name: clientName,
+      client_address: clientAddress,
       service_name: serviceName,
       service_ids: serviceIds.length > 0 ? serviceIds : (booking.service_id ? [booking.service_id] : []),
       service_names: serviceNames.length > 0 ? serviceNames : (booking.services?.title ? [booking.services.title] : []),
