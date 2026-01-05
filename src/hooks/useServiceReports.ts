@@ -51,6 +51,8 @@ export const useCarerServiceReports = (staffId?: string) => {
         return [];
       }
       
+      console.log('[useCarerServiceReports] Fetching reports for staffId:', staffId);
+      
       const { data, error } = await supabase
         .from('client_service_reports')
         .select(`
@@ -69,7 +71,12 @@ export const useCarerServiceReports = (staffId?: string) => {
         .eq('staff_id', staffId)
         .order('service_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCarerServiceReports] Query error:', error);
+        throw error;
+      }
+      
+      console.log('[useCarerServiceReports] Fetched', data?.length || 0, 'reports for staffId:', staffId);
       return data || [];
     },
     enabled: Boolean(staffId),
