@@ -591,15 +591,15 @@ export function ViewServiceReportDialog({
                   </div>
 
                   {/* Duration and Delay Summary */}
-                  {(visitRecord?.actual_duration_minutes > 0 || visitRecord?.arrival_delay_minutes !== 0) && (
+                  {visitRecord && (visitRecord.actual_duration_minutes > 0 || visitRecord.arrival_delay_minutes !== 0) && (
                     <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
-                      {visitRecord?.actual_duration_minutes > 0 && (
+                      {visitRecord.actual_duration_minutes > 0 && (
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Actual Duration</p>
                           <p className="font-medium">{visitRecord.actual_duration_minutes} minutes</p>
                         </div>
                       )}
-                      {visitRecord?.arrival_delay_minutes !== 0 && (
+                      {visitRecord.arrival_delay_minutes !== 0 && (
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Arrival Delay</p>
                           <p className={`font-medium ${visitRecord.arrival_delay_minutes > 0 ? 'text-amber-600' : 'text-green-600'}`}>
