@@ -194,7 +194,7 @@ const CarerVisitWorkflow = () => {
   // Visit management hooks
   const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit, autoCreateVisitRecord } = useVisitRecord(appointmentId);
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
-  const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
+  const { medications, administerMedication, addMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
   
   // Fetch real appointment data from database - session-stable for long visits
@@ -1105,6 +1105,61 @@ const CarerVisitWorkflow = () => {
     } else {
       console.error('[handleMedicationToggle] Medication not found!', { medId, medicationsCount: medications?.length });
       toast.error('Medication not found. Please refresh the page.');
+    }
+  };
+
+  // Handler to sync a draft care plan medication to visit_medications and optionally mark as administered
+  const [syncingDraftMedId, setSyncingDraftMedId] = useState<string | null>(null);
+  const [draftMedicationNotes, setDraftMedicationNotes] = useState<Record<string, string>>({});
+  const [expandedDraftMedication, setExpandedDraftMedication] = useState<string | null>(null);
+  const [administeredDraftMeds, setAdministeredDraftMeds] = useState<Set<string>>(new Set());
+
+  const handleDraftMedicationToggle = async (med: any, markAsAdministered: boolean) => {
+    if (isViewOnly || !visitRecord?.id) {
+      toast.info("Cannot modify medications in view-only mode");
+      return;
+    }
+
+    if (syncingDraftMedId) {
+      toast.info("Please wait for the current operation to complete");
+      return;
+    }
+
+    setSyncingDraftMedId(med.id);
+
+    try {
+      // Add medication to visit_medications table
+      const newMedData = {
+        visit_record_id: visitRecord.id,
+        medication_id: med.id.startsWith('json-') ? undefined : med.id,
+        medication_name: med.name,
+        dosage: med.dosage || '',
+        prescribed_time: med.frequency?.includes('morning') ? '08:00' : 
+                        med.frequency?.includes('noon') || med.frequency?.includes('lunch') ? '12:00' :
+                        med.frequency?.includes('evening') || med.frequency?.includes('night') ? '18:00' : '08:00',
+        administration_method: med.route || 'oral',
+        is_administered: markAsAdministered,
+        administration_notes: draftMedicationNotes[med.id] || (markAsAdministered 
+          ? `Medication administered at ${format(new Date(), 'HH:mm')}` 
+          : ''),
+        administered_by: markAsAdministered ? user?.id : undefined,
+        administration_time: markAsAdministered ? new Date().toISOString() : undefined,
+      };
+
+      await addMedication.mutateAsync(newMedData);
+      
+      // Track which draft meds have been synced
+      setAdministeredDraftMeds(prev => new Set([...prev, med.id]));
+      
+      toast.success(markAsAdministered 
+        ? `${med.name} marked as administered` 
+        : `${med.name} added to medication tracker`
+      );
+    } catch (error) {
+      console.error('[handleDraftMedicationToggle] Error:', error);
+      toast.error('Failed to update medication');
+    } finally {
+      setSyncingDraftMedId(null);
     }
   };
   
@@ -2503,98 +2558,122 @@ const CarerVisitWorkflow = () => {
                               <div className="flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                                 <div className="text-sm text-amber-700">
-                                  <p className="font-medium">Care Plan Medications (Draft)</p>
-                                  <p className="mt-0.5">These medications are from the care plan but not yet synced to the medication tracker.</p>
+                                  <p className="font-medium">Care Plan Medications</p>
+                                  <p className="mt-0.5">Mark medications as taken to record administration.</p>
                                 </div>
                               </div>
                             </div>
-                            {carePlanMedications.map((med) => (
-                              <div key={med.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-all">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <p className="font-medium text-gray-900">{med.name}</p>
-                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                      {med.dosage && <Badge variant="outline">{med.dosage}</Badge>}
-                                      <Badge variant="secondary">{med.frequency}</Badge>
-                                      {med.time_of_day?.length > 0 && (
-                                        <Badge variant="outline" className="capitalize">
-                                          {med.time_of_day.join(', ')}
-                                        </Badge>
-                                      )}
-                                      {med.route && (
-                                        <Badge variant="outline" className="capitalize">
-                                          {med.route}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Instructions */}
-                                    {med.instructions && (
-                                      <p className="text-sm text-gray-600 mt-2">{med.instructions}</p>
+                            {carePlanMedications
+                              .filter(med => !administeredDraftMeds.has(med.id))
+                              .map((med) => (
+                              <div key={med.id} className={`border rounded-lg hover:bg-gray-50 transition-all ${syncingDraftMedId === med.id ? 'opacity-70' : ''}`}>
+                                <div className="flex items-center space-x-3 p-4">
+                                  <div className="flex-shrink-0 relative">
+                                    {syncingDraftMedId === med.id ? (
+                                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    ) : (
+                                      <Checkbox
+                                        checked={false}
+                                        onCheckedChange={() => {
+                                          handleDraftMedicationToggle(med, true);
+                                        }}
+                                        disabled={isViewOnly || syncingDraftMedId !== null}
+                                      />
                                     )}
-                                    
-                                    {/* Additional Details Grid */}
-                                    <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                                      {med.who_administers && (
-                                        <div>
-                                          <span className="text-muted-foreground">Administered by:</span>
-                                          <span className="ml-1 font-medium">{med.who_administers}</span>
-                                        </div>
-                                      )}
-                                      {med.prescriber && (
-                                        <div>
-                                          <span className="text-muted-foreground">Prescriber:</span>
-                                          <span className="ml-1 font-medium">{med.prescriber}</span>
-                                        </div>
-                                      )}
-                                      {med.start_date && (
-                                        <div>
-                                          <span className="text-muted-foreground">Start:</span>
-                                          <span className="ml-1 font-medium">{format(new Date(med.start_date), 'MMM dd, yyyy')}</span>
-                                        </div>
-                                      )}
-                                      {med.end_date && (
-                                        <div>
-                                          <span className="text-muted-foreground">End:</span>
-                                          <span className="ml-1 font-medium">{format(new Date(med.end_date), 'MMM dd, yyyy')}</span>
-                                        </div>
-                                      )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-medium text-gray-900">{med.name}</p>
+                                        {med.dosage && <Badge variant="outline">{med.dosage}</Badge>}
+                                        <Badge variant="secondary">{med.frequency}</Badge>
+                                        {med.time_of_day?.length > 0 && (
+                                          <Badge variant="outline" className="capitalize text-xs">
+                                            {med.time_of_day.join(', ')}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setExpandedDraftMedication(expandedDraftMedication === med.id ? null : med.id)}
+                                          disabled={isViewOnly || syncingDraftMedId === med.id}
+                                        >
+                                          {expandedDraftMedication === med.id ? 'Hide Notes' : 'Add Notes'}
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setViewMedicationDetails({
+                                            ...med,
+                                            instruction: med.instructions,
+                                          })}
+                                          className="h-8"
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                      </div>
                                     </div>
-                                    
-                                    {/* Warnings */}
+                                    {med.instructions && (
+                                      <p className="text-sm text-gray-600 mt-1">{med.instructions}</p>
+                                    )}
                                     {med.warning && (
                                       <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm">
                                         <span className="text-amber-700 font-medium">⚠️ Warning: </span>
                                         <span className="text-amber-600">{med.warning}</span>
                                       </div>
                                     )}
-                                    
-                                    {/* Side Effects */}
-                                    {med.side_effect && (
-                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                                        <span className="text-blue-700 font-medium">ℹ️ Side Effects: </span>
-                                        <span className="text-blue-600">{med.side_effect}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col gap-2 items-end">
-                                    <Badge variant="secondary">Care Plan</Badge>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setViewMedicationDetails({
-                                        ...med,
-                                        instruction: med.instructions,
-                                      })}
-                                      className="h-8"
-                                    >
-                                      <Eye className="w-4 h-4 mr-1" />
-                                      View Details
-                                    </Button>
                                   </div>
                                 </div>
+                                
+                                {expandedDraftMedication === med.id && (
+                                  <div className="px-4 pb-4 space-y-3 border-t bg-gray-50">
+                                    <div className="pt-3">
+                                      <Label htmlFor={`draft-med-notes-${med.id}`} className="text-xs text-gray-600 block mb-1">
+                                        Notes (e.g., "Client refused", "Taken with food")
+                                      </Label>
+                                      <Textarea
+                                        id={`draft-med-notes-${med.id}`}
+                                        value={draftMedicationNotes[med.id] || ''}
+                                        onChange={(e) => setDraftMedicationNotes({
+                                          ...draftMedicationNotes,
+                                          [med.id]: e.target.value
+                                        })}
+                                        placeholder="Enter any relevant notes..."
+                                        rows={3}
+                                        className="resize-none"
+                                        disabled={isViewOnly}
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setExpandedDraftMedication(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          handleDraftMedicationToggle(med, true);
+                                          setExpandedDraftMedication(null);
+                                        }}
+                                      >
+                                        Save & Mark Taken
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
+                            {carePlanMedications.filter(med => !administeredDraftMeds.has(med.id)).length === 0 && (
+                              <div className="text-center py-4 text-gray-500">
+                                <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                                <p className="text-sm">All medications have been recorded</p>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="text-center py-6 text-gray-500">
