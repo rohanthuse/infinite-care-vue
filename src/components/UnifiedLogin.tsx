@@ -1413,6 +1413,19 @@ const UnifiedLogin = () => {
         case 'carer':
           console.log('[CARER_LOGIN] Carer role detected, pre-fetching profile');
           
+          // CLEAR CARER CONTEXT CACHE to ensure fresh data on new login
+          // This prevents stale staffId from causing Service Report visibility issues
+          try {
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('carerContext-')) {
+                localStorage.removeItem(key);
+                console.log('[CARER_LOGIN] Cleared cached carer context:', key);
+              }
+            });
+          } catch (e) {
+            console.warn('[CARER_LOGIN] Failed to clear carer context cache:', e);
+          }
+          
           // CHECK THIRD-PARTY ACCESS EXPIRY FOR STAFF/CARERS
           console.log('[CARER_LOGIN] Checking third-party access expiry for staff');
           const { data: staffThirdPartyAccess } = await supabase

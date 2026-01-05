@@ -211,7 +211,7 @@ export function CarerReportsTab() {
     console.error('[CarerReportsTab] Reports error:', reportsError);
   }
 
-  // Enhanced debug logging
+  // Enhanced debug logging - helps diagnose Service Report visibility issues
   console.log('[CarerReportsTab] Render state:', {
     contextLoading,
     reportsLoading,
@@ -220,8 +220,12 @@ export function CarerReportsTab() {
     hasCarerContext: !!carerContext,
     hasStaffProfile: !!carerContext?.staffProfile,
     staffId: carerContext?.staffProfile?.id,
+    authUserId: carerContext?.staffProfile?.auth_user_id,
+    branchId: carerContext?.staffProfile?.branch_id,
     reportsCount: reports.length,
     completedBookingsCount: completedBookings.length,
+    allBookingsCount: allBookings.length,
+    pastAppointmentsCount: pastAppointmentsWithReportStatus.length,
     contextError: contextError?.message,
     reportsError: reportsError?.message,
     timestamp: new Date().toISOString()
