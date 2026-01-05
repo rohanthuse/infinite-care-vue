@@ -24,7 +24,8 @@ import {
   LayoutDashboard, Calendar, Users, ClipboardList,
   PoundSterling, Star, MessageSquare, Workflow,
   ListChecks, Pill, FileText, Bell, ClipboardCheck,
-  FileUp, Folder, UserPlus, BarChart4, Settings
+  FileUp, Folder, UserPlus, BarChart4, Settings,
+  Eye, EyeOff
 } from "lucide-react";
 
 const initialPermissions = {
@@ -75,6 +76,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
 
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
   const [activeTab, setActiveTab] = useState("basic");
+  const [showPassword, setShowPassword] = useState(false);
 
   const createAdminMutation = useCreateAdmin();
   const { organization } = useTenant();
@@ -144,10 +146,10 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
       // First create the admin
       const adminResult = await createAdminMutation.mutateAsync(formData);
       
-      if (adminResult?.user?.id) {
+      if (adminResult?.user_id) {
         // Create permissions for each selected branch
         const permissionEntries = formData.branch_ids.map(branchId => ({
-          admin_id: adminResult.user.id,
+          admin_id: adminResult.user_id,
           branch_id: branchId,
           ...permissions
         }));
@@ -195,6 +197,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
     });
     setPermissions(initialPermissions);
     setActiveTab("basic");
+    setShowPassword(false);
     onClose();
   };
 
@@ -268,17 +271,27 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder="Enter password"
-                    required
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      placeholder="Enter password"
+                      required
+                      minLength={6}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
