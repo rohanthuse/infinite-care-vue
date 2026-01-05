@@ -446,11 +446,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         
         <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
           {/* Late/Missed Booking Alerts Banner */}
-          <LateBookingAlertsBanner 
-            branchId={branchId}
-            selectedDate={selectedDate}
-            bookings={filteredBookings}
-          />
+<LateBookingAlertsBanner 
+                  branchId={branchId}
+                  selectedDate={selectedDate}
+                  viewType={viewType}
+                  bookings={filteredBookings}
+                />
           
           <DateNavigation 
             currentDate={selectedDate} 
