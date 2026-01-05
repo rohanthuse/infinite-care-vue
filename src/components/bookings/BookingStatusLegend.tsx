@@ -18,11 +18,11 @@ const LEGEND_STATUSES: BookingStatusType[] = [
 // Color dot classes matching the solid variant
 const LEGEND_DOT_COLORS: Record<BookingStatusType, string> = {
   assigned: 'bg-green-500',
-  unassigned: 'bg-amber-500',
+  unassigned: 'bg-yellow-500',
   done: 'bg-blue-500',
   'in-progress': 'bg-purple-500',
   missed: 'bg-red-500',
-  late: 'bg-amber-500',
+  late: 'bg-orange-500',
   cancelled: 'bg-red-500',
   departed: 'bg-teal-500',
   suspended: 'bg-gray-500',

@@ -85,7 +85,7 @@ export function AttendanceStatusWidget({
 
   const getStatusBadge = () => {
     if (!attendanceStatus) {
-      return <Badge variant="outline" className="bg-gray-50 text-gray-700">Not Checked In</Badge>;
+      return <Badge variant="outline" className="bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">Not Checked In</Badge>;
     }
 
     if (attendanceStatus.check_in_time && !attendanceStatus.check_out_time) {

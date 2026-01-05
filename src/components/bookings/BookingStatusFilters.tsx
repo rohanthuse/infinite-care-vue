@@ -12,10 +12,11 @@ interface BookingStatus {
 
 const statuses: BookingStatus[] = [
   { id: "assigned", label: "Assigned", color: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200" },
-  { id: "unassigned", label: "Unassigned", color: "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200" },
+  { id: "unassigned", label: "Unassigned", color: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200" },
   { id: "done", label: "Done", color: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200" },
   { id: "in-progress", label: "In Progress", color: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200" },
-  { id: "missed", label: "Missed", color: "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200" },
+  { id: "late", label: "Late Arrival", color: "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200" },
+  { id: "missed", label: "Missed", color: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200" },
   { id: "cancelled", label: "Cancelled", color: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200" },
   { id: "departed", label: "Departed", color: "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200" },
   { id: "suspended", label: "Suspended", color: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200" },

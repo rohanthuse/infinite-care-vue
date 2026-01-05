@@ -10,8 +10,8 @@ export const BOOKING_STATUS_COLORS = {
     label: "Assigned"
   },
   unassigned: {
-    light: "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-300",
-    solid: "bg-amber-500 border-amber-600",
+    light: "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/50 dark:border-yellow-700 dark:text-yellow-300",
+    solid: "bg-yellow-500 border-yellow-600",
     label: "Unassigned"
   },
   done: {
@@ -50,8 +50,8 @@ export const BOOKING_STATUS_COLORS = {
     label: "Missed"
   },
   late: {
-    light: "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-300",
-    solid: "bg-amber-500 border-amber-600",
+    light: "bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-300",
+    solid: "bg-orange-500 border-orange-600",
     label: "Late Arrival"
   },
   meeting: {
