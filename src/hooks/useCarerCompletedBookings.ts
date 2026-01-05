@@ -56,7 +56,7 @@ export const useCarerCompletedBookings = (carerId?: string) => {
             )
           `)
           .eq('staff_id', carerId)
-          .eq('status', 'done')
+          .in('status', ['done', 'completed', 'missed', 'in_progress', 'in-progress'])
           .order('start_time', { ascending: false });
 
         console.log('[useCarerCompletedBookings] Query result:', { 
@@ -74,7 +74,7 @@ export const useCarerCompletedBookings = (carerId?: string) => {
             .from('bookings')
             .select('id, client_id, start_time, end_time, status, service_id')
             .eq('staff_id', carerId)
-            .eq('status', 'done')
+            .in('status', ['done', 'completed', 'missed', 'in_progress', 'in-progress'])
             .order('start_time', { ascending: false });
           
           if (simpleError) {

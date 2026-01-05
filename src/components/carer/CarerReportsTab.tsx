@@ -80,14 +80,24 @@ export function CarerReportsTab() {
 
   // Derived state: Past appointments with report status
   const pastAppointmentsWithReportStatus = useMemo(() => {
-    // Filter past appointments (completed or done status, before current time)
+    // Filter past appointments - include done, completed, missed, and in-progress bookings that are past their start time
     const pastAppointments = allBookings.filter(booking => {
       if (!booking.start_time) return false;
       try {
         const startTime = new Date(booking.start_time);
-        return !isNaN(startTime.getTime()) && 
-               (booking.status === 'done' || booking.status === 'completed') && 
-               startTime < new Date();
+        if (isNaN(startTime.getTime())) return false;
+        
+        const isPastStartTime = startTime < new Date();
+        
+        // Include bookings that are:
+        // 1. Marked as done or completed (finished visits)
+        // 2. Marked as missed (past appointments that were not attended)
+        // 3. Past their start time and in-progress (should be completed soon)
+        // Exclude: cancelled, unassigned
+        const validStatuses = ['done', 'completed', 'missed', 'in_progress', 'in-progress'];
+        const excludedStatuses = ['cancelled', 'unassigned'];
+        
+        return isPastStartTime && !excludedStatuses.includes(booking.status || '');
       } catch (e) {
         console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
         return false;
