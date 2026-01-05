@@ -671,7 +671,7 @@ export function CarerReportsTab() {
     }} preSelectedClient={{
       id: selectedReport.client_id,
       name: `${selectedReport.clients?.first_name} ${selectedReport.clients?.last_name}`
-    }} preSelectedDate={selectedReport.service_date} bookingId={selectedReport.booking_id} visitRecordId={selectedReport.visit_record_id || undefined} existingReport={selectedReport} mode="edit" />}
+    }} preSelectedDate={selectedReport.service_date} bookingId={selectedReport.booking_id} visitRecordId={selectedReport.visit_record_id || undefined} existingReport={selectedReport} mode="edit" adminMode={false} />}
 
       {/* Create Report from Booking Dialog */}
       {selectedBookingForReport && <CreateServiceReportDialog open={bookingReportDialogOpen} onOpenChange={open => {
@@ -689,7 +689,7 @@ export function CarerReportsTab() {
       {selectedReport && <ViewServiceReportDialog open={viewDialogOpen} onOpenChange={open => {
       setViewDialogOpen(open);
       if (!open) setSelectedReport(null);
-    }} report={selectedReport} />}
+    }} report={selectedReport} adminMode={false} />}
     </div>;
 }
 

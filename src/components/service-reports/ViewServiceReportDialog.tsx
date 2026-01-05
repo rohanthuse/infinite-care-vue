@@ -53,7 +53,8 @@ import {
   AlertCircle,
   Download,
   Activity,
-  Target
+  Target,
+  Timer
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
@@ -483,6 +484,48 @@ export function ViewServiceReportDialog({
                           This report is incomplete - Please complete the required fields and submit for approval
                         </p>
                       </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Visit Timing Details Card - consistent with Edit dialog */}
+            {visitRecord && (visitRecord.visit_start_time || visitRecord.visit_end_time) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Timer className="h-5 w-5" />
+                    Visit Timing Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Check-in Time</p>
+                      <p className="font-medium">
+                        {visitRecord.visit_start_time ? formatSafeDate(visitRecord.visit_start_time, 'p') : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Check-out Time</p>
+                      <p className="font-medium">
+                        {visitRecord.visit_end_time ? formatSafeDate(visitRecord.visit_end_time, 'p') : 'N/A'}
+                      </p>
+                    </div>
+                    {visitRecord.actual_duration_minutes > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Actual Duration</p>
+                        <p className="font-medium">{visitRecord.actual_duration_minutes} minutes</p>
+                      </div>
+                    )}
+                    {visitRecord.arrival_delay_minutes !== 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Arrival Delay</p>
+                        <p className={`font-medium ${visitRecord.arrival_delay_minutes > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                          {visitRecord.arrival_delay_minutes > 0 ? `+${visitRecord.arrival_delay_minutes}` : visitRecord.arrival_delay_minutes} min
+                        </p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
