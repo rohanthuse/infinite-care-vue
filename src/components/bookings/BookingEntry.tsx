@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Draggable } from "react-beautiful-dnd";
+import { getEffectiveBookingStatus, getBookingStatusColor } from "./utils/bookingColors";
 
 interface BookingEntryProps {
   booking: Booking;
@@ -48,6 +49,10 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   const hasPendingCancellation = booking.cancellation_request_status === 'pending';
   const hasPendingReschedule = booking.reschedule_request_status === 'pending';
 
+  // Check for late/missed status
+  const isLateStart = booking.is_late_start === true;
+  const isMissed = booking.is_missed === true;
+
   // Determine background color based on status
   const statusColors = {
     assigned: "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200",
@@ -56,7 +61,10 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     "in-progress": "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200",
     cancelled: "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200",
     departed: "bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200",
-    suspended: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
+    suspended: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200",
+    // Late/missed colors
+    late: "bg-amber-100 dark:bg-amber-900/40 border-amber-500 dark:border-amber-500 border-l-4 text-amber-900 dark:text-amber-200",
+    missed: "bg-red-100 dark:bg-red-900/40 border-red-500 dark:border-red-500 border-l-4 text-red-900 dark:text-red-200",
   };
   
   // Color coding for change requests with prominent left borders
@@ -69,6 +77,13 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     }
     if (needsReassignment) {
       return "bg-amber-50 border-amber-400 border-2 text-amber-900";
+    }
+    // Check for late/missed status using the helper
+    if (isMissed) {
+      return statusColors.missed;
+    }
+    if (isLateStart) {
+      return statusColors.late;
     }
     return statusColors[booking.status];
   };

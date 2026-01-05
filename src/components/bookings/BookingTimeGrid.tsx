@@ -71,6 +71,10 @@ export interface Booking {
   // Address fields
   location_address?: string | null;
   clientAddress?: string;
+  // Late/missed booking fields
+  is_late_start?: boolean | null;
+  is_missed?: boolean | null;
+  late_start_minutes?: number | null;
 }
 
 export interface Client {

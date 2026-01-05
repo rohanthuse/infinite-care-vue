@@ -28,6 +28,12 @@ export interface BookingDB {
   location_address: string | null;
   cancellation_request_status: 'pending' | 'approved' | 'rejected' | null;
   reschedule_request_status: 'pending' | 'approved' | 'rejected' | null;
+  // Late/missed booking fields
+  is_late_start: boolean | null;
+  is_missed: boolean | null;
+  late_start_minutes: number | null;
+  late_start_notified_at: string | null;
+  missed_notified_at: string | null;
   booking_unavailability_requests?: Array<{
     id: string;
     status: 'pending' | 'approved' | 'rejected' | 'reassigned';
@@ -71,6 +77,11 @@ export async function fetchBranchBookings(branchId?: string) {
       revenue, service_id, created_at, status, notes, location_address,
       cancellation_request_status,
       reschedule_request_status,
+      is_late_start,
+      is_missed,
+      late_start_minutes,
+      late_start_notified_at,
+      missed_notified_at,
       clients!client_id (
         id,
         first_name,

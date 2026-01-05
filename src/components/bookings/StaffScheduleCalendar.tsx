@@ -22,7 +22,7 @@ import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingsMonthView } from "./BookingsMonthView";
-import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
+import { getBookingStatusColor, getBookingStatusLabel, getEffectiveBookingStatus } from "./utils/bookingColors";
 import { StaffScheduleDraggable } from "./StaffScheduleDraggable";
 import { getRequestStatusColors } from "./utils/requestIndicatorHelpers";
 
@@ -718,9 +718,10 @@ export function StaffScheduleCalendar({
       return getBookingStatusColor('off-shift', 'light');
     }
 
-    // If there's a booking, use its actual status for color
+    // If there's a booking, use effective status for color (considers late/missed)
     if (status.booking) {
-      return getBookingStatusColor(status.booking.status, 'light');
+      const effectiveStatus = getEffectiveBookingStatus(status.booking);
+      return getBookingStatusColor(effectiveStatus, 'light');
     }
     
     // Default colors for status types
@@ -784,8 +785,9 @@ export function StaffScheduleCalendar({
     }
     
     if (status.booking) {
-      const statusLabel = getBookingStatusLabel(status.booking.status);
-      const statusColor = getBookingStatusColor(status.booking.status, 'light');
+      const effectiveStatus = getEffectiveBookingStatus(status.booking);
+      const statusLabel = getBookingStatusLabel(effectiveStatus);
+      const statusColor = getBookingStatusColor(effectiveStatus, 'light');
       
       return (
         <div className="space-y-2">

@@ -93,6 +93,28 @@ export function getBookingStatusLabel(status: string): string {
 }
 
 /**
+ * Get effective booking status considering late/missed flags
+ * This determines the visual status for color coding
+ * Priority: missed > late > regular status
+ */
+export function getEffectiveBookingStatus(booking: {
+  status?: string;
+  is_missed?: boolean | null;
+  is_late_start?: boolean | null;
+}): string {
+  // Missed takes highest priority for coloring
+  if (booking.is_missed) {
+    return 'missed';
+  }
+  // Late start takes second priority
+  if (booking.is_late_start) {
+    return 'late';
+  }
+  // Fall back to regular status
+  return booking.status || 'assigned';
+}
+
+/**
  * Check if a booking requires reassignment
  * A booking needs reassignment if:
  * 1. It has an unavailability request with status 'pending' or 'approved'
