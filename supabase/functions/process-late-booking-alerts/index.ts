@@ -104,8 +104,8 @@ serve(async (req) => {
       .in('status', ['confirmed', 'assigned'])
       .lt('start_time', now.toISOString())
       .is('cancelled_at', null)
-      .neq('cancellation_request_status', 'approved')
-      .neq('reschedule_request_status', 'approved');
+      .or('cancellation_request_status.is.null,cancellation_request_status.neq.approved')
+      .or('reschedule_request_status.is.null,reschedule_request_status.neq.approved');
 
     if (bookingsError) {
       console.error('[process-late-booking-alerts] Error fetching bookings:', bookingsError);
