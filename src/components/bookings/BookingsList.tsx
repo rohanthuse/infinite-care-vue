@@ -20,6 +20,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { BookingBulkActionsBar } from "./BookingBulkActionsBar";
 import { cn } from "@/lib/utils";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
+import { getEffectiveBookingStatus, getBookingStatusLabel } from "./utils/bookingColors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -341,6 +342,10 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         return "bg-purple-500/10 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-0";
       case "cancelled":
         return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
+      case "late":
+        return "bg-amber-500/10 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0";
+      case "missed":
+        return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
       default:
         return "bg-muted text-muted-foreground border-0";
     }
@@ -402,7 +407,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           'Actual End': actualEndTime,
           'Client': booking.clientName || '',
           'Carer': booking.carerName || '',
-          'Status': formatStatus(booking.status),
+          'Status': getBookingStatusLabel(getEffectiveBookingStatus(booking)),
           'Notes': booking.notes || ''
         };
       });
@@ -593,11 +598,16 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" 
-                        className={`px-2 py-1 rounded-full ${getStatusBadgeClass(booking.status)}`}
-                      >
-                        {formatStatus(booking.status)}
-                      </Badge>
+                      {(() => {
+                        const effectiveStatus = getEffectiveBookingStatus(booking);
+                        return (
+                          <Badge variant="outline" 
+                            className={`px-2 py-1 rounded-full ${getStatusBadgeClass(effectiveStatus)}`}
+                          >
+                            {getBookingStatusLabel(effectiveStatus)}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>{durationText}</TableCell>
                     <TableCell>
