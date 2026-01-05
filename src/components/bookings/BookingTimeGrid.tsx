@@ -155,6 +155,38 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingBookingMove, setPendingBookingMove] = useState<PendingBookingMove | null>(null);
 
+  // Auto-select first client with bookings if none selected
+  useEffect(() => {
+    if (!selectedClientId && clients.length > 0 && bookings.length > 0) {
+      // Find clients that have bookings
+      const clientsWithBookings = clients.filter(client => 
+        bookings.some(b => b.clientId === client.id)
+      );
+      if (clientsWithBookings.length > 0) {
+        setSelectedClientId(clientsWithBookings[0].id);
+      } else if (clients.length > 0) {
+        // Fallback to first client even without bookings
+        setSelectedClientId(clients[0].id);
+      }
+    }
+  }, [clients, bookings, selectedClientId]);
+
+  // Auto-select first carer with bookings if none selected
+  useEffect(() => {
+    if (!selectedCarerId && carers.length > 0 && bookings.length > 0) {
+      // Find carers that have bookings
+      const carersWithBookings = carers.filter(carer => 
+        bookings.some(b => b.carerId === carer.id)
+      );
+      if (carersWithBookings.length > 0) {
+        setSelectedCarerId(carersWithBookings[0].id);
+      } else if (carers.length > 0) {
+        // Fallback to first carer even without bookings
+        setSelectedCarerId(carers[0].id);
+      }
+    }
+  }, [carers, bookings, selectedCarerId]);
+
   useEffect(() => {
     setLocalBookings(bookings);
     
@@ -511,10 +543,22 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
 
   const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
+    const entityList = entityType === "client" ? clients : carers;
+    const entityBookings = entityType === "client" ? clientBookings : carerBookings;
+    const totalBookingsForType = entityBookings.reduce((sum, e) => sum + (e.bookings?.length || 0), 0);
+    
     if (!entity) {
       return (
-        <div className="flex items-center justify-center h-full bg-muted border border-border rounded-md">
-          <p className="text-muted-foreground text-sm">Select a {entityType} to view their schedule</p>
+        <div className="flex flex-col items-center justify-center h-full bg-muted/50 border border-border rounded-md p-6">
+          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground text-sm font-medium text-center">
+            Select a {entityType} from the list to view their schedule
+          </p>
+          <p className="text-muted-foreground text-xs mt-2 text-center">
+            {entityList.length} {entityType}s • {totalBookingsForType} bookings
+          </p>
         </div>
       );
     }
