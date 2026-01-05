@@ -46,6 +46,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { useQueryClient } from '@tanstack/react-query';
 import { ReplicateRotaDialog } from '@/components/bookings/dialogs/ReplicateRotaDialog';
+import { LateBookingAlertsBanner } from '@/components/bookings/LateBookingAlertsBanner';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -794,6 +795,9 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Late/Missed Booking Alerts Banner */}
+      <LateBookingAlertsBanner branchId={selectedBranch !== 'all' ? selectedBranch : undefined} />
 
       {/* Controls */}
       <Card>

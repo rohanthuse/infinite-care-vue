@@ -45,9 +45,14 @@ export const BOOKING_STATUS_COLORS = {
     label: "Training"
   },
   missed: {
-    light: "bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-300",
-    solid: "bg-orange-500 border-orange-600",
+    light: "bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300",
+    solid: "bg-red-500 border-red-600",
     label: "Missed"
+  },
+  late: {
+    light: "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-300",
+    solid: "bg-amber-500 border-amber-600",
+    label: "Late Arrival"
   },
   meeting: {
     light: "bg-indigo-50 border-indigo-400 text-indigo-900 dark:bg-indigo-900/50 dark:border-indigo-600 dark:text-indigo-300",

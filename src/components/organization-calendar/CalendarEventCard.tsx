@@ -59,6 +59,14 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   };
 
   const getEventColor = (type: string) => {
+    // Priority: Missed > Late > Normal type-based colors
+    if (event.isMissed) {
+      return 'border-red-500 bg-red-50 text-red-900 dark:bg-red-950/50 dark:text-red-100';
+    }
+    if (event.isLateStart) {
+      return 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-100';
+    }
+    
     const colors = {
       booking: 'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/50 dark:text-blue-100',
       meeting: 'border-purple-500 bg-purple-50 text-purple-900 dark:bg-purple-950/50 dark:text-purple-100',

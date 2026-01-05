@@ -54,6 +54,9 @@ const EXTENDED_TYPES: Record<string, string> = {
   // Payroll types
   'payroll_generated': 'payroll',
   'payroll_paid': 'payroll',
+  // Late/Missed booking alerts
+  'booking_late_start': 'booking',
+  'booking_missed': 'booking',
 };
 
 // Organization dashboard route mappings
