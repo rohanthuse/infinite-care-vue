@@ -14,6 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, Plus, Clock, CheckCircle, AlertTriangle, XCircle, Edit, Eye, Calendar, User, ClipboardList, RefreshCw, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { getBookingStatusLabel } from '@/components/bookings/utils/bookingColors';
+import { cn } from '@/lib/utils';
 export function CarerReportsTab() {
   // Destructure loading and error states from ALL hooks
   const {
@@ -563,10 +565,27 @@ export function CarerReportsTab() {
                                 {durationMinutes} min
                               </TableCell>
                               <TableCell>
-                                <Badge variant="success" className="text-xs">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  {booking.status}
-                                </Badge>
+                                {(() => {
+                                  const status = (booking.status || 'assigned').toLowerCase();
+                                  const statusConfig: Record<string, { variant: 'success' | 'destructive' | 'warning' | 'info' | 'secondary' | 'custom'; icon: JSX.Element; colorClass?: string }> = {
+                                    'done': { variant: 'info', icon: <CheckCircle className="h-3 w-3 mr-1" /> },
+                                    'completed': { variant: 'info', icon: <CheckCircle className="h-3 w-3 mr-1" /> },
+                                    'missed': { variant: 'destructive', icon: <XCircle className="h-3 w-3 mr-1" /> },
+                                    'in_progress': { variant: 'custom', icon: <Clock className="h-3 w-3 mr-1" />, colorClass: 'bg-purple-500 text-white border-purple-600' },
+                                    'in-progress': { variant: 'custom', icon: <Clock className="h-3 w-3 mr-1" />, colorClass: 'bg-purple-500 text-white border-purple-600' },
+                                    'assigned': { variant: 'success', icon: <CheckCircle className="h-3 w-3 mr-1" /> },
+                                    'cancelled': { variant: 'destructive', icon: <XCircle className="h-3 w-3 mr-1" /> },
+                                    'departed': { variant: 'custom', icon: <CheckCircle className="h-3 w-3 mr-1" />, colorClass: 'bg-teal-500 text-white border-teal-600' },
+                                    'late': { variant: 'warning', icon: <AlertTriangle className="h-3 w-3 mr-1" /> },
+                                  };
+                                  const config = statusConfig[status] || { variant: 'secondary' as const, icon: <FileText className="h-3 w-3 mr-1" /> };
+                                  return (
+                                    <Badge variant={config.variant} className={cn("text-xs", config.colorClass)}>
+                                      {config.icon}
+                                      {getBookingStatusLabel(status)}
+                                    </Badge>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell>
                                 {booking.has_report && booking.report ? (() => {
