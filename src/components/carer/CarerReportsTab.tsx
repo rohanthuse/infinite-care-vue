@@ -65,8 +65,101 @@ export function CarerReportsTab() {
     }
   }, [selectedBookingForReport]);
 
+  // ✅ ALL useMemo hooks MUST be called BEFORE any early returns (React Hooks rule)
+  // Move all derived state calculations here to prevent "Rendered more hooks" error
+  
+  // Derived state: Filter reports by status
+  const { pendingReports, approvedReports, rejectedReports, revisionReports } = useMemo(() => {
+    return {
+      pendingReports: reports.filter(r => r.status === 'pending'),
+      approvedReports: reports.filter(r => r.status === 'approved'),
+      rejectedReports: reports.filter(r => r.status === 'rejected'),
+      revisionReports: reports.filter(r => r.status === 'requires_revision')
+    };
+  }, [reports]);
+
+  // Derived state: Past appointments with report status
+  const pastAppointmentsWithReportStatus = useMemo(() => {
+    // Filter past appointments (completed or done status, before current time)
+    const pastAppointments = allBookings.filter(booking => {
+      if (!booking.start_time) return false;
+      try {
+        const startTime = new Date(booking.start_time);
+        return !isNaN(startTime.getTime()) && 
+               (booking.status === 'done' || booking.status === 'completed') && 
+               startTime < new Date();
+      } catch (e) {
+        console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
+        return false;
+      }
+    });
+
+    // Cross-reference with reports to get full report status
+    // Always pick the LATEST report for each booking (by created_at desc)
+    return pastAppointments.map(booking => {
+      const bookingReports = reports
+        .filter(r => r.booking_id === booking.id)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      const latestReport = bookingReports[0] || null;
+      
+      return {
+        ...booking,
+        has_report: !!latestReport,
+        report: latestReport
+      };
+    });
+  }, [allBookings, reports]);
+
+  // Derived state: Filtered past appointments based on search query
+  const filteredPastAppointments = useMemo(() => {
+    if (!pastSearchQuery.trim()) {
+      return pastAppointmentsWithReportStatus;
+    }
+    
+    const query = pastSearchQuery.toLowerCase().trim();
+    
+    return pastAppointmentsWithReportStatus.filter(booking => {
+      try {
+        // Search by Booking ID
+        const bookingIdMatch = (booking.id || '').toLowerCase().includes(query);
+        
+        // Search by Client Name
+        const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
+        const clientMatch = clientName.includes(query);
+        
+        // Search by Service Name
+        const serviceMatch = (booking.service_name || '').toLowerCase().includes(query);
+        
+        // Search by Date (with null check for start_time)
+        let dateMatch = false;
+        if (booking.start_time) {
+          try {
+            const startTime = new Date(booking.start_time);
+            if (!isNaN(startTime.getTime())) {
+              const dateFormatted = format(startTime, 'MMM dd, yyyy').toLowerCase();
+              const dateISO = format(startTime, 'yyyy-MM-dd');
+              dateMatch = dateFormatted.includes(query) || dateISO.includes(query);
+            }
+          } catch (e) {
+            // Ignore date parsing errors for search
+          }
+        }
+        
+        // Search by Report Status
+        const statusMatch = booking.has_report 
+          ? (booking.report?.status || '').toLowerCase().includes(query)
+          : 'no report'.includes(query);
+        
+        return bookingIdMatch || clientMatch || serviceMatch || dateMatch || statusMatch;
+      } catch (e) {
+        console.warn('[CarerReportsTab] Error filtering booking:', booking.id, e);
+        return false;
+      }
+    });
+  }, [pastAppointmentsWithReportStatus, pastSearchQuery]);
+
   // STEP 1: Check if context is still initializing (highest priority)
-  // Wait for both context loading to complete AND staffProfile.id to be available
   const isInitializing = contextLoading || !carerContext?.staffProfile?.id;
   
   if (isInitializing) {
@@ -116,7 +209,6 @@ export function CarerReportsTab() {
   // STEP 5: Handle service reports errors (non-blocking)
   if (reportsError) {
     console.error('[CarerReportsTab] Reports error:', reportsError);
-    // Show error but still render the UI with empty state
   }
 
   // Enhanced debug logging
@@ -134,84 +226,6 @@ export function CarerReportsTab() {
     reportsError: reportsError?.message,
     timestamp: new Date().toISOString()
   });
-  const pendingReports = reports.filter(r => r.status === 'pending');
-  const approvedReports = reports.filter(r => r.status === 'approved');
-  const rejectedReports = reports.filter(r => r.status === 'rejected');
-  const revisionReports = reports.filter(r => r.status === 'requires_revision');
-
-  // Filter past appointments (completed or done status, before current time) with defensive null checks
-  const pastAppointments = allBookings.filter(booking => {
-    if (!booking.start_time) return false;
-    try {
-      const startTime = new Date(booking.start_time);
-      return !isNaN(startTime.getTime()) && 
-             (booking.status === 'done' || booking.status === 'completed') && 
-             startTime < new Date();
-    } catch (e) {
-      console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
-      return false;
-    }
-  });
-
-  // Cross-reference with reports to get full report status
-  // Always pick the LATEST report for each booking (by created_at desc)
-  const pastAppointmentsWithReportStatus = pastAppointments.map(booking => {
-    // Filter all reports for this booking and sort by created_at descending
-    const bookingReports = reports
-      .filter(r => r.booking_id === booking.id)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
-    const latestReport = bookingReports[0] || null;
-    
-    return {
-      ...booking,
-      has_report: !!latestReport,
-      report: latestReport // Include the latest report object
-    };
-  });
-
-  // Filter past appointments based on search query with defensive null checks
-  const filteredPastAppointments = useMemo(() => {
-    if (!pastSearchQuery.trim()) {
-      return pastAppointmentsWithReportStatus;
-    }
-    
-    const query = pastSearchQuery.toLowerCase().trim();
-    
-    return pastAppointmentsWithReportStatus.filter(booking => {
-      try {
-        // Search by Booking ID
-        const bookingIdMatch = (booking.id || '').toLowerCase().includes(query);
-        
-        // Search by Client Name
-        const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
-        const clientMatch = clientName.includes(query);
-        
-        // Search by Service Name
-        const serviceMatch = (booking.service_name || '').toLowerCase().includes(query);
-        
-        // Search by Date (with null check for start_time)
-        let dateMatch = false;
-        if (booking.start_time) {
-          try {
-            const startTime = new Date(booking.start_time);
-            if (!isNaN(startTime.getTime())) {
-              const dateFormatted = format(startTime, 'MMM dd, yyyy').toLowerCase();
-              const dateISO = format(startTime, 'yyyy-MM-dd');
-              dateMatch = dateFormatted.includes(query) || dateISO.includes(query);
-            }
-          } catch (dateError) {
-            console.warn('[CarerReportsTab] Date parsing error for booking:', booking.id, dateError);
-          }
-        }
-        
-        return bookingIdMatch || clientMatch || serviceMatch || dateMatch;
-      } catch (filterError) {
-        console.error('[CarerReportsTab] Filter error for booking:', booking.id, filterError);
-        return false;
-      }
-    });
-  }, [pastAppointmentsWithReportStatus, pastSearchQuery]);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -377,7 +391,7 @@ export function CarerReportsTab() {
             <div className="flex items-center space-x-2">
               <FileText className="h-4 w-4 text-purple-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xl md:text-2xl font-bold">{pastAppointments.length}</p>
+                <p className="text-xl md:text-2xl font-bold">{pastAppointmentsWithReportStatus.length}</p>
                 <p className="text-xs text-muted-foreground truncate">Past Appts</p>
               </div>
             </div>
@@ -391,7 +405,7 @@ export function CarerReportsTab() {
             <TabsTrigger value="past" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
               <FileText className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Past</span>
-              <span className="text-xs">({pastAppointments.length})</span>
+              <span className="text-xs">({pastAppointmentsWithReportStatus.length})</span>
             </TabsTrigger>
             <TabsTrigger value="pending" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
               <Clock className="h-4 w-4 shrink-0" />
@@ -451,7 +465,7 @@ export function CarerReportsTab() {
                 </div>
                 {pastSearchQuery && (
                   <p className="text-sm text-muted-foreground mt-2">
-                    Showing {filteredPastAppointments.length} of {pastAppointments.length} appointments
+                    Showing {filteredPastAppointments.length} of {pastAppointmentsWithReportStatus.length} appointments
                   </p>
                 )}
               </div>
@@ -460,7 +474,7 @@ export function CarerReportsTab() {
                 <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : pastAppointments.length === 0 ? (
+              ) : pastAppointmentsWithReportStatus.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                   <p className="text-lg font-medium">No past appointments</p>
