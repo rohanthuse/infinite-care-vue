@@ -130,10 +130,10 @@ export const useCarerContext = () => {
       }
       return undefined;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - carer context doesn't change often
+    staleTime: 30 * 1000, // 30 seconds - ensure fresh context data
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch on every navigation
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always', // Always refetch to ensure fresh data
     retry: 2,
     throwOnError: false, // Prevent throwing during render - handle errors gracefully
   });
