@@ -510,6 +510,16 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-4">
+          {/* Late/Missed Booking Alerts Banner */}
+          <LateBookingAlertsBanner 
+            branchId={branchId}
+            selectedDate={selectedDate}
+            viewType={viewType}
+            bookings={filteredBookings}
+            onViewLateArrivals={() => handleViewLateBookings('late')}
+            onViewMissed={() => handleViewLateBookings('missed')}
+          />
+          
           <DateNavigation 
             currentDate={selectedDate} 
             onDateChange={setSelectedDate}
