@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
           const orgMemberships = uniqueOrgIds.map(orgId => ({
             organization_id: orgId,
             user_id: newUserId,
-            role: 'admin',
+            role: 'branch_admin',
             status: 'active',
             joined_at: new Date().toISOString(),
           }));

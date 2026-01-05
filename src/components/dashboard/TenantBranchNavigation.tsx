@@ -53,8 +53,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         userId: user.id
       });
 
-      // PRIORITY 1: Organization members with admin/owner role get FULL access
-      // Check organization membership BEFORE branch_admin role to prioritize org-level access
+      // PRIORITY 1: Organization members with owner role get FULL access
+      // Only 'owner' gets full access - 'branch_admin' role should follow branch restrictions
       const { data: orgMember } = await supabase
         .from('organization_members')
         .select('role, status')
@@ -63,8 +63,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         .eq('status', 'active')
         .maybeSingle();
 
-      if (orgMember && ['admin', 'owner'].includes(orgMember.role)) {
-        console.log('[TenantBranchNavigation] User is organization admin/owner - fetching ALL branches');
+      if (orgMember && ['owner'].includes(orgMember.role)) {
+        console.log('[TenantBranchNavigation] User is organization owner - fetching ALL branches');
         
         const { data, error } = await supabase
           .from('branches')
