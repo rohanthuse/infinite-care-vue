@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DayBookingsDialog } from "./DayBookingsDialog";
 import { AnnualLeave } from "@/hooks/useLeaveManagement";
 import { AlertTriangle } from "lucide-react";
-import { requiresReassignment, getReassignmentBadgeText } from "./utils/bookingColors";
+import { requiresReassignment, getReassignmentBadgeText, getBookingStatusColor, getEffectiveBookingStatus } from "./utils/bookingColors";
 import { isHolidayOnDate } from "@/utils/holidayHelpers";
 
 export interface Booking {
@@ -21,6 +21,9 @@ export interface Booking {
   date: string;
   status: "assigned" | "unassigned" | "done" | "in-progress" | "cancelled" | "departed" | "suspended";
   notes?: string;
+  is_late_start?: boolean;
+  is_missed?: boolean;
+  late_start_minutes?: number;
   unavailability_request?: {
     id: string;
     status: 'pending' | 'approved' | 'rejected' | 'reassigned';
@@ -129,18 +132,10 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
     return holidays.find(holiday => isHolidayOnDate(holiday, day)) || null;
   };
 
-  // Get status color for booking
-  const getStatusColor = (status: Booking["status"]): string => {
-    const colors = {
-      assigned: "bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500",
-      unassigned: "bg-gray-400 dark:bg-gray-500 border-gray-500 dark:border-gray-400",
-      done: "bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-500",
-      "in-progress": "bg-amber-500 dark:bg-amber-600 border-amber-600 dark:border-amber-500",
-      cancelled: "bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-500",
-      departed: "bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-500",
-      suspended: "bg-orange-500 dark:bg-orange-600 border-orange-600 dark:border-orange-500",
-    };
-    return colors[status] || "bg-gray-500 dark:bg-gray-600 border-gray-600 dark:border-gray-500";
+  // Get status color for booking (using effective status for late/missed)
+  const getStatusColor = (booking: Booking): string => {
+    const effectiveStatus = getEffectiveBookingStatus(booking);
+    return getBookingStatusColor(effectiveStatus, 'solid');
   };
 
   // Handle showing more bookings for a day
@@ -299,7 +294,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                           "text-white border-l-2",
                           needsReassignment 
                             ? "bg-amber-400 border-amber-600 ring-2 ring-amber-300" 
-                            : getStatusColor(booking.status)
+                            : getStatusColor(booking)
                         )}
                         onClick={() => onBookingClick?.(booking)}
                         title={`${booking.clientName}\n${booking.startTime} - ${booking.endTime}\nCarer: ${booking.carerName}\nStatus: ${booking.status}${needsReassignment ? '\n⚠️ REASSIGNMENT REQUIRED' : ''}`}

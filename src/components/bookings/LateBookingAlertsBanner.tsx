@@ -3,12 +3,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Clock, XCircle, RefreshCw } from 'lucide-react';
 import { useTriggerAlertProcessing } from '@/hooks/useLateBookingAlerts';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Booking } from './BookingTimeGrid';
 
 interface LateBookingAlertsBannerProps {
   branchId?: string;
   selectedDate?: Date;
+  viewType?: "daily" | "weekly" | "monthly";
   bookings?: Booking[];
   onViewDetails?: () => void;
 }
@@ -16,28 +17,45 @@ interface LateBookingAlertsBannerProps {
 export const LateBookingAlertsBanner: React.FC<LateBookingAlertsBannerProps> = ({
   branchId,
   selectedDate,
+  viewType = "daily",
   bookings = [],
   onViewDetails
 }) => {
   const triggerProcessing = useTriggerAlertProcessing();
 
-  // Calculate stats from loaded bookings for the selected date
+  // Calculate stats from loaded bookings for the selected date range
   const stats = useMemo(() => {
     if (!selectedDate || bookings.length === 0) {
       return { lateStartCount: 0, missedCount: 0 };
     }
 
-    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+    let dateBookings: Booking[] = [];
     
-    // Filter bookings for selected date
-    const dateBookings = bookings.filter(b => b.date === selectedDateStr);
+    if (viewType === "daily") {
+      const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+      dateBookings = bookings.filter(b => b.date === selectedDateStr);
+    } else if (viewType === "weekly") {
+      const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Monday
+      const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      dateBookings = bookings.filter(b => {
+        const bookingDate = parseISO(b.date);
+        return isWithinInterval(bookingDate, { start: weekStart, end: weekEnd });
+      });
+    } else if (viewType === "monthly") {
+      const monthStart = startOfMonth(selectedDate);
+      const monthEnd = endOfMonth(selectedDate);
+      dateBookings = bookings.filter(b => {
+        const bookingDate = parseISO(b.date);
+        return isWithinInterval(bookingDate, { start: monthStart, end: monthEnd });
+      });
+    }
     
     // Count late and missed bookings
     const lateStartCount = dateBookings.filter(b => b.is_late_start === true && !b.is_missed).length;
     const missedCount = dateBookings.filter(b => b.is_missed === true).length;
 
     return { lateStartCount, missedCount };
-  }, [bookings, selectedDate]);
+  }, [bookings, selectedDate, viewType]);
 
   // Don't show if no alerts
   if (stats.lateStartCount === 0 && stats.missedCount === 0) {

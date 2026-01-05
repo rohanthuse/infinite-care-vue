@@ -1153,9 +1153,9 @@ export function StaffScheduleCalendar({
                         const RequestIcon = requestColors.icon;
                         
                         // Use request colors if pending request, otherwise use booking status colors
-                        const colorClasses = requestColors.hasRequest 
-                          ? `${requestColors.background} ${requestColors.border} ${requestColors.text}`
-                          : getBookingStatusColor(booking.status, 'light');
+                            const colorClasses = requestColors.hasRequest 
+                              ? `${requestColors.background} ${requestColors.border} ${requestColors.text}`
+                              : getBookingStatusColor(getEffectiveBookingStatus(booking), 'light');
                         
                         return (
                           <Tooltip key={booking.id}>
