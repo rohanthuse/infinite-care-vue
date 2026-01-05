@@ -201,56 +201,146 @@ const CarerVisitWorkflow = () => {
   // Mutation timeout constant to prevent infinite loading states
   const MUTATION_TIMEOUT_MS = 15000;
   
+  // Session keep-alive interval constant (15 minutes)
+  const KEEP_ALIVE_INTERVAL_MS = 15 * 60 * 1000;
+  
+  // Helper function to validate and refresh session before critical operations
+  const ensureValidSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        toast.error('Your session has expired. Please log in again.');
+        navigate('/carer-login');
+        return false;
+      }
+      
+      // Check if token is close to expiry (within 5 minutes) and refresh
+      const expiresAt = session.expires_at;
+      if (expiresAt) {
+        const now = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = expiresAt - now;
+        
+        if (timeUntilExpiry < 300) { // 5 minutes
+          console.log('[CarerVisitWorkflow] Token expiring soon, refreshing...');
+          await supabase.auth.refreshSession();
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[CarerVisitWorkflow] Session validation error:', error);
+      return false;
+    }
+  }, [navigate]);
+  
+  // Periodic session keep-alive: refresh auth token every 15 minutes while visit screen is open
+  useEffect(() => {
+    const refreshSession = async () => {
+      console.log('[CarerVisitWorkflow] Periodic session keep-alive triggered');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) {
+          console.warn('[CarerVisitWorkflow] Session expired - showing warning');
+          toast.error('Your session has expired. Please save your work and log in again.');
+          return;
+        }
+        
+        // Proactively refresh the token to extend its lifetime
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.warn('[CarerVisitWorkflow] Session refresh failed:', refreshError);
+        } else {
+          console.log('[CarerVisitWorkflow] Session keep-alive successful');
+        }
+      } catch (error) {
+        console.error('[CarerVisitWorkflow] Session keep-alive error:', error);
+      }
+    };
+    
+    // Initial refresh when component mounts
+    refreshSession();
+    
+    // Set up periodic refresh every 15 minutes
+    const intervalId = setInterval(refreshSession, KEEP_ALIVE_INTERVAL_MS);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+  
   // Session stability: refresh auth when tab becomes visible after idle
   useEffect(() => {
     let lastActivityTime = Date.now();
+    let lastApiCallTime = Date.now();
     const IDLE_THRESHOLD_MS = 60000; // 1 minute
+    const API_STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes without API activity
+    
+    const refreshSessionIfNeeded = async () => {
+      const now = Date.now();
+      const timeSinceLastApiCall = now - lastApiCallTime;
+      
+      // If no API call in last 10 minutes, proactively refresh
+      if (timeSinceLastApiCall > API_STALE_THRESHOLD_MS) {
+        console.log('[CarerVisitWorkflow] Long idle detected, refreshing session...');
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error || !session) {
+            console.warn('[CarerVisitWorkflow] Session expired during idle');
+            toast.error('Your session has expired. Please log in again.');
+            navigate('/carer-login');
+            return;
+          }
+          
+          await supabase.auth.refreshSession();
+          console.log('[CarerVisitWorkflow] Session refreshed after idle');
+          lastApiCallTime = Date.now();
+          
+          // Invalidate stale queries to get fresh data
+          queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecord?.id] });
+          queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord?.id] });
+        } catch (error) {
+          console.error('[CarerVisitWorkflow] Error refreshing session:', error);
+        }
+      }
+    };
     
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         const idleTime = Date.now() - lastActivityTime;
         
         if (idleTime > IDLE_THRESHOLD_MS) {
-          console.log('[CarerVisitWorkflow] Tab became visible after', Math.round(idleTime/1000), 'seconds of idle - refreshing session');
-          
-          try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error || !session) {
-              console.warn('[CarerVisitWorkflow] Session expired during idle - redirecting to login');
-              toast.error('Your session has expired. Please log in again.');
-              navigate('/carer-login');
-              return;
-            }
-            
-            // Refresh auth token to ensure it's valid
-            await supabase.auth.refreshSession();
-            console.log('[CarerVisitWorkflow] Session refreshed successfully');
-            
-            // Invalidate stale queries to get fresh data
-            queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecord?.id] });
-          } catch (error) {
-            console.error('[CarerVisitWorkflow] Error refreshing session:', error);
-          }
+          console.log('[CarerVisitWorkflow] Tab became visible after', Math.round(idleTime/1000), 'seconds of idle');
+          await refreshSessionIfNeeded();
         }
         
         lastActivityTime = Date.now();
       }
     };
     
-    // Also track activity to update lastActivityTime
+    // Track activity to update lastActivityTime
     const handleActivity = () => {
       lastActivityTime = Date.now();
+    };
+    
+    // Track significant actions that might precede mutations
+    const handleSignificantAction = async () => {
+      lastActivityTime = Date.now();
+      await refreshSessionIfNeeded();
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('click', handleActivity);
     document.addEventListener('keypress', handleActivity);
+    document.addEventListener('submit', handleSignificantAction);
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('click', handleActivity);
       document.removeEventListener('keypress', handleActivity);
+      document.removeEventListener('submit', handleSignificantAction);
     };
   }, [navigate, queryClient, visitRecord?.id]);
   
@@ -1130,7 +1220,7 @@ const CarerVisitWorkflow = () => {
     }
   };
   
-  const handleMedicationToggle = (medId: string, customNotes?: string) => {
+  const handleMedicationToggle = async (medId: string, customNotes?: string) => {
     console.log('[handleMedicationToggle] Called', { medId, customNotes, isViewOnly, visitRecordId: visitRecord?.id });
     
     if (isViewOnly) {
@@ -1140,6 +1230,12 @@ const CarerVisitWorkflow = () => {
     
     if (updatingMedicationId) {
       toast.info("Please wait for the current medication update to complete");
+      return;
+    }
+    
+    // Validate session before mutation - critical for long visits
+    const sessionValid = await ensureValidSession();
+    if (!sessionValid) {
       return;
     }
     
@@ -1628,27 +1724,16 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Validate session before starting - critical for long visits
+    console.log('[handleCompleteVisit] Validating session...');
+    const sessionValid = await ensureValidSession();
+    if (!sessionValid) {
+      return; // User will be redirected to login
+    }
+    
     // Pre-completion: Flush all pending draft saves
     console.log('[handleCompleteVisit] Flushing pending draft saves...');
     await flushDraftSaves();
-    
-    // Pre-completion: Refresh auth session to ensure token is fresh for long sessions
-    console.log('[handleCompleteVisit] Refreshing auth session...');
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.warn('[handleCompleteVisit] Session refresh warning:', sessionError);
-      } else if (session) {
-        // Optionally refresh if token is older than 30 minutes
-        const tokenAge = session.expires_at ? (Date.now() / 1000) - (session.expires_at - 3600) : 0;
-        if (tokenAge > 1800) { // 30 minutes
-          console.log('[handleCompleteVisit] Token is old, refreshing...');
-          await supabase.auth.refreshSession();
-        }
-      }
-    } catch (refreshError) {
-      console.warn('[handleCompleteVisit] Auth refresh failed, continuing:', refreshError);
-    }
     
     if (!currentAppointment || !user?.id || !visitRecord) {
       const missingData = [];
