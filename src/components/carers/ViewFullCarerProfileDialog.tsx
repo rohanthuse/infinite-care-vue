@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
+import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
 import { CarerPersonalDetailsTab } from "@/components/carer-profile/CarerPersonalDetailsTab";
 import { CarerCommunicationTab } from "@/components/carer-profile/CarerCommunicationTab";
@@ -40,6 +41,7 @@ import { CarerGeneralTab } from "@/components/carer-profile/CarerGeneralTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { CarerProfileSummaryCard } from "@/components/carer-profile/CarerProfileSummaryCard";
 import { TransferBranchDialog } from "@/components/carers/TransferBranchDialog";
+import { SendCarerScheduleEmailDialog } from "@/components/carers/SendCarerScheduleEmailDialog";
 
 interface ViewFullCarerProfileDialogProps {
   carerId: string;
@@ -58,8 +60,12 @@ export function ViewFullCarerProfileDialog({
 }: ViewFullCarerProfileDialogProps) {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [showScheduleEmailDialog, setShowScheduleEmailDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [photoKey, setPhotoKey] = useState(0);
+
+  // Fetch carer bookings for schedule email
+  const { data: carerBookings = [] } = useCarerBookings(carerId);
 
   const tabs = [
     { value: "overview", label: "Overview", icon: User },
@@ -177,6 +183,15 @@ export function ViewFullCarerProfileDialog({
                 </DialogTitle>
               </div>
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowScheduleEmailDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Email Schedule
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -322,6 +337,27 @@ export function ViewFullCarerProfileDialog({
             setShowTransferDialog(false);
             handleClose();
           }}
+        />
+      )}
+
+      {/* Schedule Email Dialog */}
+      {carer && showScheduleEmailDialog && (
+        <SendCarerScheduleEmailDialog
+          open={showScheduleEmailDialog}
+          onOpenChange={setShowScheduleEmailDialog}
+          carerId={carerId}
+          carerName={`${carer.first_name} ${carer.last_name}`}
+          carerEmail={carer.email || ''}
+          branchName={branchName || 'Branch'}
+          bookings={carerBookings.map(b => ({
+            id: b.id,
+            start_time: b.start_time,
+            end_time: b.end_time,
+            status: b.status,
+            client_name: b.client_name,
+            client_address: b.client_address,
+            service_names: b.service_names,
+          }))}
         />
       )}
     </>
