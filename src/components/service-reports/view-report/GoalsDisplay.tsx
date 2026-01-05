@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Target, Loader2 } from 'lucide-react';
 import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 
 interface GoalsDisplayProps {
   carePlanId?: string;
@@ -22,7 +23,14 @@ const getStatusBadge = (status: string) => {
 };
 
 export function GoalsDisplay({ carePlanId }: GoalsDisplayProps) {
-  const { data: goals = [], isLoading } = useCarePlanGoals(carePlanId || '');
+  const { data: tableGoals = [], isLoading: isLoadingTable } = useCarePlanGoals(carePlanId || '');
+  const { data: jsonData, isLoading: isLoadingJson } = useCarePlanJsonData(carePlanId || '');
+
+  // Use table goals if available, otherwise fall back to JSON data
+  const goals = tableGoals.length > 0 
+    ? tableGoals 
+    : (jsonData?.goals || []);
+  const isLoading = isLoadingTable || (tableGoals.length === 0 && isLoadingJson);
 
   if (isLoading) {
     return (
