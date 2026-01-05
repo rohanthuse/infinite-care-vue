@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -61,8 +61,8 @@ export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             <DialogTitle>
@@ -74,7 +74,7 @@ export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
           </p>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-4 scroll-smooth">
           <div className="space-y-3">
             {sortedBookings.map((booking) => (
               <Card
@@ -119,7 +119,7 @@ export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
               </Card>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
