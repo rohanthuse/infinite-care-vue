@@ -54,7 +54,9 @@ import {
   Download,
   Activity,
   Target,
-  Timer
+  Timer,
+  Utensils,
+  Droplets,
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
@@ -66,6 +68,10 @@ import { GoalsDisplay } from './view-report/GoalsDisplay';
 
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
+import { useClientDietaryRequirements } from '@/hooks/useClientDietaryRequirements';
+import { useFluidIntakeSummary } from '@/hooks/useFluidIntakeRecords';
+import { useFluidOutputSummary } from '@/hooks/useFluidOutputRecords';
+import { format } from 'date-fns';
 
 // Normalize mood values from database (lowercase) to UI display format (Title Case)
 const normalizeMood = (mood: string | null | undefined): string => {
@@ -268,6 +274,14 @@ export function ViewServiceReportDialog({
 
   // Fetch care plan JSON data for fallback tasks and medications
   const { data: carePlanJsonData } = useCarePlanJsonData(clientCarePlan?.id || '');
+
+  // Fetch dietary requirements for the client
+  const { data: dietaryRequirements } = useClientDietaryRequirements(safeReport?.client_id || '');
+
+  // Fetch fluid balance for service date
+  const serviceDate = safeReport?.service_date ? format(new Date(safeReport.service_date), 'yyyy-MM-dd') : '';
+  const { data: fluidIntake } = useFluidIntakeSummary(safeReport?.client_id || '', serviceDate);
+  const { data: fluidOutput } = useFluidOutputSummary(safeReport?.client_id || '', serviceDate);
 
   // Transform care plan tasks for fallback when visit_tasks is empty
   const carePlanTasksFallback = useMemo(() => {
@@ -820,6 +834,100 @@ export function ViewServiceReportDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* Dietary Information */}
+            {dietaryRequirements && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Utensils className="h-5 w-5" />
+                    Dietary Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {dietaryRequirements.food_allergies && dietaryRequirements.food_allergies.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Food Allergies</p>
+                        <div className="flex flex-wrap gap-2">
+                          {dietaryRequirements.food_allergies.map((allergy: string, i: number) => (
+                            <Badge key={i} variant="destructive">{allergy}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {dietaryRequirements.dietary_restrictions && dietaryRequirements.dietary_restrictions.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Dietary Restrictions</p>
+                        <div className="flex flex-wrap gap-2">
+                          {dietaryRequirements.dietary_restrictions.map((r: string, i: number) => (
+                            <Badge key={i} variant="secondary">{r}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {dietaryRequirements.feeding_assistance_required && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Feeding Assistance</p>
+                        <Badge>Required</Badge>
+                      </div>
+                    )}
+                    {dietaryRequirements.texture_modifications && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Texture Modifications</p>
+                        <p className="text-sm">{dietaryRequirements.texture_modifications}</p>
+                      </div>
+                    )}
+                    {dietaryRequirements.fluid_restrictions && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Fluid Restrictions</p>
+                        <p className="text-sm">{dietaryRequirements.fluid_restrictions}</p>
+                      </div>
+                    )}
+                    {dietaryRequirements.food_preferences && dietaryRequirements.food_preferences.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Food Preferences</p>
+                        <div className="flex flex-wrap gap-2">
+                          {dietaryRequirements.food_preferences.map((pref: string, i: number) => (
+                            <Badge key={i} variant="outline">{pref}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Fluid Balance Summary */}
+            {((fluidIntake?.total ?? 0) > 0 || (fluidOutput?.total ?? 0) > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Droplets className="h-5 w-5 text-blue-500" />
+                    Fluid Balance (Visit Date)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Intake</p>
+                      <p className="text-2xl font-bold text-blue-600">{fluidIntake?.total || 0} ml</p>
+                    </div>
+                    <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Output</p>
+                      <p className="text-2xl font-bold text-amber-600">{fluidOutput?.total || 0} ml</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Balance</p>
+                      <p className={`text-2xl font-bold ${((fluidIntake?.total || 0) - (fluidOutput?.total || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(fluidIntake?.total || 0) - (fluidOutput?.total || 0)} ml
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Client Mood & Engagement - Editable Section */}
             {isEditable ? (
