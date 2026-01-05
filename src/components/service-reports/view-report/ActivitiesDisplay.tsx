@@ -3,13 +3,21 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Activity, Loader2 } from 'lucide-react';
 import { useClientActivities } from '@/hooks/useClientActivities';
+import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 
 interface ActivitiesDisplayProps {
   carePlanId?: string;
 }
 
 export function ActivitiesDisplay({ carePlanId }: ActivitiesDisplayProps) {
-  const { data: activities = [], isLoading } = useClientActivities(carePlanId || '');
+  const { data: tableActivities = [], isLoading: isLoadingTable } = useClientActivities(carePlanId || '');
+  const { data: jsonData, isLoading: isLoadingJson } = useCarePlanJsonData(carePlanId || '');
+
+  // Use table activities if available, otherwise fall back to JSON data
+  const activities = tableActivities.length > 0 
+    ? tableActivities 
+    : (jsonData?.activities || []);
+  const isLoading = isLoadingTable || (tableActivities.length === 0 && isLoadingJson);
 
   if (isLoading) {
     return (
