@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, Badge as BadgeIcon, Edit } from "lucide-react";
+import { Plus, RefreshCw, Badge as BadgeIcon, Edit, Copy } from "lucide-react";
 import { BulkUpdateBookingsDialog } from "./dialogs/BulkUpdateBookingsDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ import { useBookingDebug } from "./hooks/useBookingDebug";
 import { useQuery } from "@tanstack/react-query";
 import { BookingStatusLegend } from "./BookingStatusLegend";
 import { LateBookingAlertsBanner } from "./LateBookingAlertsBanner";
+import { ReplicateRotaDialog } from "./dialogs/ReplicateRotaDialog";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -75,6 +76,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
   const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
   const [showBulkUpdateDialog, setShowBulkUpdateDialog] = useState(false);
+  const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
 
   // Update URL parameters when filters change
   useEffect(() => {
@@ -431,6 +433,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             <Edit className="h-4 w-4 mr-2" />
             Bulk Update
           </Button>
+          <Button variant="outline" onClick={() => setReplicateDialogOpen(true)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Replicate Rota
+          </Button>
           <Button onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
             New Booking
@@ -642,6 +648,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         branchId={branchId || ""}
         carers={carers}
         clients={clients}
+      />
+
+      <ReplicateRotaDialog 
+        open={replicateDialogOpen} 
+        onOpenChange={setReplicateDialogOpen} 
+        branchId={branchId || ''} 
+        currentDate={selectedDate}
       />
     </div>
   );
