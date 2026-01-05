@@ -41,6 +41,7 @@ import {
   Target,
   Calendar,
   Smile,
+  Utensils,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,6 +69,8 @@ import { ActivityStatusButton } from "@/components/care/ActivityStatusButton";
 import { InlineNotesEditor } from "@/components/care/InlineNotesEditor";
 import { MedicationDetailsDialog } from "@/components/care/medication/MedicationDetailsDialog";
 import { Eye } from "lucide-react";
+import { DietaryTab } from "@/components/care/tabs/DietaryTab";
+import { useClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
 
 interface NextBookingInfo {
   id: string;
@@ -442,6 +445,9 @@ const CarerVisitWorkflow = () => {
   const { data: normalizedGoals, isLoading: goalsLoading } = useCarePlanGoals(activeCareplan?.id || '');
   const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
+  
+  // Fetch client dietary requirements
+  const { data: dietaryRequirements, isLoading: dietaryLoading } = useClientDietaryRequirements(currentAppointment?.client_id || '');
   
   // Fetch database medications for merging with JSON - session-stable
   const { data: dbMedications, isLoading: dbMedicationsLoading } = useQuery({
@@ -1528,7 +1534,7 @@ const CarerVisitWorkflow = () => {
   };
   
   // Define tab order and completion requirements
-  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "goals", "activities", "notes", "care-plan", "sign-off", "complete"];
+  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "goals", "activities", "dietary", "notes", "care-plan", "sign-off", "complete"];
   
   // Check if a tab is completed
   const isTabCompleted = (tabName: string): boolean => {
@@ -2289,6 +2295,18 @@ const CarerVisitWorkflow = () => {
                     {isTabCompleted("activities") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
                   </div>
                   <span className="text-[10px] md:text-xs whitespace-nowrap">Activities</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="dietary"
+                className={`flex-shrink-0 min-w-[60px] px-2 py-2 md:min-w-0 md:px-3 ${isTabCompleted("dietary") ? "bg-green-50 border-green-200" : ""}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <Utensils className="w-4 h-4" />
+                    {isTabCompleted("dietary") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                  </div>
+                  <span className="text-[10px] md:text-xs whitespace-nowrap">Dietary</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger 
@@ -3640,6 +3658,45 @@ const CarerVisitWorkflow = () => {
                 <Button 
                   onClick={handleNextStep}
                 >
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Dietary Tab */}
+          <TabsContent value="dietary" className="w-full mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Utensils className="w-5 h-5" />
+                  Dietary Requirements & Fluid Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {dietaryLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <DietaryTab
+                    dietaryRequirements={dietaryRequirements}
+                    carePlanData={activeCareplan}
+                    clientId={currentAppointment?.client_id}
+                    clientName={`${currentAppointment?.clients?.first_name || ''} ${currentAppointment?.clients?.last_name || ''}`}
+                  />
+                )}
+              </CardContent>
+              <div className="border-t p-6 flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
