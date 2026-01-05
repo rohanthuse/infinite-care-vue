@@ -259,6 +259,7 @@ export function useBookingData(branchId?: string) {
             start_time: bk.start_time,
             end_time: bk.end_time,
             service_id: bk.service_id,
+            service_ids: bk.service_ids || (bk.service_id ? [bk.service_id] : []),
             branch_id: bk.branch_id,
             client_id: bk.client_id,
             unavailability_request: bk.booking_unavailability_requests?.[0] || null,
