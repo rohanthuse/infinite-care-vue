@@ -563,17 +563,40 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       );
     }
 
+    // Calculate filtered booking count based on view type
+    const getFilteredBookingsCount = () => {
+      if (!entity?.bookings) return 0;
+      
+      if (viewType === "daily") {
+        return entity.bookings.filter(b => isBookingOnDate(b, date)).length;
+      } else if (viewType === "weekly") {
+        return entity.bookings.filter(b => 
+          weekDates.some(weekDate => isBookingOnDate(b, weekDate))
+        ).length;
+      }
+      return entity.bookings.length; // Monthly shows all
+    };
+
+    const filteredBookingsCount = getFilteredBookingsCount();
+
     return (
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className={`booking-view ${viewType === "weekly" ? "weekly-view" : "daily-view"} h-full`}>
           <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-accent' : 'bg-accent'}`}>
             <div className="flex items-center">
-              <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary-foreground'} flex items-center justify-center text-sm font-medium mr-2`}>
+              <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'} flex items-center justify-center text-sm font-medium mr-2`}>
                 {entity.initials}
               </div>
               <div className="text-sm font-medium text-foreground">{entity.name}</div>
-              <Badge className={`ml-2 ${entityType === "client" ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary-foreground'} text-xs`}>
-                {entity.bookings?.length || 0} bookings
+              <Badge 
+                variant="outline" 
+                className={`ml-2 ${
+                  entityType === "client" 
+                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' 
+                    : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                } text-xs font-medium`}
+              >
+                {filteredBookingsCount} bookings
               </Badge>
             </div>
           </div>
