@@ -189,6 +189,24 @@ export function ViewServiceReportDialog({
     enabled: !!safeReport?.visit_record_id && open && !!report,
   });
 
+  // Fetch booking data for scheduled times
+  const { data: bookingData } = useQuery({
+    queryKey: ['booking-for-report', safeReport?.booking_id],
+    queryFn: async () => {
+      if (!safeReport?.booking_id) return null;
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('start_time, end_time')
+        .eq('id', safeReport.booking_id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!safeReport?.booking_id && open && !!report,
+  });
+
   // Fetch all related data using hooks - only if visit_record_id exists
   const { tasks = [], isLoading: tasksLoading } = useVisitTasks(safeReport?.visit_record_id);
   const { medications = [], isLoading: medsLoading } = useVisitMedications(safeReport?.visit_record_id);
@@ -490,8 +508,8 @@ export function ViewServiceReportDialog({
               </Card>
             )}
 
-            {/* Visit Timing Details Card - consistent with Edit dialog */}
-            {visitRecord && (visitRecord.visit_start_time || visitRecord.visit_end_time) && (
+            {/* Visit Timing Details Card - Scheduled vs Actual comparison */}
+            {(visitRecord || bookingData) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -500,34 +518,65 @@ export function ViewServiceReportDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Check-in Time</p>
-                      <p className="font-medium">
-                        {visitRecord.visit_start_time ? formatSafeDate(visitRecord.visit_start_time, 'p') : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Check-out Time</p>
-                      <p className="font-medium">
-                        {visitRecord.visit_end_time ? formatSafeDate(visitRecord.visit_end_time, 'p') : 'N/A'}
-                      </p>
-                    </div>
-                    {visitRecord.actual_duration_minutes > 0 && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Actual Duration</p>
-                        <p className="font-medium">{visitRecord.actual_duration_minutes} minutes</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Scheduled Time Column */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Scheduled Time</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Start:</span>
+                          <span className="text-sm font-medium">
+                            {bookingData?.start_time ? formatSafeDate(bookingData.start_time, 'p') : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">End:</span>
+                          <span className="text-sm font-medium">
+                            {bookingData?.end_time ? formatSafeDate(bookingData.end_time, 'p') : 'N/A'}
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    {visitRecord.arrival_delay_minutes !== 0 && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Arrival Delay</p>
-                        <p className={`font-medium ${visitRecord.arrival_delay_minutes > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                          {visitRecord.arrival_delay_minutes > 0 ? `+${visitRecord.arrival_delay_minutes}` : visitRecord.arrival_delay_minutes} min
-                        </p>
+                    </div>
+
+                    {/* Actual Time Column */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Actual Time</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Check-in:</span>
+                          <span className="text-sm font-medium">
+                            {visitRecord?.visit_start_time ? formatSafeDate(visitRecord.visit_start_time, 'p') : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Check-out:</span>
+                          <span className="text-sm font-medium">
+                            {visitRecord?.visit_end_time ? formatSafeDate(visitRecord.visit_end_time, 'p') : 'N/A'}
+                          </span>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
+
+                  {/* Duration and Delay Summary */}
+                  {(visitRecord?.actual_duration_minutes > 0 || visitRecord?.arrival_delay_minutes !== 0) && (
+                    <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                      {visitRecord?.actual_duration_minutes > 0 && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Actual Duration</p>
+                          <p className="font-medium">{visitRecord.actual_duration_minutes} minutes</p>
+                        </div>
+                      )}
+                      {visitRecord?.arrival_delay_minutes !== 0 && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Arrival Delay</p>
+                          <p className={`font-medium ${visitRecord.arrival_delay_minutes > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                            {visitRecord.arrival_delay_minutes > 0 ? `+${visitRecord.arrival_delay_minutes}` : visitRecord.arrival_delay_minutes} min
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -740,13 +789,13 @@ export function ViewServiceReportDialog({
               </CardContent>
             </Card>
 
-            {/* Carer Visit Details - Editable Section */}
+            {/* Client Mood & Engagement - Editable Section */}
             {isEditable ? (
               <Card className="border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Smile className="h-5 w-5" />
-                    Carer Visit Details
+                    Client Mood & Engagement
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
