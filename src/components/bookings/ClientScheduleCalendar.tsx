@@ -12,7 +12,7 @@ import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { BookingsMonthView } from "./BookingsMonthView";
-import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
+import { getBookingStatusColor, getBookingStatusLabel, getEffectiveBookingStatus } from "./utils/bookingColors";
 import { getRequestStatusColors } from "./utils/requestIndicatorHelpers";
 import { ClientScheduleDraggable } from "./ClientScheduleDraggable";
 
@@ -556,9 +556,10 @@ export function ClientScheduleCalendar({
   }, [viewType, clients, bookings, date, timeSlots, searchTerm, filters, timeInterval]);
 
   const getStatusColor = (status: ClientStatus) => {
-    // If there's a booking, use its actual status for color
+    // If there's a booking, use effective status for color (considers late/missed)
     if (status.booking) {
-      return getBookingStatusColor(status.booking.status, 'light');
+      const effectiveStatus = getEffectiveBookingStatus(status.booking);
+      return getBookingStatusColor(effectiveStatus, 'light');
     }
     
     // Default colors for status types
@@ -608,8 +609,9 @@ export function ClientScheduleCalendar({
     }
     
     if (status.booking) {
-      const statusLabel = getBookingStatusLabel(status.booking.status);
-      const statusColor = getBookingStatusColor(status.booking.status, 'light');
+      const effectiveStatus = getEffectiveBookingStatus(status.booking);
+      const statusLabel = getBookingStatusLabel(effectiveStatus);
+      const statusColor = getBookingStatusColor(effectiveStatus, 'light');
       const allCarerNames = (status.booking as any).allCarerNames || [];
       const singleCarerName = status.booking.carerName;
       const hasMultipleCarers = allCarerNames.length > 1;

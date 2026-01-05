@@ -272,6 +272,10 @@ export function useBookingData(branchId?: string) {
               bk.clients?.address,
               bk.clients?.client_addresses
             ),
+            // Late/missed booking fields
+            is_late_start: bk.is_late_start || false,
+            is_missed: bk.is_missed || false,
+            late_start_minutes: bk.late_start_minutes || 0,
           };
 
           // Debug logging for request statuses
