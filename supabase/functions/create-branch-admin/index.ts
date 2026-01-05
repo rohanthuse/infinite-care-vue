@@ -77,36 +77,107 @@ Deno.serve(async (req) => {
     let newUserId: string;
     let isNewUser = false;
 
-    // First, try to find existing user by email
-    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === email);
+    // Find existing user by email using paginated search
+    // listUsers() has a default limit of 50, so we need to search all pages
+    let existingUser = null;
+    let page = 1;
+    const perPage = 100;
+
+    console.log('Searching for existing user with email:', email);
+
+    while (!existingUser) {
+      const { data: usersPage, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (listError) {
+        console.warn('Error listing users on page', page, ':', listError);
+        break;
+      }
+
+      if (!usersPage?.users || usersPage.users.length === 0) {
+        break;
+      }
+
+      existingUser = usersPage.users.find(u => u.email === email);
+
+      if (usersPage.users.length < perPage) {
+        break;
+      }
+
+      page++;
+
+      // Safety limit to prevent infinite loops
+      if (page > 50) {
+        console.warn('Reached maximum page limit while searching for user');
+        break;
+      }
+    }
+
+    console.log('User lookup result:', { email, found: !!existingUser, pagesSearched: page });
 
     if (existingUser) {
       console.log('User already exists, using existing user:', existingUser.id);
       newUserId = existingUser.id;
     } else {
       // Create new user
-      const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // Auto-confirm for admins
-        user_metadata: {
-          first_name,
-          last_name,
-        },
-      });
+      try {
+        const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            first_name,
+            last_name,
+          },
+        });
 
-      if (createUserError || !authData.user) {
-        console.error('Failed to create user:', createUserError);
+        if (createUserError) {
+          // Check if error is because user already exists (race condition or pagination miss)
+          if (createUserError.message?.includes('already been registered') || 
+              (createUserError as any).code === 'email_exists') {
+            console.log('User exists (caught at createUser), attempting direct lookup');
+            
+            // Try to find the user again with a fresh paginated search
+            let foundUser = null;
+            let searchPage = 1;
+            while (!foundUser && searchPage <= 50) {
+              const { data: searchResult } = await supabaseAdmin.auth.admin.listUsers({
+                page: searchPage,
+                perPage: 100,
+              });
+              
+              if (!searchResult?.users || searchResult.users.length === 0) break;
+              foundUser = searchResult.users.find(u => u.email === email);
+              if (searchResult.users.length < 100) break;
+              searchPage++;
+            }
+            
+            if (foundUser) {
+              newUserId = foundUser.id;
+              isNewUser = false;
+              console.log('Found existing user after retry:', newUserId);
+            } else {
+              throw new Error('User exists but could not be found. Please try again.');
+            }
+          } else {
+            throw createUserError;
+          }
+        } else if (!authData?.user) {
+          throw new Error('User creation returned no data');
+        } else {
+          newUserId = authData.user.id;
+          isNewUser = true;
+          console.log('User created successfully:', newUserId);
+        }
+      } catch (createError) {
+        console.error('Failed to create/find user:', createError);
         return new Response(
-          JSON.stringify({ error: `Failed to create user: ${createUserError?.message || 'Unknown error'}` }),
+          JSON.stringify({ error: `Failed to create user: ${(createError as Error).message || 'Unknown error'}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      newUserId = authData.user.id;
-      isNewUser = true;
-      console.log('User created successfully:', newUserId);
     }
 
     try {
