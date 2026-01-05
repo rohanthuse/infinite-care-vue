@@ -39,6 +39,35 @@ import { Separator } from '@/components/ui/separator';
 import { formatSafeDate } from '@/lib/dateUtils';
 import { formatDurationHoursMinutes } from '@/lib/utils';
 import { getTimeOfDayFromTimestamp, doesMedicationMatchTimeOfDay } from '@/utils/timeOfDayUtils';
+
+// Normalize mood values from database (lowercase) to UI display format (Title Case)
+const normalizeMood = (mood: string | null | undefined): string => {
+  if (!mood) return '';
+  const moodMap: Record<string, string> = {
+    'happy': 'Happy', 'content': 'Content', 'neutral': 'Neutral',
+    'anxious': 'Anxious', 'sad': 'Sad', 'confused': 'Confused',
+    'agitated': 'Agitated', 'calm': 'Calm',
+    'Happy': 'Happy', 'Content': 'Content', 'Neutral': 'Neutral',
+    'Anxious': 'Anxious', 'Sad': 'Sad', 'Confused': 'Confused',
+    'Agitated': 'Agitated', 'Calm': 'Calm',
+  };
+  return moodMap[mood] || mood;
+};
+
+// Normalize engagement values from database to UI display format
+const normalizeEngagement = (engagement: string | null | undefined): string => {
+  if (!engagement) return '';
+  const engagementMap: Record<string, string> = {
+    'highly_engaged': 'Very Engaged', 'very_engaged': 'Very Engaged',
+    'engaged': 'Engaged', 'somewhat_engaged': 'Somewhat Engaged',
+    'passive': 'Limited Engagement', 'limited_engagement': 'Limited Engagement',
+    'withdrawn': 'Not Engaged', 'unresponsive': 'Not Engaged', 'not_engaged': 'Not Engaged',
+    'Very Engaged': 'Very Engaged', 'Engaged': 'Engaged',
+    'Somewhat Engaged': 'Somewhat Engaged', 'Limited Engagement': 'Limited Engagement',
+    'Not Engaged': 'Not Engaged',
+  };
+  return engagementMap[engagement] || engagement;
+};
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   booking_id: z.string().optional(),
@@ -334,6 +363,25 @@ export function CreateServiceReportDialog({
     enabled: !!effectiveVisitRecordId && open,
   });
 
+  // Fetch booking data for scheduled times in Edit mode (when preSelectedBooking is not available)
+  const { data: bookingDataForEdit } = useQuery({
+    queryKey: ['booking-for-edit', bookingId, existingReport?.booking_id],
+    queryFn: async () => {
+      const id = bookingId || existingReport?.booking_id;
+      if (!id) return null;
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('start_time, end_time')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!(bookingId || existingReport?.booking_id) && open && !preSelectedBooking,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -349,14 +397,15 @@ export function CreateServiceReportDialog({
   });
 
   // Populate form with existing report data when editing
+  // Normalize mood and engagement values from database format to match UI Select options
   React.useEffect(() => {
     if (mode === 'edit' && existingReport && open) {
       form.reset({
         client_id: existingReport.client_id,
         booking_id: existingReport.booking_id || '',
         tasks_completed: existingReport.tasks_completed || [],
-        client_mood: existingReport.client_mood || '',
-        client_engagement: existingReport.client_engagement || '',
+        client_mood: normalizeMood(existingReport.client_mood) || '',
+        client_engagement: normalizeEngagement(existingReport.client_engagement) || '',
         activities_undertaken: existingReport.activities_undertaken || '',
         next_visit_preparations: existingReport.next_visit_preparations || '',
         carer_observations: existingReport.carer_observations || '',
@@ -1002,9 +1051,11 @@ export function CreateServiceReportDialog({
 
   const isDataLoading = isLoadingTasks || isLoadingVitals;
 
-  // Calculate scheduled times from preSelectedBooking
-  const scheduledStartTime = preSelectedBooking?.start_time ? new Date(preSelectedBooking.start_time) : null;
-  const scheduledEndTime = preSelectedBooking?.end_time ? new Date(preSelectedBooking.end_time) : null;
+  // Calculate scheduled times from preSelectedBooking or fetched booking data (for Edit mode)
+  const bookingStartTime = preSelectedBooking?.start_time || bookingDataForEdit?.start_time;
+  const bookingEndTime = preSelectedBooking?.end_time || bookingDataForEdit?.end_time;
+  const scheduledStartTime = bookingStartTime ? new Date(bookingStartTime) : null;
+  const scheduledEndTime = bookingEndTime ? new Date(bookingEndTime) : null;
   const scheduledDurationMins = scheduledStartTime && scheduledEndTime 
     ? differenceInMinutes(scheduledEndTime, scheduledStartTime)
     : null;

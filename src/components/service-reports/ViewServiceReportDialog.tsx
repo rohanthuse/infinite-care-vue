@@ -67,6 +67,37 @@ import { GoalsDisplay } from './view-report/GoalsDisplay';
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
 
+// Normalize mood values from database (lowercase) to UI display format (Title Case)
+const normalizeMood = (mood: string | null | undefined): string => {
+  if (!mood) return '';
+  const moodMap: Record<string, string> = {
+    'happy': 'Happy', 'content': 'Content', 'neutral': 'Neutral',
+    'anxious': 'Anxious', 'sad': 'Sad', 'confused': 'Confused',
+    'agitated': 'Agitated', 'calm': 'Calm',
+    // Also handle Title Case input (already normalized)
+    'Happy': 'Happy', 'Content': 'Content', 'Neutral': 'Neutral',
+    'Anxious': 'Anxious', 'Sad': 'Sad', 'Confused': 'Confused',
+    'Agitated': 'Agitated', 'Calm': 'Calm',
+  };
+  return moodMap[mood] || mood;
+};
+
+// Normalize engagement values from database to UI display format
+const normalizeEngagement = (engagement: string | null | undefined): string => {
+  if (!engagement) return '';
+  const engagementMap: Record<string, string> = {
+    'highly_engaged': 'Very Engaged', 'very_engaged': 'Very Engaged',
+    'engaged': 'Engaged', 'somewhat_engaged': 'Somewhat Engaged',
+    'passive': 'Limited Engagement', 'limited_engagement': 'Limited Engagement',
+    'withdrawn': 'Not Engaged', 'unresponsive': 'Not Engaged', 'not_engaged': 'Not Engaged',
+    // Also handle Title Case input (already normalized)
+    'Very Engaged': 'Very Engaged', 'Engaged': 'Engaged',
+    'Somewhat Engaged': 'Somewhat Engaged', 'Limited Engagement': 'Limited Engagement',
+    'Not Engaged': 'Not Engaged',
+  };
+  return engagementMap[engagement] || engagement;
+};
+
 interface ViewServiceReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -114,13 +145,14 @@ export function ViewServiceReportDialog({
   const resolvedReport = fetchedReport || report;
 
   // Create safeReport with fallbacks BEFORE any hooks
+  // Normalize mood and engagement values from database format to UI format
   const safeReport = resolvedReport ? {
     ...resolvedReport,
     clients: resolvedReport.clients || { first_name: '', last_name: '', email: '' },
     staff: resolvedReport.staff || { first_name: '', last_name: '', email: '' },
     services_provided: resolvedReport.services_provided || [],
-    client_mood: resolvedReport.client_mood || '',
-    client_engagement: resolvedReport.client_engagement || '',
+    client_mood: normalizeMood(resolvedReport.client_mood),
+    client_engagement: normalizeEngagement(resolvedReport.client_engagement),
     carer_observations: resolvedReport.carer_observations || '',
     client_feedback: resolvedReport.client_feedback || '',
     activities_undertaken: resolvedReport.activities_undertaken || '',
