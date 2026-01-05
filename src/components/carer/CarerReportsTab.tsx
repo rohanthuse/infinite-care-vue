@@ -160,13 +160,14 @@ export function CarerReportsTab() {
   }, [pastAppointmentsWithReportStatus, pastSearchQuery]);
 
   // STEP 1: Check if context is still initializing (highest priority)
-  const isInitializing = contextLoading || !carerContext?.staffProfile?.id;
+  // Also wait for allBookings to finish loading before showing content
+  const isInitializing = contextLoading || !carerContext?.staffProfile?.id || allBookingsLoading;
   
   if (isInitializing) {
     return <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         <p className="ml-3 text-sm text-muted-foreground">
-          {contextLoading ? 'Loading your profile...' : 'Initializing service reports...'}
+          {contextLoading ? 'Loading your profile...' : allBookingsLoading ? 'Loading past appointments...' : 'Initializing service reports...'}
         </p>
       </div>;
   }

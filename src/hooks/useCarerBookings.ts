@@ -125,11 +125,12 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
   });
 };
 
-export const useCarerBookings = (carerId: string) => {
+export const useCarerBookings = (carerId?: string) => {
   return useQuery({
     queryKey: ['carer-bookings', carerId],
-    queryFn: () => fetchCarerBookings(carerId),
+    queryFn: () => carerId ? fetchCarerBookings(carerId) : Promise.resolve([]),
     enabled: Boolean(carerId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - ensure fresh data
+    refetchOnMount: true, // Always refetch on mount
   });
 };
