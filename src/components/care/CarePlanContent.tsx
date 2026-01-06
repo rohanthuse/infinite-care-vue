@@ -20,6 +20,7 @@ import { EquipmentTab } from "./tabs/EquipmentTab";
 import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
 import { CarePlanFormsTab } from "./forms/CarePlanFormsTab";
 import { AdminMedicationTab } from "./tabs/AdminMedicationTab";
+import { TasksTab } from "./tabs/TasksTab";
 import { ClientKeyContactsTab } from "@/components/clients/tabs/ClientKeyContactsTab";
 import {
   ClientProfile,
@@ -350,6 +351,10 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                 serviceActions={serviceActions}
                 onAddServiceAction={onAddServiceAction}
               />
+            </TabsContent>
+
+            <TabsContent value="tasks">
+              <TasksTab carePlanId={carePlan.id} />
             </TabsContent>
             
             <TabsContent value="eventslogs">

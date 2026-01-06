@@ -17,6 +17,7 @@ import { WizardStep9RiskAssessments } from "./steps/WizardStep9RiskAssessments";
 import { WizardStep10Equipment } from "./steps/WizardStep10Equipment";
 import { WizardStep11ServicePlans } from "./steps/WizardStep11ServicePlans";
 import { WizardStep12ServiceActions } from "./steps/WizardStep12ServiceActions";
+import { WizardStepTasks } from "./steps/WizardStepTasks";
 import { WizardStep13Documents } from "./steps/WizardStep13Documents";
 import { WizardStepConsent } from "./steps/WizardStepConsent";
 import { WizardStepKeyContacts } from "./steps/WizardStepKeyContacts";
@@ -72,21 +73,23 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 14:
         return <WizardStep12ServiceActions form={form} />;
       case 15:
-        return <WizardStep13Documents form={form} clientId={clientId} />;
+        return <WizardStepTasks form={form} />;
       case 16:
-        return <WizardStepConsent form={form} />;
+        return <WizardStep13Documents form={form} clientId={clientId} />;
       case 17:
-        return <WizardStepKeyContacts form={form} clientId={clientId} />;
+        return <WizardStepConsent form={form} />;
       case 18:
+        return <WizardStepKeyContacts form={form} clientId={clientId} />;
+      case 19:
         // Only render Behavior Support for child/young person clients
         return isChild ? <BehaviorSupportTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
-      case 19:
+      case 20:
         // Only render Education & Development for child/young person clients
         return isChild ? <EducationDevelopmentTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
-      case 20:
+      case 21:
         // Only render Safeguarding & Risks for child/young person clients
         return isChild ? <SafeguardingRisksTab clientId={clientId} clientName="" /> : <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
-      case 21:
+      case 22:
         return <WizardStep14Review form={form} clientId={clientId} isChild={isChild} effectiveCarePlanId={effectiveCarePlanId} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);

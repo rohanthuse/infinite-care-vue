@@ -583,7 +583,16 @@ export function CreateServiceReportDialog({
             }
           };
           
-          // Extract tasks from personal_care section (JSON only source)
+          // Extract tasks from dedicated tasks array (primary source for explicit tasks)
+          if (autoSave?.tasks && Array.isArray(autoSave.tasks)) {
+            autoSave.tasks.forEach((task: any) => {
+              if (task.name) {
+                addTask(task.category || 'General', task.name);
+              }
+            });
+          }
+          
+          // Extract tasks from personal_care section (JSON fallback source)
           if (autoSave?.personal_care?.items) {
             autoSave.personal_care.items.forEach((item: any) => {
               const taskName = item.description || item.name;

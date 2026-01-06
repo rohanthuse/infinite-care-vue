@@ -26,6 +26,7 @@ import { PersonalCareTab } from "../care/tabs/PersonalCareTab";
 import { EventsLogsTab } from "../care/tabs/EventsLogsTab";
 import { ServiceActionsTab } from "../care/tabs/ServiceActionsTab";
 import { ServicePlanTab } from "../care/tabs/ServicePlanTab";
+import { TasksTab } from "../care/tabs/TasksTab";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -448,6 +449,10 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 
                 <TabsContent value="serviceactions">
                   <ServiceActionsTab serviceActions={mockServiceActions} />
+                </TabsContent>
+
+                <TabsContent value="tasks">
+                  <TasksTab carePlanId={carePlan.id} />
                 </TabsContent>
                 
                 <TabsContent value="eventslogs">

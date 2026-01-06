@@ -40,6 +40,8 @@ interface JsonTask {
   category?: string;
   name?: string;
   description?: string;
+  priority?: string;
+  time_of_day?: string[];
 }
 
 interface TransformedGoal {
@@ -94,6 +96,9 @@ interface TransformedTask {
   care_plan_id: string;
   task_category: string;
   task_name: string;
+  task_description?: string;
+  priority?: string;
+  time_of_day?: string[];
 }
 
 export const useCarePlanJsonData = (carePlanId: string) => {
@@ -183,10 +188,27 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         prescriber: med.prescriber || null,
       }));
 
-      // Transform tasks from personal_care ONLY (not activities - those belong in Activities tab)
+      // Transform tasks from dedicated tasks array (primary source)
       const tasks: TransformedTask[] = [];
       
-      // Extract from personal_care.items only
+      // Extract from dedicated tasks array (new format)
+      if (autoSaveData.tasks && Array.isArray(autoSaveData.tasks)) {
+        autoSaveData.tasks.forEach((task: JsonTask, index: number) => {
+          if (task.name) {
+            tasks.push({
+              id: `json-task-${index}`,
+              care_plan_id: data.id,
+              task_category: task.category || 'other',
+              task_name: task.name,
+              task_description: task.description,
+              priority: task.priority || 'medium',
+              time_of_day: task.time_of_day,
+            });
+          }
+        });
+      }
+      
+      // Fallback: Also extract from personal_care.items for backward compatibility
       if (autoSaveData.personal_care?.items) {
         autoSaveData.personal_care.items.forEach((item: any, index: number) => {
           if (item.description || item.name) {

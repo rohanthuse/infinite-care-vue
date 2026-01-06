@@ -68,6 +68,7 @@ const carePlanSchema = z.object({
   risk_pressure_damage: z.any().optional(),
   equipment: z.any().optional(),
   service_plans: z.array(z.any()).optional(),
+  tasks: z.array(z.any()).optional(),
   service_actions: z.array(z.any()).optional(),
   documents: z.array(z.any()).optional(),
   consent: z.any().optional(),
@@ -146,15 +147,16 @@ const wizardSteps = [
   { id: 12, name: "Equipment", description: "Required equipment and aids" },
   { id: 13, name: "Service Plans", description: "Service delivery plans" },
   { id: 14, name: "Service Actions", description: "Specific service actions" },
-  { id: 15, name: "Documents", description: "Supporting documents" },
-  { id: 16, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 17, name: "Key Contacts", description: "Emergency and family contacts" },
+  { id: 15, name: "Tasks", description: "Care tasks for carer visits" },
+  { id: 16, name: "Documents", description: "Supporting documents" },
+  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 18, name: "Key Contacts", description: "Emergency and family contacts" },
   // Child-specific steps (only shown for children/young persons) - placed before Review
-  { id: 18, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
-  { id: 19, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
-  { id: 20, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
+  { id: 19, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
+  { id: 20, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
+  { id: 21, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
   // Review is now last
-  { id: 21, name: "Review", description: "Review and finalize care plan" },
+  { id: 22, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -257,6 +259,7 @@ export function CarePlanCreationWizard({
         },
       },
       service_plans: [],
+      tasks: [],
       service_actions: [],
       documents: [],
       consent: {},
@@ -341,6 +344,7 @@ export function CarePlanCreationWizard({
           },
         },
         service_plans: [],
+        tasks: [],
         service_actions: [],
         documents: [],
         consent: {},
@@ -421,7 +425,7 @@ export function CarePlanCreationWizard({
             let value = savedData[key];
             
             // Handle array fields with safety checks
-            if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities', 'staff_ids'].includes(key)) {
+            if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities', 'staff_ids', 'tasks'].includes(key)) {
               value = initializeArrayField(value);
               
               // DEFENSIVE: Don't overwrite existing data with empty arrays
