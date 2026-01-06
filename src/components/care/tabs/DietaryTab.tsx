@@ -24,10 +24,55 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
   onEditDietaryRequirements 
 }) => {
   const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
-  const dietaryInfo = carePlanData?.auto_save_data?.dietary || dietaryRequirements || {};
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: todayIntake } = useFluidIntakeSummary(clientId || '', today);
   const { data: todayOutput } = useFluidOutputSummary(clientId || '', today);
+  
+  // Normalize dietary data - map wizard field names to expected display names
+  const rawDietary = carePlanData?.auto_save_data?.dietary || dietaryRequirements || {};
+  const dietaryInfo = {
+    // Map allergies - wizard saves as food_allergies
+    allergies: rawDietary.allergies || rawDietary.food_allergies || [],
+    
+    // Map malnutrition risk - wizard saves as boolean at_risk_malnutrition
+    malnutrition_risk_level: rawDietary.malnutrition_risk_level || 
+      (rawDietary.at_risk_malnutrition ? 'At Risk' : null),
+    
+    // Map dehydration risk - wizard saves as boolean
+    dehydration_risk: rawDietary.at_risk_dehydration || false,
+    
+    // Preserved fields that match
+    dietary_restrictions: rawDietary.dietary_restrictions || [],
+    food_preferences: rawDietary.food_preferences || [],
+    dislikes: rawDietary.dislikes || [],
+    meal_schedule: rawDietary.meal_schedule || null,
+    nutritional_needs: rawDietary.nutritional_needs || '',
+    weight_monitoring: rawDietary.weight_monitoring || false,
+    feeding_assistance_required: rawDietary.feeding_assistance_required || false,
+    supplements: rawDietary.supplements || [],
+    special_equipment_needed: rawDietary.special_equipment_needed || '',
+    texture_modifications: rawDietary.texture_modifications || '',
+    fluid_restrictions: rawDietary.fluid_restrictions || '',
+    swallowing_difficulties: rawDietary.swallowing_difficulties || '',
+    choking_risk: rawDietary.choking_risk || false,
+    hydration_needs: rawDietary.hydration_needs || '',
+    meal_preparation_needs: rawDietary.meal_preparation_needs || '',
+    eating_assistance: rawDietary.eating_assistance || '',
+    cultural_religious_requirements: rawDietary.cultural_religious_requirements || '',
+    
+    // Additional wizard fields
+    check_fridge_expiry: rawDietary.check_fridge_expiry || false,
+    do_you_cook: rawDietary.do_you_cook || false,
+    help_with_cooking: rawDietary.help_with_cooking || false,
+    preparation_instructions: rawDietary.preparation_instructions || '',
+    avoid_medical_reasons: rawDietary.avoid_medical_reasons || false,
+    avoid_religious_reasons: rawDietary.avoid_religious_reasons || false,
+    
+    // Legacy fields for backward compatibility
+    cooking_method_preferences: rawDietary.cooking_method_preferences || '',
+    cultural_considerations: rawDietary.cultural_considerations || '',
+    religious_requirements: rawDietary.religious_requirements || '',
+  };
   
   return (
     <>
@@ -101,22 +146,30 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
               </div>
             </div>
 
-            {/* Nutritional Information */}
+            {/* Risk Factors */}
             <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-medium">Nutritional Information</h3>
+              <h3 className="text-lg font-medium">Risk Factors & Monitoring</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Malnutrition Risk</h4>
                   {dietaryInfo.malnutrition_risk_level ? (
                     <Badge variant={
-                      dietaryInfo.malnutrition_risk_level === 'High' ? 'destructive' :
-                      dietaryInfo.malnutrition_risk_level === 'Medium' ? 'default' : 'secondary'
+                      dietaryInfo.malnutrition_risk_level === 'High' || dietaryInfo.malnutrition_risk_level === 'At Risk' 
+                        ? 'destructive' 
+                        : dietaryInfo.malnutrition_risk_level === 'Medium' ? 'default' : 'secondary'
                     }>
-                      {dietaryInfo.malnutrition_risk_level} Risk
+                      {dietaryInfo.malnutrition_risk_level}
                     </Badge>
                   ) : (
                     <span className="text-sm text-muted-foreground">Not assessed</span>
                   )}
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Dehydration Risk</h4>
+                  <Badge variant={dietaryInfo.dehydration_risk ? 'destructive' : 'outline'}>
+                    {dietaryInfo.dehydration_risk ? 'At Risk' : 'No Risk'}
+                  </Badge>
                 </div>
 
                 <div className="space-y-3">
@@ -126,10 +179,92 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                   </Badge>
                 </div>
 
-                <div className="space-y-3 md:col-span-2">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Feeding Assistance</h4>
+                  <Badge variant={dietaryInfo.feeding_assistance_required ? 'default' : 'outline'}>
+                    {dietaryInfo.feeding_assistance_required ? 'Required' : 'Not Required'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Cooking & Meal Assistance */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-lg font-medium">Cooking & Meal Assistance</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Check Fridge Expiry</h4>
+                  <Badge variant={dietaryInfo.check_fridge_expiry ? 'default' : 'outline'}>
+                    {dietaryInfo.check_fridge_expiry ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Client Cooks</h4>
+                  <Badge variant={dietaryInfo.do_you_cook ? 'default' : 'outline'}>
+                    {dietaryInfo.do_you_cook ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Needs Help With Cooking</h4>
+                  <Badge variant={dietaryInfo.help_with_cooking ? 'default' : 'outline'}>
+                    {dietaryInfo.help_with_cooking ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+
+                {dietaryInfo.preparation_instructions && (
+                  <div className="space-y-3 md:col-span-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Preparation Instructions</h4>
+                    <p className="text-sm">{dietaryInfo.preparation_instructions}</p>
+                  </div>
+                )}
+                
+                {(dietaryInfo.avoid_medical_reasons || dietaryInfo.avoid_religious_reasons) && (
+                  <div className="space-y-3 md:col-span-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Food Avoidance</h4>
+                    <div className="flex gap-2">
+                      {dietaryInfo.avoid_medical_reasons && (
+                        <Badge variant="secondary">Medical Reasons</Badge>
+                      )}
+                      {dietaryInfo.avoid_religious_reasons && (
+                        <Badge variant="secondary">Religious Reasons</Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Nutritional Information */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-lg font-medium">Nutritional & Hydration Needs</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Nutritional Needs</h4>
                   <p className="text-sm">
                     {dietaryInfo.nutritional_needs || <span className="text-muted-foreground">Not specified</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Hydration Needs</h4>
+                  <p className="text-sm">
+                    {dietaryInfo.hydration_needs || <span className="text-muted-foreground">Not specified</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Meal Preparation Needs</h4>
+                  <p className="text-sm">
+                    {dietaryInfo.meal_preparation_needs || <span className="text-muted-foreground">Not specified</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Eating Assistance</h4>
+                  <p className="text-sm">
+                    {dietaryInfo.eating_assistance || <span className="text-muted-foreground">Not specified</span>}
                   </p>
                 </div>
 
@@ -145,20 +280,24 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                     )}
                   </div>
                 </div>
+
+                {dietaryInfo.dislikes?.length > 0 && (
+                  <div className="space-y-3 md:col-span-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Food Dislikes</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {dietaryInfo.dislikes.map((dislike: string, index: number) => (
+                        <Badge key={index} variant="outline">{dislike}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Assistance & Special Requirements */}
+            {/* Special Requirements & Modifications */}
             <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-medium">Assistance & Special Requirements</h3>
+              <h3 className="text-lg font-medium">Special Requirements & Modifications</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Feeding Assistance</h4>
-                  <Badge variant={dietaryInfo.feeding_assistance_required ? 'default' : 'outline'}>
-                    {dietaryInfo.feeding_assistance_required ? 'Required' : 'Not Required'}
-                  </Badge>
-                </div>
-
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Special Equipment</h4>
                   <p className="text-sm">
@@ -191,6 +330,13 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">Choking Risk</h4>
                     <Badge variant="destructive">High Risk</Badge>
+                  </div>
+                )}
+
+                {dietaryInfo.cultural_religious_requirements && (
+                  <div className="space-y-3 md:col-span-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Cultural/Religious Requirements</h4>
+                    <p className="text-sm">{dietaryInfo.cultural_religious_requirements}</p>
                   </div>
                 )}
               </div>
