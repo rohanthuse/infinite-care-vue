@@ -6,10 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Plus, X, Droplets, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, X, Droplets, TrendingUp, TrendingDown } from 'lucide-react';
 import { FluidBalanceRecordDialog } from '@/components/fluid-balance/FluidBalanceRecordDialog';
 import { useFluidBalanceTarget, useUpdateFluidBalanceTarget } from '@/hooks/useFluidBalanceTargets';
 import { useFluidIntakeSummary } from '@/hooks/useFluidIntakeRecords';
@@ -19,6 +18,9 @@ import { format } from 'date-fns';
 export default function WizardStep8Dietary({ form, clientId }: { form: UseFormReturn<any>; clientId: string }) {
   const watchedValues = form.watch();
   const [newAllergy, setNewAllergy] = React.useState('');
+  const [newRestriction, setNewRestriction] = React.useState('');
+  const [newPreference, setNewPreference] = React.useState('');
+  const [newSupplement, setNewSupplement] = React.useState('');
   const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
   
   // Get client info from form
@@ -37,6 +39,9 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
       const currentDietary = form.getValues('dietary') || {};
       const defaultDietary = {
         food_allergies: [],
+        dietary_restrictions: [],
+        food_preferences: [],
+        supplements: [],
         at_risk_malnutrition: false,
         at_risk_dehydration: false,
         check_fridge_expiry: false,
@@ -46,8 +51,15 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
         avoid_medical_reasons: false,
         avoid_religious_reasons: false,
         nutritional_needs: '',
+        hydration_needs: '',
         feeding_assistance_required: false,
         weight_monitoring: false,
+        eating_assistance: '',
+        meal_preparation_needs: '',
+        meal_schedule: '',
+        special_equipment_needed: '',
+        texture_modifications: '',
+        fluid_restrictions: '',
         ...currentDietary
       };
       
@@ -142,6 +154,120 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
                         ))}
                       </div>
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Dietary Restrictions & Preferences Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Dietary Restrictions & Preferences</h3>
+            
+            <FormField
+              control={form.control}
+              name="dietary.dietary_restrictions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dietary Restrictions</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Add dietary restriction (e.g., Vegetarian, Gluten-free)..."
+                          value={newRestriction}
+                          onChange={(e) => setNewRestriction(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addToArray('dietary.dietary_restrictions', newRestriction, setNewRestriction);
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm"
+                          onClick={() => addToArray('dietary.dietary_restrictions', newRestriction, setNewRestriction)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(field.value) && field.value.map((item: string, index: number) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {item}
+                            <X 
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeFromArray('dietary.dietary_restrictions', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.food_preferences"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Food Preferences</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Add food preference..."
+                          value={newPreference}
+                          onChange={(e) => setNewPreference(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addToArray('dietary.food_preferences', newPreference, setNewPreference);
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm"
+                          onClick={() => addToArray('dietary.food_preferences', newPreference, setNewPreference)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(field.value) && field.value.map((item: string, index: number) => (
+                          <Badge key={index} variant="outline" className="flex items-center gap-1">
+                            {item}
+                            <X 
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeFromArray('dietary.food_preferences', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.meal_schedule"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meal Schedule</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe preferred meal times and schedule (e.g., Breakfast at 8am, Lunch at 12pm, Dinner at 6pm)..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -334,59 +460,207 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
             />
           </div>
 
+          {/* Nutritional & Hydration Needs Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Nutritional & Hydration Needs</h3>
+            
+            <FormField
+              control={form.control}
+              name="dietary.nutritional_needs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nutritional Needs</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe any specific nutritional requirements..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* Additional details - Collapsible */}
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 p-0 h-auto">
-                <ChevronDown className="h-4 w-4" />
-                Additional dietary details
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-6 mt-4">
+            <FormField
+              control={form.control}
+              name="dietary.hydration_needs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hydration Needs</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe any hydration requirements or preferences..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.supplements"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplements</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Add supplement (e.g., Vitamin D, Iron)..."
+                          value={newSupplement}
+                          onChange={(e) => setNewSupplement(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addToArray('dietary.supplements', newSupplement, setNewSupplement);
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm"
+                          onClick={() => addToArray('dietary.supplements', newSupplement, setNewSupplement)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(field.value) && field.value.map((item: string, index: number) => (
+                          <Badge key={index} variant="outline" className="flex items-center gap-1">
+                            {item}
+                            <X 
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeFromArray('dietary.supplements', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Eating & Meal Assistance Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Eating & Meal Assistance</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="dietary.nutritional_needs"
+                name="dietary.feeding_assistance_required"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nutritional Needs</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormLabel className="text-base">Feeding Assistance Required</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Describe any specific nutritional requirements..." {...field} />
+                      <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="dietary.feeding_assistance_required"
-                  render={({ field }) => (
-                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                       <FormLabel className="text-base">Feeding Assistance Required</FormLabel>
-                       <FormControl>
-                         <Switch checked={!!field.value} onCheckedChange={field.onChange} />
-                       </FormControl>
-                     </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="dietary.weight_monitoring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormLabel className="text-base">Weight Monitoring Required</FormLabel>
+                    <FormControl>
+                      <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="dietary.weight_monitoring"
-                  render={({ field }) => (
-                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                       <FormLabel className="text-base">Weight Monitoring Required</FormLabel>
-                       <FormControl>
-                         <Switch checked={!!field.value} onCheckedChange={field.onChange} />
-                       </FormControl>
-                     </FormItem>
-                  )}
-                />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+            <FormField
+              control={form.control}
+              name="dietary.eating_assistance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Eating Assistance Details</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe any eating assistance needed (e.g., cutting food, hand-over-hand support)..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.meal_preparation_needs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meal Preparation Needs</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe specific meal preparation requirements..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Special Requirements Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Special Requirements</h3>
+            
+            <FormField
+              control={form.control}
+              name="dietary.special_equipment_needed"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Special Equipment Needed</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="List any special eating equipment (e.g., adapted cutlery, non-slip mat, feeding tube)..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.texture_modifications"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Texture Modifications</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe any texture modifications needed (e.g., pureed, soft, minced)..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.fluid_restrictions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fluid Restrictions</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe any fluid restrictions (e.g., max 1.5L per day, thickened fluids only)..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </CardContent>
       </Card>
 
