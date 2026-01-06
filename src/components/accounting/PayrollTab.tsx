@@ -10,7 +10,8 @@ import {
   AlertTriangle, 
   Clock, 
   CalendarDays,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Users
 } from "lucide-react";
 import { usePayrollRecords, useCreatePayrollRecord, useDeletePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
@@ -22,6 +23,7 @@ import FilterPayrollDialog from "./FilterPayrollDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import PayrollBookingIntegration from "./PayrollBookingIntegration";
+import BulkPayrollGenerationDialog from "./BulkPayrollGenerationDialog";
 import { exportPayrollPayslip, OrganizationInfo } from "@/utils/payslipPdfGenerator";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -62,6 +64,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
   // Filters state
@@ -404,6 +407,15 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           <Button 
             variant="default" 
             size="sm" 
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            onClick={() => setBulkDialogOpen(true)}
+          >
+            <Users className="h-4 w-4" />
+            <span>Bulk Generate</span>
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
             onClick={() => {
               setIsEditing(false);
@@ -572,6 +584,15 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <BulkPayrollGenerationDialog
+        isOpen={bulkDialogOpen}
+        onClose={() => setBulkDialogOpen(false)}
+        branchId={branchId!}
+        onPayrollCreated={() => {
+          // Query will auto-invalidate from the mutation
+        }}
+      />
     </div>
   );
 };

@@ -134,11 +134,13 @@ export const useCreateServiceReport = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate relevant queries
+      // Invalidate ALL relevant queries for data consistency
       queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
       
       toast.success('Service report saved successfully');
     },
@@ -165,10 +167,12 @@ export const useUpdateServiceReport = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate relevant queries
+      // Invalidate ALL relevant queries for data consistency
       queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
       
       toast.success('Service report updated successfully');
     },
@@ -210,10 +214,12 @@ export const useReviewServiceReport = () => {
       return data;
     },
     onSuccess: (data, { status }) => {
-      // Invalidate relevant queries
+      // Invalidate ALL relevant queries for data consistency
       queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
       
       const message = status === 'approved' ? 'Service report approved' :
                      status === 'rejected' ? 'Service report rejected' :
