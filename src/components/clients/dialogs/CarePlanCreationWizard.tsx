@@ -813,25 +813,14 @@ export function CarePlanCreationWizard({
           <div className="flex flex-1 min-h-0">
             {/* Sidebar - Hidden on mobile, visible on lg+ */}
             <div className="hidden lg:block flex-shrink-0 h-full overflow-hidden">
-        {clientProfile?.first_name && clientProfile?.last_name && (
-          <div className="flex items-center gap-2 mb-4">
-            <User className="h-4 w-4" />
-            <span className="text-sm text-muted-foreground">
-              {clientProfile.first_name} {clientProfile.last_name}
-              {clientProfile.age_group && clientProfile.age_group !== 'adult' && (
-                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                  Young Person
-                </span>
-              )}
-            </span>
-          </div>
-        )}
               <CarePlanWizardSidebar 
                 steps={filteredSteps}
                 currentStep={currentStep}
                 completedSteps={completedSteps}
                 onStepClick={handleStepClick}
                 completionPercentage={completionPercentage}
+                clientName={clientProfile ? `${clientProfile.first_name} ${clientProfile.last_name}` : undefined}
+                isYoungPerson={clientProfile?.age_group !== undefined && clientProfile.age_group !== 'adult'}
               />
             </div>
             {/* Main Content */}
