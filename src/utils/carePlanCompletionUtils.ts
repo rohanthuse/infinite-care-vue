@@ -122,15 +122,25 @@ export const hasDiagnosisInfo = (formData: any): boolean => {
   return hasMedicalInfo(formData?.medical_info);
 };
 
-// Check if NEWS2 health monitoring has data
-export const hasNews2Monitoring = (medicalInfo: any): boolean => {
-  if (!medicalInfo || typeof medicalInfo !== 'object') return false;
+// Check if NEWS2 health monitoring has been configured
+// Handles both root-level fields (wizard) and legacy nested format
+export const hasNews2Monitoring = (formData: any): boolean => {
+  if (!formData || typeof formData !== 'object') return false;
   
-  const news2 = medicalInfo.news2_monitoring;
-  if (!news2 || typeof news2 !== 'object') return false;
+  // Check root-level fields (current wizard format)
+  if (formData.news2_monitoring_enabled === true) return true;
   
-  // Check if any NEWS2 field has a meaningful value
-  return hasAnyValue(news2);
+  // Also check root-level fields with any meaningful value
+  if (isNonEmptyString(formData.news2_monitoring_frequency) || 
+      isNonEmptyString(formData.news2_monitoring_notes)) return true;
+  
+  // Legacy fallback: check nested path under medical_info
+  const news2 = formData.medical_info?.news2_monitoring;
+  if (news2 && typeof news2 === 'object') {
+    return hasAnyValue(news2);
+  }
+  
+  return false;
 };
 
 // Check if medication schedule has medications
@@ -288,8 +298,8 @@ export const getCompletedStepIds = (formData: any, isChild: boolean = false, ctx
   // Step 3 - Diagnosis / Medical Info (checks both diagnosis and medical_info paths)
   if (hasDiagnosisInfo(formData)) completedSteps.push(3);
   
-  // Step 4 - NEWS2 Health Monitoring
-  if (hasNews2Monitoring(medInfo)) completedSteps.push(4);
+  // Step 4 - NEWS2 Health Monitoring (checks root-level fields)
+  if (hasNews2Monitoring(formData)) completedSteps.push(4);
   
   // Step 5 - Medication Schedule (now considers DB medication count)
   if (hasMedicationSchedule(medInfo, medicationCount)) completedSteps.push(5);
