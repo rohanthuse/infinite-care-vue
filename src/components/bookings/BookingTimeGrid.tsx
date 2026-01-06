@@ -202,55 +202,71 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return bookingMonth === currentMonth;
   };
 
-  // Auto-select first client with bookings for the current view if none selected
+  // Auto-select first client with bookings for the current view range
+  // Re-evaluates when date/view changes to switch to a client with visible bookings
   useEffect(() => {
-    if (!selectedClientId && clients.length > 0 && bookings.length > 0) {
-      // Find clients that have bookings in the current view range
-      const clientsWithVisibleBookings = clients.filter(client => 
-        bookings.some(b => b.clientId === client.id && isBookingInViewRange(b))
-      );
+    if (clients.length > 0 && bookings.length > 0) {
+      // Check if current selection has bookings in the view range
+      const currentSelectionHasBookings = selectedClientId && 
+        bookings.some(b => b.clientId === selectedClientId && isBookingInViewRange(b));
       
-      if (clientsWithVisibleBookings.length > 0) {
-        console.log(`[BookingTimeGrid] Auto-selecting client with visible bookings: ${clientsWithVisibleBookings[0].name}`);
-        setSelectedClientId(clientsWithVisibleBookings[0].id);
-      } else {
-        // Fallback: select first client with any bookings
-        const clientsWithAnyBookings = clients.filter(client => 
-          bookings.some(b => b.clientId === client.id)
+      // If no selection OR current selection has no visible bookings, auto-select
+      if (!selectedClientId || !currentSelectionHasBookings) {
+        // Find clients that have bookings in the current view range
+        const clientsWithVisibleBookings = clients.filter(client => 
+          bookings.some(b => b.clientId === client.id && isBookingInViewRange(b))
         );
-        if (clientsWithAnyBookings.length > 0) {
-          console.log(`[BookingTimeGrid] Auto-selecting client with any bookings: ${clientsWithAnyBookings[0].name}`);
-          setSelectedClientId(clientsWithAnyBookings[0].id);
-        } else if (clients.length > 0) {
-          console.log(`[BookingTimeGrid] Auto-selecting first client: ${clients[0].name}`);
-          setSelectedClientId(clients[0].id);
+        
+        if (clientsWithVisibleBookings.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting client with visible bookings: ${clientsWithVisibleBookings[0].name}`);
+          setSelectedClientId(clientsWithVisibleBookings[0].id);
+        } else if (!selectedClientId) {
+          // Only fallback to any client if nothing is currently selected
+          const clientsWithAnyBookings = clients.filter(client => 
+            bookings.some(b => b.clientId === client.id)
+          );
+          if (clientsWithAnyBookings.length > 0) {
+            console.log(`[BookingTimeGrid] Auto-selecting client with any bookings: ${clientsWithAnyBookings[0].name}`);
+            setSelectedClientId(clientsWithAnyBookings[0].id);
+          } else if (clients.length > 0) {
+            console.log(`[BookingTimeGrid] Auto-selecting first client: ${clients[0].name}`);
+            setSelectedClientId(clients[0].id);
+          }
         }
       }
     }
   }, [clients, bookings, selectedClientId, viewType, validDate, weekDates]);
 
-  // Auto-select first carer with bookings for the current view if none selected
+  // Auto-select first carer with bookings for the current view range
+  // Re-evaluates when date/view changes to switch to a carer with visible bookings
   useEffect(() => {
-    if (!selectedCarerId && carers.length > 0 && bookings.length > 0) {
-      // Find carers that have bookings in the current view range
-      const carersWithVisibleBookings = carers.filter(carer => 
-        bookings.some(b => b.carerId === carer.id && isBookingInViewRange(b))
-      );
+    if (carers.length > 0 && bookings.length > 0) {
+      // Check if current selection has bookings in the view range
+      const currentSelectionHasBookings = selectedCarerId && 
+        bookings.some(b => b.carerId === selectedCarerId && isBookingInViewRange(b));
       
-      if (carersWithVisibleBookings.length > 0) {
-        console.log(`[BookingTimeGrid] Auto-selecting carer with visible bookings: ${carersWithVisibleBookings[0].name}`);
-        setSelectedCarerId(carersWithVisibleBookings[0].id);
-      } else {
-        // Fallback: select first carer with any bookings
-        const carersWithAnyBookings = carers.filter(carer => 
-          bookings.some(b => b.carerId === carer.id)
+      // If no selection OR current selection has no visible bookings, auto-select
+      if (!selectedCarerId || !currentSelectionHasBookings) {
+        // Find carers that have bookings in the current view range
+        const carersWithVisibleBookings = carers.filter(carer => 
+          bookings.some(b => b.carerId === carer.id && isBookingInViewRange(b))
         );
-        if (carersWithAnyBookings.length > 0) {
-          console.log(`[BookingTimeGrid] Auto-selecting carer with any bookings: ${carersWithAnyBookings[0].name}`);
-          setSelectedCarerId(carersWithAnyBookings[0].id);
-        } else if (carers.length > 0) {
-          console.log(`[BookingTimeGrid] Auto-selecting first carer: ${carers[0].name}`);
-          setSelectedCarerId(carers[0].id);
+        
+        if (carersWithVisibleBookings.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting carer with visible bookings: ${carersWithVisibleBookings[0].name}`);
+          setSelectedCarerId(carersWithVisibleBookings[0].id);
+        } else if (!selectedCarerId) {
+          // Only fallback to any carer if nothing is currently selected
+          const carersWithAnyBookings = carers.filter(carer => 
+            bookings.some(b => b.carerId === carer.id)
+          );
+          if (carersWithAnyBookings.length > 0) {
+            console.log(`[BookingTimeGrid] Auto-selecting carer with any bookings: ${carersWithAnyBookings[0].name}`);
+            setSelectedCarerId(carersWithAnyBookings[0].id);
+          } else if (carers.length > 0) {
+            console.log(`[BookingTimeGrid] Auto-selecting first carer: ${carers[0].name}`);
+            setSelectedCarerId(carers[0].id);
+          }
         }
       }
     }
