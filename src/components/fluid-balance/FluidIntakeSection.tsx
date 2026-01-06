@@ -162,7 +162,7 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteRecord.mutate({ id: record.id, clientId })}
+                      onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
                       disabled={deleteRecord.isPending}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
