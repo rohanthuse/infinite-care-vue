@@ -637,24 +637,26 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
               </div>
                         
               {viewType === "daily" ? (
-                <BookingContextMenu 
-                  date={date} 
-                  time={contextMenuTime} 
-                  onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
-                >
-                  <Droppable 
-                    droppableId={`${entityType}-${format(date, 'yyyy-MM-dd')}`} 
-                    type="booking"
-                    direction="vertical"
-                  >
-                    {(provided, snapshot) => (
-                      <div 
-                        className={`day-content ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
-                        onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        data-rbd-droppable-id={`${entityType}-${format(date, 'yyyy-MM-dd')}`}
+                <div className="day-columns">
+                  <div className="day-column">
+                    <BookingContextMenu 
+                      date={date} 
+                      time={contextMenuTime} 
+                      onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
+                    >
+                      <Droppable 
+                        droppableId={`${entityType}-${format(date, 'yyyy-MM-dd')}`} 
+                        type="booking"
+                        direction="vertical"
                       >
+                        {(provided, snapshot) => (
+                          <div 
+                            className={`day-content ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
+                            onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            data-rbd-droppable-id={`${entityType}-${format(date, 'yyyy-MM-dd')}`}
+                          >
                         {timeSlots.map((_, timeIndex) => (
                           <div key={timeIndex} className="hour-cell"></div>
                         ))}
@@ -696,11 +698,13 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                             </span>
                           </div>
                         )}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </BookingContextMenu>
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </BookingContextMenu>
+                  </div>
+                </div>
               ) : (
                 <div className="day-columns">
                   {weekDates.map((day, dayIndex) => (

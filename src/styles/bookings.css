@@ -230,8 +230,16 @@
 }
 
 /* View-specific styles */
+.daily-view .day-columns {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
 .daily-view .day-column {
+  flex: 1;
   min-width: 300px;
+  width: 100%;
 }
 
 .weekly-view .day-column {
