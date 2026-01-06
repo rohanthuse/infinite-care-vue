@@ -12,6 +12,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Booking } from "./BookingsMonthView";
+import { 
+  getBookingStatusLabel,
+  getEffectiveBookingStatus 
+} from "./utils/bookingColors";
 
 interface DayBookingsDialogProps {
   open: boolean;
@@ -21,30 +25,36 @@ interface DayBookingsDialogProps {
   onBookingClick?: (booking: Booking) => void;
 }
 
-const getStatusColor = (status: Booking["status"]): string => {
-  const colors = {
-    assigned: "bg-blue-500 text-white",
-    unassigned: "bg-gray-400 text-white",
-    done: "bg-green-500 text-white",
-    "in-progress": "bg-amber-500 text-white",
-    cancelled: "bg-red-500 text-white",
-    departed: "bg-purple-500 text-white",
-    suspended: "bg-orange-500 text-white",
+const getStatusBadgeColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    assigned: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+    unassigned: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+    done: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+    "in-progress": "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+    cancelled: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+    departed: "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300",
+    suspended: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    missed: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+    late: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+    training: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
   };
-  return colors[status] || "bg-gray-500 text-white";
+  return colors[status] || colors.assigned;
 };
 
-const getStatusLabel = (status: Booking["status"]): string => {
-  const labels = {
-    assigned: "Assigned",
-    unassigned: "Unassigned",
-    done: "Done",
-    "in-progress": "In Progress",
-    cancelled: "Cancelled",
-    departed: "Departed",
-    suspended: "Suspended",
+const getCardBorderColor = (status: string): string => {
+  const borders: Record<string, string> = {
+    assigned: "border-l-green-500",
+    unassigned: "border-l-yellow-500",
+    done: "border-l-blue-500",
+    "in-progress": "border-l-purple-500",
+    cancelled: "border-l-red-500",
+    departed: "border-l-teal-500",
+    suspended: "border-l-gray-500",
+    missed: "border-l-red-500",
+    late: "border-l-orange-500",
+    training: "border-l-amber-500",
   };
-  return labels[status] || status;
+  return borders[status] || borders.assigned;
 };
 
 export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
@@ -80,7 +90,8 @@ export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
               <Card
                 key={booking.id}
                 className={cn(
-                  "cursor-pointer transition-all hover:shadow-md hover:border-primary/50",
+                  "cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border-l-4",
+                  getCardBorderColor(getEffectiveBookingStatus(booking)),
                   onBookingClick && "cursor-pointer"
                 )}
                 onClick={() => onBookingClick?.(booking)}
@@ -111,8 +122,14 @@ export const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
                       )}
                     </div>
 
-                    <Badge className={cn("shrink-0", getStatusColor(booking.status))}>
-                      {getStatusLabel(booking.status)}
+                    <Badge 
+                      variant="custom"
+                      className={cn(
+                        "shrink-0",
+                        getStatusBadgeColor(getEffectiveBookingStatus(booking))
+                      )}
+                    >
+                      {getBookingStatusLabel(getEffectiveBookingStatus(booking))}
                     </Badge>
                   </div>
                 </CardContent>
