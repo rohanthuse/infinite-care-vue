@@ -15,6 +15,7 @@ interface DietaryTabProps {
   carePlanData?: any;
   clientId?: string;
   clientName?: string;
+  visitRecordId?: string;
   onEditDietaryRequirements?: () => void;
 }
 
@@ -23,6 +24,7 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
   carePlanData,
   clientId,
   clientName,
+  visitRecordId,
   onEditDietaryRequirements 
 }) => {
   const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
@@ -415,6 +417,7 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
           onOpenChange={setFluidBalanceDialogOpen}
           clientId={clientId}
           clientName={clientName}
+          visitRecordId={visitRecordId}
         />
       )}
     </>

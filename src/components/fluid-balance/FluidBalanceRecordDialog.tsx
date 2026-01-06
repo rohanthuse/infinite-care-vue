@@ -17,6 +17,7 @@ interface FluidBalanceRecordDialogProps {
   onOpenChange: (open: boolean) => void;
   clientId: string;
   clientName: string;
+  visitRecordId?: string;
 }
 
 export function FluidBalanceRecordDialog({
@@ -24,6 +25,7 @@ export function FluidBalanceRecordDialog({
   onOpenChange,
   clientId,
   clientName,
+  visitRecordId,
 }: FluidBalanceRecordDialogProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const dateString = format(selectedDate, 'yyyy-MM-dd');
@@ -74,15 +76,15 @@ export function FluidBalanceRecordDialog({
 
           <div className="flex-1 overflow-auto mt-4">
             <TabsContent value="intake" className="mt-0">
-              <FluidIntakeSection clientId={clientId} date={dateString} />
+              <FluidIntakeSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
             </TabsContent>
 
             <TabsContent value="output" className="mt-0">
-              <FluidOutputSection clientId={clientId} date={dateString} />
+              <FluidOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
             </TabsContent>
 
             <TabsContent value="urinary" className="mt-0">
-              <UrinaryOutputSection clientId={clientId} date={dateString} />
+              <UrinaryOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
             </TabsContent>
 
             <TabsContent value="summary" className="mt-0">

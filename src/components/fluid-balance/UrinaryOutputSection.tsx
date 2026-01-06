@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 interface UrinaryOutputSectionProps {
   clientId: string;
   date: string;
+  visitRecordId?: string;
 }
 
 const COLLECTION_METHODS = ['Toilet', 'Pad', 'Catheter', 'Bedpan', 'Urinal', 'Other'];
@@ -20,7 +21,7 @@ const COLOURS = ['Pale yellow', 'Yellow', 'Dark amber', 'Brown', 'Red-tinged', '
 const ODOURS = ['Normal', 'Strong', 'Offensive', 'Sweet', 'Unusual'];
 const ESTIMATES = ['Small', 'Moderate', 'Large'];
 
-export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionProps) {
+export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryOutputSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useUrinaryOutputRecords(clientId, date);
   const addRecord = useAddUrinaryOutputRecord();
@@ -63,6 +64,7 @@ export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionPro
     addRecord.mutate({
       client_id: clientId,
       record_date: date,
+      visit_record_id: visitRecordId,
       time: timeDate.toISOString(),
       collection_method: newRecord.collection_method,
       amount_ml: useEstimate ? undefined : parseInt(newRecord.amount_ml),

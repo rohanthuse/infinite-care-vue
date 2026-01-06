@@ -3759,6 +3759,7 @@ const CarerVisitWorkflow = () => {
                     carePlanData={activeCareplan}
                     clientId={currentAppointment?.client_id}
                     clientName={`${currentAppointment?.clients?.first_name || ''} ${currentAppointment?.clients?.last_name || ''}`}
+                    visitRecordId={visitRecord?.id}
                   />
                 )}
               </CardContent>
