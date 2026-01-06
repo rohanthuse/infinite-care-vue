@@ -25,6 +25,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
 import { useVisitVitals } from '@/hooks/useVisitVitals';
+import { useUpdateClientActivity } from '@/hooks/useClientActivities';
+import { useUpdateCarePlanGoal } from '@/hooks/useCarePlanGoals';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { EditableTasksTable } from './edit-report/EditableTasksTable';
 import { EditableMedicationsTable } from './edit-report/EditableMedicationsTable';
@@ -134,6 +136,10 @@ export function CreateServiceReportDialog({
   const createServiceReport = useCreateServiceReport();
   const updateServiceReport = useUpdateServiceReport();
   const queryClient = useQueryClient();
+  
+  // Mutation hooks for activity and goal updates
+  const updateActivity = useUpdateClientActivity();
+  const updateGoal = useUpdateCarePlanGoal();
 
   // State for pending changes in edit mode
   const [pendingTaskChanges, setPendingTaskChanges] = useState<Map<string, { is_completed: boolean; completion_notes: string }>>(new Map());
@@ -942,6 +948,46 @@ export function CreateServiceReportDialog({
             .eq('id', effectiveVisitRecordId);
         }
 
+        // Save activity changes (status updates to client_activities table)
+        for (const [activityId, changes] of pendingActivityChanges) {
+          // Skip manual/temp activities - they're not in the database yet
+          if (!activityId.startsWith('manual-') && !activityId.startsWith('temp-')) {
+            try {
+              // Update the activity status based on performed flag
+              await updateActivity.mutateAsync({
+                id: activityId,
+                updates: {
+                  status: changes.performed ? 'completed' : 'active',
+                  // Store duration and notes if the schema supports it
+                },
+              });
+              console.log('[CreateServiceReportDialog] Updated activity:', activityId);
+            } catch (err) {
+              console.error('[CreateServiceReportDialog] Error updating activity:', activityId, err);
+            }
+          }
+        }
+
+        // Save goal changes (status, progress, notes to client_care_plan_goals table)
+        for (const [goalId, changes] of pendingGoalChanges) {
+          // Skip manual/temp goals - they're not in the database yet
+          if (!goalId.startsWith('manual-') && !goalId.startsWith('temp-')) {
+            try {
+              await updateGoal.mutateAsync({
+                id: goalId,
+                updates: {
+                  status: changes.status,
+                  progress: changes.progress,
+                  notes: changes.notes,
+                },
+              });
+              console.log('[CreateServiceReportDialog] Updated goal:', goalId);
+            } catch (err) {
+              console.error('[CreateServiceReportDialog] Error updating goal:', goalId, err);
+            }
+          }
+        }
+
         // Invalidate queries
         queryClient.invalidateQueries({ queryKey: ['visit-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['visit-medications'] });
@@ -1007,6 +1053,11 @@ export function CreateServiceReportDialog({
         }
       }, {
         onSuccess: () => {
+          // Ensure View mode sees the updated data
+          queryClient.invalidateQueries({ queryKey: ['care-plan-goals'] });
+          queryClient.invalidateQueries({ queryKey: ['client-activities'] });
+          queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
+          queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
           onOpenChange(false);
           form.reset();
           toast.success('Service report updated and submitted for review');
