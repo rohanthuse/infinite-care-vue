@@ -2702,11 +2702,14 @@ export type Database = {
           client_id: string
           created_at: string
           dietary_restrictions: string[] | null
+          eating_assistance: string | null
           feeding_assistance_required: boolean | null
           fluid_restrictions: string | null
           food_allergies: string[] | null
           food_preferences: string[] | null
+          hydration_needs: string | null
           id: string
+          meal_preparation_needs: string | null
           meal_schedule: Json | null
           nutritional_needs: string | null
           special_equipment_needed: string | null
@@ -2719,11 +2722,14 @@ export type Database = {
           client_id: string
           created_at?: string
           dietary_restrictions?: string[] | null
+          eating_assistance?: string | null
           feeding_assistance_required?: boolean | null
           fluid_restrictions?: string | null
           food_allergies?: string[] | null
           food_preferences?: string[] | null
+          hydration_needs?: string | null
           id?: string
+          meal_preparation_needs?: string | null
           meal_schedule?: Json | null
           nutritional_needs?: string | null
           special_equipment_needed?: string | null
@@ -2736,11 +2742,14 @@ export type Database = {
           client_id?: string
           created_at?: string
           dietary_restrictions?: string[] | null
+          eating_assistance?: string | null
           feeding_assistance_required?: boolean | null
           fluid_restrictions?: string | null
           food_allergies?: string[] | null
           food_preferences?: string[] | null
+          hydration_needs?: string | null
           id?: string
+          meal_preparation_needs?: string | null
           meal_schedule?: Json | null
           nutritional_needs?: string | null
           special_equipment_needed?: string | null

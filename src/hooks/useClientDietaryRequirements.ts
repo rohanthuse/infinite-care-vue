@@ -16,6 +16,9 @@ export interface ClientDietaryRequirements {
   texture_modifications?: string;
   fluid_restrictions?: string;
   weight_monitoring?: boolean;
+  hydration_needs?: string;
+  meal_preparation_needs?: string;
+  eating_assistance?: string;
   created_at: string;
   updated_at: string;
 }
