@@ -16,7 +16,8 @@ import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServi
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import { format, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Activity, Target } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Activity, Target, Droplets } from 'lucide-react';
+import { FluidBalanceDisplay } from './view-report/FluidBalanceDisplay';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1340,6 +1341,15 @@ export function CreateServiceReportDialog({
                   />
                 </CardContent>
               </Card>
+
+              {/* Fluid Balance Section */}
+              {preSelectedClient?.id && serviceDate && (
+                <FluidBalanceDisplay 
+                  clientId={preSelectedClient.id}
+                  serviceDate={serviceDate}
+                  visitRecordId={effectiveVisitRecordId}
+                />
+              )}
 
               {/* Events & Incidents Card */}
               <Card>
