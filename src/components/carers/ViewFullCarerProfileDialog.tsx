@@ -170,7 +170,7 @@ export function ViewFullCarerProfileDialog({
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
-          className="max-w-7xl max-h-[95vh] p-0 overflow-y-auto"
+          className="max-w-7xl max-h-[95vh] p-0 overflow-hidden"
           onEscapeKeyDown={handleClose}
           onPointerDownOutside={handleClose}
         >
@@ -217,9 +217,9 @@ export function ViewFullCarerProfileDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0">
+          <div className="flex h-[calc(95vh-80px)]">
             {/* Left Sidebar - Navigation */}
-            <div className="w-80 border-r border-border bg-muted/30">
+            <div className="w-80 border-r border-border bg-muted/30 flex flex-col overflow-y-auto">
               {/* Profile Summary Section */}
               <CarerProfileSummaryCard 
                 carerId={carerId}
@@ -254,7 +254,7 @@ export function ViewFullCarerProfileDialog({
             </div>
 
             {/* Right Panel - Content */}
-            <div className="flex-1">
+            <div className="flex-1 flex flex-col overflow-hidden">
               {/* Tab Title Header */}
               <div className="border-b border-border px-6 py-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -266,7 +266,7 @@ export function ViewFullCarerProfileDialog({
               </div>
 
               {/* Content Area */}
-              <div className="p-6">
+              <div className="flex-1 overflow-y-auto p-6">
                 <div className="animate-in fade-in-50 duration-300">
                   {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
                   {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
