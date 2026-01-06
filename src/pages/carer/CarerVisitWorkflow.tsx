@@ -924,14 +924,88 @@ const CarerVisitWorkflow = () => {
     medicationsInitializedRef.current = false;
   }, [appointmentId]);
 
-  // Removed auto-generation of common tasks - only show admin-assigned tasks
-  // useEffect(() => {
-  //   if (!isViewOnly && visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
-  //     console.log('Initializing common tasks for visit record:', visitRecord.id);
-  //     setTasksInitialized(true);
-  //     addCommonTasks.mutate(visitRecord.id);
-  //   }
-  // }, [visitRecord, tasks, addCommonTasks, tasksInitialized, isViewOnly]);
+  // Sync Care Plan tasks to visit_tasks when visit starts
+  useEffect(() => {
+    const syncCarePlanTasks = async () => {
+      if (!visitRecord?.id || !currentAppointment?.client_id || isViewOnly) return;
+      if (tasks && tasks.length > 0) return; // Already have tasks
+      if (tasksInitialized) return;
+      
+      setTasksInitialized(true);
+      
+      const ACTIVE_STATUSES = ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved', 'confirmed'];
+      
+      try {
+        // Fetch care plan with auto_save_data
+        const { data: carePlan } = await supabase
+          .from('client_care_plans')
+          .select('id, auto_save_data')
+          .eq('client_id', currentAppointment.client_id)
+          .in('status', ACTIVE_STATUSES)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (!carePlan) return;
+        
+        const autoSave = carePlan.auto_save_data as any;
+        const tasksToSync: Array<{ task_category: string; task_name: string; priority: string }> = [];
+        const seenTaskKeys = new Set<string>();
+        
+        const addTask = (category: string, name: string, priority: string = 'medium') => {
+          const normalizedName = name.toLowerCase().trim();
+          const key = `${category}:${normalizedName}`;
+          if (normalizedName && !seenTaskKeys.has(key)) {
+            tasksToSync.push({ task_category: category, task_name: name.trim(), priority });
+            seenTaskKeys.add(key);
+          }
+        };
+        
+        // Extract tasks from dedicated tasks array
+        if (autoSave?.tasks && Array.isArray(autoSave.tasks)) {
+          autoSave.tasks.forEach((task: any) => {
+            if (task.name) {
+              addTask(task.category || 'General', task.name, task.priority || 'medium');
+            }
+          });
+        }
+        
+        if (tasksToSync.length > 0) {
+          // Check for existing tasks to prevent duplicates
+          const { data: existingTasks } = await supabase
+            .from('visit_tasks')
+            .select('task_category, task_name')
+            .eq('visit_record_id', visitRecord.id);
+          
+          const existingKeys = new Set(
+            (existingTasks || []).map(t => `${t.task_category}:${t.task_name.toLowerCase().trim()}`)
+          );
+          
+          const newTasks = tasksToSync.filter(t => 
+            !existingKeys.has(`${t.task_category}:${t.task_name.toLowerCase().trim()}`)
+          );
+          
+          if (newTasks.length > 0) {
+            const visitTasksToInsert = newTasks.map(t => ({
+              visit_record_id: visitRecord.id,
+              task_category: t.task_category,
+              task_name: t.task_name,
+              is_completed: false,
+              priority: t.priority,
+            }));
+            
+            await supabase.from('visit_tasks').insert(visitTasksToInsert);
+            queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecord.id] });
+            console.log('[CarerVisitWorkflow] Synced Care Plan tasks to visit:', newTasks.length);
+          }
+        }
+      } catch (error) {
+        console.error('[CarerVisitWorkflow] Error syncing care plan tasks to visit:', error);
+      }
+    };
+    
+    syncCarePlanTasks();
+  }, [visitRecord?.id, currentAppointment?.client_id, tasks?.length, isViewOnly, tasksInitialized, queryClient]);
 
   useEffect(() => {
     // Don't initialize medications in view-only mode

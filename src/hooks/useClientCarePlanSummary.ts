@@ -247,20 +247,59 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     });
   }
 
+  // TASKS: Merge database tasks with Care Plan JSON tasks
+  let parsedTasks: CarePlanSummaryTask[] = [];
+  
+  // First, add all database tasks (admin-assigned)
+  if (tasks.length > 0) {
+    parsedTasks = tasks.map((t) => ({
+      id: t.id,
+      title: t.title || '',
+      description: t.description || null,
+      status: t.status || 'pending',
+      priority: t.priority || 'medium',
+      due_date: t.due_date || null,
+      notes: t.notes || null,
+      category: t.category || null,
+    }));
+  }
+  
+  // Then, add Care Plan JSON tasks that aren't already in database
+  const jsonTasks = autoSaveData?.tasks || [];
+  if (Array.isArray(jsonTasks)) {
+    const dbTaskTitles = new Set(parsedTasks.map(t => t.title.toLowerCase().trim()));
+    
+    jsonTasks.forEach((t: any, index: number) => {
+      const taskName = (t.name || '').toLowerCase().trim();
+      // Only add if not already in database
+      if (taskName && !dbTaskTitles.has(taskName)) {
+        parsedTasks.push({
+          id: `json-task-${index}`,
+          title: t.name || '',
+          description: t.description || null,
+          status: 'pending',
+          priority: t.priority || 'medium',
+          due_date: null,
+          notes: null,
+          category: t.category || null,
+        });
+      }
+    });
+  }
+
   const completedGoals = parsedGoals.filter(g => g.status === 'completed').length;
   const activeActivities = parsedActivities.filter(a => a.status === 'active').length;
   const activeMedications = parsedMedications.filter(m => m.status === 'active').length;
-  const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo').length;
+  const pendingTasks = parsedTasks.filter(t => t.status === 'pending' || t.status === 'todo' || t.status === 'in_progress').length;
 
   console.log('[useClientCarePlanSummary] Summary with database priority:', {
     carePlanId: carePlan.id,
     medicationsFromDb: dbMedications.length,
     activitiesFromDb: dbActivities.length,
     goalsFromDb: dbGoals.length,
-    totalMedications: parsedMedications.length,
-    totalActivities: parsedActivities.length,
-    totalGoals: parsedGoals.length,
-    tasks: tasks.length,
+    tasksFromDb: tasks.length,
+    tasksFromJson: jsonTasks.length,
+    totalTasks: parsedTasks.length,
   });
 
   return {
@@ -268,7 +307,7 @@ const fetchCarePlanSummary = async (clientId: string): Promise<Omit<CarePlanSumm
     goals: { total: parsedGoals.length, completed: completedGoals, items: parsedGoals },
     activities: { total: parsedActivities.length, active: activeActivities, items: parsedActivities },
     medications: { total: parsedMedications.length, active: activeMedications, items: parsedMedications },
-    tasks: { total: tasks.length, pending: pendingTasks, items: tasks },
+    tasks: { total: parsedTasks.length, pending: pendingTasks, items: parsedTasks },
     hasCarePlan: true,
   };
 };
