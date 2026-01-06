@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FluidBalanceSummaryProps {
   clientId: string;
@@ -26,10 +26,21 @@ export function FluidBalanceSummary({ clientId, date }: FluidBalanceSummaryProps
 
   const [targetDialogOpen, setTargetDialogOpen] = useState(false);
   const [targetValues, setTargetValues] = useState({
-    daily_intake_target_ml: target?.daily_intake_target_ml || 2000,
-    alert_threshold_percentage: target?.alert_threshold_percentage || 50,
-    notes: target?.notes || '',
+    daily_intake_target_ml: 2000,
+    alert_threshold_percentage: 50,
+    notes: '',
   });
+
+  // Sync target values when target data is fetched
+  useEffect(() => {
+    if (target) {
+      setTargetValues({
+        daily_intake_target_ml: target.daily_intake_target_ml || 2000,
+        alert_threshold_percentage: target.alert_threshold_percentage || 50,
+        notes: target.notes || '',
+      });
+    }
+  }, [target]);
 
   const totalIntake = intakeSummary?.total || 0;
   const totalOutput = (outputSummary?.total || 0) + (urinarySummary?.total || 0);

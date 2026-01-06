@@ -59,6 +59,7 @@ export const useAddFluidOutputRecord = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fluid-output-records', variables.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['fluid-output-summary', variables.client_id, variables.record_date] });
       toast({
         title: 'Success',
         description: 'Fluid output record added successfully',
@@ -92,6 +93,7 @@ export const useUpdateFluidOutputRecord = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['fluid-output-records', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['fluid-output-summary', data.client_id, data.record_date] });
       toast({
         title: 'Success',
         description: 'Fluid output record updated successfully',
@@ -112,17 +114,18 @@ export const useDeleteFluidOutputRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
+    mutationFn: async ({ id, clientId, date }: { id: string; clientId: string; date: string }) => {
       const { error } = await (supabase as any)
         .from('fluid_output_records')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      return { id, clientId };
+      return { id, clientId, date };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['fluid-output-records', data.clientId] });
+      queryClient.invalidateQueries({ queryKey: ['fluid-output-summary', data.clientId, data.date] });
       toast({
         title: 'Success',
         description: 'Fluid output record deleted successfully',

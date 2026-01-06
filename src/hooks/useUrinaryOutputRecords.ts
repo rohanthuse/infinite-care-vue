@@ -61,6 +61,7 @@ export const useAddUrinaryOutputRecord = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['urinary-output-records', variables.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['urinary-output-summary', variables.client_id, variables.record_date] });
       toast({
         title: 'Success',
         description: 'Urinary output record added successfully',
@@ -94,6 +95,7 @@ export const useUpdateUrinaryOutputRecord = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['urinary-output-records', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['urinary-output-summary', data.client_id, data.record_date] });
       toast({
         title: 'Success',
         description: 'Urinary output record updated successfully',
@@ -114,17 +116,18 @@ export const useDeleteUrinaryOutputRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
+    mutationFn: async ({ id, clientId, date }: { id: string; clientId: string; date: string }) => {
       const { error } = await (supabase as any)
         .from('urinary_output_records')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      return { id, clientId };
+      return { id, clientId, date };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['urinary-output-records', data.clientId] });
+      queryClient.invalidateQueries({ queryKey: ['urinary-output-summary', data.clientId, data.date] });
       toast({
         title: 'Success',
         description: 'Urinary output record deleted successfully',
