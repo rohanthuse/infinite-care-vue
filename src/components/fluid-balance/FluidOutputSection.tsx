@@ -13,13 +13,14 @@ import { useToast } from '@/hooks/use-toast';
 interface FluidOutputSectionProps {
   clientId: string;
   date: string;
+  visitRecordId?: string;
 }
 
 const OUTPUT_TYPES = ['Urine', 'Vomit', 'Drain', 'Stoma', 'Wound', 'Other'];
 const ESTIMATES = ['Small', 'Moderate', 'Large'];
 const APPEARANCES = ['Clear', 'Cloudy', 'Dark', 'Blood-stained', 'Yellow', 'Brown', 'Other'];
 
-export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) {
+export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutputSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidOutputRecords(clientId, date);
   const addRecord = useAddFluidOutputRecord();
@@ -61,6 +62,7 @@ export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) 
     addRecord.mutate({
       client_id: clientId,
       record_date: date,
+      visit_record_id: visitRecordId,
       time: timeDate.toISOString(),
       output_type: newRecord.output_type,
       amount_ml: useEstimate ? undefined : parseInt(newRecord.amount_ml),

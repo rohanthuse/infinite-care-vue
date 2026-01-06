@@ -12,12 +12,13 @@ import { useToast } from '@/hooks/use-toast';
 interface FluidIntakeSectionProps {
   clientId: string;
   date: string;
+  visitRecordId?: string;
 }
 
 const FLUID_TYPES = ['Water', 'Tea', 'Coffee', 'Juice', 'Soup', 'Milk', 'Smoothie', 'Other'];
 const METHODS = ['Oral', 'PEG', 'NG Tube', 'IV', 'Other'];
 
-export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) {
+export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntakeSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidIntakeRecords(clientId, date);
   const addRecord = useAddFluidIntakeRecord();
@@ -56,6 +57,7 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
     addRecord.mutate({
       client_id: clientId,
       record_date: date,
+      visit_record_id: visitRecordId,
       time: timeDate.toISOString(),
       fluid_type: newRecord.fluid_type,
       amount_ml: parseInt(newRecord.amount_ml),

@@ -65,12 +65,11 @@ import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { ActivitiesDisplay } from './view-report/ActivitiesDisplay';
 import { GoalsDisplay } from './view-report/GoalsDisplay';
+import { FluidBalanceDisplay } from './view-report/FluidBalanceDisplay';
 
 import { formatSafeDate } from '@/lib/dateUtils';
 import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
 import { useClientDietaryRequirements } from '@/hooks/useClientDietaryRequirements';
-import { useFluidIntakeSummary } from '@/hooks/useFluidIntakeRecords';
-import { useFluidOutputSummary } from '@/hooks/useFluidOutputRecords';
 import { format } from 'date-fns';
 
 // Normalize mood values from database (lowercase) to UI display format (Title Case)
@@ -278,10 +277,8 @@ export function ViewServiceReportDialog({
   // Fetch dietary requirements for the client
   const { data: dietaryRequirements } = useClientDietaryRequirements(safeReport?.client_id || '');
 
-  // Fetch fluid balance for service date
+  // Service date for fluid balance display
   const serviceDate = safeReport?.service_date ? format(new Date(safeReport.service_date), 'yyyy-MM-dd') : '';
-  const { data: fluidIntake } = useFluidIntakeSummary(safeReport?.client_id || '', serviceDate);
-  const { data: fluidOutput } = useFluidOutputSummary(safeReport?.client_id || '', serviceDate);
 
   // Transform care plan tasks for fallback when visit_tasks is empty
   const carePlanTasksFallback = useMemo(() => {
@@ -899,34 +896,13 @@ export function ViewServiceReportDialog({
               </Card>
             )}
 
-            {/* Fluid Balance Summary */}
-            {((fluidIntake?.total ?? 0) > 0 || (fluidOutput?.total ?? 0) > 0) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Droplets className="h-5 w-5 text-blue-500" />
-                    Fluid Balance (Visit Date)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Intake</p>
-                      <p className="text-2xl font-bold text-blue-600">{fluidIntake?.total || 0} ml</p>
-                    </div>
-                    <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Output</p>
-                      <p className="text-2xl font-bold text-amber-600">{fluidOutput?.total || 0} ml</p>
-                    </div>
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Balance</p>
-                      <p className={`text-2xl font-bold ${((fluidIntake?.total || 0) - (fluidOutput?.total || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {(fluidIntake?.total || 0) - (fluidOutput?.total || 0)} ml
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Fluid Balance Display - Detailed View */}
+            {safeReport.client_id && serviceDate && (
+              <FluidBalanceDisplay 
+                clientId={safeReport.client_id}
+                serviceDate={serviceDate}
+                visitRecordId={safeReport.visit_record_id}
+              />
             )}
 
             {/* Client Mood & Engagement - Editable Section */}
