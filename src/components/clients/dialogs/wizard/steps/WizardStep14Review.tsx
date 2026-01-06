@@ -87,7 +87,7 @@ export function WizardStep14Review({ form, clientId, isChild = false, effectiveC
         // Use hasDiagnosisInfo for proper diagnosis/medical_info detection
         return hasDiagnosisInfo(formData) ? "completed" : "empty";
       case "news2_monitoring":
-        return hasNews2Monitoring(formData.medical_info) ? "completed" : "empty";
+        return hasNews2Monitoring(formData) ? "completed" : "empty";
       case "medication_schedule":
         return hasMedicationSchedule(formData.medical_info, effectiveMedicationCount) ? "completed" : "empty";
       case "medication":
