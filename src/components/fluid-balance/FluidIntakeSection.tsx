@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface FluidIntakeSectionProps {
   clientId: string;
@@ -17,6 +18,7 @@ const FLUID_TYPES = ['Water', 'Tea', 'Coffee', 'Juice', 'Soup', 'Milk', 'Smoothi
 const METHODS = ['Oral', 'PEG', 'NG Tube', 'IV', 'Other'];
 
 export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) {
+  const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidIntakeRecords(clientId, date);
   const addRecord = useAddFluidIntakeRecord();
   const deleteRecord = useDeleteFluidIntakeRecord();
@@ -30,9 +32,26 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
   });
 
   const handleAdd = () => {
+    if (!clientId) {
+      console.error('[FluidIntake] Save failed: clientId is missing');
+      toast({ 
+        title: 'Error', 
+        description: 'Client ID is missing. Please try again.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     if (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0) return;
 
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
+
+    console.log('[FluidIntake] Attempting to save:', {
+      client_id: clientId,
+      record_date: date,
+      amount_ml: newRecord.amount_ml,
+      fluid_type: newRecord.fluid_type
+    });
 
     addRecord.mutate({
       client_id: clientId,
@@ -44,6 +63,7 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
       comments: newRecord.comments || undefined,
     }, {
       onSuccess: () => {
+        console.log('[FluidIntake] Save successful');
         setNewRecord({
           time: format(new Date(), 'HH:mm'),
           fluid_type: 'Water',
@@ -52,6 +72,9 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
           comments: '',
         });
       },
+      onError: (error) => {
+        console.error('[FluidIntake] Save failed:', error);
+      }
     });
   };
 
@@ -111,8 +134,15 @@ export function FluidIntakeSection({ clientId, date }: FluidIntakeSectionProps) 
             </Select>
           </div>
           <div className="flex items-end">
-            <Button onClick={handleAdd} disabled={addRecord.isPending} className="w-full">
-              Add Entry
+            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full">
+              {addRecord.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Add Entry'
+              )}
             </Button>
           </div>
         </div>
