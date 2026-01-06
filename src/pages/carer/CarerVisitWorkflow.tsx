@@ -71,6 +71,10 @@ import { MedicationDetailsDialog } from "@/components/care/medication/Medication
 import { Eye } from "lucide-react";
 import { DietaryTab } from "@/components/care/tabs/DietaryTab";
 import { useClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
+import { useFluidIntakeSummary } from "@/hooks/useFluidIntakeRecords";
+import { useFluidOutputSummary } from "@/hooks/useFluidOutputRecords";
+import { useUrinaryOutputSummary } from "@/hooks/useUrinaryOutputRecords";
+import { useFluidBalanceTarget } from "@/hooks/useFluidBalanceTargets";
 
 interface NextBookingInfo {
   id: string;
@@ -448,6 +452,27 @@ const CarerVisitWorkflow = () => {
   
   // Fetch client dietary requirements
   const { data: dietaryRequirements, isLoading: dietaryLoading } = useClientDietaryRequirements(currentAppointment?.client_id || '');
+  
+  // Fetch fluid balance data for Complete tab summary
+  const visitDateForFluid = visitRecord?.visit_start_time 
+    ? format(new Date(visitRecord.visit_start_time), 'yyyy-MM-dd') 
+    : format(new Date(), 'yyyy-MM-dd');
+  
+  const { data: fluidIntakeSummary } = useFluidIntakeSummary(
+    currentAppointment?.client_id || '', 
+    visitDateForFluid
+  );
+  const { data: fluidOutputSummary } = useFluidOutputSummary(
+    currentAppointment?.client_id || '', 
+    visitDateForFluid
+  );
+  const { data: urinaryOutputSummary } = useUrinaryOutputSummary(
+    currentAppointment?.client_id || '', 
+    visitDateForFluid
+  );
+  const { data: fluidBalanceTarget } = useFluidBalanceTarget(
+    currentAppointment?.client_id || ''
+  );
   
   // Fetch database medications for merging with JSON - session-stable
   const { data: dbMedications, isLoading: dbMedicationsLoading } = useQuery({
@@ -4118,6 +4143,83 @@ const CarerVisitWorkflow = () => {
                         <p><span className="text-gray-500">Activities Completed:</span> {carePlanActivities?.filter((a: any) => a.status === 'completed').length || 0} of {carePlanActivities?.length || 0}</p>
                         <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings?.length || 0}</p>
                         <p><span className="text-gray-500">Events Recorded:</span> {events?.length || 0}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Dietary Summary Section */}
+                    <div>
+                      <h4 className="font-medium text-gray-700">Dietary Summary</h4>
+                      <div className="mt-2 text-sm space-y-1">
+                        {/* Dietary Tasks */}
+                        {(() => {
+                          const dietaryTaskCategories = ['dietary', 'meal', 'nutrition', 'food', 'feeding'];
+                          const dietaryTasks = tasks?.filter(t => 
+                            dietaryTaskCategories.some(cat => 
+                              t.task_category?.toLowerCase().includes(cat) ||
+                              t.task_name?.toLowerCase().includes(cat)
+                            )
+                          ) || [];
+                          const completedDietaryTasks = dietaryTasks.filter(t => t.is_completed).length;
+                          return (
+                            <p>
+                              <span className="text-gray-500">Dietary Tasks:</span>{' '}
+                              {dietaryTasks.length > 0 
+                                ? `${completedDietaryTasks} of ${dietaryTasks.length} completed`
+                                : 'None assigned'}
+                            </p>
+                          );
+                        })()}
+                        
+                        {/* Meal Assistance */}
+                        <p>
+                          <span className="text-gray-500">Meal Assistance Required:</span>{' '}
+                          {dietaryRequirements?.feeding_assistance_required ? 'Yes' : 'No'}
+                        </p>
+                        
+                        {/* Fluid Intake */}
+                        <p>
+                          <span className="text-gray-500">Fluid Intake Recorded:</span>{' '}
+                          <span className="text-blue-600 font-medium">
+                            {fluidIntakeSummary?.total || 0} ml
+                          </span>
+                          {fluidIntakeSummary?.count ? ` (${fluidIntakeSummary.count} entries)` : ''}
+                          {fluidBalanceTarget?.daily_intake_target_ml && (
+                            <span className="text-gray-400">
+                              {' '}/ {fluidBalanceTarget.daily_intake_target_ml} ml target
+                            </span>
+                          )}
+                        </p>
+                        
+                        {/* Fluid Output */}
+                        <p>
+                          <span className="text-gray-500">Fluid Output Recorded:</span>{' '}
+                          <span className="text-orange-600 font-medium">
+                            {(fluidOutputSummary?.total || 0) + (urinaryOutputSummary?.total || 0)} ml
+                          </span>
+                          {((fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)) > 0 && (
+                            <span>
+                              {' '}({(fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)} entries)
+                            </span>
+                          )}
+                        </p>
+                        
+                        {/* Fluid Balance */}
+                        {(() => {
+                          const balance = (fluidIntakeSummary?.total || 0) - (fluidOutputSummary?.total || 0) - (urinaryOutputSummary?.total || 0);
+                          return (
+                            <p>
+                              <span className="text-gray-500">Fluid Balance:</span>{' '}
+                              <span className={`font-medium ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {balance >= 0 ? '+' : ''}{balance} ml
+                              </span>
+                            </p>
+                          );
+                        })()}
+                        
+                        {/* No dietary data message */}
+                        {!fluidIntakeSummary?.count && !fluidOutputSummary?.count && !urinaryOutputSummary?.count && (
+                          <p className="text-gray-400 italic">No fluid records for this visit</p>
+                        )}
                       </div>
                     </div>
                   </div>
