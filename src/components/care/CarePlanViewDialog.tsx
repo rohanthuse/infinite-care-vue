@@ -144,9 +144,25 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
   const safeObject = (value: any) => (value && typeof value === 'object' && !Array.isArray(value)) ? value : {};
   const safeString = (value: any) => typeof value === 'string' ? value : '';
   const safeBool = (value: any) => typeof value === 'boolean' ? value : false;
+  
+  // Helper to check if object has actual data (not just empty object)
+  const hasData = (obj: any) => obj && typeof obj === 'object' && Object.keys(obj).length > 0;
 
   // Enhanced extraction from auto_save_data for comprehensive field mapping
+  // auto_save_data is the PRIMARY source of truth for wizard data
   const autoSaveData = safeObject((carePlan as any).auto_save_data);
+  
+  // Debug logging for data flow tracing
+  console.log('[mapCarePlanToWizardDefaults] Input data analysis:', {
+    carePlanId: carePlan.id,
+    hasAutoSaveData: hasData(autoSaveData),
+    autoSaveDataKeys: Object.keys(autoSaveData),
+    aboutMe: autoSaveData.about_me,
+    dietary: autoSaveData.dietary || autoSaveData.dietary_requirements,
+    personalCare: autoSaveData.personal_care,
+    consent: autoSaveData.consent,
+    medicalInfo: autoSaveData.medical_info,
+  });
   
   return {
     // Basic Information - Enhanced with missing fields
@@ -160,85 +176,86 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
     priority: carePlan.priority || autoSaveData.priority || 'medium',
     care_plan_type: carePlan.care_plan_type || autoSaveData.care_plan_type || 'standard',
     
-    // Personal Information
+    // Personal Information - autoSaveData takes priority, then carePlan
     personal_info: {
-      ...safeObject(carePlan.personal_info),
       ...safeObject(autoSaveData.personal_info),
+      ...safeObject(carePlan.personal_info),
       first_name: safeString(carePlan.client?.first_name),
       last_name: safeString(carePlan.client?.last_name),
     },
     
-    // About Me - preserve all fields as stored in database, no field remapping
-    about_me: autoSaveData.about_me || carePlan.about_me || {},
+    // About Me - autoSaveData is the primary source
+    about_me: hasData(autoSaveData.about_me) ? autoSaveData.about_me : (carePlan.about_me || {}),
     
-    // Medical Info - Enhanced with admin medication and complex structures
+    // Medical Info - autoSaveData takes priority for nested structures
     medical_info: {
-      ...safeObject(carePlan.medical_info),
       ...safeObject(autoSaveData.medical_info),
+      ...safeObject(carePlan.medical_info),
       medication_manager: {
-        medications: safeArray(carePlan.medications || carePlan.medical_info?.medication_manager?.medications || autoSaveData.medical_info?.medication_manager?.medications),
-        ...safeObject(carePlan.medical_info?.medication_manager || autoSaveData.medical_info?.medication_manager),
+        medications: safeArray(carePlan.medications || autoSaveData.medical_info?.medication_manager?.medications || carePlan.medical_info?.medication_manager?.medications),
+        ...safeObject(autoSaveData.medical_info?.medication_manager || carePlan.medical_info?.medication_manager),
       },
       admin_medication: {
-        ...safeObject(carePlan.medical_info?.admin_medication || autoSaveData.medical_info?.admin_medication),
+        ...safeObject(autoSaveData.medical_info?.admin_medication || carePlan.medical_info?.admin_medication),
       },
     },
     
     // NEWS2 Monitoring
-    news2_monitoring_enabled: (carePlan as any).news2_monitoring_enabled || autoSaveData.news2_monitoring_enabled || false,
-    news2_monitoring_frequency: safeString((carePlan as any).news2_monitoring_frequency || autoSaveData.news2_monitoring_frequency) || 'daily',
-    news2_monitoring_notes: safeString((carePlan as any).news2_monitoring_notes || autoSaveData.news2_monitoring_notes),
+    news2_monitoring_enabled: autoSaveData.news2_monitoring_enabled || (carePlan as any).news2_monitoring_enabled || false,
+    news2_monitoring_frequency: safeString(autoSaveData.news2_monitoring_frequency || (carePlan as any).news2_monitoring_frequency) || 'daily',
+    news2_monitoring_notes: safeString(autoSaveData.news2_monitoring_notes || (carePlan as any).news2_monitoring_notes),
     
-    // Goals and Activities
-    goals: safeArray(carePlan.goals?.length > 0 ? carePlan.goals : autoSaveData.goals),
-    activities: safeArray(carePlan.activities?.length > 0 ? carePlan.activities : autoSaveData.activities),
+    // Goals and Activities - prefer arrays with data
+    goals: safeArray(autoSaveData.goals?.length > 0 ? autoSaveData.goals : carePlan.goals),
+    activities: safeArray(autoSaveData.activities?.length > 0 ? autoSaveData.activities : carePlan.activities),
     
     // Medications
-    medications: safeArray(carePlan.medications || autoSaveData.medications),
+    medications: safeArray(autoSaveData.medications?.length > 0 ? autoSaveData.medications : carePlan.medications),
     
-    // Admin Medication
+    // Admin Medication - autoSaveData takes priority
     admin_medication: {
-      admin_method: safeString(carePlan.medical_info?.admin_medication?.admin_method || autoSaveData.admin_medication?.admin_method),
-      administration_times: safeArray(carePlan.medical_info?.admin_medication?.administration_times || autoSaveData.admin_medication?.administration_times),
-      special_instructions: safeString(carePlan.medical_info?.admin_medication?.special_instructions || autoSaveData.admin_medication?.special_instructions),
-      trained_staff_required: carePlan.medical_info?.admin_medication?.trained_staff_required || autoSaveData.admin_medication?.trained_staff_required || false,
-      medication_storage: safeString(carePlan.medical_info?.admin_medication?.medication_storage || autoSaveData.admin_medication?.medication_storage),
-      disposal_method: safeString(carePlan.medical_info?.admin_medication?.disposal_method || autoSaveData.admin_medication?.disposal_method),
-      monitoring_requirements: safeString(carePlan.medical_info?.admin_medication?.monitoring_requirements || autoSaveData.admin_medication?.monitoring_requirements),
-      side_effects_to_monitor: safeString(carePlan.medical_info?.admin_medication?.side_effects_to_monitor || autoSaveData.admin_medication?.side_effects_to_monitor),
-      ...safeObject(carePlan.medical_info?.admin_medication || autoSaveData.admin_medication),
+      ...safeObject(autoSaveData.admin_medication || autoSaveData.medical_info?.admin_medication),
+      ...safeObject(carePlan.medical_info?.admin_medication),
+      admin_method: safeString(autoSaveData.admin_medication?.admin_method || autoSaveData.medical_info?.admin_medication?.admin_method || carePlan.medical_info?.admin_medication?.admin_method),
+      administration_times: safeArray(autoSaveData.admin_medication?.administration_times || autoSaveData.medical_info?.admin_medication?.administration_times || carePlan.medical_info?.admin_medication?.administration_times),
+      special_instructions: safeString(autoSaveData.admin_medication?.special_instructions || autoSaveData.medical_info?.admin_medication?.special_instructions || carePlan.medical_info?.admin_medication?.special_instructions),
+      trained_staff_required: autoSaveData.admin_medication?.trained_staff_required || autoSaveData.medical_info?.admin_medication?.trained_staff_required || carePlan.medical_info?.admin_medication?.trained_staff_required || false,
+      medication_storage: safeString(autoSaveData.admin_medication?.medication_storage || autoSaveData.medical_info?.admin_medication?.medication_storage || carePlan.medical_info?.admin_medication?.medication_storage),
+      disposal_method: safeString(autoSaveData.admin_medication?.disposal_method || autoSaveData.medical_info?.admin_medication?.disposal_method || carePlan.medical_info?.admin_medication?.disposal_method),
+      monitoring_requirements: safeString(autoSaveData.admin_medication?.monitoring_requirements || autoSaveData.medical_info?.admin_medication?.monitoring_requirements || carePlan.medical_info?.admin_medication?.monitoring_requirements),
+      side_effects_to_monitor: safeString(autoSaveData.admin_medication?.side_effects_to_monitor || autoSaveData.medical_info?.admin_medication?.side_effects_to_monitor || carePlan.medical_info?.admin_medication?.side_effects_to_monitor),
     },
     
-    // Personal Care - Enhanced with detailed sleep and assistance fields
+    // Personal Care - autoSaveData takes priority, spread it LAST to override carePlan
     personal_care: {
       ...safeObject(carePlan.personal_care),
       ...safeObject(autoSaveData.personal_care),
-      // Sleep schedule fields
-      sleep_go_to_bed_time: safeString(carePlan.personal_care?.sleep_go_to_bed_time || autoSaveData.personal_care?.sleep_go_to_bed_time),
-      sleep_wake_up_time: safeString(carePlan.personal_care?.sleep_wake_up_time || autoSaveData.personal_care?.sleep_wake_up_time),
-      sleep_get_out_of_bed_time: safeString(carePlan.personal_care?.sleep_get_out_of_bed_time || autoSaveData.personal_care?.sleep_get_out_of_bed_time),
-      sleep_prepare_duration: safeString(carePlan.personal_care?.sleep_prepare_duration || autoSaveData.personal_care?.sleep_prepare_duration),
+      // Sleep schedule fields - autoSaveData first
+      sleep_go_to_bed_time: safeString(autoSaveData.personal_care?.sleep_go_to_bed_time || carePlan.personal_care?.sleep_go_to_bed_time),
+      sleep_wake_up_time: safeString(autoSaveData.personal_care?.sleep_wake_up_time || carePlan.personal_care?.sleep_wake_up_time),
+      sleep_get_out_of_bed_time: safeString(autoSaveData.personal_care?.sleep_get_out_of_bed_time || carePlan.personal_care?.sleep_get_out_of_bed_time),
+      sleep_prepare_duration: safeString(autoSaveData.personal_care?.sleep_prepare_duration || carePlan.personal_care?.sleep_prepare_duration),
       // Assistance preferences
-      assist_going_to_bed: safeBool(carePlan.personal_care?.assist_going_to_bed || autoSaveData.personal_care?.assist_going_to_bed),
-      assist_getting_out_of_bed: safeBool(carePlan.personal_care?.assist_getting_out_of_bed || autoSaveData.personal_care?.assist_getting_out_of_bed),
+      assist_going_to_bed: safeBool(autoSaveData.personal_care?.assist_going_to_bed || carePlan.personal_care?.assist_going_to_bed),
+      assist_getting_out_of_bed: safeBool(autoSaveData.personal_care?.assist_getting_out_of_bed || carePlan.personal_care?.assist_getting_out_of_bed),
       // Incontinence
-      incontinence_products_required: safeBool(carePlan.personal_care?.incontinence_products_required || autoSaveData.personal_care?.incontinence_products_required),
+      incontinence_products_required: safeBool(autoSaveData.personal_care?.incontinence_products_required || carePlan.personal_care?.incontinence_products_required),
       // Detailed care fields
-      dressing_assistance_level: safeString(carePlan.personal_care?.dressing_assistance_level || autoSaveData.personal_care?.dressing_assistance_level),
-      toileting_assistance_level: safeString(carePlan.personal_care?.toileting_assistance_level || autoSaveData.personal_care?.toileting_assistance_level),
-      continence_status: safeString(carePlan.personal_care?.continence_status || autoSaveData.personal_care?.continence_status),
-      bathing_preferences: safeString(carePlan.personal_care?.bathing_preferences || autoSaveData.personal_care?.bathing_preferences),
-      personal_hygiene_needs: safeString(carePlan.personal_care?.personal_hygiene_needs || autoSaveData.personal_care?.personal_hygiene_needs),
-      skin_care_needs: safeString(carePlan.personal_care?.skin_care_needs || autoSaveData.personal_care?.skin_care_needs),
-      pain_management: safeString(carePlan.personal_care?.pain_management || autoSaveData.personal_care?.pain_management),
-      comfort_measures: safeString(carePlan.personal_care?.comfort_measures || autoSaveData.personal_care?.comfort_measures),
-      behavioral_notes: safeString(carePlan.personal_care?.behavioral_notes || autoSaveData.personal_care?.behavioral_notes),
+      dressing_assistance_level: safeString(autoSaveData.personal_care?.dressing_assistance_level || carePlan.personal_care?.dressing_assistance_level),
+      toileting_assistance_level: safeString(autoSaveData.personal_care?.toileting_assistance_level || carePlan.personal_care?.toileting_assistance_level),
+      continence_status: safeString(autoSaveData.personal_care?.continence_status || carePlan.personal_care?.continence_status),
+      bathing_preferences: safeString(autoSaveData.personal_care?.bathing_preferences || carePlan.personal_care?.bathing_preferences),
+      personal_hygiene_needs: safeString(autoSaveData.personal_care?.personal_hygiene_needs || carePlan.personal_care?.personal_hygiene_needs),
+      skin_care_needs: safeString(autoSaveData.personal_care?.skin_care_needs || carePlan.personal_care?.skin_care_needs),
+      pain_management: safeString(autoSaveData.personal_care?.pain_management || carePlan.personal_care?.pain_management),
+      comfort_measures: safeString(autoSaveData.personal_care?.comfort_measures || carePlan.personal_care?.comfort_measures),
+      behavioral_notes: safeString(autoSaveData.personal_care?.behavioral_notes || carePlan.personal_care?.behavioral_notes),
     },
     
-    // Dietary Requirements
+    // Dietary Requirements - autoSaveData takes priority, check both 'dietary' and 'dietary_requirements' keys
     dietary: {
       ...safeObject(carePlan.dietary_requirements),
-      ...safeObject(autoSaveData.dietary_requirements || autoSaveData.dietary),
+      ...safeObject(autoSaveData.dietary || autoSaveData.dietary_requirements),
     },
     
     // Risk Assessments - Enhanced with review dates and all fields
@@ -347,11 +364,17 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
     // Documents
     documents: safeArray(carePlan.documents?.length > 0 ? carePlan.documents : autoSaveData.documents),
     
-    // Consent
+    // Consent - autoSaveData takes priority
     consent: {
       ...safeObject(carePlan.consent),
       ...safeObject(autoSaveData.consent),
     },
+    
+    // General section
+    general: hasData(autoSaveData.general) ? autoSaveData.general : (carePlan.general || {}),
+    
+    // Hobbies section
+    hobbies: hasData(autoSaveData.hobbies) ? autoSaveData.hobbies : ((carePlan as any).hobbies || {}),
     
     // Key Contacts - Use merged data from CarePlanWithDetails
     key_contacts: safeArray(carePlan.key_contacts || autoSaveData.key_contacts),
