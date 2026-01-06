@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Edit, Droplets, ClipboardList } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Edit, Droplets, ClipboardList, AlertTriangle, Target } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FluidBalanceRecordDialog } from "@/components/fluid-balance/FluidBalanceRecordDialog";
 import { useFluidIntakeSummary } from "@/hooks/useFluidIntakeRecords";
 import { useFluidOutputSummary } from "@/hooks/useFluidOutputRecords";
+import { useFluidBalanceTarget } from "@/hooks/useFluidBalanceTargets";
 import { format } from 'date-fns';
 
 interface DietaryTabProps {
@@ -27,6 +28,7 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: todayIntake } = useFluidIntakeSummary(clientId || '', today);
   const { data: todayOutput } = useFluidOutputSummary(clientId || '', today);
+  const { data: fluidTarget } = useFluidBalanceTarget(clientId || '');
   
   // Normalize dietary data - map wizard field names to expected display names
   const rawDietary = carePlanData?.auto_save_data?.dietary || dietaryRequirements || {};
@@ -41,38 +43,29 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
     // Map dehydration risk - wizard saves as boolean
     dehydration_risk: rawDietary.at_risk_dehydration || false,
     
-    // Preserved fields that match
-    dietary_restrictions: rawDietary.dietary_restrictions || [],
-    food_preferences: rawDietary.food_preferences || [],
-    dislikes: rawDietary.dislikes || [],
-    meal_schedule: rawDietary.meal_schedule || null,
+    // Fields captured in wizard
     nutritional_needs: rawDietary.nutritional_needs || '',
     weight_monitoring: rawDietary.weight_monitoring || false,
     feeding_assistance_required: rawDietary.feeding_assistance_required || false,
-    supplements: rawDietary.supplements || [],
-    special_equipment_needed: rawDietary.special_equipment_needed || '',
-    texture_modifications: rawDietary.texture_modifications || '',
-    fluid_restrictions: rawDietary.fluid_restrictions || '',
-    swallowing_difficulties: rawDietary.swallowing_difficulties || '',
-    choking_risk: rawDietary.choking_risk || false,
-    hydration_needs: rawDietary.hydration_needs || '',
-    meal_preparation_needs: rawDietary.meal_preparation_needs || '',
-    eating_assistance: rawDietary.eating_assistance || '',
-    cultural_religious_requirements: rawDietary.cultural_religious_requirements || '',
     
-    // Additional wizard fields
+    // Cooking & Meal Assistance fields from wizard
     check_fridge_expiry: rawDietary.check_fridge_expiry || false,
     do_you_cook: rawDietary.do_you_cook || false,
     help_with_cooking: rawDietary.help_with_cooking || false,
     preparation_instructions: rawDietary.preparation_instructions || '',
     avoid_medical_reasons: rawDietary.avoid_medical_reasons || false,
     avoid_religious_reasons: rawDietary.avoid_religious_reasons || false,
-    
-    // Legacy fields for backward compatibility
-    cooking_method_preferences: rawDietary.cooking_method_preferences || '',
-    cultural_considerations: rawDietary.cultural_considerations || '',
-    religious_requirements: rawDietary.religious_requirements || '',
   };
+
+  // Calculate intake progress percentage
+  const intakeProgress = fluidTarget?.daily_intake_target_ml 
+    ? Math.round(((todayIntake?.total || 0) / fluidTarget.daily_intake_target_ml) * 100)
+    : null;
+  
+  // Check if below alert threshold
+  const isBelowThreshold = intakeProgress !== null && 
+    fluidTarget?.alert_threshold_percentage && 
+    intakeProgress < fluidTarget.alert_threshold_percentage;
   
   return (
     <>
@@ -87,66 +80,21 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
           </div>
 
           <div className="space-y-8">
-            {/* Dietary Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Allergies */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Food Allergies</h3>
-                <div className="flex flex-wrap gap-2">
-                  {dietaryInfo.allergies?.length > 0 ? (
-                    dietaryInfo.allergies.map((allergy: string, index: number) => (
-                      <Badge key={index} variant="destructive">{allergy}</Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No allergies recorded</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Dietary Restrictions */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Dietary Restrictions</h3>
-                <div className="flex flex-wrap gap-2">
-                  {dietaryInfo.dietary_restrictions?.length > 0 ? (
-                    dietaryInfo.dietary_restrictions.map((restriction: string, index: number) => (
-                      <Badge key={index} variant="secondary">{restriction}</Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No dietary restrictions</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Food Preferences */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Food Preferences</h3>
-                <div className="flex flex-wrap gap-2">
-                  {dietaryInfo.food_preferences?.length > 0 ? (
-                    dietaryInfo.food_preferences.map((preference: string, index: number) => (
-                      <Badge key={index} variant="outline">{preference}</Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No preferences recorded</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Meal Schedule */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Meal Schedule</h3>
-                {dietaryInfo.meal_schedule ? (
-                  <div className="text-sm">
-                    {typeof dietaryInfo.meal_schedule === 'string' 
-                      ? dietaryInfo.meal_schedule 
-                      : JSON.stringify(dietaryInfo.meal_schedule)}
-                  </div>
+            {/* Dietary Requirements - Allergies */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">Food Allergies</h3>
+              <div className="flex flex-wrap gap-2">
+                {dietaryInfo.allergies?.length > 0 ? (
+                  dietaryInfo.allergies.map((allergy: string, index: number) => (
+                    <Badge key={index} variant="destructive">{allergy}</Badge>
+                  ))
                 ) : (
-                  <span className="text-sm text-muted-foreground">Not specified</span>
+                  <span className="text-sm text-muted-foreground">No allergies recorded</span>
                 )}
               </div>
             </div>
 
-            {/* Risk Factors */}
+            {/* Risk Factors & Monitoring */}
             <div className="space-y-4 border-t pt-6">
               <h3 className="text-lg font-medium">Risk Factors & Monitoring</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,7 +109,7 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                       {dietaryInfo.malnutrition_risk_level}
                     </Badge>
                   ) : (
-                    <span className="text-sm text-muted-foreground">Not assessed</span>
+                    <Badge variant="outline">Not Assessed</Badge>
                   )}
                 </div>
 
@@ -213,15 +161,8 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                   </Badge>
                 </div>
 
-                {dietaryInfo.preparation_instructions && (
-                  <div className="space-y-3 md:col-span-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">Preparation Instructions</h4>
-                    <p className="text-sm">{dietaryInfo.preparation_instructions}</p>
-                  </div>
-                )}
-                
                 {(dietaryInfo.avoid_medical_reasons || dietaryInfo.avoid_religious_reasons) && (
-                  <div className="space-y-3 md:col-span-2">
+                  <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">Food Avoidance</h4>
                     <div className="flex gap-2">
                       {dietaryInfo.avoid_medical_reasons && (
@@ -233,143 +174,22 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Nutritional Information */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-medium">Nutritional & Hydration Needs</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Nutritional Needs</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.nutritional_needs || <span className="text-muted-foreground">Not specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Hydration Needs</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.hydration_needs || <span className="text-muted-foreground">Not specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Meal Preparation Needs</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.meal_preparation_needs || <span className="text-muted-foreground">Not specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Eating Assistance</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.eating_assistance || <span className="text-muted-foreground">Not specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3 md:col-span-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Supplements</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {dietaryInfo.supplements?.length > 0 ? (
-                      dietaryInfo.supplements.map((supplement: string, index: number) => (
-                        <Badge key={index} variant="outline">{supplement}</Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No supplements</span>
-                    )}
-                  </div>
-                </div>
-
-                {dietaryInfo.dislikes?.length > 0 && (
+                {dietaryInfo.preparation_instructions && (
                   <div className="space-y-3 md:col-span-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">Food Dislikes</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {dietaryInfo.dislikes.map((dislike: string, index: number) => (
-                        <Badge key={index} variant="outline">{dislike}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Special Requirements & Modifications */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-medium">Special Requirements & Modifications</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Special Equipment</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.special_equipment_needed || <span className="text-muted-foreground">None specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Texture Modifications</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.texture_modifications || <span className="text-muted-foreground">None specified</span>}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Fluid Restrictions</h4>
-                  <p className="text-sm">
-                    {dietaryInfo.fluid_restrictions || <span className="text-muted-foreground">None specified</span>}
-                  </p>
-                </div>
-
-                {dietaryInfo.swallowing_difficulties && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">Swallowing Difficulties</h4>
-                    <p className="text-sm">{dietaryInfo.swallowing_difficulties}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Preparation Instructions</h4>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md">{dietaryInfo.preparation_instructions}</p>
                   </div>
                 )}
 
-                {dietaryInfo.choking_risk && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">Choking Risk</h4>
-                    <Badge variant="destructive">High Risk</Badge>
-                  </div>
-                )}
-
-                {dietaryInfo.cultural_religious_requirements && (
+                {dietaryInfo.nutritional_needs && (
                   <div className="space-y-3 md:col-span-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">Cultural/Religious Requirements</h4>
-                    <p className="text-sm">{dietaryInfo.cultural_religious_requirements}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Nutritional Needs</h4>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md">{dietaryInfo.nutritional_needs}</p>
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Cooking & Preparation */}
-            {(dietaryInfo.cooking_method_preferences || dietaryInfo.cultural_considerations || dietaryInfo.religious_requirements) && (
-              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">Cooking & Preparation</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {dietaryInfo.cooking_method_preferences && (
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Cooking Preferences</h4>
-                      <p className="text-sm">{dietaryInfo.cooking_method_preferences}</p>
-                    </div>
-                  )}
-
-                  {dietaryInfo.cultural_considerations && (
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Cultural Considerations</h4>
-                      <p className="text-sm">{dietaryInfo.cultural_considerations}</p>
-                    </div>
-                  )}
-
-                  {dietaryInfo.religious_requirements && (
-                    <div className="space-y-3 md:col-span-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Religious Requirements</h4>
-                      <p className="text-sm">{dietaryInfo.religious_requirements}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
             
             {/* Fluid Balance Section */}
             {clientId && clientName && (
@@ -384,19 +204,79 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                     Record Fluid Balance
                   </Button>
                 </div>
+
+                {/* Fluid Balance Targets */}
+                {(fluidTarget?.daily_intake_target_ml || fluidTarget?.daily_output_target_ml) && (
+                  <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Target className="h-4 w-4 text-blue-600" />
+                        Daily Targets
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        {fluidTarget?.daily_intake_target_ml && (
+                          <div className="space-y-1">
+                            <span className="text-muted-foreground">Intake Target</span>
+                            <p className="font-semibold text-lg">{fluidTarget.daily_intake_target_ml} ml</p>
+                          </div>
+                        )}
+                        {fluidTarget?.daily_output_target_ml && (
+                          <div className="space-y-1">
+                            <span className="text-muted-foreground">Output Target</span>
+                            <p className="font-semibold text-lg">{fluidTarget.daily_output_target_ml} ml</p>
+                          </div>
+                        )}
+                        {fluidTarget?.alert_threshold_percentage && (
+                          <div className="space-y-1">
+                            <span className="text-muted-foreground">Alert Below</span>
+                            <p className="font-semibold text-lg text-amber-600">{fluidTarget.alert_threshold_percentage}%</p>
+                          </div>
+                        )}
+                      </div>
+                      {fluidTarget?.notes && (
+                        <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                          <span className="text-sm text-muted-foreground">Notes:</span>
+                          <p className="mt-1 text-sm">{fluidTarget.notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Today's Summary */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-base">Today's Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
+                    {isBelowThreshold && (
+                      <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm text-amber-700 dark:text-amber-400">
+                          Intake is below {fluidTarget?.alert_threshold_percentage}% of daily target
+                        </span>
+                      </div>
+                    )}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="p-4 bg-primary/10 rounded-lg">
                         <div className="text-sm text-muted-foreground">Intake</div>
                         <div className="text-2xl font-bold text-primary">{todayIntake?.total || 0} ml</div>
+                        {fluidTarget?.daily_intake_target_ml && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {intakeProgress}% of {fluidTarget.daily_intake_target_ml} ml
+                          </div>
+                        )}
                       </div>
                       <div className="p-4 bg-secondary/10 rounded-lg">
                         <div className="text-sm text-muted-foreground">Output</div>
-                        <div className="text-2xl font-bold text-secondary">{todayOutput?.total || 0} ml</div>
+                        <div className="text-2xl font-bold text-secondary-foreground">{todayOutput?.total || 0} ml</div>
+                        {fluidTarget?.daily_output_target_ml && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Target: {fluidTarget.daily_output_target_ml} ml
+                          </div>
+                        )}
                       </div>
                       <div className="p-4 bg-accent/10 rounded-lg">
                         <div className="text-sm text-muted-foreground">Balance</div>
