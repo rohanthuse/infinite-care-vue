@@ -155,38 +155,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingBookingMove, setPendingBookingMove] = useState<PendingBookingMove | null>(null);
 
-  // Auto-select first client with bookings if none selected
-  useEffect(() => {
-    if (!selectedClientId && clients.length > 0 && bookings.length > 0) {
-      // Find clients that have bookings
-      const clientsWithBookings = clients.filter(client => 
-        bookings.some(b => b.clientId === client.id)
-      );
-      if (clientsWithBookings.length > 0) {
-        setSelectedClientId(clientsWithBookings[0].id);
-      } else if (clients.length > 0) {
-        // Fallback to first client even without bookings
-        setSelectedClientId(clients[0].id);
-      }
-    }
-  }, [clients, bookings, selectedClientId]);
-
-  // Auto-select first carer with bookings if none selected
-  useEffect(() => {
-    if (!selectedCarerId && carers.length > 0 && bookings.length > 0) {
-      // Find carers that have bookings
-      const carersWithBookings = carers.filter(carer => 
-        bookings.some(b => b.carerId === carer.id)
-      );
-      if (carersWithBookings.length > 0) {
-        setSelectedCarerId(carersWithBookings[0].id);
-      } else if (carers.length > 0) {
-        // Fallback to first carer even without bookings
-        setSelectedCarerId(carers[0].id);
-      }
-    }
-  }, [carers, bookings, selectedCarerId]);
-
   useEffect(() => {
     setLocalBookings(bookings);
     
@@ -196,14 +164,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       console.log('[BookingTimeGrid] Sample booking dates:', 
         bookings.slice(0, 5).map(b => ({ id: b.id, date: b.date }))
       );
-      
-      // Check if we have any bookings for September 28, 2025
-      const sept28Bookings = bookings.filter(b => b.date === '2025-09-28');
-      if (sept28Bookings.length > 0) {
-        console.log(`[BookingTimeGrid] Found ${sept28Bookings.length} bookings for 2025-09-28:`, sept28Bookings);
-      } else {
-        console.log('[BookingTimeGrid] No bookings found for 2025-09-28');
-      }
     }
   }, [bookings]);
 
@@ -225,6 +185,75 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
   
   const weekDates = getWeekDates();
+
+  // Helper to check if a booking is in the current view range
+  const isBookingInViewRange = (booking: Booking): boolean => {
+    if (!booking.date) return false;
+    
+    if (viewType === "daily") {
+      return booking.date === format(validDate, 'yyyy-MM-dd');
+    } else if (viewType === "weekly") {
+      return weekDates.some(d => booking.date === format(d, 'yyyy-MM-dd'));
+    }
+    // Monthly - check if in same month
+    const bookingMonth = booking.date.substring(0, 7); // "YYYY-MM"
+    const currentMonth = format(validDate, 'yyyy-MM');
+    return bookingMonth === currentMonth;
+  };
+
+  // Auto-select first client with bookings for the current view if none selected
+  useEffect(() => {
+    if (!selectedClientId && clients.length > 0 && bookings.length > 0) {
+      // Find clients that have bookings in the current view range
+      const clientsWithVisibleBookings = clients.filter(client => 
+        bookings.some(b => b.clientId === client.id && isBookingInViewRange(b))
+      );
+      
+      if (clientsWithVisibleBookings.length > 0) {
+        console.log(`[BookingTimeGrid] Auto-selecting client with visible bookings: ${clientsWithVisibleBookings[0].name}`);
+        setSelectedClientId(clientsWithVisibleBookings[0].id);
+      } else {
+        // Fallback: select first client with any bookings
+        const clientsWithAnyBookings = clients.filter(client => 
+          bookings.some(b => b.clientId === client.id)
+        );
+        if (clientsWithAnyBookings.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting client with any bookings: ${clientsWithAnyBookings[0].name}`);
+          setSelectedClientId(clientsWithAnyBookings[0].id);
+        } else if (clients.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting first client: ${clients[0].name}`);
+          setSelectedClientId(clients[0].id);
+        }
+      }
+    }
+  }, [clients, bookings, selectedClientId, viewType, validDate, weekDates]);
+
+  // Auto-select first carer with bookings for the current view if none selected
+  useEffect(() => {
+    if (!selectedCarerId && carers.length > 0 && bookings.length > 0) {
+      // Find carers that have bookings in the current view range
+      const carersWithVisibleBookings = carers.filter(carer => 
+        bookings.some(b => b.carerId === carer.id && isBookingInViewRange(b))
+      );
+      
+      if (carersWithVisibleBookings.length > 0) {
+        console.log(`[BookingTimeGrid] Auto-selecting carer with visible bookings: ${carersWithVisibleBookings[0].name}`);
+        setSelectedCarerId(carersWithVisibleBookings[0].id);
+      } else {
+        // Fallback: select first carer with any bookings
+        const carersWithAnyBookings = carers.filter(carer => 
+          bookings.some(b => b.carerId === carer.id)
+        );
+        if (carersWithAnyBookings.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting carer with any bookings: ${carersWithAnyBookings[0].name}`);
+          setSelectedCarerId(carersWithAnyBookings[0].id);
+        } else if (carers.length > 0) {
+          console.log(`[BookingTimeGrid] Auto-selecting first carer: ${carers[0].name}`);
+          setSelectedCarerId(carers[0].id);
+        }
+      }
+    }
+  }, [carers, bookings, selectedCarerId, viewType, validDate, weekDates]);
   
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);
@@ -298,7 +327,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
 
   const isBookingOnDate = (booking: Booking, checkDate: Date) => {
     if (!booking.date) {
-      console.log(`[isBookingOnDate] No date for booking ${booking.id}`);
+      console.warn(`[isBookingOnDate] No date for booking ${booking.id}`);
       return false;
     }
     
@@ -308,11 +337,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       
       // Direct string comparison - more reliable than date parsing
       const result = booking.date === checkDateString;
-      
-      // Only log for September 28, 2025 to avoid spam
-      if (checkDateString === '2025-09-28' || booking.date === '2025-09-28') {
-        console.log(`[isBookingOnDate] Booking ${booking.id}: "${booking.date}" vs "${checkDateString}" => ${result}`);
-      }
       
       return result;
     } catch (error) {
@@ -636,7 +660,13 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               
                          {(() => {
                            const filteredBookings = entity.bookings?.filter(booking => isBookingOnDate(booking, date)) || [];
-                           console.log(`[BookingTimeGrid] Daily view - Entity ${entity.name} has ${entity.bookings?.length || 0} bookings, ${filteredBookings.length} for date ${format(date, 'yyyy-MM-dd')}`);
+                           
+                           // Debug logging to understand the data
+                           if (entity.bookings && entity.bookings.length > 0 && filteredBookings.length === 0) {
+                             const sampleDates = entity.bookings.slice(0, 5).map(b => b.date);
+                             console.warn(`[BookingTimeGrid] Daily view - ${entity.name} has ${entity.bookings.length} total bookings but 0 for ${format(date, 'yyyy-MM-dd')}. Sample dates:`, sampleDates);
+                           }
+                           
                            return filteredBookings.map((booking, index) => {
                           const position = getBookingPosition(booking.startTime, booking.endTime);
                                 
@@ -703,7 +733,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                       
                                {(() => {
                                  const filteredBookings = entity.bookings?.filter(booking => isBookingOnDate(booking, day)) || [];
-                                 console.log(`[BookingTimeGrid] Weekly view - Entity ${entity.name} has ${entity.bookings?.length || 0} bookings, ${filteredBookings.length} for date ${format(day, 'yyyy-MM-dd')}`);
+                                 
                                  return filteredBookings.map((booking, index) => {
                                 const position = getBookingPosition(booking.startTime, booking.endTime);
                                         
