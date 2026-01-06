@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Save, Edit, X, Loader2, FileText, ExternalLink } from "lucide-react";
+import { Save, Edit, X, Loader2, FileText, ExternalLink, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
@@ -594,911 +594,968 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     }
   };
 
-  return <div className="space-y-6">
-      <Tabs defaultValue="personal-details" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="personal-details">Personal Details</TabsTrigger>
-          <TabsTrigger value="address">Address</TabsTrigger>
-          <TabsTrigger value="related-info">Related Info</TabsTrigger>
-          <TabsTrigger value="service-actions">Service Actions</TabsTrigger>
-        </TabsList>
+  // State for collapsible sections
+  const [openSections, setOpenSections] = useState({
+    personalDetails: true,
+    address: true,
+    relatedInfo: true,
+    serviceActions: true,
+  });
 
-        <TabsContent value="personal-details" className="mt-6">
-          <Card className="p-4 border border-border shadow-sm">
-            <h3 className="text-lg font-medium mb-4">Personal Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Title</h4>
-                <p className="mt-1">{client.title || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">First Name</h4>
-                <p className="mt-1">{client.first_name || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Middle Name</h4>
-                <p className="mt-1">{client.middle_name || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Last Name</h4>
-                <p className="mt-1">{client.last_name || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Preferred Name</h4>
-                <p className="mt-1">{client.preferred_name || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Pronouns</h4>
-                <p className="mt-1">{client.pronouns || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Date of Birth</h4>
-                <p className="mt-1">{formatDate(client.date_of_birth)}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Gender</h4>
-                <p className="mt-1">{client.gender || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Client ID</h4>
-                <p className="mt-1">{client.id}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Other Identifier</h4>
-                <p className="mt-1">{client.other_identifier || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-                <p className="mt-1">{client.status || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Registered On</h4>
-                <p className="mt-1">{formatDate(client.registered_on || client.registeredOn)}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Referral Route</h4>
-                <p className="mt-1">{client.referral_route || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Avatar Initials</h4>
-                <p className="mt-1">{client.avatar_initials || client.avatar || 'Not provided'}</p>
-              </div>
-            </div>
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
-            {/* Contact Information Section */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
-                  <p className="mt-1">{client.email || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
-                  <p className="mt-1">{client.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
-                  <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
-                </div>
-              </div>
-            </div>
-            
-            {client.additional_information && (
-              <div className="mt-6">
-                <h4 className="text-sm font-medium text-muted-foreground">Additional Information</h4>
-                <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
-              </div>
-            )}
+  // Section Header Component
+  const SectionHeader: React.FC<{
+    title: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    editButton?: React.ReactNode;
+  }> = ({ title, isOpen, onToggle, editButton }) => (
+    <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-t-lg border-b border-border">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-2 font-medium text-lg hover:text-primary transition-colors"
+      >
+        <ChevronDown 
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            isOpen && "rotate-180"
+          )} 
+        />
+        {title}
+      </button>
+      {editButton}
+    </div>
+  );
 
-            {/* Emergency Contact Section */}
-            {(client.emergency_contact || client.emergency_phone) && (
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border">
-                <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+  return (
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+      {/* Section 1: Personal Details */}
+      <Collapsible open={openSections.personalDetails}>
+        <Card className="border border-border shadow-sm overflow-hidden">
+          <SectionHeader 
+            title="Personal Details" 
+            isOpen={openSections.personalDetails}
+            onToggle={() => toggleSection('personalDetails')}
+          />
+          <CollapsibleContent>
+            <div className="p-4 space-y-6">
+              {/* Personal Information */}
+              <div>
+                <h4 className="text-md font-medium mb-3 text-muted-foreground">Personal Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Contact Name</h4>
-                    <p className="mt-1">{client.emergency_contact || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Title</h4>
+                    <p className="mt-1">{client.title || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Contact Phone</h4>
-                    <p className="mt-1">{client.emergency_phone || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">First Name</h4>
+                    <p className="mt-1">{client.first_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Middle Name</h4>
+                    <p className="mt-1">{client.middle_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Last Name</h4>
+                    <p className="mt-1">{client.last_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Name</h4>
+                    <p className="mt-1">{client.preferred_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pronouns</h4>
+                    <p className="mt-1">{client.pronouns || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Date of Birth</h4>
+                    <p className="mt-1">{formatDate(client.date_of_birth)}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Gender</h4>
+                    <p className="mt-1">{client.gender || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Client ID</h4>
+                    <p className="mt-1">{client.id}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Other Identifier</h4>
+                    <p className="mt-1">{client.other_identifier || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                    <p className="mt-1">{client.status || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Registered On</h4>
+                    <p className="mt-1">{formatDate(client.registered_on || client.registeredOn)}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Referral Route</h4>
+                    <p className="mt-1">{client.referral_route || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Avatar Initials</h4>
+                    <p className="mt-1">{client.avatar_initials || client.avatar || 'Not provided'}</p>
                   </div>
                 </div>
               </div>
-            )}
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="address" className="mt-6">
-          <ClientAddressSection 
-            clientId={client.id}
-            legacyAddress={client.address || client.location}
-            legacyPinCode={client.pin_code}
-          />
-        </TabsContent>
-
-        <TabsContent value="related-info" className="mt-6">
-          {isPersonalInfoLoading ? (
-            <Card className="p-4 border border-border shadow-sm">
-              <p>Loading related information...</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {/* Edit/Save buttons */}
-              {editingTab !== 'related-info' && (
-                <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={handleEditRelatedInfo}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit All Sections
-                  </Button>
+              {/* Contact Information */}
+              <div className="pt-4 border-t">
+                <h4 className="text-md font-medium mb-3 text-muted-foreground">Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
+                    <p className="mt-1">{client.email || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
+                    <p className="mt-1">{client.phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
+                    <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {client.additional_information && (
+                <div className="pt-4 border-t">
+                  <h4 className="text-sm font-medium text-muted-foreground">Additional Information</h4>
+                  <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
                 </div>
               )}
 
-              {editingTab === 'related-info' && (
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleCancelRelatedInfo}
-                    disabled={isSavingRelatedInfo}
-                  >
+              {/* Emergency Contact */}
+              {(client.emergency_contact || client.emergency_phone) && (
+                <div className="pt-4 border-t">
+                  <h4 className="text-md font-medium mb-3 text-muted-foreground">Emergency Contact</h4>
+                  <div className="p-3 bg-red-50/50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Contact Name</h4>
+                        <p className="mt-1">{client.emergency_contact || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Contact Phone</h4>
+                        <p className="mt-1">{client.emergency_phone || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Section 2: Address */}
+      <Collapsible open={openSections.address}>
+        <Card className="border border-border shadow-sm overflow-hidden">
+          <SectionHeader 
+            title="Address" 
+            isOpen={openSections.address}
+            onToggle={() => toggleSection('address')}
+          />
+          <CollapsibleContent>
+            <div className="p-4">
+              <ClientAddressSection 
+                clientId={client.id}
+                legacyAddress={client.address || client.location}
+                legacyPinCode={client.pin_code}
+              />
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Section 3: Related Information */}
+      <Collapsible open={openSections.relatedInfo}>
+        <Card className="border border-border shadow-sm overflow-hidden">
+          <SectionHeader 
+            title="Related Information" 
+            isOpen={openSections.relatedInfo}
+            onToggle={() => toggleSection('relatedInfo')}
+            editButton={
+              editingTab !== 'related-info' ? (
+                <Button size="sm" variant="outline" onClick={handleEditRelatedInfo}>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleCancelRelatedInfo} disabled={isSavingRelatedInfo}>
                     <X className="h-4 w-4 mr-1" />
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleSaveRelatedInfo}
-                    disabled={isSavingRelatedInfo}
-                    className={cn(
-                      "transition-all duration-150",
-                      isSavingRelatedInfo && "opacity-70"
-                    )}
-                  >
-                    {isSavingRelatedInfo ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-1" />
-                        Save All
-                      </>
-                    )}
+                  <Button size="sm" onClick={handleSaveRelatedInfo} disabled={isSavingRelatedInfo}>
+                    {isSavingRelatedInfo ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                    Save
                   </Button>
                 </div>
-              )}
-
-              {/* Background & Identity Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Background & Identity</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="ethnicity">Ethnicity</Label>
-                      <Input 
-                        id="ethnicity"
-                        value={relatedInfoFormData.ethnicity}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, ethnicity: e.target.value }))}
-                        placeholder="Enter ethnicity"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sexual_orientation">Sexual Orientation</Label>
-                      <Input 
-                        id="sexual_orientation"
-                        value={relatedInfoFormData.sexual_orientation}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sexual_orientation: e.target.value }))}
-                        placeholder="Enter sexual orientation"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gender_identity">Gender Identity</Label>
-                      <Input 
-                        id="gender_identity"
-                        value={relatedInfoFormData.gender_identity}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gender_identity: e.target.value }))}
-                        placeholder="Enter gender identity"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="nationality">Nationality</Label>
-                      <Input 
-                        id="nationality"
-                        value={relatedInfoFormData.nationality}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, nationality: e.target.value }))}
-                        placeholder="Enter nationality"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="primary_language">Primary Language</Label>
-                      <Input 
-                        id="primary_language"
-                        value={relatedInfoFormData.primary_language}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, primary_language: e.target.value }))}
-                        placeholder="Enter primary language"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2 pt-6">
-                      <Checkbox 
-                        id="interpreter_required"
-                        checked={relatedInfoFormData.interpreter_required}
-                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, interpreter_required: checked as boolean }))}
-                      />
-                      <Label htmlFor="interpreter_required" className="font-normal">Interpreter Required</Label>
-                    </div>
-                    <div>
-                      <Label htmlFor="preferred_interpreter_language">Preferred Interpreter Language</Label>
-                      <Input 
-                        id="preferred_interpreter_language"
-                        value={relatedInfoFormData.preferred_interpreter_language}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_interpreter_language: e.target.value }))}
-                        placeholder="Enter preferred interpreter language"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="religion">Religion</Label>
-                      <Input 
-                        id="religion"
-                        value={relatedInfoFormData.religion}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, religion: e.target.value }))}
-                        placeholder="Enter religion"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Ethnicity</h4>
-                      <p className="mt-1">{personalInfo?.ethnicity || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
-                      <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
-                      <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
-                      <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
-                      <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
-                      <p className="mt-1">{personalInfo?.interpreter_required ? 'Yes' : 'No'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
-                      <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
-                      <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* My Home Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">My Home</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="property_type">Property Type</Label>
-                      <Input 
-                        id="property_type"
-                        value={relatedInfoFormData.property_type}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, property_type: e.target.value }))}
-                        placeholder="e.g., House, Flat, Bungalow"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="living_arrangement">Living Arrangement</Label>
-                      <Input 
-                        id="living_arrangement"
-                        value={relatedInfoFormData.living_arrangement}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, living_arrangement: e.target.value }))}
-                        placeholder="e.g., Lives alone, With family"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="home_accessibility">Home Accessibility</Label>
-                      <Textarea 
-                        id="home_accessibility"
-                        value={relatedInfoFormData.home_accessibility}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, home_accessibility: e.target.value }))}
-                        placeholder="Describe any accessibility features or needs"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pets_home">Pets</Label>
-                      <Textarea 
-                        id="pets_home"
-                        value={relatedInfoFormData.pets}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pets: e.target.value }))}
-                        placeholder="Describe any pets"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="key_safe_location">Key Safe Location</Label>
-                      <Input 
-                        id="key_safe_location"
-                        value={relatedInfoFormData.key_safe_location}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, key_safe_location: e.target.value }))}
-                        placeholder="Location of key safe"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="parking_availability">Parking Availability</Label>
-                      <Input 
-                        id="parking_availability"
-                        value={relatedInfoFormData.parking_availability}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, parking_availability: e.target.value }))}
-                        placeholder="Parking information"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="emergency_access">Emergency Access</Label>
-                      <Textarea 
-                        id="emergency_access"
-                        value={relatedInfoFormData.emergency_access}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, emergency_access: e.target.value }))}
-                        placeholder="Emergency access information"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Property Type</h4>
-                      <p className="mt-1">{personalInfo?.property_type || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Living Arrangement</h4>
-                      <p className="mt-1">{personalInfo?.living_arrangement || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
-                      <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
-                      <p className="mt-1">{personalInfo?.pets || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Key Safe Location</h4>
-                      <p className="mt-1">{personalInfo?.key_safe_location || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
-                      <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
-                      <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* My Accessibility and Communication Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">My Accessibility and Communication</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="sensory_impairment">Sensory Impairment</Label>
-                      <Input 
-                        id="sensory_impairment"
-                        value={relatedInfoFormData.sensory_impairment}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sensory_impairment: e.target.value }))}
-                        placeholder="Describe any sensory impairment"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="communication_aids">Communication Aids</Label>
-                      <Input 
-                        id="communication_aids"
-                        value={relatedInfoFormData.communication_aids}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, communication_aids: e.target.value }))}
-                        placeholder="Communication aids used"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="preferred_communication_method">Preferred Communication Method</Label>
-                      <Input 
-                        id="preferred_communication_method"
-                        value={relatedInfoFormData.preferred_communication_method}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_communication_method: e.target.value }))}
-                        placeholder="Preferred communication method"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2 pt-6">
-                      <Checkbox 
-                        id="hearing_difficulties"
-                        checked={relatedInfoFormData.hearing_difficulties}
-                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, hearing_difficulties: checked as boolean }))}
-                      />
-                      <Label htmlFor="hearing_difficulties" className="font-normal">Hearing Difficulties</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 pt-6">
-                      <Checkbox 
-                        id="vision_difficulties"
-                        checked={relatedInfoFormData.vision_difficulties}
-                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, vision_difficulties: checked as boolean }))}
-                      />
-                      <Label htmlFor="vision_difficulties" className="font-normal">Vision Difficulties</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 pt-6">
-                      <Checkbox 
-                        id="speech_difficulties"
-                        checked={relatedInfoFormData.speech_difficulties}
-                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, speech_difficulties: checked as boolean }))}
-                      />
-                      <Label htmlFor="speech_difficulties" className="font-normal">Speech Difficulties</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 pt-6">
-                      <Checkbox 
-                        id="cognitive_impairment"
-                        checked={relatedInfoFormData.cognitive_impairment}
-                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, cognitive_impairment: checked as boolean }))}
-                      />
-                      <Label htmlFor="cognitive_impairment" className="font-normal">Cognitive Impairment</Label>
-                    </div>
-                    <div>
-                      <Label htmlFor="mobility_aids">Mobility Aids</Label>
-                      <Input 
-                        id="mobility_aids"
-                        value={relatedInfoFormData.mobility_aids}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, mobility_aids: e.target.value }))}
-                        placeholder="Mobility aids used"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
-                      <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
-                      <p className="mt-1">{personalInfo?.communication_aids || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication Method</h4>
-                      <p className="mt-1">{personalInfo?.preferred_communication_method || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Hearing Difficulties</h4>
-                      <p className="mt-1">{personalInfo?.hearing_difficulties === null ? 'Not provided' : personalInfo?.hearing_difficulties ? 'Yes' : 'No'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Vision Difficulties</h4>
-                      <p className="mt-1">{personalInfo?.vision_difficulties === null ? 'Not provided' : personalInfo?.vision_difficulties ? 'Yes' : 'No'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
-                      <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
-                      <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>
-                      <p className="mt-1">{personalInfo?.mobility_aids || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Do's & Don'ts Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Do's & Don'ts</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="likes_preferences">Likes/Preferences</Label>
-                      <Textarea 
-                        id="likes_preferences"
-                        value={relatedInfoFormData.likes_preferences}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, likes_preferences: e.target.value }))}
-                        placeholder="Things the client likes or prefers"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dislikes_restrictions">Dislikes/Restrictions</Label>
-                      <Textarea 
-                        id="dislikes_restrictions"
-                        value={relatedInfoFormData.dislikes_restrictions}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dislikes_restrictions: e.target.value }))}
-                        placeholder="Things the client dislikes or restrictions"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dos">Do's</Label>
-                      <Textarea 
-                        id="dos"
-                        value={relatedInfoFormData.dos}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dos: e.target.value }))}
-                        placeholder="Things that should be done"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="donts">Don'ts</Label>
-                      <Textarea 
-                        id="donts"
-                        value={relatedInfoFormData.donts}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, donts: e.target.value }))}
-                        placeholder="Things that should not be done"
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.likes_preferences || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dislikes_restrictions || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dos || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Don'ts</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.donts || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* My GP Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">My GP</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="gp_name">GP Name</Label>
-                      <Input 
-                        id="gp_name"
-                        value={relatedInfoFormData.gp_name}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_name: e.target.value }))}
-                        placeholder="GP name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gp_surgery_name">Surgery Name</Label>
-                      <Input 
-                        id="gp_surgery_name"
-                        value={relatedInfoFormData.gp_surgery_name}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_name: e.target.value }))}
-                        placeholder="Surgery name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gp_surgery_address">Surgery Address</Label>
-                      <Textarea 
-                        id="gp_surgery_address"
-                        value={relatedInfoFormData.gp_surgery_address}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_address: e.target.value }))}
-                        placeholder="Surgery address"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gp_surgery_phone">Surgery Phone</Label>
-                      <Input 
-                        id="gp_surgery_phone"
-                        value={relatedInfoFormData.gp_surgery_phone}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_phone: e.target.value }))}
-                        placeholder="Surgery phone"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gp_surgery_ods_code">ODS Code</Label>
-                      <Input 
-                        id="gp_surgery_ods_code"
-                        value={relatedInfoFormData.gp_surgery_ods_code}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_ods_code: e.target.value }))}
-                        placeholder="ODS code"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gp_practice">Practice</Label>
-                      <Input 
-                        id="gp_practice"
-                        value={relatedInfoFormData.gp_practice}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_practice: e.target.value }))}
-                        placeholder="Practice name"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Show legacy GP details if no personalInfo GP data */}
-                    {!personalInfo?.gp_name && client.gp_details && (
-                      <div className="mb-4 p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                        <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2">Legacy GP Details</h4>
-                        <p className="text-sm whitespace-pre-wrap">{client.gp_details}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Click "Edit All Sections" to update GP information in the new format.
-                        </p>
-                      </div>
-                    )}
+              )
+            }
+          />
+          <CollapsibleContent>
+            {isPersonalInfoLoading ? (
+              <div className="p-4">
+                <p>Loading related information...</p>
+              </div>
+            ) : (
+              <div className="p-4 space-y-4">
+                {/* Background & Identity */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">Background & Identity</h4>
+                  {editingTab === 'related-info' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
-                        <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                        <Label htmlFor="ethnicity">Ethnicity</Label>
+                        <Input 
+                          id="ethnicity"
+                          value={relatedInfoFormData.ethnicity}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, ethnicity: e.target.value }))}
+                          placeholder="Enter ethnicity"
+                        />
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
-                        <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                        <Label htmlFor="sexual_orientation">Sexual Orientation</Label>
+                        <Input 
+                          id="sexual_orientation"
+                          value={relatedInfoFormData.sexual_orientation}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sexual_orientation: e.target.value }))}
+                          placeholder="Enter sexual orientation"
+                        />
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
-                        <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
+                        <Label htmlFor="gender_identity">Gender Identity</Label>
+                        <Input 
+                          id="gender_identity"
+                          value={relatedInfoFormData.gender_identity}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gender_identity: e.target.value }))}
+                          placeholder="Enter gender identity"
+                        />
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
-                        <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
+                        <Label htmlFor="nationality">Nationality</Label>
+                        <Input 
+                          id="nationality"
+                          value={relatedInfoFormData.nationality}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                          placeholder="Enter nationality"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="primary_language">Primary Language</Label>
+                        <Input 
+                          id="primary_language"
+                          value={relatedInfoFormData.primary_language}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, primary_language: e.target.value }))}
+                          placeholder="Enter primary language"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox 
+                          id="interpreter_required"
+                          checked={relatedInfoFormData.interpreter_required}
+                          onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, interpreter_required: checked as boolean }))}
+                        />
+                        <Label htmlFor="interpreter_required" className="font-normal">Interpreter Required</Label>
+                      </div>
+                      <div>
+                        <Label htmlFor="preferred_interpreter_language">Preferred Interpreter Language</Label>
+                        <Input 
+                          id="preferred_interpreter_language"
+                          value={relatedInfoFormData.preferred_interpreter_language}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_interpreter_language: e.target.value }))}
+                          placeholder="Enter preferred interpreter language"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="religion">Religion</Label>
+                        <Input 
+                          id="religion"
+                          value={relatedInfoFormData.religion}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, religion: e.target.value }))}
+                          placeholder="Enter religion"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Ethnicity</h4>
+                        <p className="mt-1">{personalInfo?.ethnicity || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
+                        <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
+                        <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
+                        <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
+                        <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
+                        <p className="mt-1">{personalInfo?.interpreter_required ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
+                        <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
+                        <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* My Home */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">My Home</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="property_type">Property Type</Label>
+                        <Input 
+                          id="property_type"
+                          value={relatedInfoFormData.property_type}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, property_type: e.target.value }))}
+                          placeholder="e.g., House, Flat, Bungalow"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="living_arrangement">Living Arrangement</Label>
+                        <Input 
+                          id="living_arrangement"
+                          value={relatedInfoFormData.living_arrangement}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, living_arrangement: e.target.value }))}
+                          placeholder="e.g., Lives alone, With family"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="home_accessibility">Home Accessibility</Label>
+                        <Textarea 
+                          id="home_accessibility"
+                          value={relatedInfoFormData.home_accessibility}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, home_accessibility: e.target.value }))}
+                          placeholder="Describe any accessibility features or needs"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pets_home">Pets</Label>
+                        <Textarea 
+                          id="pets_home"
+                          value={relatedInfoFormData.pets}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pets: e.target.value }))}
+                          placeholder="Describe any pets"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="key_safe_location">Key Safe Location</Label>
+                        <Input 
+                          id="key_safe_location"
+                          value={relatedInfoFormData.key_safe_location}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, key_safe_location: e.target.value }))}
+                          placeholder="Location of key safe"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="parking_availability">Parking Availability</Label>
+                        <Input 
+                          id="parking_availability"
+                          value={relatedInfoFormData.parking_availability}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, parking_availability: e.target.value }))}
+                          placeholder="Parking information"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="emergency_access">Emergency Access</Label>
+                        <Textarea 
+                          id="emergency_access"
+                          value={relatedInfoFormData.emergency_access}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, emergency_access: e.target.value }))}
+                          placeholder="Emergency access information"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Property Type</h4>
+                        <p className="mt-1">{personalInfo?.property_type || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Living Arrangement</h4>
+                        <p className="mt-1">{personalInfo?.living_arrangement || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
+                        <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
+                        <p className="mt-1">{personalInfo?.pets || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Key Safe Location</h4>
+                        <p className="mt-1">{personalInfo?.key_safe_location || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
+                        <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
+                        <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Accessibility & Communication */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">Accessibility & Communication</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="sensory_impairment">Sensory Impairment</Label>
+                        <Input 
+                          id="sensory_impairment"
+                          value={relatedInfoFormData.sensory_impairment}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sensory_impairment: e.target.value }))}
+                          placeholder="Describe any sensory impairment"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="communication_aids">Communication Aids</Label>
+                        <Input 
+                          id="communication_aids"
+                          value={relatedInfoFormData.communication_aids}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, communication_aids: e.target.value }))}
+                          placeholder="Communication aids used"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="preferred_communication_method">Preferred Communication Method</Label>
+                        <Input 
+                          id="preferred_communication_method"
+                          value={relatedInfoFormData.preferred_communication_method}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_communication_method: e.target.value }))}
+                          placeholder="Preferred communication method"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox 
+                          id="hearing_difficulties"
+                          checked={relatedInfoFormData.hearing_difficulties}
+                          onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, hearing_difficulties: checked as boolean }))}
+                        />
+                        <Label htmlFor="hearing_difficulties" className="font-normal">Hearing Difficulties</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox 
+                          id="vision_difficulties"
+                          checked={relatedInfoFormData.vision_difficulties}
+                          onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, vision_difficulties: checked as boolean }))}
+                        />
+                        <Label htmlFor="vision_difficulties" className="font-normal">Vision Difficulties</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox 
+                          id="speech_difficulties"
+                          checked={relatedInfoFormData.speech_difficulties}
+                          onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, speech_difficulties: checked as boolean }))}
+                        />
+                        <Label htmlFor="speech_difficulties" className="font-normal">Speech Difficulties</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox 
+                          id="cognitive_impairment"
+                          checked={relatedInfoFormData.cognitive_impairment}
+                          onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, cognitive_impairment: checked as boolean }))}
+                        />
+                        <Label htmlFor="cognitive_impairment" className="font-normal">Cognitive Impairment</Label>
+                      </div>
+                      <div>
+                        <Label htmlFor="mobility_aids">Mobility Aids</Label>
+                        <Input 
+                          id="mobility_aids"
+                          value={relatedInfoFormData.mobility_aids}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, mobility_aids: e.target.value }))}
+                          placeholder="Mobility aids used"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
+                        <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
+                        <p className="mt-1">{personalInfo?.communication_aids || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication Method</h4>
+                        <p className="mt-1">{personalInfo?.preferred_communication_method || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Hearing Difficulties</h4>
+                        <p className="mt-1">{personalInfo?.hearing_difficulties === null ? 'Not provided' : personalInfo?.hearing_difficulties ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Vision Difficulties</h4>
+                        <p className="mt-1">{personalInfo?.vision_difficulties === null ? 'Not provided' : personalInfo?.vision_difficulties ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
+                        <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
+                        <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>
+                        <p className="mt-1">{personalInfo?.mobility_aids || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Do's & Don'ts */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">Do's & Don'ts</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="likes_preferences">Likes/Preferences</Label>
+                        <Textarea 
+                          id="likes_preferences"
+                          value={relatedInfoFormData.likes_preferences}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, likes_preferences: e.target.value }))}
+                          placeholder="Things the client likes or prefers"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dislikes_restrictions">Dislikes/Restrictions</Label>
+                        <Textarea 
+                          id="dislikes_restrictions"
+                          value={relatedInfoFormData.dislikes_restrictions}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dislikes_restrictions: e.target.value }))}
+                          placeholder="Things the client dislikes or restrictions"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dos">Do's</Label>
+                        <Textarea 
+                          id="dos"
+                          value={relatedInfoFormData.dos}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dos: e.target.value }))}
+                          placeholder="Things to do for the client"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="donts">Don'ts</Label>
+                        <Textarea 
+                          id="donts"
+                          value={relatedInfoFormData.donts}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, donts: e.target.value }))}
+                          placeholder="Things to avoid for the client"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.likes_preferences || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dislikes_restrictions || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dos || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Don'ts</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.donts || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* GP Details */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">GP Details</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="gp_name">GP Name</Label>
+                        <Input 
+                          id="gp_name"
+                          value={relatedInfoFormData.gp_name}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_name: e.target.value }))}
+                          placeholder="GP name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gp_surgery_name">Surgery Name</Label>
+                        <Input 
+                          id="gp_surgery_name"
+                          value={relatedInfoFormData.gp_surgery_name}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_name: e.target.value }))}
+                          placeholder="Surgery name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gp_surgery_address">Surgery Address</Label>
+                        <Textarea 
+                          id="gp_surgery_address"
+                          value={relatedInfoFormData.gp_surgery_address}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_address: e.target.value }))}
+                          placeholder="Surgery address"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gp_surgery_phone">Surgery Phone</Label>
+                        <Input 
+                          id="gp_surgery_phone"
+                          value={relatedInfoFormData.gp_surgery_phone}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_phone: e.target.value }))}
+                          placeholder="Surgery phone"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gp_surgery_ods_code">ODS Code</Label>
+                        <Input 
+                          id="gp_surgery_ods_code"
+                          value={relatedInfoFormData.gp_surgery_ods_code}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_ods_code: e.target.value }))}
+                          placeholder="ODS code"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gp_practice">Practice</Label>
+                        <Input 
+                          id="gp_practice"
+                          value={relatedInfoFormData.gp_practice}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_practice: e.target.value }))}
+                          placeholder="Practice name"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Show legacy GP details if no personalInfo GP data */}
+                      {!personalInfo?.gp_name && client.gp_details && (
+                        <div className="mb-4 p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2">Legacy GP Details</h4>
+                          <p className="text-sm whitespace-pre-wrap">{client.gp_details}</p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Click "Edit" to update GP information in the new format.
+                          </p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
+                          <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
+                          <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
+                          <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
+                          <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                          <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
+                          <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Find NHS services and healthcare providers at{' '}
+                      <a 
+                        href="https://digital.nhs.uk/services/organisation-data-service/ods-portal" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        NHS Digital ODS Portal
+                      </a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Pharmacy */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">Pharmacy</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="pharmacy_name">Pharmacy Name</Label>
+                        <Input 
+                          id="pharmacy_name"
+                          value={relatedInfoFormData.pharmacy_name}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_name: e.target.value }))}
+                          placeholder="Pharmacy name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pharmacy_address">Pharmacy Address</Label>
+                        <Textarea 
+                          id="pharmacy_address"
+                          value={relatedInfoFormData.pharmacy_address}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_address: e.target.value }))}
+                          placeholder="Pharmacy address"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pharmacy_phone">Pharmacy Phone</Label>
+                        <Input 
+                          id="pharmacy_phone"
+                          value={relatedInfoFormData.pharmacy_phone}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_phone: e.target.value }))}
+                          placeholder="Pharmacy phone"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pharmacy_ods_code">ODS Code</Label>
+                        <Input 
+                          id="pharmacy_ods_code"
+                          value={relatedInfoFormData.pharmacy_ods_code}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_ods_code: e.target.value }))}
+                          placeholder="ODS code"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Name</h4>
+                        <p className="mt-1">{personalInfo?.pharmacy_name || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Address</h4>
+                        <p className="mt-1">{personalInfo?.pharmacy_address || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Phone</h4>
+                        <p className="mt-1">{personalInfo?.pharmacy_phone || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
-                        <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
+                        <p className="mt-1">{personalInfo?.pharmacy_ods_code || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desired Outcomes */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <h4 className="font-medium mb-3">Desired Outcomes</h4>
+                  {editingTab === 'related-info' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="personal_goals">Personal Goals</Label>
+                        <Textarea 
+                          id="personal_goals"
+                          value={relatedInfoFormData.personal_goals}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, personal_goals: e.target.value }))}
+                          placeholder="Personal goals"
+                          rows={4}
+                        />
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
-                        <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                        <Label htmlFor="desired_outcomes">Desired Outcomes</Label>
+                        <Textarea 
+                          id="desired_outcomes"
+                          value={relatedInfoFormData.desired_outcomes}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, desired_outcomes: e.target.value }))}
+                          placeholder="Desired outcomes"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="success_measures">Success Measures</Label>
+                        <Textarea 
+                          id="success_measures"
+                          value={relatedInfoFormData.success_measures}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, success_measures: e.target.value }))}
+                          placeholder="Success measures"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="priority_areas">Priority Areas</Label>
+                        <Textarea 
+                          id="priority_areas"
+                          value={relatedInfoFormData.priority_areas}
+                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, priority_areas: e.target.value }))}
+                          placeholder="Priority areas"
+                          rows={4}
+                        />
                       </div>
                     </div>
-                  </>
-                )}
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Find NHS services and healthcare providers at{' '}
-                    <a 
-                      href="https://digital.nhs.uk/services/organisation-data-service/ods-portal" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      NHS Digital ODS Portal
-                    </a>
-                  </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Personal Goals</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.personal_goals || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Desired Outcomes</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.desired_outcomes || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Success Measures</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.success_measures || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground">Priority Areas</h4>
+                        <p className="mt-1 whitespace-pre-wrap">{personalInfo?.priority_areas || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </Card>
 
-              {/* Pharmacy Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Pharmacy</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="pharmacy_name">Pharmacy Name</Label>
-                      <Input 
-                        id="pharmacy_name"
-                        value={relatedInfoFormData.pharmacy_name}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_name: e.target.value }))}
-                        placeholder="Pharmacy name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pharmacy_address">Pharmacy Address</Label>
-                      <Textarea 
-                        id="pharmacy_address"
-                        value={relatedInfoFormData.pharmacy_address}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_address: e.target.value }))}
-                        placeholder="Pharmacy address"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pharmacy_phone">Pharmacy Phone</Label>
-                      <Input 
-                        id="pharmacy_phone"
-                        value={relatedInfoFormData.pharmacy_phone}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_phone: e.target.value }))}
-                        placeholder="Pharmacy phone"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pharmacy_ods_code">ODS Code</Label>
-                      <Input 
-                        id="pharmacy_ods_code"
-                        value={relatedInfoFormData.pharmacy_ods_code}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_ods_code: e.target.value }))}
-                        placeholder="ODS code"
-                      />
-                    </div>
+                {/* Vaccination */}
+                <div className="p-4 bg-muted/20 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Vaccination</h4>
+                    <VaccinationDialog clientId={client?.id} />
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Name</h4>
-                      <p className="mt-1">{personalInfo?.pharmacy_name || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Address</h4>
-                      <p className="mt-1">{personalInfo?.pharmacy_address || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Phone</h4>
-                      <p className="mt-1">{personalInfo?.pharmacy_phone || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
-                      <p className="mt-1">{personalInfo?.pharmacy_ods_code || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
+                  {isVaccinationsLoading ? (
+                    <p>Loading vaccinations...</p>
+                  ) : vaccinations && vaccinations.length > 0 ? (
+                    <div className="space-y-3">
+                      {vaccinations.map((vaccination) => (
+                        <div key={vaccination.id} className="border rounded-lg p-4 space-y-3 bg-background">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground">Vaccination</h4>
+                              <p className="mt-1 font-medium">{vaccination.vaccination_name}</p>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground">Date Given</h4>
+                              <p className="mt-1">{formatDate(vaccination.vaccination_date)}</p>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground">Next Due</h4>
+                              <p className="mt-1">{vaccination.next_due_date ? formatDate(vaccination.next_due_date) : 'N/A'}</p>
+                            </div>
+                          </div>
+                          
+                          {vaccination.notes && (
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
+                              <p className="mt-1 text-sm">{vaccination.notes}</p>
+                            </div>
+                          )}
 
-              {/* Desired outcomes Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Desired outcomes</h3>
-                {editingTab === 'related-info' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="personal_goals">Personal Goals</Label>
-                      <Textarea 
-                        id="personal_goals"
-                        value={relatedInfoFormData.personal_goals}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, personal_goals: e.target.value }))}
-                        placeholder="Personal goals"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="desired_outcomes">Desired Outcomes</Label>
-                      <Textarea 
-                        id="desired_outcomes"
-                        value={relatedInfoFormData.desired_outcomes}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, desired_outcomes: e.target.value }))}
-                        placeholder="Desired outcomes"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="success_measures">Success Measures</Label>
-                      <Textarea 
-                        id="success_measures"
-                        value={relatedInfoFormData.success_measures}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, success_measures: e.target.value }))}
-                        placeholder="Success measures"
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="priority_areas">Priority Areas</Label>
-                      <Textarea 
-                        id="priority_areas"
-                        value={relatedInfoFormData.priority_areas}
-                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, priority_areas: e.target.value }))}
-                        placeholder="Priority areas"
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Personal Goals</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.personal_goals || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Desired Outcomes</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.desired_outcomes || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Success Measures</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.success_measures || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Priority Areas</h4>
-                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.priority_areas || 'Not provided'}</p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Vaccination Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium">Vaccination</h3>
-                  <VaccinationDialog clientId={client?.id} />
-                </div>
-                {isVaccinationsLoading ? (
-                  <p>Loading vaccinations...</p>
-                ) : vaccinations && vaccinations.length > 0 ? (
-                  <div className="space-y-3">
-                    {vaccinations.map((vaccination) => (
-                      <div key={vaccination.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Vaccination</h4>
-                            <p className="mt-1 font-medium">{vaccination.vaccination_name}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Date Given</h4>
-                            <p className="mt-1">{formatDate(vaccination.vaccination_date)}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Next Due</h4>
-                            <p className="mt-1">{vaccination.next_due_date ? formatDate(vaccination.next_due_date) : 'N/A'}</p>
-                          </div>
+                          {vaccination.file_path && (
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground mb-2">Document</h4>
+                              <a
+                                href={supabase.storage.from('client-documents').getPublicUrl(vaccination.file_path).data.publicUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 border rounded-lg transition-colors"
+                              >
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span>View Document</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          )}
                         </div>
-                        
-                        {vaccination.notes && (
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
-                            <p className="mt-1 text-sm">{vaccination.notes}</p>
-                          </div>
-                        )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No vaccination records found.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-                        {vaccination.file_path && (
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Document</h4>
-                            <a
-                              href={supabase.storage.from('client-documents').getPublicUrl(vaccination.file_path).data.publicUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 border rounded-lg transition-colors"
-                            >
-                              <FileText className="h-4 w-4 text-primary" />
-                              <span>View Document</span>
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No vaccination records found.</p>
-                )}
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="service-actions" className="mt-6">
-          {isServiceActionsLoading ? (
-            <Card className="p-4 border border-border shadow-sm">
-              <p>Loading service actions...</p>
-            </Card>
-          ) : (
-            <ServiceActionsTab 
-              serviceActions={mergedServiceActions || []} 
-              onAddServiceAction={() => setIsAddServiceActionOpen(true)} 
-            />
-          )}
-          
-          <AddServiceActionDialog
-            open={isAddServiceActionOpen}
-            onOpenChange={setIsAddServiceActionOpen}
-            onSave={handleSaveServiceAction}
-            clientId={client?.id}
-            branchId={client?.branch_id}
-            isLoading={createServiceActionMutation.isPending}
+      {/* Section 4: Service Actions */}
+      <Collapsible open={openSections.serviceActions}>
+        <Card className="border border-border shadow-sm overflow-hidden">
+          <SectionHeader 
+            title="Service Actions" 
+            isOpen={openSections.serviceActions}
+            onToggle={() => toggleSection('serviceActions')}
           />
-        </TabsContent>
-      </Tabs>
-    </div>;
+          <CollapsibleContent>
+            <div className="p-4">
+              {isServiceActionsLoading ? (
+                <p>Loading service actions...</p>
+              ) : (
+                <ServiceActionsTab 
+                  serviceActions={mergedServiceActions || []} 
+                  onAddServiceAction={() => setIsAddServiceActionOpen(true)} 
+                />
+              )}
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Add Service Action Dialog */}
+      <AddServiceActionDialog
+        open={isAddServiceActionOpen}
+        onOpenChange={setIsAddServiceActionOpen}
+        onSave={handleSaveServiceAction}
+        clientId={client?.id}
+        branchId={client?.branch_id}
+        isLoading={createServiceActionMutation.isPending}
+      />
+    </div>
+  );
 };
