@@ -331,36 +331,39 @@ export const getCompletedStepIds = (formData: any, isChild: boolean = false, ctx
   // Step 14 - Service Actions
   if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(14);
   
-  // Step 15 - Documents
-  if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(15);
+  // Step 15 - Tasks
+  if (Array.isArray(formData.tasks) && formData.tasks.length > 0) completedSteps.push(15);
   
-  // Step 16 - Consent
-  if (hasConsentInfo(formData.consent)) completedSteps.push(16);
+  // Step 16 - Documents
+  if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(16);
   
-  // Step 17 - Key Contacts
-  if (hasKeyContacts(formData)) completedSteps.push(17);
+  // Step 17 - Consent
+  if (hasConsentInfo(formData.consent)) completedSteps.push(17);
   
-  // Child-specific steps (18-20) - only evaluated for children
+  // Step 18 - Key Contacts
+  if (hasKeyContacts(formData)) completedSteps.push(18);
+  
+  // Child-specific steps (19-21) - only evaluated for children
   if (isChild) {
     const behaviorSupport = formData.behavior_support;
     const childInfo = formData.child_info;
     const safeguarding = formData.safeguarding;
     
-    // Step 18 - Behavior Support
-    if (behaviorSupport && hasAnyValue(behaviorSupport)) completedSteps.push(18);
+    // Step 19 - Behavior Support
+    if (behaviorSupport && hasAnyValue(behaviorSupport)) completedSteps.push(19);
     
-    // Step 19 - Education & Development
+    // Step 20 - Education & Development
     if (childInfo && (
       isNonEmptyString(childInfo.education_placement) ||
       isNonEmptyString(childInfo.daily_learning_goals) ||
       isNonEmptyString(childInfo.independence_skills)
-    )) completedSteps.push(19);
+    )) completedSteps.push(20);
     
-    // Step 20 - Safeguarding & Risks
-    if (safeguarding && hasAnyValue(safeguarding)) completedSteps.push(20);
+    // Step 21 - Safeguarding & Risks
+    if (safeguarding && hasAnyValue(safeguarding)) completedSteps.push(21);
   }
   
-  // Step 21 - Review is NOT auto-marked (only on explicit submission)
+  // Step 22 - Review is NOT auto-marked (only on explicit submission)
   
   return completedSteps;
 };
@@ -379,10 +382,10 @@ export const calculateCompletionPercentage = (formData: any, isChild: boolean = 
   
   const completedSteps = getCompletedStepIds(formData, isChild, ctx);
   
-  // Total countable steps (excluding Review step 21)
-  // For children: 20 steps (1-20)
-  // For adults: 17 steps (1-17, excluding child-only steps 18-20)
-  const totalSteps = isChild ? 20 : 17;
+  // Total countable steps (excluding Review step 22)
+  // For children: 21 steps (1-21)
+  // For adults: 18 steps (1-18, excluding child-only steps 19-21)
+  const totalSteps = isChild ? 21 : 18;
   
   return Math.round((completedSteps.length / totalSteps) * 100);
 };

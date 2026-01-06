@@ -39,6 +39,7 @@ import { ServiceActionsSection } from '@/components/care/client-view/ServiceActi
 import { DocumentsSection } from '@/components/care/client-view/DocumentsSection';
 import { ConsentSection } from '@/components/care/client-view/ConsentSection';
 import { KeyContactsSection } from '@/components/care/client-view/KeyContactsSection';
+import { TasksSection } from '@/components/care/client-view/TasksSection';
 import { ReviewSection } from '@/components/care/client-view/ReviewSection';
 import { BehaviorSupportSection } from '@/components/care/client-view/BehaviorSupportSection';
 import { EducationDevelopmentSection } from '@/components/care/client-view/EducationDevelopmentSection';
@@ -66,15 +67,16 @@ const viewSteps = [
   { id: 12, name: "Equipment", description: "Required equipment and aids", childOnly: false },
   { id: 13, name: "Service Plans", description: "Service delivery plans", childOnly: false },
   { id: 14, name: "Service Actions", description: "Specific service actions", childOnly: false },
-  { id: 15, name: "Documents", description: "Supporting documents", childOnly: false },
-  { id: 16, name: "Consent", description: "Consent and capacity assessment", childOnly: false },
-  { id: 17, name: "Key Contacts", description: "Emergency and family contacts", childOnly: false },
+  { id: 15, name: "Tasks", description: "Care tasks for carer visits", childOnly: false },
+  { id: 16, name: "Documents", description: "Supporting documents", childOnly: false },
+  { id: 17, name: "Consent", description: "Consent and capacity assessment", childOnly: false },
+  { id: 18, name: "Key Contacts", description: "Emergency and family contacts", childOnly: false },
   // Young Person (0-17 years) specific tabs
-  { id: 18, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
-  { id: 19, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
-  { id: 20, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
+  { id: 19, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
+  { id: 20, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
+  { id: 21, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
   // Review is always last
-  { id: 21, name: "Review", description: "Review and finalize care plan", childOnly: false },
+  { id: 22, name: "Review", description: "Review and finalize care plan", childOnly: false },
 ];
 
 // Transform care plan data for PDF generation
@@ -339,6 +341,9 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       is_saved: true,
     })),
     
+    // Tasks
+    tasks: safeArray((carePlan as any).tasks?.length > 0 ? (carePlan as any).tasks : autoSaveData.tasks),
+    
     // Documents
     documents: safeArray(carePlan.documents?.length > 0 ? carePlan.documents : autoSaveData.documents),
     
@@ -561,26 +566,29 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
       case 14: // Service Actions
         return <ServiceActionsSection serviceActions={wizardData.service_actions || []} />;
       
-      case 15: // Documents
+      case 15: // Tasks
+        return <TasksSection tasks={wizardData.tasks || []} />;
+      
+      case 16: // Documents
         return <DocumentsSection documents={wizardData.documents || []} />;
       
-      case 16: // Consent
+      case 17: // Consent
         return <ConsentSection consent={wizardData.consent} />;
       
-      case 17: // Key Contacts (NEW)
+      case 18: // Key Contacts
         return <KeyContactsSection keyContacts={wizardData.key_contacts || []} />;
       
       // Young Person (0-17 years) specific tabs
-      case 18: // Behavior Support
+      case 19: // Behavior Support
         return <BehaviorSupportSection clientId={carePlanWithDetails.client_id} />;
       
-      case 19: // Education & Development
+      case 20: // Education & Development
         return <EducationDevelopmentSection clientId={carePlanWithDetails.client_id} />;
       
-      case 20: // Safeguarding & Risks
+      case 21: // Safeguarding & Risks
         return <SafeguardingRisksSection clientId={carePlanWithDetails.client_id} />;
       
-      case 21: // Review
+      case 22: // Review
         return <ReviewSection 
           carePlan={carePlanWithDetails} 
           additionalNotes={wizardData.additional_notes} 
