@@ -77,6 +77,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   medical_info?: any;
   personal_care?: any;
   dietary_requirements?: any;
+  dietary?: any; // Alias for dietary_requirements for wizard compatibility
   about_me?: any;
   consent?: any;
   general?: any;
@@ -497,8 +498,10 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       incontinence_products_required: autoSaveData.personal_care?.incontinence_products_required,
     },
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+    dietary: autoSaveData.dietary || autoSaveData.dietary_requirements || {}, // Both keys for compatibility
     // Pass through about_me as-is to preserve all actual field names from database
     about_me: autoSaveData.about_me || {},
+    general: autoSaveData.general || {},
     consent: autoSaveData.consent || {},
     hobbies: autoSaveData.hobbies || {},
     // Enhanced extraction of complex structures with proper date handling and field normalization
