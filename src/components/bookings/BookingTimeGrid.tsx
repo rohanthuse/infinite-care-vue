@@ -170,7 +170,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Only define these ONCE!
-  const hourHeight = 60; // height in px for one hour
+  // Height per hour - must match CSS values for each view type
+  const hourHeight = viewType === "weekly" ? 50 : 60; // weekly=50px, daily=60px (matches CSS)
   const timeInterval = 30; // time interval in minutes (30 = half hour intervals)
   const timeSlots = Array.from({ length: 24 }, (_, i) =>
     i.toString().padStart(2, '0') + ":00"
