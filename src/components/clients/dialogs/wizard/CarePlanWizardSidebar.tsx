@@ -1,6 +1,6 @@
 
 import React from "react";
-import { CheckCircle, Circle, Clock } from "lucide-react";
+import { CheckCircle, Circle, Clock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
@@ -16,6 +16,8 @@ interface CarePlanWizardSidebarProps {
   completedSteps: number[];
   onStepClick: (stepNumber: number) => void;
   completionPercentage: number;
+  clientName?: string;
+  isYoungPerson?: boolean;
 }
 
 export function CarePlanWizardSidebar({
@@ -23,10 +25,26 @@ export function CarePlanWizardSidebar({
   currentStep,
   completedSteps,
   onStepClick,
-  completionPercentage
+  completionPercentage,
+  clientName,
+  isYoungPerson
 }: CarePlanWizardSidebarProps) {
   return (
     <div className="w-72 xl:w-80 bg-muted border-r border-border p-4 xl:p-6 overflow-y-auto h-full">
+      {/* Client Info Section */}
+      {clientName && (
+        <div className="flex items-center gap-2 pb-4 mb-4 border-b border-border">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground truncate">
+            {clientName}
+          </span>
+          {isYoungPerson && (
+            <span className="ml-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded-full flex-shrink-0">
+              Young Person
+            </span>
+          )}
+        </div>
+      )}
       <div className="mb-4 xl:mb-6">
         <h3 className="text-base xl:text-lg font-semibold text-foreground mb-2">Care Plan Progress</h3>
         <div className="space-y-2">
