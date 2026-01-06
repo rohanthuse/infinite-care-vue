@@ -629,6 +629,12 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           <div className="booking-grid-container" ref={gridRef}>
             <div className="booking-scroll-container">
               <div className="time-column">
+                {/* Add spacer for weekly view to align with day headers */}
+                {viewType === "weekly" && (
+                  <div className="time-column-header">
+                    <span className="text-xs text-muted-foreground">Time</span>
+                  </div>
+                )}
                 {timeSlots.map((time, index) => (
                   <div key={index} className="time-slot">
                     <span>{time}</span>

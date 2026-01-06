@@ -242,6 +242,23 @@
   width: 100%;
 }
 
+/* Time column header spacer for weekly view alignment */
+.time-column-header {
+  padding: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+}
+
 .weekly-view .day-column {
   min-width: 180px;
 }
