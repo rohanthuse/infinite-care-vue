@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
@@ -170,7 +170,7 @@ export function ViewFullCarerProfileDialog({
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent 
-          className="max-w-7xl max-h-[95vh] p-0 overflow-hidden"
+          className="max-w-7xl max-h-[95vh] p-0 overflow-y-auto"
           onEscapeKeyDown={handleClose}
           onPointerDownOutside={handleClose}
         >
@@ -217,9 +217,9 @@ export function ViewFullCarerProfileDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex h-[calc(95vh-80px)]">
+          <div className="flex min-h-0">
             {/* Left Sidebar - Navigation */}
-            <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+            <div className="w-80 border-r border-border bg-muted/30">
               {/* Profile Summary Section */}
               <CarerProfileSummaryCard 
                 carerId={carerId}
@@ -229,34 +229,32 @@ export function ViewFullCarerProfileDialog({
                 }}
               />
               
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="p-6 space-y-1">
-                  {tabs.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.value;
-                    return (
-                      <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "text-foreground hover:bg-muted hover:text-primary"
-                        )}
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate text-left">{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
+              <div className="p-6 space-y-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.value;
+                  return (
+                    <button
+                      key={tab.value}
+                      onClick={() => setActiveTab(tab.value)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:bg-muted hover:text-primary"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate text-left">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Right Panel - Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1">
               {/* Tab Title Header */}
               <div className="border-b border-border px-6 py-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -267,34 +265,32 @@ export function ViewFullCarerProfileDialog({
                 </h3>
               </div>
 
-              {/* Scrollable Content Area */}
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="min-h-full p-6">
-                  <div className="animate-in fade-in-50 duration-300">
-                    {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
-                    {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
-                    {activeTab === "general" && <CarerGeneralTab carerId={carerId} branchId={branchId} />}
-                    {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
-                    {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
-                    {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
-                    {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
-                    {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
-                    {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
-                    {activeTab === "employment" && <CarerEmploymentHistoryTab carerId={carerId} />}
-                    {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
-                    {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
-                    {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
-                    {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
-                    {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
-                    {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
-                    {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
-                    {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} branchId={branchId} />}
-                    {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
-                    {activeTab === "rate" && <CarerRateTab carerId={carerId} branchId={branchId} />}
-                    {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
-                  </div>
+              {/* Content Area */}
+              <div className="p-6">
+                <div className="animate-in fade-in-50 duration-300">
+                  {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
+                  {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
+                  {activeTab === "general" && <CarerGeneralTab carerId={carerId} branchId={branchId} />}
+                  {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
+                  {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
+                  {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
+                  {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
+                  {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
+                  {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
+                  {activeTab === "employment" && <CarerEmploymentHistoryTab carerId={carerId} />}
+                  {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
+                  {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
+                  {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
+                  {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
+                  {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
+                  {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
+                  {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
+                  {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} branchId={branchId} />}
+                  {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
+                  {activeTab === "rate" && <CarerRateTab carerId={carerId} branchId={branchId} />}
+                  {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           </div>
         </DialogContent>
