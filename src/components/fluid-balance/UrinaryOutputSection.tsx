@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface UrinaryOutputSectionProps {
   clientId: string;
@@ -20,6 +21,7 @@ const ODOURS = ['Normal', 'Strong', 'Offensive', 'Sweet', 'Unusual'];
 const ESTIMATES = ['Small', 'Moderate', 'Large'];
 
 export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionProps) {
+  const { toast } = useToast();
   const { data: records = [], isLoading } = useUrinaryOutputRecords(clientId, date);
   const addRecord = useAddUrinaryOutputRecord();
   const deleteRecord = useDeleteUrinaryOutputRecord();
@@ -37,10 +39,26 @@ export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionPro
   const [useEstimate, setUseEstimate] = useState(false);
 
   const handleAdd = () => {
+    if (!clientId) {
+      console.error('[UrinaryOutput] Save failed: clientId is missing');
+      toast({ 
+        title: 'Error', 
+        description: 'Client ID is missing. Please try again.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     if (!useEstimate && (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0)) return;
     if (useEstimate && !newRecord.amount_estimate) return;
 
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
+
+    console.log('[UrinaryOutput] Attempting to save:', {
+      client_id: clientId,
+      record_date: date,
+      collection_method: newRecord.collection_method
+    });
 
     addRecord.mutate({
       client_id: clientId,
@@ -54,6 +72,7 @@ export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionPro
       discomfort_observations: newRecord.discomfort_observations || undefined,
     }, {
       onSuccess: () => {
+        console.log('[UrinaryOutput] Save successful');
         setNewRecord({
           time: format(new Date(), 'HH:mm'),
           collection_method: 'Toilet',
@@ -64,6 +83,9 @@ export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionPro
           discomfort_observations: '',
         });
       },
+      onError: (error) => {
+        console.error('[UrinaryOutput] Save failed:', error);
+      }
     });
   };
 
@@ -177,8 +199,15 @@ export function UrinaryOutputSection({ clientId, date }: UrinaryOutputSectionPro
             </Select>
           </div>
           <div className="flex items-end">
-            <Button onClick={handleAdd} disabled={addRecord.isPending} className="w-full">
-              Add Entry
+            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full">
+              {addRecord.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Add Entry'
+              )}
             </Button>
           </div>
         </div>

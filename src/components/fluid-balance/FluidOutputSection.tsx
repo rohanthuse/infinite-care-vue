@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface FluidOutputSectionProps {
   clientId: string;
@@ -19,6 +20,7 @@ const ESTIMATES = ['Small', 'Moderate', 'Large'];
 const APPEARANCES = ['Clear', 'Cloudy', 'Dark', 'Blood-stained', 'Yellow', 'Brown', 'Other'];
 
 export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) {
+  const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidOutputRecords(clientId, date);
   const addRecord = useAddFluidOutputRecord();
   const deleteRecord = useDeleteFluidOutputRecord();
@@ -35,10 +37,26 @@ export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) 
   const [useEstimate, setUseEstimate] = useState(false);
 
   const handleAdd = () => {
+    if (!clientId) {
+      console.error('[FluidOutput] Save failed: clientId is missing');
+      toast({ 
+        title: 'Error', 
+        description: 'Client ID is missing. Please try again.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
     if (!useEstimate && (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0)) return;
     if (useEstimate && !newRecord.amount_estimate) return;
 
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
+
+    console.log('[FluidOutput] Attempting to save:', {
+      client_id: clientId,
+      record_date: date,
+      output_type: newRecord.output_type
+    });
 
     addRecord.mutate({
       client_id: clientId,
@@ -51,6 +69,7 @@ export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) 
       comments: newRecord.comments || undefined,
     }, {
       onSuccess: () => {
+        console.log('[FluidOutput] Save successful');
         setNewRecord({
           time: format(new Date(), 'HH:mm'),
           output_type: 'Urine',
@@ -60,6 +79,9 @@ export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) 
           comments: '',
         });
       },
+      onError: (error) => {
+        console.error('[FluidOutput] Save failed:', error);
+      }
     });
   };
 
@@ -153,8 +175,15 @@ export function FluidOutputSection({ clientId, date }: FluidOutputSectionProps) 
             </Select>
           </div>
           <div className="flex items-end">
-            <Button onClick={handleAdd} disabled={addRecord.isPending} className="w-full">
-              Add Entry
+            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full">
+              {addRecord.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Add Entry'
+              )}
             </Button>
           </div>
         </div>

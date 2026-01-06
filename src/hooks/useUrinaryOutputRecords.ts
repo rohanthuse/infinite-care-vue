@@ -10,10 +10,10 @@ interface UrinaryOutputRecord {
   record_date: string;
   recorded_by?: string;
   time: string;
-  colour: string;
-  odour: string;
+  collection_method: string;
+  colour?: string;
+  odour?: string;
   discomfort_observations?: string;
-  collection_method?: string;
   amount_ml?: number;
   amount_estimate?: string;
   comments?: string;
