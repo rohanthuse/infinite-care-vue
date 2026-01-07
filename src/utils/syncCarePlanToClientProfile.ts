@@ -73,6 +73,23 @@ interface CarePlanAutoSaveData {
     dislikes?: string;
     dos?: string;
     donts?: string;
+    // NEW: Background & Identity fields
+    sexual_orientation?: string;
+    gender_identity?: string;
+    nationality?: string;
+    primary_language?: string;
+    preferred_interpreter_language?: string;
+    religion?: string;
+    // NEW: My Home fields
+    pets?: string;
+    home_accessibility?: string;
+    parking_availability?: string;
+    emergency_access?: string;
+    // NEW: Accessibility fields
+    sensory_impairment?: string;
+    speech_difficulties?: string;
+    cognitive_impairment?: string;
+    communication_aids?: string;
   };
   gp_info?: {
     gp_name?: string;
@@ -199,6 +216,52 @@ export const syncCarePlanToClientProfile = async (
     // Background & Identity fields
     if (aboutMe.ethnicity) {
       updateData.ethnicity = aboutMe.ethnicity;
+    }
+    if (aboutMe.religion) {
+      updateData.religion = aboutMe.religion;
+    }
+    if (aboutMe.sexual_orientation) {
+      updateData.sexual_orientation = aboutMe.sexual_orientation;
+    }
+    if (aboutMe.gender_identity) {
+      updateData.gender_identity = aboutMe.gender_identity;
+    }
+    if (aboutMe.nationality) {
+      updateData.nationality = aboutMe.nationality;
+    }
+    if (aboutMe.primary_language) {
+      updateData.primary_language = aboutMe.primary_language;
+    }
+    if (aboutMe.preferred_interpreter_language) {
+      updateData.preferred_interpreter_language = aboutMe.preferred_interpreter_language;
+    }
+
+    // My Home additional fields
+    if (aboutMe.pets) {
+      updateData.pets = aboutMe.pets;
+    }
+    if (aboutMe.home_accessibility) {
+      updateData.home_accessibility = aboutMe.home_accessibility;
+    }
+    if (aboutMe.parking_availability) {
+      updateData.parking_availability = aboutMe.parking_availability;
+    }
+    if (aboutMe.emergency_access) {
+      updateData.emergency_access = aboutMe.emergency_access;
+    }
+
+    // Accessibility additional fields
+    if (aboutMe.sensory_impairment) {
+      updateData.sensory_impairment = aboutMe.sensory_impairment;
+    }
+    if (aboutMe.speech_difficulties !== undefined) {
+      updateData.speech_difficulties = yesNoToBoolean(aboutMe.speech_difficulties);
+    }
+    if (aboutMe.cognitive_impairment !== undefined) {
+      updateData.cognitive_impairment = yesNoToBoolean(aboutMe.cognitive_impairment);
+    }
+    if (aboutMe.communication_aids) {
+      updateData.communication_aids = aboutMe.communication_aids;
     }
 
     // Legal Directives fields

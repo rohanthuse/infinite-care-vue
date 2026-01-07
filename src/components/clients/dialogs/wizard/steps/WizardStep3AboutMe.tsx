@@ -169,6 +169,81 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                   )}
                 />
               </div>
+
+              {/* NEW: Pets */}
+              <FormField
+                control={form.control}
+                name="about_me.pets"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pets</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe any pets in the home..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Home Accessibility */}
+              <FormField
+                control={form.control}
+                name="about_me.home_accessibility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Home Accessibility</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe accessibility features or needs..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Parking Availability */}
+              <FormField
+                control={form.control}
+                name="about_me.parking_availability"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parking Availability</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Parking information for carers..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Emergency Access */}
+              <FormField
+                control={form.control}
+                name="about_me.emergency_access"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emergency Access</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Emergency access instructions..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -395,6 +470,78 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                   </FormItem>
                 )}
               />
+
+              {/* NEW: Sensory Impairment */}
+              <FormField
+                control={form.control}
+                name="about_me.sensory_impairment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sensory Impairment</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Describe any sensory impairments..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Speech Difficulties */}
+              <FormField
+                control={form.control}
+                name="about_me.speech_difficulties"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Speech Difficulties</FormLabel>
+                    <FormControl>
+                      <YesNoToggle
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Cognitive Impairment */}
+              <FormField
+                control={form.control}
+                name="about_me.cognitive_impairment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cognitive Impairment</FormLabel>
+                    <FormControl>
+                      <YesNoToggle
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Communication Aids */}
+              <FormField
+                control={form.control}
+                name="about_me.communication_aids"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Communication Aids</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Communication aids used..."
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -417,6 +564,108 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                       <FormControl>
                         <Input 
                           placeholder="Enter ethnicity..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.religion"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Religion</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter religion..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.sexual_orientation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexual Orientation</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter sexual orientation..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.gender_identity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gender Identity</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter gender identity..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.nationality"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nationality</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter nationality..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.primary_language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Language</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter primary language..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="about_me.preferred_interpreter_language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preferred Interpreter Language</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter preferred interpreter language..."
                           {...field} 
                         />
                       </FormControl>
