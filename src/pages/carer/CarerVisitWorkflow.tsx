@@ -2007,13 +2007,73 @@ const CarerVisitWorkflow = () => {
       return;
     }
 
-    // Validation checks
+    // Comprehensive pre-flight validation with detailed error messages
+    const validationErrors: string[] = [];
+    
+    // Required clinical data
     if (!carerSignature) {
-      toast.error('Carer signature is required to complete the visit');
-      setActiveTab("sign-off");
+      validationErrors.push('Carer signature is required');
+    }
+    if (!clientMood) {
+      validationErrors.push('Client mood must be selected');
+    }
+    if (!clientEngagement) {
+      validationErrors.push('Client engagement level must be selected');
+    }
+    if (!carerObservations || carerObservations.trim().length < 10) {
+      validationErrors.push('Carer observations must be at least 10 characters');
+    }
+    
+    // Data consistency check
+    if (visitRecord?.staff_id && carerContext?.staffId && 
+        visitRecord.staff_id !== carerContext.staffId) {
+      console.warn('[handleCompleteVisit] Staff ID mismatch:', {
+        visitRecordStaffId: visitRecord.staff_id,
+        carerContextStaffId: carerContext.staffId
+      });
+      // Don't block but log for debugging
+    }
+    
+    // If validation errors exist, show detailed feedback
+    if (validationErrors.length > 0) {
+      // Show primary error
+      toast.error(`Cannot complete visit: ${validationErrors[0]}`);
+      
+      // Show additional errors if multiple
+      if (validationErrors.length > 1) {
+        setTimeout(() => {
+          toast.error(`Please also fix: ${validationErrors.slice(1).join(', ')}`, { 
+            duration: 8000 
+          });
+        }, 500);
+      }
+      
+      // Navigate to appropriate tab based on error
+      if (validationErrors.some(e => e.includes('signature'))) {
+        setActiveTab("sign-off");
+        toast.info('Please sign in the Sign-off tab', { duration: 4000 });
+      } else if (validationErrors.some(e => e.includes('mood') || e.includes('engagement') || e.includes('observations'))) {
+        setActiveTab("complete");
+        toast.info('Please complete all required fields in the Complete Visit tab', { duration: 4000 });
+      }
+      
       completionInProgressRef.current = false;
       return;
     }
+    
+    // Log pre-flight data for debugging
+    console.log('[handleCompleteVisit] Pre-flight validation passed:', {
+      bookingId: currentAppointment?.id,
+      visitRecordId: visitRecord?.id,
+      visitStaffId: visitRecord?.staff_id,
+      carerStaffId: carerContext?.staffId,
+      authUserId: user?.id,
+      hasCarerSignature: !!carerSignature,
+      hasClientSignature: !!clientSignature,
+      hasClientMood: !!clientMood,
+      hasClientEngagement: !!clientEngagement,
+      observationsLength: carerObservations?.length || 0,
+    });
 
     // Reset modal state and show it
     setIsCompletingVisit(true);
@@ -2256,25 +2316,59 @@ const CarerVisitWorkflow = () => {
         return handleCompleteVisit(retryCount + 1);
       }
       
-      // Set error state in modal
+      // Enhanced error classification with actionable messages
       let errorMessage = 'An unexpected error occurred. Please try again.';
+      let actionableHint = '';
       
       if (error instanceof Error || error?.message) {
-        const message = error.message || error?.message;
+        const message = (error.message || '').toLowerCase();
+        
         if (message.includes('timed out')) {
-          errorMessage = message; // Use our custom timeout message
+          errorMessage = error.message; // Use our custom timeout message
+          actionableHint = 'The server is taking too long. Your data may still be saving in the background.';
         } else if (message.includes('policy') || message.includes('permission') || message.includes('row-level security')) {
-          errorMessage = 'Permission denied. Please check your access rights or contact your administrator.';
-        } else if (message.includes('network') || message.includes('fetch') || message.includes('Failed to fetch')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
+          errorMessage = 'Permission denied while saving visit data.';
+          actionableHint = 'Your staff profile may not be linked correctly. Please log out and log in again, or contact your administrator.';
+        } else if (message.includes('network') || message.includes('fetch') || message.includes('failed to fetch')) {
+          errorMessage = 'Network error occurred.';
+          actionableHint = 'Please check your internet connection and try again.';
+        } else if (message.includes('duplicate') || message.includes('unique')) {
+          errorMessage = 'A service report already exists for this visit.';
+          actionableHint = 'The visit may have been completed already. Check your Service Reports.';
+        } else if (message.includes('not found') || message.includes('does not exist')) {
+          errorMessage = 'Required data was not found.';
+          actionableHint = 'The visit record may have been deleted. Please start a new visit.';
+        } else if (message.includes('violates check constraint')) {
+          errorMessage = 'Invalid data detected.';
+          actionableHint = 'Some fields may have invalid values. Please review all entries.';
         } else if (message.includes('timeout')) {
-          errorMessage = 'The request timed out. The server may be busy. Please try again.';
+          errorMessage = 'The request timed out. The server may be busy.';
+          actionableHint = 'Please wait a moment and try again.';
         } else {
-          errorMessage = message;
+          errorMessage = `Error: ${error.message}`;
         }
       }
       
-      setCompletionError(errorMessage);
+      // Show error toast with detailed message
+      toast.error(errorMessage, { duration: 6000 });
+      
+      // Show actionable hint as a separate info toast
+      if (actionableHint) {
+        setTimeout(() => {
+          toast.info(`💡 ${actionableHint}`, { duration: 8000 });
+        }, 300);
+      }
+      
+      // Log error details for debugging
+      console.error('[handleCompleteVisit] Error details:', {
+        errorMessage,
+        actionableHint,
+        originalError: error,
+        bookingId: currentAppointment?.id,
+        visitRecordId: visitRecord?.id,
+      });
+      
+      setCompletionError(`${errorMessage}${actionableHint ? `\n\n${actionableHint}` : ''}`);
       setCompletionStatus('error');
       // Ensure modal stays visible with error state
       setShowCompletionModal(true);
