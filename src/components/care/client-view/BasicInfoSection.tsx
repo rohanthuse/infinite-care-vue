@@ -48,6 +48,22 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
   const hasGpInfo = gpInfo.name || gpInfo.phone || gpInfo.email || gpInfo.address;
   const hasPharmacyInfo = pharmacyInfo.name || pharmacyInfo.phone || pharmacyInfo.email || pharmacyInfo.address;
 
+  // Get provider type display
+  const getProviderType = () => {
+    const providerType = carePlan.provider_type;
+    if (providerType === 'staff' || providerType === 'internal') {
+      return { label: 'Internal Staff Member', variant: 'default' as const };
+    }
+    if (providerType === 'external') {
+      return { label: 'External Provider', variant: 'secondary' as const };
+    }
+    // Default based on whether staff_id exists
+    if (carePlan.staff_id || carePlan.staff || carePlan.staff_ids?.length > 0) {
+      return { label: 'Internal Staff Member', variant: 'default' as const };
+    }
+    return null;
+  };
+
   // Get assigned staff - support both single staff and multiple staff_assignments
   const getAssignedStaff = () => {
     // First check staff_assignments array (new multi-staff approach)
@@ -68,9 +84,27 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
       }];
     }
     
+    // Fall back to staff_ids from auto_save_data
+    if (carePlan.staff_ids && carePlan.staff_ids.length > 0) {
+      // If we have provider_name with names, use those
+      if (carePlan.provider_name && carePlan.provider_name !== 'Not Assigned') {
+        const names = carePlan.provider_name.split(',').map((n: string) => n.trim()).filter(Boolean);
+        if (names.length > 0) {
+          return names.map((name: string, index: number) => ({
+            name,
+            isPrimary: index === 0
+          }));
+        }
+      }
+      // Fallback: show count
+      return [{
+        name: `${carePlan.staff_ids.length} staff member(s) assigned`,
+        isPrimary: true
+      }];
+    }
+    
     // Fall back to provider_name
-    if (carePlan.provider_name) {
-      // Check if provider_name contains multiple names (comma-separated)
+    if (carePlan.provider_name && carePlan.provider_name !== 'Not Assigned') {
       const names = carePlan.provider_name.split(',').map((n: string) => n.trim()).filter(Boolean);
       return names.map((name: string, index: number) => ({
         name,
@@ -80,6 +114,8 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
     
     return [];
   };
+
+  const providerType = getProviderType();
 
   const assignedStaff = getAssignedStaff();
 
@@ -125,6 +161,17 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
                 )}
               </div>
             </div>
+
+            {providerType && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Provider Type</label>
+                <div className="mt-1">
+                  <Badge variant={providerType.variant}>
+                    {providerType.label}
+                  </Badge>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">Priority Level</label>

@@ -88,6 +88,17 @@ export interface CarePlanWithDetails extends CarePlanData {
   service_plans?: any[];
   equipment?: any;
   documents?: any[];
+  staff_assignments?: Array<{
+    id: string;
+    staff_id: string;
+    is_primary?: boolean;
+    staff?: {
+      first_name: string;
+      last_name: string;
+    };
+  }>;
+  staff_ids?: string[];
+  provider_type?: string;
 }
 
 // Helper function to merge JSON data with unique DB records (JSON-First strategy)
