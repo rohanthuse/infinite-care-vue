@@ -87,11 +87,20 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               {renderYesNo('Key Safe', data.has_key_safe)}
+              {data.has_key_safe && data.key_safe_code && (
+                <div className="pl-4 border-l-2 border-primary/30">
+                  {renderField('Key Safe Code/Location', data.key_safe_code)}
+                </div>
+              )}
               {renderYesNo('Requires Heating Help', data.requires_heating_help)}
             </div>
             <div className="space-y-4">
               {renderField('Home Type', data.home_type ? HOME_TYPE_LABELS[data.home_type] || data.home_type : null)}
               {renderField('Living Status', data.living_status)}
+              {renderField('Pets', data.pets)}
+              {renderField('Home Accessibility', data.home_accessibility)}
+              {renderField('Parking Availability', data.parking_availability)}
+              {renderField('Emergency Access', data.emergency_access)}
             </div>
           </div>
         </CardContent>
@@ -120,22 +129,27 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
                   {renderField('Hearing Description', data.hearing_description)}
                 </div>
               )}
+              {renderYesNo('Requires Interpreter', data.requires_interpreter === 'yes' || data.requires_interpreter === true)}
+              {renderYesNo('Speech Difficulties', data.speech_difficulties === 'yes' || data.speech_difficulties === true)}
+              {renderYesNo('Cognitive Impairment', data.cognitive_impairment === 'yes' || data.cognitive_impairment === true)}
             </div>
             <div className="space-y-4">
               {renderField('Mobility', data.mobility)}
               {renderField('Communication Needs', data.communication_needs)}
               {renderField('How I Communicate', data.how_i_communicate)}
+              {renderField('Sensory Impairment', data.sensory_impairment)}
+              {renderField('Communication Aids', data.communication_aids)}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Status & Legal Directives Section */}
+      {/* Background & Identity Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Status & Legal Directives
+            Background & Identity
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -143,6 +157,12 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
             <div className="space-y-4">
               {renderField('Ethnicity', data.ethnicity)}
               {renderField('Living Arrangement', data.living_arrangement ? LIVING_ARRANGEMENT_LABELS[data.living_arrangement] || data.living_arrangement : null)}
+              {renderField('Religion', data.religion)}
+              {renderField('Sexual Orientation', data.sexual_orientation)}
+              {renderField('Gender Identity', data.gender_identity)}
+              {renderField('Nationality', data.nationality)}
+              {renderField('Primary Language', data.primary_language)}
+              {renderField('Preferred Interpreter Language', data.preferred_interpreter_language)}
             </div>
             <div className="space-y-2">
               {renderYesNo('DNR in Place', data.has_dnr)}

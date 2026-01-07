@@ -46,6 +46,24 @@ interface AboutMeTabProps {
     has_respect?: boolean;
     has_dols?: boolean;
     has_lpa?: boolean;
+    // New fields - My Home
+    pets?: string;
+    home_accessibility?: string;
+    parking_availability?: string;
+    emergency_access?: string;
+    // New fields - Accessibility
+    requires_interpreter?: string | boolean;
+    sensory_impairment?: string;
+    speech_difficulties?: string | boolean;
+    cognitive_impairment?: string | boolean;
+    communication_aids?: string;
+    // New fields - Background & Identity
+    religion?: string;
+    sexual_orientation?: string;
+    gender_identity?: string;
+    nationality?: string;
+    primary_language?: string;
+    preferred_interpreter_language?: string;
   } | null;
   isLoadingPersonalInfo?: boolean;
   isLoadingPersonalCare?: boolean;
@@ -152,6 +170,22 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Living Status</h3>
                   <p className="text-base">{aboutMeData.living_status || 'Not specified'}</p>
                 </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Pets</h3>
+                  <p className="text-base">{aboutMeData.pets || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Home Accessibility</h3>
+                  <p className="text-base">{aboutMeData.home_accessibility || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Parking Availability</h3>
+                  <p className="text-base">{aboutMeData.parking_availability || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Emergency Access</h3>
+                  <p className="text-base">{aboutMeData.emergency_access || 'Not specified'}</p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -185,6 +219,9 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                     <p className="text-base">{aboutMeData.hearing_description}</p>
                   </div>
                 )}
+                {renderYesNo('Requires Interpreter', aboutMeData.requires_interpreter === 'yes' || aboutMeData.requires_interpreter === true)}
+                {renderYesNo('Speech Difficulties', aboutMeData.speech_difficulties === 'yes' || aboutMeData.speech_difficulties === true)}
+                {renderYesNo('Cognitive Impairment', aboutMeData.cognitive_impairment === 'yes' || aboutMeData.cognitive_impairment === true)}
               </div>
               <div className="space-y-4">
                 <div>
@@ -199,21 +236,29 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">How I Communicate</h3>
                   <p className="text-base">{aboutMeData.how_i_communicate || 'Not specified'}</p>
                 </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Sensory Impairment</h3>
+                  <p className="text-base">{aboutMeData.sensory_impairment || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Communication Aids</h3>
+                  <p className="text-base">{aboutMeData.communication_aids || 'Not specified'}</p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Status & Legal Directives Section */}
+      {/* Background & Identity Section */}
       {aboutMeData && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Status & Legal Directives</CardTitle>
+              <CardTitle className="text-lg">Background & Identity</CardTitle>
             </div>
-            <CardDescription>Legal status and advance directives</CardDescription>
+            <CardDescription>Background information and legal directives</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -229,6 +274,30 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                       ? LIVING_ARRANGEMENT_LABELS[aboutMeData.living_arrangement] || aboutMeData.living_arrangement 
                       : 'Not specified'}
                   </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Religion</h3>
+                  <p className="text-base">{aboutMeData.religion || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Sexual Orientation</h3>
+                  <p className="text-base">{aboutMeData.sexual_orientation || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Gender Identity</h3>
+                  <p className="text-base">{aboutMeData.gender_identity || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Nationality</h3>
+                  <p className="text-base">{aboutMeData.nationality || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Primary Language</h3>
+                  <p className="text-base">{aboutMeData.primary_language || 'Not specified'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Preferred Interpreter Language</h3>
+                  <p className="text-base">{aboutMeData.preferred_interpreter_language || 'Not specified'}</p>
                 </div>
               </div>
               <div className="space-y-2">
