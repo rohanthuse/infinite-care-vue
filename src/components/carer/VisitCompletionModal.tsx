@@ -48,11 +48,11 @@ export const VisitCompletionModal: React.FC<VisitCompletionModalProps> = ({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showCancelOption, setShowCancelOption] = useState(false);
 
-  // Show cancel option after 15 seconds of completing status
+  // Show cancel option after 10 seconds of completing status (reduced from 15s)
   useEffect(() => {
     if (status === 'completing') {
       setShowCancelOption(false);
-      const timer = setTimeout(() => setShowCancelOption(true), 15000);
+      const timer = setTimeout(() => setShowCancelOption(true), 10000);
       return () => clearTimeout(timer);
     } else {
       setShowCancelOption(false);
@@ -109,17 +109,32 @@ export const VisitCompletionModal: React.FC<VisitCompletionModalProps> = ({
               <p className="text-sm text-muted-foreground text-center">
                 {completionStep}
               </p>
+              <p className="text-xs text-muted-foreground text-center">
+                This usually takes 5-15 seconds...
+              </p>
               
               {showCancelOption && (
-                <div className="text-center pt-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={onClose}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Taking too long? Cancel and try again
-                  </Button>
+                <div className="text-center pt-2 space-y-2">
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    The process is taking longer than expected.
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={onRetry}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Retry Now
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={onClose}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
