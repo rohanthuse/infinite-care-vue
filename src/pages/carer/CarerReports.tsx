@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
+import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,11 +18,13 @@ import { ReportExporter } from "@/utils/reportExporter";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { CarerAttendanceReports } from "@/components/reports/attendance/CarerAttendanceReports";
 import { CarerActivityReports } from "@/components/reports/activity/CarerActivityReports";
+import { CarerScheduleReport } from "@/components/reports/schedule/CarerScheduleReport";
 
 type ReportType = 
   | "clinical"
   | "activity" 
-  | "attendance";
+  | "attendance"
+  | "schedule";
 
 interface ReportOption {
   id: ReportType;
@@ -63,6 +65,12 @@ const CarerReports: React.FC = () => {
       title: "Attendance Reports",
       description: "Track working hours and attendance",
       icon: <PieChart className="h-6 w-6" />
+    },
+    {
+      id: "schedule",
+      title: "Schedule Report",
+      description: "Generate your upcoming booking plan",
+      icon: <CalendarDays className="h-6 w-6" />
     }
   ];
 
@@ -207,7 +215,7 @@ const CarerReports: React.FC = () => {
       <ReportsHeader />
       
       <div className="space-y-4 mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {reportOptions.map((option) => (
             <Card 
               key={option.id}
@@ -329,7 +337,7 @@ const CarerReports: React.FC = () => {
                 dateRange={dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined}
               />
             </div>
-          ) : (
+          ) : activeReport === "attendance" ? (
             <div id="attendance-reports-content">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <Popover>
@@ -401,7 +409,11 @@ const CarerReports: React.FC = () => {
                 dateRange={dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined}
               />
             </div>
-          )}
+          ) : activeReport === "schedule" ? (
+            <div id="schedule-reports-content">
+              <CarerScheduleReport branchName="Med-Infinite Branch" />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
