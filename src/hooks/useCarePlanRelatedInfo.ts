@@ -5,12 +5,20 @@ export interface CarePlanRelatedInfo {
   // Background & Identity
   ethnicity?: string;
   religion?: string;
+  sexual_orientation?: string;
+  gender_identity?: string;
+  nationality?: string;
+  primary_language?: string;
+  preferred_interpreter_language?: string;
   
   // My Home
   property_type?: string;
   living_arrangement?: string;
   key_safe_location?: string;
   pets?: string;
+  home_accessibility?: string;
+  parking_availability?: string;
+  emergency_access?: string;
   
   // Accessibility & Communication
   interpreter_required?: boolean;
@@ -19,6 +27,9 @@ export interface CarePlanRelatedInfo {
   mobility_aids?: string;
   preferred_communication_method?: string;
   communication_aids?: string;
+  sensory_impairment?: string;
+  speech_difficulties?: boolean;
+  cognitive_impairment?: boolean;
   
   // Do's & Don'ts
   likes_preferences?: string;
@@ -73,6 +84,22 @@ interface CarePlanAutoSaveData {
     dos?: string;
     donts?: string;
     pets?: string;
+    // NEW: Background & Identity fields
+    sexual_orientation?: string;
+    gender_identity?: string;
+    nationality?: string;
+    primary_language?: string;
+    preferred_interpreter_language?: string;
+    religion?: string;
+    // NEW: My Home fields
+    home_accessibility?: string;
+    parking_availability?: string;
+    emergency_access?: string;
+    // NEW: Accessibility fields
+    sensory_impairment?: string;
+    speech_difficulties?: string;
+    cognitive_impairment?: string;
+    communication_aids?: string;
   };
   gp_info?: {
     gp_name?: string;
@@ -154,13 +181,21 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
   return {
     // Background & Identity
     ethnicity: aboutMe.ethnicity || undefined,
-    religion: personalInfo.religion || undefined,
+    religion: aboutMe.religion || personalInfo.religion || undefined,
+    sexual_orientation: aboutMe.sexual_orientation || undefined,
+    gender_identity: aboutMe.gender_identity || undefined,
+    nationality: aboutMe.nationality || undefined,
+    primary_language: aboutMe.primary_language || undefined,
+    preferred_interpreter_language: aboutMe.preferred_interpreter_language || undefined,
     
     // My Home
     property_type: aboutMe.home_type || undefined,
     living_arrangement: aboutMe.living_arrangement || undefined,
     key_safe_location: aboutMe.key_safe_code || undefined,
     pets: aboutMe.pets || undefined,
+    home_accessibility: aboutMe.home_accessibility || undefined,
+    parking_availability: aboutMe.parking_availability || undefined,
+    emergency_access: aboutMe.emergency_access || undefined,
     
     // Accessibility & Communication
     interpreter_required: yesNoToBoolean(aboutMe.requires_interpreter),
@@ -168,6 +203,10 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
     hearing_difficulties: yesNoToBoolean(aboutMe.is_hearing_impaired),
     mobility_aids: aboutMe.mobility || undefined,
     preferred_communication_method: aboutMe.communication_needs || undefined,
+    sensory_impairment: aboutMe.sensory_impairment || undefined,
+    speech_difficulties: yesNoToBoolean(aboutMe.speech_difficulties),
+    cognitive_impairment: yesNoToBoolean(aboutMe.cognitive_impairment),
+    communication_aids: aboutMe.communication_aids || undefined,
     
     // Do's & Don'ts
     likes_preferences: aboutMe.likes || undefined,
