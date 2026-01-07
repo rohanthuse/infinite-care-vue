@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
@@ -17,6 +18,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { getBookingStatusLabel } from '@/components/bookings/utils/bookingColors';
 import { cn } from '@/lib/utils';
 export function CarerReportsTab() {
+  const queryClient = useQueryClient();
+  
   // Destructure loading and error states from ALL hooks
   const {
     data: carerContext,
@@ -713,9 +716,14 @@ export function CarerReportsTab() {
       <CreateServiceReportDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 
       {/* Edit Report Dialog */}
-      {selectedReport && <CreateServiceReportDialog open={editDialogOpen} onOpenChange={open => {
+      {selectedReport && <CreateServiceReportDialog open={editDialogOpen} onOpenChange={async (open) => {
       setEditDialogOpen(open);
-      if (!open) setSelectedReport(null);
+      if (!open) {
+        // Force refetch of reports list when dialog closes
+        await queryClient.refetchQueries({ queryKey: ['carer-service-reports'] });
+        await queryClient.refetchQueries({ queryKey: ['carer-completed-bookings'] });
+        setSelectedReport(null);
+      }
     }} preSelectedClient={{
       id: selectedReport.client_id,
       name: `${selectedReport.clients?.first_name} ${selectedReport.clients?.last_name}`
