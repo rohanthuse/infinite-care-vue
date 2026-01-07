@@ -169,7 +169,10 @@ export const useCarerBookings = (carerId?: string) => {
     queryKey: ['carer-bookings', carerId],
     queryFn: () => carerId ? fetchCarerBookings(carerId) : Promise.resolve([]),
     enabled: Boolean(carerId),
-    staleTime: 30 * 1000, // 30 seconds - ensure fresh data
-    refetchOnMount: true, // Always refetch on mount
+    staleTime: 0, // Always fetch fresh data - prevents "No Past Appointments" issue
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnReconnect: true, // Refetch when connection restored
   });
 };

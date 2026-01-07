@@ -37,8 +37,19 @@ export function CarerReportsTab() {
   } = useCarerCompletedBookings(carerContext?.staffProfile?.id);
   const {
     data: allBookings = [],
-    isLoading: allBookingsLoading
+    isLoading: allBookingsLoading,
+    refetch: refetchAllBookings
   } = useCarerBookings(carerContext?.staffProfile?.id);
+
+  // Force refetch bookings on mount to ensure fresh data (fixes "No Past Appointments" issue)
+  useEffect(() => {
+    if (carerContext?.staffProfile?.id) {
+      console.log('[CarerReportsTab] Component mounted, invalidating bookings for fresh data');
+      queryClient.invalidateQueries({ 
+        queryKey: ['carer-bookings', carerContext.staffProfile.id] 
+      });
+    }
+  }, [carerContext?.staffProfile?.id, queryClient]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);

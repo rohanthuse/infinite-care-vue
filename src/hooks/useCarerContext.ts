@@ -130,7 +130,7 @@ export const useCarerContext = () => {
       }
       return undefined;
     },
-    staleTime: 30 * 1000, // 30 seconds - ensure fresh context data
+    staleTime: 0, // Always fetch fresh context data - prevents stale cache issues
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
     refetchOnWindowFocus: true,
     refetchOnMount: 'always', // Always refetch to ensure fresh data
