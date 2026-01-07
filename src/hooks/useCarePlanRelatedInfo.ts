@@ -190,7 +190,7 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
     
     // My Home
     property_type: aboutMe.home_type || undefined,
-    living_arrangement: aboutMe.living_arrangement || undefined,
+    living_arrangement: aboutMe.living_arrangement || (aboutMe as any).living_status || undefined,
     key_safe_location: aboutMe.key_safe_code || undefined,
     pets: aboutMe.pets || undefined,
     home_accessibility: aboutMe.home_accessibility || undefined,
