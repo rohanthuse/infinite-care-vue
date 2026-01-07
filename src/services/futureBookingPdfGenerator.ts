@@ -99,15 +99,9 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
     doc.rect(0, 0, pageWidth, 8, 'F');
 
     if (isFirstPage) {
-      // Define column boundaries to prevent overlap
-      const leftColumnMaxX = pageWidth * 0.50;  // Left side gets 50%
       const rightX = pageWidth - 15;
       
-      // LEFT SIDE: Logo + Organization info
-      let leftX = 15;
-      let contentY = 20;
-
-      // Add logo if available
+      // LEFT SIDE: Larger Logo only
       if (logoBase64) {
         try {
           const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
@@ -115,64 +109,58 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
             if (base64.includes('data:image/gif')) return 'GIF';
             return 'PNG';
           };
-          doc.addImage(logoBase64, getImageFormat(logoBase64), leftX, 12, 30, 18);
-          leftX = 50;
+          // Increased logo size: 50x32 (was 30x18)
+          doc.addImage(logoBase64, getImageFormat(logoBase64), 15, 12, 50, 32);
         } catch (e) {
           console.error('Error adding logo:', e);
         }
       }
 
-      // Organization name - with max width constraint
-      const maxOrgWidth = leftColumnMaxX - leftX - 5;
-      doc.setFontSize(13);
+      // RIGHT SIDE: Organization details
+      const maxRightWidth = 80;
+      let rightY = 16;
+
+      // Organization name (bold, prominent)
+      doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
-      
-      // Split text if too long and use first line only
-      const orgLines = doc.splitTextToSize(orgName.toUpperCase(), maxOrgWidth);
-      doc.text(orgLines[0], leftX, contentY);
-      
-      // Show second line if organization name wrapped
-      let subtitleY = contentY + 5;
+      const orgLines = doc.splitTextToSize(orgName.toUpperCase(), maxRightWidth);
+      doc.text(orgLines[0], rightX, rightY, { align: 'right' });
+      rightY += 5;
       if (orgLines.length > 1) {
-        doc.setFontSize(11);
-        doc.text(orgLines[1], leftX, contentY + 5);
-        subtitleY = contentY + 10;
+        doc.setFontSize(10);
+        doc.text(orgLines[1], rightX, rightY, { align: 'right' });
+        rightY += 5;
       }
 
-      // Subtitle/tagline
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
-      doc.text(orgSubtitle, leftX, subtitleY);
-
-      // RIGHT SIDE: Carer name prominently + branch/date
-      // Calculate max width for right side text
-      const maxRightWidth = rightX - (pageWidth * 0.52);
-
-      // Carer name (with width constraint)
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-      const carerLines = doc.splitTextToSize(carerName, maxRightWidth);
-      doc.text(carerLines[0], rightX, 18, { align: 'right' });
-
-      // Branch name
+      // Organization details (address, phone, email, website)
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
-      const branchText = branchName.length > 30 ? branchName.substring(0, 27) + '...' : branchName;
-      doc.text(`Branch: ${branchText}`, rightX, 25, { align: 'right' });
 
-      // Generated date
-      doc.setFontSize(7);
-      doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
-      doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightX, 31, { align: 'right' });
+      if (orgSettings?.address) {
+        const addressLines = doc.splitTextToSize(orgSettings.address, maxRightWidth);
+        addressLines.slice(0, 2).forEach((line: string) => {
+          doc.text(line, rightX, rightY, { align: 'right' });
+          rightY += 4;
+        });
+      }
+      if (orgSettings?.telephone) {
+        doc.text(`Tel: ${orgSettings.telephone}`, rightX, rightY, { align: 'right' });
+        rightY += 4;
+      }
+      if (orgSettings?.email) {
+        doc.text(orgSettings.email, rightX, rightY, { align: 'right' });
+        rightY += 4;
+      }
+      if (orgSettings?.website) {
+        doc.text(orgSettings.website, rightX, rightY, { align: 'right' });
+      }
 
       // Separator line
       doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
       doc.setLineWidth(0.5);
-      doc.line(15, 42, pageWidth - 15, 42);
+      doc.line(15, 48, pageWidth - 15, 48);
     } else {
       // Mini header for subsequent pages
       doc.setFontSize(10);
@@ -189,25 +177,31 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
   drawHeader(true);
 
   // =====================================================
-  // TITLE SECTION
+  // TITLE SECTION - Below header with reduced sizing
   // =====================================================
-  let currentY = 52;
+  let currentY = 55;
 
-  // Title: "CARER ROTA" (centered)
-  doc.setFontSize(20);
+  // Title: "CARER ROTA" (centered, reduced from 20pt to 14pt)
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
   doc.text("CARER ROTA", pageWidth / 2, currentY, { align: 'center' });
 
-  // Date range below title (simple text, no box)
-  currentY += 8;
+  // Carer name below title
+  currentY += 6;
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
+  doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+  doc.text(carerName, pageWidth / 2, currentY, { align: 'center' });
+
+  // Date range below carer name
+  currentY += 6;
+  doc.setFontSize(10);
   doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
   const dateRangeText = `${format(dateFrom, "dd MMM yyyy")} — ${format(dateTo, "dd MMM yyyy")}`;
   doc.text(dateRangeText, pageWidth / 2, currentY, { align: 'center' });
 
-  currentY += 12;
+  currentY += 10;
 
   // =====================================================
   // BOOKING TABLE
