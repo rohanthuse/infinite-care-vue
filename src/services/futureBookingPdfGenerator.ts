@@ -99,6 +99,10 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
     doc.rect(0, 0, pageWidth, 8, 'F');
 
     if (isFirstPage) {
+      // Define column boundaries to prevent overlap
+      const leftColumnMaxX = pageWidth * 0.50;  // Left side gets 50%
+      const rightX = pageWidth - 15;
+      
       // LEFT SIDE: Logo + Organization info
       let leftX = 15;
       let contentY = 20;
@@ -111,44 +115,59 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
             if (base64.includes('data:image/gif')) return 'GIF';
             return 'PNG';
           };
-          doc.addImage(logoBase64, getImageFormat(logoBase64), leftX, 12, 35, 22);
-          leftX = 55;
+          doc.addImage(logoBase64, getImageFormat(logoBase64), leftX, 12, 30, 18);
+          leftX = 50;
         } catch (e) {
           console.error('Error adding logo:', e);
         }
       }
 
-      // Organization name
-      doc.setFontSize(16);
+      // Organization name - with max width constraint
+      const maxOrgWidth = leftColumnMaxX - leftX - 5;
+      doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
-      doc.text(orgName.toUpperCase(), leftX, contentY);
+      
+      // Split text if too long and use first line only
+      const orgLines = doc.splitTextToSize(orgName.toUpperCase(), maxOrgWidth);
+      doc.text(orgLines[0], leftX, contentY);
+      
+      // Show second line if organization name wrapped
+      let subtitleY = contentY + 5;
+      if (orgLines.length > 1) {
+        doc.setFontSize(11);
+        doc.text(orgLines[1], leftX, contentY + 5);
+        subtitleY = contentY + 10;
+      }
 
       // Subtitle/tagline
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
-      doc.text(orgSubtitle, leftX, contentY + 6);
+      doc.text(orgSubtitle, leftX, subtitleY);
 
       // RIGHT SIDE: Carer name prominently + branch/date
-      const rightX = pageWidth - 15;
+      // Calculate max width for right side text
+      const maxRightWidth = rightX - (pageWidth * 0.52);
 
-      // Carer name (large, like "Jupiter" in reference)
-      doc.setFontSize(18);
+      // Carer name (with width constraint)
+      doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-      doc.text(carerName, rightX, 18, { align: 'right' });
+      const carerLines = doc.splitTextToSize(carerName, maxRightWidth);
+      doc.text(carerLines[0], rightX, 18, { align: 'right' });
 
       // Branch name
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
-      doc.text(`Branch: ${branchName}`, rightX, 26, { align: 'right' });
+      const branchText = branchName.length > 30 ? branchName.substring(0, 27) + '...' : branchName;
+      doc.text(`Branch: ${branchText}`, rightX, 25, { align: 'right' });
 
       // Generated date
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
-      doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightX, 33, { align: 'right' });
+      doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightX, 31, { align: 'right' });
 
       // Separator line
       doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
