@@ -22,6 +22,7 @@ import {
   MapPin,
   CheckCircle2,
   Clipboard,
+  ClipboardList,
   Pill,
   FileText,
   Camera,
@@ -4408,107 +4409,6 @@ const CarerVisitWorkflow = () => {
                      )}
                    </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-medium text-gray-700">Visit Details</h4>
-                      <ul className="mt-2 text-sm space-y-1">
-                        <li><span className="text-gray-500">Client:</span> {currentAppointment?.clients?.first_name} {currentAppointment?.clients?.last_name}</li>
-                        <li><span className="text-gray-500">Address:</span> {currentAppointment?.clients?.address}</li>
-                        <li><span className="text-gray-500">Date:</span> {format(new Date(currentAppointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
-                        <li><span className="text-gray-500">Visit Duration:</span> {isViewOnly && visitRecord?.actual_duration_minutes ? `${Math.floor(visitRecord.actual_duration_minutes / 60)}h ${visitRecord.actual_duration_minutes % 60}m` : formatTime(visitTimer)}</li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-gray-700">Tasks Summary</h4>
-                      <div className="mt-2 text-sm space-y-1">
-                        <p><span className="text-gray-500">Completed Tasks:</span> {tasks?.filter(t => t.is_completed).length || 0} of {tasks?.length || 0}</p>
-                        <p><span className="text-gray-500">Medications Administered:</span> {medications?.filter(m => m.is_administered).length || 0} of {medications?.length || 0}</p>
-                        <p><span className="text-gray-500">Goals Progress:</span> {carePlanGoals?.filter((g: any) => g.status === 'completed' || g.status === 'achieved').length || 0} of {carePlanGoals?.length || 0}</p>
-                        <p><span className="text-gray-500">Activities Completed:</span> {carePlanActivities?.filter((a: any) => a.status === 'completed').length || 0} of {carePlanActivities?.length || 0}</p>
-                        <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings?.length || 0}</p>
-                        <p><span className="text-gray-500">Events Recorded:</span> {events?.length || 0}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Dietary Summary Section */}
-                    <div>
-                      <h4 className="font-medium text-gray-700">Dietary Summary</h4>
-                      <div className="mt-2 text-sm space-y-1">
-                        {/* Dietary Tasks */}
-                        {(() => {
-                          const dietaryTaskCategories = ['dietary', 'meal', 'nutrition', 'food', 'feeding'];
-                          const dietaryTasks = tasks?.filter(t => 
-                            dietaryTaskCategories.some(cat => 
-                              t.task_category?.toLowerCase().includes(cat) ||
-                              t.task_name?.toLowerCase().includes(cat)
-                            )
-                          ) || [];
-                          const completedDietaryTasks = dietaryTasks.filter(t => t.is_completed).length;
-                          return (
-                            <p>
-                              <span className="text-gray-500">Dietary Tasks:</span>{' '}
-                              {dietaryTasks.length > 0 
-                                ? `${completedDietaryTasks} of ${dietaryTasks.length} completed`
-                                : 'None assigned'}
-                            </p>
-                          );
-                        })()}
-                        
-                        {/* Meal Assistance */}
-                        <p>
-                          <span className="text-gray-500">Meal Assistance Required:</span>{' '}
-                          {dietaryRequirements?.feeding_assistance_required ? 'Yes' : 'No'}
-                        </p>
-                        
-                        {/* Fluid Intake */}
-                        <p>
-                          <span className="text-gray-500">Fluid Intake Recorded:</span>{' '}
-                          <span className="text-blue-600 font-medium">
-                            {fluidIntakeSummary?.total || 0} ml
-                          </span>
-                          {fluidIntakeSummary?.count ? ` (${fluidIntakeSummary.count} entries)` : ''}
-                          {fluidBalanceTarget?.daily_intake_target_ml && (
-                            <span className="text-gray-400">
-                              {' '}/ {fluidBalanceTarget.daily_intake_target_ml} ml target
-                            </span>
-                          )}
-                        </p>
-                        
-                        {/* Fluid Output */}
-                        <p>
-                          <span className="text-gray-500">Fluid Output Recorded:</span>{' '}
-                          <span className="text-orange-600 font-medium">
-                            {(fluidOutputSummary?.total || 0) + (urinaryOutputSummary?.total || 0)} ml
-                          </span>
-                          {((fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)) > 0 && (
-                            <span>
-                              {' '}({(fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)} entries)
-                            </span>
-                          )}
-                        </p>
-                        
-                        {/* Fluid Balance */}
-                        {(() => {
-                          const balance = (fluidIntakeSummary?.total || 0) - (fluidOutputSummary?.total || 0) - (urinaryOutputSummary?.total || 0);
-                          return (
-                            <p>
-                              <span className="text-gray-500">Fluid Balance:</span>{' '}
-                              <span className={`font-medium ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {balance >= 0 ? '+' : ''}{balance} ml
-                              </span>
-                            </p>
-                          );
-                        })()}
-                        
-                        {/* No dietary data message */}
-                        {!fluidIntakeSummary?.count && !fluidOutputSummary?.count && !urinaryOutputSummary?.count && (
-                          <p className="text-gray-400 italic">No fluid records for this visit</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
                   {/* Client Mood & Engagement Section */}
                   {!isViewOnly && (
                     <Card className="mt-6 bg-blue-50/50 border-blue-100">
@@ -4627,6 +4527,118 @@ const CarerVisitWorkflow = () => {
                       </CardContent>
                     </Card>
                   )}
+                  
+                  {/* Visit Summary Section - Below Visit Notes */}
+                  <Card className="mt-4 bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-900/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ClipboardList className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        Visit Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                          <h4 className="font-medium text-foreground dark:text-foreground">Visit Details</h4>
+                          <ul className="mt-2 text-sm space-y-1">
+                            <li><span className="text-muted-foreground">Client:</span> {currentAppointment?.clients?.first_name} {currentAppointment?.clients?.last_name}</li>
+                            <li><span className="text-muted-foreground">Address:</span> {currentAppointment?.clients?.address}</li>
+                            <li><span className="text-muted-foreground">Date:</span> {format(new Date(currentAppointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
+                            <li><span className="text-muted-foreground">Visit Duration:</span> {isViewOnly && visitRecord?.actual_duration_minutes ? `${Math.floor(visitRecord.actual_duration_minutes / 60)}h ${visitRecord.actual_duration_minutes % 60}m` : formatTime(visitTimer)}</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium text-foreground dark:text-foreground">Tasks Summary</h4>
+                          <div className="mt-2 text-sm space-y-1">
+                            <p><span className="text-muted-foreground">Completed Tasks:</span> {tasks?.filter(t => t.is_completed).length || 0} of {tasks?.length || 0}</p>
+                            <p><span className="text-muted-foreground">Medications Administered:</span> {medications?.filter(m => m.is_administered).length || 0} of {medications?.length || 0}</p>
+                            <p><span className="text-muted-foreground">Goals Progress:</span> {carePlanGoals?.filter((g: any) => g.status === 'completed' || g.status === 'achieved').length || 0} of {carePlanGoals?.length || 0}</p>
+                            <p><span className="text-muted-foreground">Activities Completed:</span> {carePlanActivities?.filter((a: any) => a.status === 'completed').length || 0} of {carePlanActivities?.length || 0}</p>
+                            <p><span className="text-muted-foreground">NEWS2 Readings:</span> {news2Readings?.length || 0}</p>
+                            <p><span className="text-muted-foreground">Events Recorded:</span> {events?.length || 0}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Dietary Summary Section */}
+                        <div>
+                          <h4 className="font-medium text-foreground dark:text-foreground">Dietary Summary</h4>
+                          <div className="mt-2 text-sm space-y-1">
+                            {/* Dietary Tasks */}
+                            {(() => {
+                              const dietaryTaskCategories = ['dietary', 'meal', 'nutrition', 'food', 'feeding'];
+                              const dietaryTasks = tasks?.filter(t => 
+                                dietaryTaskCategories.some(cat => 
+                                  t.task_category?.toLowerCase().includes(cat) ||
+                                  t.task_name?.toLowerCase().includes(cat)
+                                )
+                              ) || [];
+                              const completedDietaryTasks = dietaryTasks.filter(t => t.is_completed).length;
+                              return (
+                                <p>
+                                  <span className="text-muted-foreground">Dietary Tasks:</span>{' '}
+                                  {dietaryTasks.length > 0 
+                                    ? `${completedDietaryTasks} of ${dietaryTasks.length} completed`
+                                    : 'None assigned'}
+                                </p>
+                              );
+                            })()}
+                            
+                            {/* Meal Assistance */}
+                            <p>
+                              <span className="text-muted-foreground">Meal Assistance Required:</span>{' '}
+                              {dietaryRequirements?.feeding_assistance_required ? 'Yes' : 'No'}
+                            </p>
+                            
+                            {/* Fluid Intake */}
+                            <p>
+                              <span className="text-muted-foreground">Fluid Intake Recorded:</span>{' '}
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                {fluidIntakeSummary?.total || 0} ml
+                              </span>
+                              {fluidIntakeSummary?.count ? ` (${fluidIntakeSummary.count} entries)` : ''}
+                              {fluidBalanceTarget?.daily_intake_target_ml && (
+                                <span className="text-muted-foreground">
+                                  {' '}/ {fluidBalanceTarget.daily_intake_target_ml} ml target
+                                </span>
+                              )}
+                            </p>
+                            
+                            {/* Fluid Output */}
+                            <p>
+                              <span className="text-muted-foreground">Fluid Output Recorded:</span>{' '}
+                              <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                {(fluidOutputSummary?.total || 0) + (urinaryOutputSummary?.total || 0)} ml
+                              </span>
+                              {((fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)) > 0 && (
+                                <span>
+                                  {' '}({(fluidOutputSummary?.count || 0) + (urinaryOutputSummary?.count || 0)} entries)
+                                </span>
+                              )}
+                            </p>
+                            
+                            {/* Fluid Balance */}
+                            {(() => {
+                              const balance = (fluidIntakeSummary?.total || 0) - (fluidOutputSummary?.total || 0) - (urinaryOutputSummary?.total || 0);
+                              return (
+                                <p>
+                                  <span className="text-muted-foreground">Fluid Balance:</span>{' '}
+                                  <span className={`font-medium ${balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {balance >= 0 ? '+' : ''}{balance} ml
+                                  </span>
+                                </p>
+                              );
+                            })()}
+                            
+                            {/* No dietary data message */}
+                            {!fluidIntakeSummary?.count && !fluidOutputSummary?.count && !urinaryOutputSummary?.count && (
+                              <p className="text-muted-foreground italic">No fluid records for this visit</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
               
