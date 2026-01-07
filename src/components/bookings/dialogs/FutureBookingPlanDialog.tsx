@@ -26,6 +26,7 @@ import { Calendar, Download, Clock, Users } from "lucide-react";
 import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isAfter, parseISO } from "date-fns";
 import { generateFutureBookingPlanPDF, FutureBookingData } from "@/services/futureBookingPdfGenerator";
 import { Booking } from "../BookingTimeGrid";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 
 interface Carer {
   id: string;
@@ -51,6 +52,8 @@ export function FutureBookingPlanDialog({
 }: FutureBookingPlanDialogProps) {
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>("this-week");
+  const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
+  const [customEndDate, setCustomEndDate] = useState<Date>(addDays(new Date(), 30));
 
   const today = new Date();
 
@@ -79,13 +82,18 @@ export function FutureBookingPlanDialog({
           from: nextMonthStart,
           to: endOfMonth(nextMonthStart),
         };
+      case "custom":
+        return {
+          from: customStartDate,
+          to: customEndDate,
+        };
       default:
         return {
           from: now,
           to: addDays(now, 7),
         };
     }
-  }, [dateRangePreset]);
+  }, [dateRangePreset, customStartDate, customEndDate]);
 
   const filteredBookings = useMemo(() => {
     if (!selectedCarerId) return [];
@@ -129,11 +137,9 @@ export function FutureBookingPlanDialog({
     if (!selectedCarer || filteredBookings.length === 0) return;
 
     const bookingData: FutureBookingData[] = filteredBookings.map((booking) => {
-      const bookingDate = parseISO(booking.date);
-
       return {
         id: booking.id,
-        date: format(bookingDate, "EEE, d MMM yyyy"),
+        date: booking.date, // Keep as ISO format for PDF generator to parse
         startTime: booking.startTime,
         endTime: booking.endTime,
         clientName: booking.clientName || "Unknown Client",
@@ -195,10 +201,34 @@ export function FutureBookingPlanDialog({
                   <SelectItem value="next-week">Next Week</SelectItem>
                   <SelectItem value="this-month">This Month</SelectItem>
                   <SelectItem value="next-month">Next Month</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {/* Custom Date Range Pickers */}
+          {dateRangePreset === "custom" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Start Date</label>
+                <EnhancedDatePicker
+                  value={customStartDate}
+                  onChange={(date) => date && setCustomStartDate(date)}
+                  placeholder="Select start date"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">End Date</label>
+                <EnhancedDatePicker
+                  value={customEndDate}
+                  onChange={(date) => date && setCustomEndDate(date)}
+                  placeholder="Select end date"
+                  disabled={(date) => date < customStartDate}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Date Range Display */}
           <div className="text-sm text-muted-foreground">
