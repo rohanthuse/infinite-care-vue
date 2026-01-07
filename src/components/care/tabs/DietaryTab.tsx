@@ -336,23 +336,23 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                         {fluidTarget?.daily_intake_target_ml && (
                           <div className="space-y-1">
-                            <span className="text-muted-foreground">Intake Target</span>
-                            <p className="font-semibold text-lg">{fluidTarget.daily_intake_target_ml} ml</p>
+                            <span className="text-xs sm:text-sm text-muted-foreground">Intake Target</span>
+                            <p className="font-semibold text-base sm:text-lg">{fluidTarget.daily_intake_target_ml} ml</p>
                           </div>
                         )}
                         {fluidTarget?.daily_output_target_ml && (
                           <div className="space-y-1">
-                            <span className="text-muted-foreground">Output Target</span>
-                            <p className="font-semibold text-lg">{fluidTarget.daily_output_target_ml} ml</p>
+                            <span className="text-xs sm:text-sm text-muted-foreground">Output Target</span>
+                            <p className="font-semibold text-base sm:text-lg">{fluidTarget.daily_output_target_ml} ml</p>
                           </div>
                         )}
                         {fluidTarget?.alert_threshold_percentage && (
                           <div className="space-y-1">
-                            <span className="text-muted-foreground">Alert Below</span>
-                            <p className="font-semibold text-lg text-amber-600">{fluidTarget.alert_threshold_percentage}%</p>
+                            <span className="text-xs sm:text-sm text-muted-foreground">Alert Below</span>
+                            <p className="font-semibold text-base sm:text-lg text-amber-600">{fluidTarget.alert_threshold_percentage}%</p>
                           </div>
                         )}
                       </div>
@@ -380,28 +380,28 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
                         </span>
                       </div>
                     )}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="p-4 bg-primary/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Intake</div>
-                        <div className="text-2xl font-bold text-primary">{todayIntake?.total || 0} ml</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
+                        <div className="text-xs sm:text-sm text-muted-foreground">Intake</div>
+                        <div className="text-xl sm:text-2xl font-bold text-primary">{todayIntake?.total || 0} ml</div>
                         {fluidTarget?.daily_intake_target_ml && (
                           <div className="text-xs text-muted-foreground mt-1">
                             {intakeProgress}% of {fluidTarget.daily_intake_target_ml} ml
                           </div>
                         )}
                       </div>
-                      <div className="p-4 bg-secondary/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Output</div>
-                        <div className="text-2xl font-bold text-secondary-foreground">{todayOutput?.total || 0} ml</div>
+                      <div className="p-3 sm:p-4 bg-secondary/10 rounded-lg">
+                        <div className="text-xs sm:text-sm text-muted-foreground">Output</div>
+                        <div className="text-xl sm:text-2xl font-bold text-secondary-foreground">{todayOutput?.total || 0} ml</div>
                         {fluidTarget?.daily_output_target_ml && (
                           <div className="text-xs text-muted-foreground mt-1">
                             Target: {fluidTarget.daily_output_target_ml} ml
                           </div>
                         )}
                       </div>
-                      <div className="p-4 bg-accent/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Balance</div>
-                        <div className="text-2xl font-bold">{(todayIntake?.total || 0) - (todayOutput?.total || 0)} ml</div>
+                      <div className="p-3 sm:p-4 bg-accent/10 rounded-lg">
+                        <div className="text-xs sm:text-sm text-muted-foreground">Balance</div>
+                        <div className="text-xl sm:text-2xl font-bold">{(todayIntake?.total || 0) - (todayOutput?.total || 0)} ml</div>
                       </div>
                     </div>
                   </CardContent>
