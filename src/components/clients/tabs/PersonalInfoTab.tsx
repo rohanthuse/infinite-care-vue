@@ -303,8 +303,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       mobility_aids: db?.mobility_aids || cp?.mobility_aids || '',
       preferred_communication_method: db?.preferred_communication_method || cp?.preferred_communication_method || '',
       communication_aids: db?.communication_aids || cp?.communication_aids || '',
-      likes_preferences: db?.likes_preferences || cp?.likes_preferences || '',
-      dislikes_restrictions: db?.dislikes_restrictions || cp?.dislikes_restrictions || '',
       dos: db?.dos || cp?.dos || '',
       donts: db?.donts || cp?.donts || '',
       gp_name: db?.gp_name || cp?.gp_name || '',
@@ -397,8 +395,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     speech_difficulties: personalInfo?.speech_difficulties || false,
     cognitive_impairment: personalInfo?.cognitive_impairment || false,
     mobility_aids: personalInfo?.mobility_aids || '',
-    likes_preferences: personalInfo?.likes_preferences || '',
-    dislikes_restrictions: personalInfo?.dislikes_restrictions || '',
     dos: personalInfo?.dos || '',
     donts: personalInfo?.donts || '',
     gp_name: personalInfo?.gp_name || '',
@@ -444,8 +440,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         speech_difficulties: personalInfo?.speech_difficulties || false,
         cognitive_impairment: personalInfo?.cognitive_impairment || false,
         mobility_aids: mergedRelatedInfo.mobility_aids,
-        likes_preferences: mergedRelatedInfo.likes_preferences,
-        dislikes_restrictions: mergedRelatedInfo.dislikes_restrictions,
         dos: mergedRelatedInfo.dos,
         donts: mergedRelatedInfo.donts,
         gp_name: mergedRelatedInfo.gp_name,
@@ -562,8 +556,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         speech_difficulties: personalInfo.speech_difficulties || false,
         cognitive_impairment: personalInfo.cognitive_impairment || false,
         mobility_aids: personalInfo.mobility_aids || '',
-        likes_preferences: personalInfo.likes_preferences || '',
-        dislikes_restrictions: personalInfo.dislikes_restrictions || '',
         dos: personalInfo.dos || '',
         donts: personalInfo.donts || '',
         gp_name: personalInfo.gp_name || '',
@@ -1165,26 +1157,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   {editingTab === 'related-info' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="likes_preferences">Likes/Preferences</Label>
-                        <Textarea 
-                          id="likes_preferences"
-                          value={relatedInfoFormData.likes_preferences}
-                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, likes_preferences: e.target.value }))}
-                          placeholder="Things the client likes or prefers"
-                          rows={4}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dislikes_restrictions">Dislikes/Restrictions</Label>
-                        <Textarea 
-                          id="dislikes_restrictions"
-                          value={relatedInfoFormData.dislikes_restrictions}
-                          onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dislikes_restrictions: e.target.value }))}
-                          placeholder="Things the client dislikes or restrictions"
-                          rows={4}
-                        />
-                      </div>
-                      <div>
                         <Label htmlFor="dos">Do's</Label>
                         <Textarea 
                           id="dos"
@@ -1207,14 +1179,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
-                        <p className="mt-1 whitespace-pre-wrap">{mergedRelatedInfo.likes_preferences || 'Not provided'}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
-                        <p className="mt-1 whitespace-pre-wrap">{mergedRelatedInfo.dislikes_restrictions || 'Not provided'}</p>
-                      </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
                         <p className="mt-1 whitespace-pre-wrap">{mergedRelatedInfo.dos || 'Not provided'}</p>

@@ -968,61 +968,7 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="about_me.how_to_communicate_with_me"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>How to communicate with me</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Best ways to communicate with the client..."
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Do's & Don'ts Section */}
-              <FormField
-                control={form.control}
-                name="about_me.likes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Likes/Preferences</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Things the client likes or prefers..."
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="about_me.dislikes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dislikes/Restrictions</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Things the client dislikes or restrictions..."
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="about_me.dos"

@@ -196,12 +196,6 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
             {renderField('How and When to Support Me', data.how_and_when_to_support_me)}
           </div>
 
-          {/* Do's & Don'ts Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {renderField('Likes/Preferences', data.likes)}
-            {renderField('Dislikes/Restrictions', data.dislikes)}
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField("Do's", data.dos || data.please_do)}
             {renderField("Don'ts", data.donts || data.please_dont)}
