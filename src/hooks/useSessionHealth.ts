@@ -6,6 +6,7 @@ interface SessionHealth {
   isHealthy: boolean;
   validateBeforeMutation: () => Promise<boolean>;
   markSessionRefreshed: () => void;
+  markSessionUnhealthy: () => void;
 }
 
 const SESSION_STALE_THRESHOLD = 20 * 60 * 1000; // 20 minutes
@@ -30,6 +31,7 @@ export const useSessionHealth = (navigateToLogin: () => void): SessionHealth => 
           return false;
         }
         lastRefreshTimeRef.current = Date.now();
+        setIsHealthy(true);
         console.log('[useSessionHealth] Session refreshed successfully');
       } catch (err) {
         console.error('[useSessionHealth] Refresh error:', err);
@@ -63,9 +65,14 @@ export const useSessionHealth = (navigateToLogin: () => void): SessionHealth => 
     setIsHealthy(true);
   }, []);
   
+  const markSessionUnhealthy = useCallback(() => {
+    setIsHealthy(false);
+  }, []);
+  
   return {
     isHealthy,
     validateBeforeMutation,
     markSessionRefreshed,
+    markSessionUnhealthy,
   };
 };
