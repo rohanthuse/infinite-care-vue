@@ -14,14 +14,17 @@ interface UrinaryOutputSectionProps {
   clientId: string;
   date: string;
   visitRecordId?: string;
+  validateSession?: () => Promise<boolean>;
 }
+
+const MUTATION_TIMEOUT_MS = 15000;
 
 const COLLECTION_METHODS = ['Toilet', 'Pad', 'Catheter', 'Bedpan', 'Urinal', 'Other'];
 const COLOURS = ['Pale yellow', 'Yellow', 'Dark amber', 'Brown', 'Red-tinged', 'Clear', 'Other'];
 const ODOURS = ['Normal', 'Strong', 'Offensive', 'Sweet', 'Unusual'];
 const ESTIMATES = ['Small', 'Moderate', 'Large'];
 
-export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryOutputSectionProps) {
+export function UrinaryOutputSection({ clientId, date, visitRecordId, validateSession }: UrinaryOutputSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useUrinaryOutputRecords(clientId, date);
   const addRecord = useAddUrinaryOutputRecord();
@@ -39,7 +42,7 @@ export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryO
 
   const [useEstimate, setUseEstimate] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!clientId) {
       console.error('[UrinaryOutput] Save failed: clientId is missing');
       toast({ 
@@ -53,6 +56,19 @@ export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryO
     if (!useEstimate && (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0)) return;
     if (useEstimate && !newRecord.amount_estimate) return;
 
+    // Validate session before mutation
+    if (validateSession) {
+      const isValid = await validateSession();
+      if (!isValid) {
+        toast({ 
+          title: 'Session Expired', 
+          description: 'Please refresh the page and try again.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
 
     console.log('[UrinaryOutput] Attempting to save:', {
@@ -60,6 +76,20 @@ export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryO
       record_date: date,
       collection_method: newRecord.collection_method
     });
+
+    // Timeout protection
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let hasTimedOut = false;
+
+    timeoutId = setTimeout(() => {
+      hasTimedOut = true;
+      console.warn('[UrinaryOutput] Mutation timeout after', MUTATION_TIMEOUT_MS, 'ms');
+      toast({ 
+        title: 'Timeout', 
+        description: 'Request timed out. Please check your connection and try again.', 
+        variant: 'destructive' 
+      });
+    }, MUTATION_TIMEOUT_MS);
 
     addRecord.mutate({
       client_id: clientId,
@@ -73,19 +103,25 @@ export function UrinaryOutputSection({ clientId, date, visitRecordId }: UrinaryO
       odour: newRecord.odour || undefined,
       discomfort_observations: newRecord.discomfort_observations || undefined,
     }, {
+      onSettled: () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      },
       onSuccess: () => {
-        console.log('[UrinaryOutput] Save successful');
-        setNewRecord({
-          time: format(new Date(), 'HH:mm'),
-          collection_method: 'Toilet',
-          amount_ml: '',
-          amount_estimate: '',
-          colour: 'Pale yellow',
-          odour: 'Normal',
-          discomfort_observations: '',
-        });
+        if (!hasTimedOut) {
+          console.log('[UrinaryOutput] Save successful');
+          setNewRecord({
+            time: format(new Date(), 'HH:mm'),
+            collection_method: 'Toilet',
+            amount_ml: '',
+            amount_estimate: '',
+            colour: 'Pale yellow',
+            odour: 'Normal',
+            discomfort_observations: '',
+          });
+        }
       },
       onError: (error) => {
+        if (timeoutId) clearTimeout(timeoutId);
         console.error('[UrinaryOutput] Save failed:', error);
       }
     });
