@@ -84,24 +84,25 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg p-4 bg-muted/30">
-        <h3 className="font-medium mb-3 flex items-center gap-2">
+      <div className="border rounded-lg p-3 sm:p-4 bg-muted/30">
+        <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
           <Plus className="h-4 w-4" />
           Add Intake Entry
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <div>
-            <label className="text-sm text-muted-foreground">Time</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Time</label>
             <Input
               type="time"
               value={newRecord.time}
               onChange={(e) => setNewRecord({ ...newRecord, time: e.target.value })}
+              className="h-9 sm:h-10"
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Fluid Type</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Fluid Type</label>
             <Select value={newRecord.fluid_type} onValueChange={(v) => setNewRecord({ ...newRecord, fluid_type: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -112,7 +113,7 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
             </Select>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Amount (ml)</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Amount (ml)</label>
             <Input
               type="number"
               min="1"
@@ -120,12 +121,13 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
               value={newRecord.amount_ml}
               onChange={(e) => setNewRecord({ ...newRecord, amount_ml: e.target.value })}
               placeholder="250"
+              className="h-9 sm:h-10"
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Method</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Method</label>
             <Select value={newRecord.method} onValueChange={(v) => setNewRecord({ ...newRecord, method: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -135,8 +137,8 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
-            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full">
+          <div className="col-span-2 sm:col-span-1 flex items-end">
+            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full h-9 sm:h-10 text-sm">
               {addRecord.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -149,7 +151,7 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
           </div>
         </div>
         <div className="mt-3">
-          <label className="text-sm text-muted-foreground">Comments (optional)</label>
+          <label className="text-xs sm:text-sm text-muted-foreground">Comments (optional)</label>
           <Textarea
             value={newRecord.comments}
             onChange={(e) => setNewRecord({ ...newRecord, comments: e.target.value })}
@@ -159,57 +161,88 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Type of Fluid</TableHead>
-              <TableHead>Amount (ml)</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Comments</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <div className="border rounded-lg overflow-hidden">
+        {/* Mobile card view */}
+        <div className="sm:hidden divide-y">
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground">Loading...</div>
+          ) : records.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No intake records for this date</div>
+          ) : (
+            records.map((record) => (
+              <div key={record.id} className="p-3 flex justify-between items-start gap-2">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="font-medium text-sm">{format(new Date(record.time), 'HH:mm')} - {record.fluid_type}</div>
+                  <div className="text-sm text-muted-foreground">{record.amount_ml} ml via {record.method}</div>
+                  {record.comments && <div className="text-xs text-muted-foreground truncate">{record.comments}</div>}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
+                  disabled={deleteRecord.isPending}
+                  className="flex-shrink-0"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden sm:block overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableHead>Time</TableHead>
+                <TableHead>Type of Fluid</TableHead>
+                <TableHead>Amount (ml)</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Comments</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-            ) : records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No intake records for this date
-                </TableCell>
-              </TableRow>
-            ) : (
-              records.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>{format(new Date(record.time), 'HH:mm')}</TableCell>
-                  <TableCell>{record.fluid_type}</TableCell>
-                  <TableCell className="font-medium">{record.amount_ml} ml</TableCell>
-                  <TableCell>{record.method}</TableCell>
-                  <TableCell className="max-w-xs truncate">{record.comments || '-'}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
-                      disabled={deleteRecord.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : records.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    No intake records for this date
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                records.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{format(new Date(record.time), 'HH:mm')}</TableCell>
+                    <TableCell>{record.fluid_type}</TableCell>
+                    <TableCell className="font-medium">{record.amount_ml} ml</TableCell>
+                    <TableCell>{record.method}</TableCell>
+                    <TableCell className="max-w-xs truncate">{record.comments || '-'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
+                        disabled={deleteRecord.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="flex justify-between items-center p-4 bg-primary/10 rounded-lg">
-        <span className="font-medium">Total Intake (ml):</span>
-        <span className="text-2xl font-bold text-primary">{totalIntake} ml</span>
+      <div className="flex justify-between items-center p-3 sm:p-4 bg-primary/10 rounded-lg">
+        <span className="font-medium text-sm sm:text-base">Total Intake (ml):</span>
+        <span className="text-xl sm:text-2xl font-bold text-primary">{totalIntake} ml</span>
       </div>
     </div>
   );

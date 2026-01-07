@@ -32,12 +32,12 @@ export function FluidBalanceRecordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-full max-w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <DialogTitle>Fluid Intake & Output Record</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <DialogTitle className="text-lg sm:text-xl">Fluid Intake & Output Record</DialogTitle>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Service User: {clientName}
               </p>
             </div>
@@ -45,8 +45,9 @@ export function FluidBalanceRecordDialog({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
+                  size="sm"
                   className={cn(
-                    'justify-start text-left font-normal',
+                    'justify-start text-left font-normal w-full sm:w-auto',
                     !selectedDate && 'text-muted-foreground'
                   )}
                 >
@@ -67,11 +68,11 @@ export function FluidBalanceRecordDialog({
         </DialogHeader>
 
         <Tabs defaultValue="intake" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="intake">Intake Records</TabsTrigger>
-            <TabsTrigger value="output">Output Records</TabsTrigger>
-            <TabsTrigger value="urinary">Urinary Output</TabsTrigger>
-            <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="intake" className="text-xs sm:text-sm py-2">Intake</TabsTrigger>
+            <TabsTrigger value="output" className="text-xs sm:text-sm py-2">Output</TabsTrigger>
+            <TabsTrigger value="urinary" className="text-xs sm:text-sm py-2">Urinary</TabsTrigger>
+            <TabsTrigger value="summary" className="text-xs sm:text-sm py-2">Summary</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-auto mt-4">

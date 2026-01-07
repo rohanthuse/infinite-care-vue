@@ -89,17 +89,17 @@ export function FluidBalanceSummary({ clientId, date }: FluidBalanceSummaryProps
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <Droplets className="h-4 w-4 text-primary" />
               Total Intake
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{totalIntake} ml</div>
-            <div className="text-sm text-muted-foreground mt-1">
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-primary">{totalIntake} ml</div>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               Target: {intakeTarget} ml ({intakePercentage.toFixed(0)}%)
             </div>
             <Progress value={Math.min(intakePercentage, 100)} className="mt-2" />
@@ -107,23 +107,23 @@ export function FluidBalanceSummary({ clientId, date }: FluidBalanceSummaryProps
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-secondary" />
               Total Output
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-secondary">{totalOutput} ml</div>
-            <div className="text-sm text-muted-foreground mt-1">
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-secondary">{totalOutput} ml</div>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               Urinary: {urinarySummary?.total || 0} ml | Other: {outputSummary?.total || 0} ml
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
               {fluidBalance >= 0 ? (
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
               ) : (
@@ -132,11 +132,11 @@ export function FluidBalanceSummary({ clientId, date }: FluidBalanceSummaryProps
               Fluid Balance
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className={`text-3xl font-bold ${fluidBalance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+          <CardContent className="pt-0">
+            <div className={`text-2xl sm:text-3xl font-bold ${fluidBalance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
               {fluidBalance > 0 && '+'}{fluidBalance} ml
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               {fluidBalance >= 0 ? 'Positive balance' : 'Negative balance - monitor closely'}
             </div>
           </CardContent>

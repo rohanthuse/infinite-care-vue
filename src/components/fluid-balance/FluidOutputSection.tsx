@@ -102,24 +102,25 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg p-4 bg-muted/30">
-        <h3 className="font-medium mb-3 flex items-center gap-2">
+      <div className="border rounded-lg p-3 sm:p-4 bg-muted/30">
+        <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
           <Plus className="h-4 w-4" />
           Add Output Entry
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <div>
-            <label className="text-sm text-muted-foreground">Time</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Time</label>
             <Input
               type="time"
               value={newRecord.time}
               onChange={(e) => setNewRecord({ ...newRecord, time: e.target.value })}
+              className="h-9 sm:h-10"
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Output Type</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Output Type</label>
             <Select value={newRecord.output_type} onValueChange={(v) => setNewRecord({ ...newRecord, output_type: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -130,7 +131,7 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
             </Select>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
+            <label className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
               Amount
               <label className="flex items-center gap-1 text-xs">
                 <input
@@ -139,12 +140,12 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
                   onChange={(e) => setUseEstimate(e.target.checked)}
                   className="rounded"
                 />
-                Estimate
+                Est.
               </label>
             </label>
             {useEstimate ? (
               <Select value={newRecord.amount_estimate} onValueChange={(v) => setNewRecord({ ...newRecord, amount_estimate: v })}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,13 +161,14 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
                 value={newRecord.amount_ml}
                 onChange={(e) => setNewRecord({ ...newRecord, amount_ml: e.target.value })}
                 placeholder="ml"
+                className="h-9 sm:h-10"
               />
             )}
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Appearance</label>
+            <label className="text-xs sm:text-sm text-muted-foreground">Appearance</label>
             <Select value={newRecord.appearance} onValueChange={(v) => setNewRecord({ ...newRecord, appearance: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -176,8 +178,8 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
-            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full">
+          <div className="col-span-2 sm:col-span-1 flex items-end">
+            <Button onClick={handleAdd} disabled={addRecord.isPending || !clientId} className="w-full h-9 sm:h-10 text-sm">
               {addRecord.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -190,7 +192,7 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
           </div>
         </div>
         <div className="mt-3">
-          <label className="text-sm text-muted-foreground">Comments (optional)</label>
+          <label className="text-xs sm:text-sm text-muted-foreground">Comments (optional)</label>
           <Textarea
             value={newRecord.comments}
             onChange={(e) => setNewRecord({ ...newRecord, comments: e.target.value })}
@@ -200,59 +202,95 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Type of Output</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Appearance</TableHead>
-              <TableHead>Comments</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
-              </TableRow>
-            ) : records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No output records for this date
-                </TableCell>
-              </TableRow>
-            ) : (
-              records.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>{format(new Date(record.time), 'HH:mm')}</TableCell>
-                  <TableCell>{record.output_type}</TableCell>
-                  <TableCell className="font-medium">
+      <div className="border rounded-lg overflow-hidden">
+        {/* Mobile card view */}
+        <div className="sm:hidden divide-y">
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground">Loading...</div>
+          ) : records.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No output records for this date</div>
+          ) : (
+            records.map((record) => (
+              <div key={record.id} className="p-3 flex justify-between items-start gap-2">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="font-medium text-sm">{format(new Date(record.time), 'HH:mm')} - {record.output_type}</div>
+                  <div className="text-sm text-muted-foreground">
                     {record.amount_ml ? `${record.amount_ml} ml` : record.amount_estimate || '-'}
-                  </TableCell>
-                  <TableCell>{getAppearanceBadge(record.appearance)}</TableCell>
-                  <TableCell className="max-w-xs truncate">{record.comments || '-'}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
-                      disabled={deleteRecord.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getAppearanceBadge(record.appearance)}
+                    {record.comments && <span className="text-xs text-muted-foreground truncate">{record.comments}</span>}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
+                  disabled={deleteRecord.isPending}
+                  className="flex-shrink-0"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden sm:block overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Time</TableHead>
+                <TableHead>Type of Output</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Appearance</TableHead>
+                <TableHead>Comments</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : records.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    No output records for this date
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                records.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{format(new Date(record.time), 'HH:mm')}</TableCell>
+                    <TableCell>{record.output_type}</TableCell>
+                    <TableCell className="font-medium">
+                      {record.amount_ml ? `${record.amount_ml} ml` : record.amount_estimate || '-'}
+                    </TableCell>
+                    <TableCell>{getAppearanceBadge(record.appearance)}</TableCell>
+                    <TableCell className="max-w-xs truncate">{record.comments || '-'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteRecord.mutate({ id: record.id, clientId, date })}
+                        disabled={deleteRecord.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="flex justify-between items-center p-4 bg-secondary/10 rounded-lg">
-        <span className="font-medium">Total Output (ml):</span>
-        <span className="text-2xl font-bold text-secondary">{totalOutput} ml</span>
+      <div className="flex justify-between items-center p-3 sm:p-4 bg-secondary/10 rounded-lg">
+        <span className="font-medium text-sm sm:text-base">Total Output (ml):</span>
+        <span className="text-xl sm:text-2xl font-bold text-secondary">{totalOutput} ml</span>
       </div>
     </div>
   );
