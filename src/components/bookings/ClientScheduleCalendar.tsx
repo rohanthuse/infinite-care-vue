@@ -255,9 +255,16 @@ export function ClientScheduleCalendar({
         // Group bookings by day
         const clientBookings = bookings.filter(b => b.clientId === client.id);
         
+        // Filter to only bookings within this week's date range for accurate weekly total
+        const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+        const weekEndStr = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+        const weeklyClientBookings = clientBookings.filter(b => 
+          b.date >= weekStartStr && b.date <= weekEndStr
+        );
+        
         // Group by time slot to merge multiple carers
         const groupedByDate: Record<string, Booking[]> = {};
-        clientBookings.forEach(booking => {
+        weeklyClientBookings.forEach(booking => {
           if (!groupedByDate[booking.date]) {
             groupedByDate[booking.date] = [];
           }
@@ -279,7 +286,7 @@ export function ClientScheduleCalendar({
         
         // Calculate total hours for the week (accounting for multiple carers)
         // Group bookings by time slot to identify multi-carer scenarios
-        const weekGrouped = groupBookingsByTimeSlot(clientBookings);
+        const weekGrouped = groupBookingsByTimeSlot(weeklyClientBookings);
         let totalWeekHours = 0;
         
         weekGrouped.forEach((bookingsInSlot) => {
