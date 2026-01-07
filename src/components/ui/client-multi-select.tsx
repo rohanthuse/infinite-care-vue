@@ -15,6 +15,8 @@ interface ClientMultiSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** When true (default), only shows active clients. Set to false for historical data views. */
+  activeOnly?: boolean;
 }
 
 export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
@@ -23,7 +25,8 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
   onChange,
   placeholder = "Select clients...",
   disabled = false,
-  className
+  className,
+  activeOnly = true  // Default to active-only for new booking creation
 }) => {
   const [open, setOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -36,10 +39,12 @@ export const ClientMultiSelect: React.FC<ClientMultiSelectProps> = ({
     setClientStatus
   } = useSearchableClients(branchId);
 
-  // Ensure only active clients are shown for new bookings
+  // Set client status filter based on activeOnly prop
+  // For new bookings: show only active clients
+  // For historical views: show all clients including inactive
   React.useEffect(() => {
-    setClientStatus('active');
-  }, [setClientStatus]);
+    setClientStatus(activeOnly ? 'active' : 'all');
+  }, [setClientStatus, activeOnly]);
 
   // Debounced search
   React.useEffect(() => {
