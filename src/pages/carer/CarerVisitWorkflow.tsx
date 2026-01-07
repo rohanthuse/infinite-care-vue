@@ -1739,6 +1739,9 @@ const CarerVisitWorkflow = () => {
   };
   
   const [isCompletingVisit, setIsCompletingVisit] = useState(false);
+  
+  // Ref to prevent double-clicks on Complete Visit button
+  const completionInProgressRef = useRef(false);
 
   // Debug button state - helps identify why button is disabled
   useEffect(() => {
@@ -1823,17 +1826,37 @@ const CarerVisitWorkflow = () => {
   const handleCompleteVisit = async (retryCount = 0) => {
     console.log('Starting visit completion process...');
     
+    // Prevent double-clicks and re-entry
+    if (completionInProgressRef.current) {
+      console.log('[handleCompleteVisit] Already in progress, ignoring');
+      return;
+    }
+    completionInProgressRef.current = true;
+    
     // Check connectivity before starting
     if (!navigator.onLine) {
       toast.error('No internet connection. Please check your network and try again.');
+      completionInProgressRef.current = false;
       return;
     }
     
-    // Validate session before starting - critical for long visits
+    // Validate session before starting - with 10s timeout
     console.log('[handleCompleteVisit] Validating session...');
-    const sessionValid = await ensureValidSession();
-    if (!sessionValid) {
-      return; // User will be redirected to login
+    try {
+      const sessionValid = await withTimeout(
+        ensureValidSession(),
+        10000,
+        'Session validation timed out. Please try again.'
+      );
+      if (!sessionValid) {
+        completionInProgressRef.current = false;
+        return; // User will be redirected to login
+      }
+    } catch (sessionError) {
+      console.error('[handleCompleteVisit] Session validation failed:', sessionError);
+      toast.error('Session validation failed. Please try again.');
+      completionInProgressRef.current = false;
+      return;
     }
     
     // Pre-completion: Flush pending draft saves with timeout (non-blocking)
@@ -1865,6 +1888,7 @@ const CarerVisitWorkflow = () => {
       });
       
       toast.error(`Missing required data: ${missingData.join(', ')}`);
+      completionInProgressRef.current = false;
       return;
     }
 
@@ -1872,6 +1896,7 @@ const CarerVisitWorkflow = () => {
     if (!carerSignature) {
       toast.error('Carer signature is required to complete the visit');
       setActiveTab("sign-off");
+      completionInProgressRef.current = false;
       return;
     }
 
@@ -1879,24 +1904,25 @@ const CarerVisitWorkflow = () => {
     setIsCompletingVisit(true);
     setShowCompletionModal(true);
     setCompletionStatus('completing');
-    setCompletionStep('Saving visit record...');
-    setCompletionProgress(10);
+    setCompletionStep('Validating session...');
+    setCompletionProgress(5);
     setCompletionError(undefined);
     setNextBooking(null);
     
-    // Global timeout to prevent infinite hangs (2 minutes)
+    // Global timeout to prevent infinite hangs (90 seconds - reduced from 2 minutes)
     const globalTimeoutId = setTimeout(() => {
-      console.error('Global completion timeout reached after 2 minutes');
-      setCompletionError('The visit completion process is taking too long. Please try again or contact support.');
+      console.error('Global completion timeout reached after 90 seconds');
+      setCompletionError('The process is taking too long. Your visit data has been saved. Please check your connection and try again.');
       setCompletionStatus('error');
       setIsCompletingVisit(false);
-    }, 120000);
+      completionInProgressRef.current = false;
+    }, 90000);
 
     try {
-      // Step 1: Complete visit record - with 60s timeout (increased for long sessions)
+      // Step 1: Complete visit record - with 45s timeout
       console.log('Step 1: Completing visit record...');
       setCompletionStep('Saving signatures and visit data...');
-      setCompletionProgress(20);
+      setCompletionProgress(15);
       
       const completedVisit = await withTimeout(
         completeVisit.mutateAsync({
@@ -1907,14 +1933,15 @@ const CarerVisitWorkflow = () => {
           visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks completed, ${medications?.filter(m => m.is_administered).length || 0} medications administered, and ${events?.length || 0} events recorded.`,
           visitPhotos: uploadedPhotos,
         }),
-        60000, // Increased from 30s to 60s for reliability on slow connections
+        45000, // Reduced from 60s to 45s for faster feedback
         'Saving visit data timed out. Please check your connection and try again.'
       );
+      
+      setCompletionProgress(35);
 
-      // Step 2: Fetch booking details for service report - with 15s timeout
+      // Step 2: Fetch booking details for service report - with 10s timeout
       console.log('Step 2: Fetching organization ID for service report...');
       setCompletionStep('Preparing service report...');
-      setCompletionProgress(40);
       
       const bookingResult = await withTimeout(
         Promise.resolve(
@@ -1924,15 +1951,16 @@ const CarerVisitWorkflow = () => {
             .eq('id', currentAppointment.id)
             .single()
         ),
-        15000,
+        10000, // Reduced from 15s to 10s
         'Fetching booking details timed out.'
       );
       const bookingData = bookingResult.data;
+      
+      setCompletionProgress(45);
 
-      // Step 3: Generate and create service report
+      // Step 3: Generate service report (local operation, no network)
       console.log('Step 3: Generating service report...');
       setCompletionStep('Generating service report...');
-      setCompletionProgress(55);
       
       const serviceReportData = generateServiceReportFromVisit({
         visitRecord: {
@@ -1967,30 +1995,38 @@ const CarerVisitWorkflow = () => {
         },
       });
 
-      // Step 4: Upsert service report (update if exists, create if not) - with 30s timeout
+      // Step 4: Upsert service report (update if exists, create if not)
       console.log('Step 4: Upserting service report in database...');
       setCompletionStep('Saving service report...');
-      setCompletionProgress(70);
+      setCompletionProgress(55);
       
-      // Check if report already exists for this booking
-      const existingReportResult = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from('client_service_reports')
-            .select('id')
-            .eq('booking_id', currentAppointment.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        ),
-        15000,
-        'Checking for existing report timed out.'
-      );
-      const existingReport = existingReportResult.data;
+      // Check if report already exists for this booking - with reduced timeout
+      let existingReportId: string | null = null;
+      try {
+        const existingReportResult = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from('client_service_reports')
+              .select('id')
+              .eq('booking_id', currentAppointment.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          ),
+          5000, // Reduced from 15s to 5s
+          'Report check timed out.'
+        );
+        existingReportId = existingReportResult.data?.id || null;
+      } catch (checkError) {
+        console.warn('[handleCompleteVisit] Report existence check failed, creating new:', checkError);
+        // Continue with creation - duplicates can be handled later
+      }
       
-      if (existingReport) {
-        // Update existing report - with 30s timeout
-        console.log('Updating existing service report:', existingReport.id);
+      setCompletionProgress(65);
+      
+      if (existingReportId) {
+        // Update existing report - with 20s timeout
+        console.log('Updating existing service report:', existingReportId);
         const updateResult = await withTimeout(
           Promise.resolve(
             supabase
@@ -1999,26 +2035,27 @@ const CarerVisitWorkflow = () => {
                 ...serviceReportData,
                 updated_at: new Date().toISOString(),
               })
-              .eq('id', existingReport.id)
+              .eq('id', existingReportId)
           ),
-          30000,
+          20000, // Reduced from 30s to 20s
           'Updating service report timed out.'
         );
         
         if (updateResult.error) throw updateResult.error;
       } else {
-        // Create new report - with 30s timeout
+        // Create new report - with 20s timeout
         await withTimeout(
           createServiceReport.mutateAsync(serviceReportData),
-          30000,
+          20000, // Reduced from 30s to 20s
           'Creating service report timed out.'
         );
       }
+      
+      setCompletionProgress(80);
 
-      // Step 5: Update booking status - with 30s timeout
+      // Step 5: Update booking status - with 15s timeout
       console.log('Step 5: Updating booking status to completed...');
       setCompletionStep('Marking booking as complete...');
-      setCompletionProgress(85);
       
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
@@ -2032,7 +2069,7 @@ const CarerVisitWorkflow = () => {
       try {
         await withTimeout(
           bookingAttendance.mutateAsync(attendanceData),
-          30000,
+          15000, // Reduced from 30s to 15s
           'Marking booking as complete timed out.'
         );
       } catch (attendanceError) {
@@ -2131,6 +2168,7 @@ const CarerVisitWorkflow = () => {
       // CRITICAL: Always reset loading state to prevent stuck button
       // The completion modal handles the success/error UX separately
       setIsCompletingVisit(false);
+      completionInProgressRef.current = false;
     }
   };
 
@@ -4371,6 +4409,8 @@ const CarerVisitWorkflow = () => {
                         size="lg"
                         disabled={
                           isCompletingVisit || 
+                          completeVisit.isPending ||
+                          createServiceReport.isPending ||
                           !carerSignature || 
                           !clientMood ||
                           !clientEngagement ||

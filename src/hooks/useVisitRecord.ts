@@ -272,29 +272,7 @@ export const useVisitRecord = (bookingId?: string) => {
 
         if (error) {
           console.error('[completeVisit] Update error:', error);
-          
-          // Retry logic for timeout errors
-          if (error.code === '57014' && retryCount < 2) {
-            const delayMs = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s
-            console.log(`[completeVisit] Timeout detected, retrying after ${delayMs}ms...`);
-            toast.info(`Database busy, retrying in ${delayMs / 1000}s...`);
-            
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-            
-            // Recursive retry
-            const result = await completeVisit.mutateAsync({
-              visitRecordId,
-              visitNotes,
-              clientSignature,
-              staffSignature,
-              visitSummary,
-              visitPhotos,
-              retryCount: retryCount + 1
-            });
-            
-            return result;
-          }
-          
+          // Propagate error to caller for unified retry handling
           throw error;
         }
         
