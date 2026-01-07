@@ -64,6 +64,11 @@ interface AboutMeTabProps {
     nationality?: string;
     primary_language?: string;
     preferred_interpreter_language?: string;
+    // New fields - Do's & Don'ts
+    likes?: string;
+    dislikes?: string;
+    dos?: string;
+    donts?: string;
   } | null;
   isLoadingPersonalInfo?: boolean;
   isLoadingPersonalCare?: boolean;
@@ -357,6 +362,47 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Do's & Don'ts */}
+      {aboutMeData && (aboutMeData.likes || aboutMeData.dislikes || aboutMeData.dos || aboutMeData.donts) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Do's & Don'ts</CardTitle>
+            </div>
+            <CardDescription>Preferences and things to remember</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {aboutMeData.likes && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Likes/Preferences</h3>
+                  <p className="text-base">{aboutMeData.likes}</p>
+                </div>
+              )}
+              {aboutMeData.dislikes && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Dislikes/Restrictions</h3>
+                  <p className="text-base">{aboutMeData.dislikes}</p>
+                </div>
+              )}
+              {aboutMeData.dos && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Do's</h3>
+                  <p className="text-base">{aboutMeData.dos}</p>
+                </div>
+              )}
+              {aboutMeData.donts && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Don'ts</h3>
+                  <p className="text-base">{aboutMeData.donts}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Care Preferences */}
       <Card>
