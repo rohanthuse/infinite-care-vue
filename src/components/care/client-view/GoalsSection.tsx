@@ -68,7 +68,9 @@ export function GoalsSection({ goals }: GoalsSectionProps) {
                     <div className="flex-1">
                       <h4 className="font-semibold text-base">{goal.goal || goal.name || goal.title || goal.description || 'Untitled Goal'}</h4>
                       {goal.description && goal.description !== (goal.goal || goal.name || goal.title) && (
-                        <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
+                        <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{goal.description}</p>
+                        </div>
                       )}
                     </div>
                     <Badge variant={getStatusVariant(goal.status)}>
@@ -105,7 +107,9 @@ export function GoalsSection({ goals }: GoalsSectionProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Measurable Outcome</label>
                     {goal.measurable_outcome ? (
-                      <p className="text-sm mt-1 whitespace-pre-wrap">{goal.measurable_outcome}</p>
+                      <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-sm whitespace-pre-wrap">{goal.measurable_outcome}</p>
+                      </div>
                     ) : (
                       <p className="text-sm mt-1 text-muted-foreground italic">No measurable outcome defined</p>
                     )}
@@ -115,7 +119,9 @@ export function GoalsSection({ goals }: GoalsSectionProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Interventions</label>
                     {goal.interventions ? (
-                      <p className="text-sm mt-1 whitespace-pre-wrap">{goal.interventions}</p>
+                      <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-sm whitespace-pre-wrap">{goal.interventions}</p>
+                      </div>
                     ) : (
                       <p className="text-sm mt-1 text-muted-foreground italic">No interventions specified</p>
                     )}
@@ -125,7 +131,9 @@ export function GoalsSection({ goals }: GoalsSectionProps) {
                   <div className="bg-muted/50 rounded p-3">
                     <label className="text-sm font-medium">Latest Review Notes</label>
                     {goal.review_notes ? (
-                      <p className="text-sm mt-1">{goal.review_notes}</p>
+                      <div className="mt-1 max-h-[100px] overflow-y-auto">
+                        <p className="text-sm whitespace-pre-wrap">{goal.review_notes}</p>
+                      </div>
                     ) : (
                       <p className="text-sm mt-1 text-muted-foreground italic">No review notes available</p>
                     )}
