@@ -1,6 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, Badge as BadgeIcon, Edit, Copy } from "lucide-react";
+import { Plus, RefreshCw, Badge as BadgeIcon, Edit, Copy, FileText, ChevronDown, CalendarDays, ClipboardList } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BulkUpdateBookingsDialog } from "./dialogs/BulkUpdateBookingsDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +46,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookingStatusLegend } from "./BookingStatusLegend";
 import { LateBookingAlertsBanner } from "./LateBookingAlertsBanner";
 import { ReplicateRotaDialog } from "./dialogs/ReplicateRotaDialog";
+import { FutureBookingPlanDialog } from "./dialogs/FutureBookingPlanDialog";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -77,6 +84,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
   const [showBulkUpdateDialog, setShowBulkUpdateDialog] = useState(false);
   const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
+  const [showFuturePlanDialog, setShowFuturePlanDialog] = useState(false);
 
   // Update URL parameters when filters change
   useEffect(() => {
@@ -437,6 +445,25 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             <Copy className="h-4 w-4 mr-2" />
             Replicate Rota
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                Reports
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setActiveView("reports")}>
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Booking Reports
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowFuturePlanDialog(true)}>
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Future Booking Plan
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
             New Booking
@@ -655,6 +682,14 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         onOpenChange={setReplicateDialogOpen} 
         branchId={branchId || ''} 
         currentDate={selectedDate}
+      />
+
+      <FutureBookingPlanDialog
+        open={showFuturePlanDialog}
+        onOpenChange={setShowFuturePlanDialog}
+        bookings={bookings}
+        carers={carers.map(c => ({ id: c.id, name: c.name }))}
+        branchName={organization?.name || "Branch"}
       />
     </div>
   );
