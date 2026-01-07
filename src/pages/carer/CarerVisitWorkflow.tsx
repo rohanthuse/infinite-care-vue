@@ -241,7 +241,15 @@ const CarerVisitWorkflow = () => {
         
         if (timeUntilExpiry < 300) { // 5 minutes
           console.log('[CarerVisitWorkflow] Token expiring soon, refreshing...');
-          await supabase.auth.refreshSession();
+          try {
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              console.warn('[CarerVisitWorkflow] Refresh failed but session still valid:', refreshError);
+            }
+          } catch (refreshErr) {
+            console.warn('[CarerVisitWorkflow] Refresh threw error but session still valid:', refreshErr);
+            // Don't throw - session is still usable for a few minutes
+          }
         }
       }
       
@@ -1978,23 +1986,39 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
-    // Validate session before starting - with 10s timeout
+    // Validate session before starting - with 15s timeout and 1 retry
     console.log('[handleCompleteVisit] Validating session...');
-    try {
-      const sessionValid = await withTimeout(
-        ensureValidSession(),
-        10000,
-        'Session validation timed out. Please try again.'
-      );
-      if (!sessionValid) {
-        completionInProgressRef.current = false;
-        return; // User will be redirected to login
+    let sessionValid = false;
+    let sessionAttempts = 0;
+    const MAX_SESSION_ATTEMPTS = 2;
+
+    while (!sessionValid && sessionAttempts < MAX_SESSION_ATTEMPTS) {
+      sessionAttempts++;
+      try {
+        sessionValid = await withTimeout(
+          ensureValidSession(),
+          15000,
+          'Session validation timed out'
+        );
+        if (!sessionValid) {
+          completionInProgressRef.current = false;
+          return; // User will be redirected to login
+        }
+      } catch (sessionError) {
+        console.warn(`[handleCompleteVisit] Session validation attempt ${sessionAttempts} failed:`, sessionError);
+        if (sessionAttempts < MAX_SESSION_ATTEMPTS) {
+          console.log('[handleCompleteVisit] Retrying session validation...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay before retry
+        } else {
+          console.error('[handleCompleteVisit] All session validation attempts failed');
+          toast.error('Session validation failed. Please check your connection and try again.', {
+            description: 'If this persists, try refreshing the page.',
+            duration: 6000
+          });
+          completionInProgressRef.current = false;
+          return;
+        }
       }
-    } catch (sessionError) {
-      console.error('[handleCompleteVisit] Session validation failed:', sessionError);
-      toast.error('Session validation failed. Please try again.');
-      completionInProgressRef.current = false;
-      return;
     }
     
     // Pre-completion: Flush pending draft saves with timeout (non-blocking)
