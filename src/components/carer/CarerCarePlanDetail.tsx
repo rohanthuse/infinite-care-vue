@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component uses mock data and is NOT used in production.
+ * The carer portal uses CarePlanViewDialog instead which fetches real data.
+ * DO NOT USE this component - it exists only for historical reference.
+ */
 
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
