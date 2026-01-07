@@ -1,8 +1,13 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
+import { 
+  fetchOrganizationSettings, 
+  getLogoForPDF,
+  OrganizationSettings 
+} from "@/lib/pdfExportHelpers";
 
-// Med-Infinite brand colors
+// Brand colors
 const BRAND_COLORS = {
   primary: [0, 83, 156] as [number, number, number],
   secondary: [46, 150, 208] as [number, number, number],
@@ -10,7 +15,8 @@ const BRAND_COLORS = {
   light: [240, 240, 240] as [number, number, number],
   white: [255, 255, 255] as [number, number, number],
   dark: [33, 37, 41] as [number, number, number],
-  muted: [150, 150, 150] as [number, number, number]
+  muted: [120, 120, 120] as [number, number, number],
+  text: [50, 50, 50] as [number, number, number]
 };
 
 export interface FutureBookingData {
@@ -30,6 +36,7 @@ export interface FutureBookingReportOptions {
   dateFrom: Date;
   dateTo: Date;
   bookings: FutureBookingData[];
+  branchId?: string;
 }
 
 /**
@@ -62,142 +69,132 @@ const calculateDuration = (start: string, end: string): { text: string; minutes:
 };
 
 /**
- * Format minutes to hours and minutes string
+ * Generate a Carer Rota PDF report
  */
-const formatMinutesToHoursMinutes = (totalMinutes: number): string => {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  
-  if (hours > 0 && minutes > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (hours > 0) {
-    return `${hours}h 0m`;
-  } else {
-    return `${minutes}m`;
-  }
-};
-
-/**
- * Generate a Future Booking Plan PDF report for carers
- */
-export const generateFutureBookingPlanPDF = (options: FutureBookingReportOptions): void => {
-  const { carerName, branchName, dateFrom, dateTo, bookings } = options;
+export const generateFutureBookingPlanPDF = async (options: FutureBookingReportOptions): Promise<void> => {
+  const { carerName, branchName, dateFrom, dateTo, bookings, branchId } = options;
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  let totalPages = 1;
+
+  // Fetch organization settings and logo
+  let orgSettings: OrganizationSettings | null = null;
+  let logoBase64: string | null = null;
+
+  if (branchId) {
+    orgSettings = await fetchOrganizationSettings(branchId);
+    logoBase64 = await getLogoForPDF(orgSettings);
+  }
+
+  const orgName = orgSettings?.name || "Med-Infinite";
+  const orgSubtitle = "Your Dignity is Our Business";
 
   // =====================================================
-  // HEADER SECTION
+  // HEADER SECTION - Clean Professional Design
   // =====================================================
-  const drawHeader = () => {
-    // Header background - increased height
+  const drawHeader = (isFirstPage: boolean = true) => {
+    // Thin blue bar at very top
     doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    doc.rect(0, 0, pageWidth, 52, 'F');
+    doc.rect(0, 0, pageWidth, 8, 'F');
 
-    // Organization name - larger and bolder
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    doc.text("Med-Infinite", 20, 20);
+    if (isFirstPage) {
+      // LEFT SIDE: Logo + Organization info
+      let leftX = 15;
+      let contentY = 20;
 
-    // Subtitle
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Healthcare Management System", 20, 28);
+      // Add logo if available
+      if (logoBase64) {
+        try {
+          const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+            if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+            if (base64.includes('data:image/gif')) return 'GIF';
+            return 'PNG';
+          };
+          doc.addImage(logoBase64, getImageFormat(logoBase64), leftX, 12, 35, 22);
+          leftX = 55;
+        } catch (e) {
+          console.error('Error adding logo:', e);
+        }
+      }
 
-    // Branch name (right side)
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(branchName, pageWidth - 20, 18, { align: 'right' });
-    
-    // Generated date (right side)
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, pageWidth - 20, 26, { align: 'right' });
+      // Organization name
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+      doc.text(orgName.toUpperCase(), leftX, contentY);
 
-    // Decorative accent line
-    doc.setFillColor(BRAND_COLORS.secondary[0], BRAND_COLORS.secondary[1], BRAND_COLORS.secondary[2]);
-    doc.rect(0, 52, pageWidth, 3, 'F');
+      // Subtitle/tagline
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
+      doc.text(orgSubtitle, leftX, contentY + 6);
+
+      // RIGHT SIDE: Carer name prominently + branch/date
+      const rightX = pageWidth - 15;
+
+      // Carer name (large, like "Jupiter" in reference)
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+      doc.text(carerName, rightX, 18, { align: 'right' });
+
+      // Branch name
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
+      doc.text(`Branch: ${branchName}`, rightX, 26, { align: 'right' });
+
+      // Generated date
+      doc.setFontSize(8);
+      doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
+      doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightX, 33, { align: 'right' });
+
+      // Separator line
+      doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
+      doc.setLineWidth(0.5);
+      doc.line(15, 42, pageWidth - 15, 42);
+    } else {
+      // Mini header for subsequent pages
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
+      doc.text(`CARER ROTA - ${carerName}`, 15, 5.5);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`${format(dateFrom, "dd MMM")} - ${format(dateTo, "dd MMM yyyy")}`, pageWidth - 15, 5.5, { align: 'right' });
+    }
   };
 
-  drawHeader();
+  drawHeader(true);
 
   // =====================================================
-  // REPORT TITLE SECTION
+  // TITLE SECTION
   // =====================================================
-  let currentY = 70;
-  
-  // Main title
-  doc.setFontSize(24);
+  let currentY = 52;
+
+  // Title: "CARER ROTA" (centered)
+  doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-  doc.text("FUTURE BOOKING PLAN", pageWidth / 2, currentY, { align: 'center' });
+  doc.text("CARER ROTA", pageWidth / 2, currentY, { align: 'center' });
 
-  // Decorative line under title
-  currentY += 6;
-  doc.setDrawColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-  doc.setLineWidth(1);
-  doc.line(pageWidth / 2 - 60, currentY, pageWidth / 2 + 60, currentY);
-
-  // =====================================================
-  // DATE RANGE BOX
-  // =====================================================
-  currentY += 15;
-  const dateRangeText = `${format(dateFrom, "dd MMM yyyy")}  —  ${format(dateTo, "dd MMM yyyy")}`;
-  const dateBoxWidth = 140;
-  const dateBoxX = (pageWidth - dateBoxWidth) / 2;
-  
-  // Date range box background
-  doc.setFillColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-  doc.roundedRect(dateBoxX, currentY - 8, dateBoxWidth, 18, 4, 4, 'F');
-  
-  // Date range box border
-  doc.setDrawColor(BRAND_COLORS.secondary[0], BRAND_COLORS.secondary[1], BRAND_COLORS.secondary[2]);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(dateBoxX, currentY - 8, dateBoxWidth, 18, 4, 4, 'S');
-  
-  // Calendar icon representation
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-  doc.text("📅", dateBoxX + 8, currentY + 3);
-  
-  // Date range text
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
-  doc.text(dateRangeText, pageWidth / 2 + 5, currentY + 3, { align: 'center' });
-
-  // =====================================================
-  // CARER INFORMATION BOX
-  // =====================================================
-  currentY += 25;
-  
-  // Carer info box
-  doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-  doc.roundedRect(20, currentY - 6, pageWidth - 40, 22, 4, 4, 'F');
-  
-  // Carer icon and label
+  // Date range below title (simple text, no box)
+  currentY += 8;
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-  doc.text("👤  CARER:", 28, currentY + 7);
-  
-  // Carer name
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
-  doc.text(carerName, 75, currentY + 7);
+  doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
+  const dateRangeText = `${format(dateFrom, "dd MMM yyyy")} — ${format(dateTo, "dd MMM yyyy")}`;
+  doc.text(dateRangeText, pageWidth / 2, currentY, { align: 'center' });
 
-  currentY += 30;
+  currentY += 12;
 
   // =====================================================
   // BOOKING TABLE
   // =====================================================
   const tableColumns = ["Date", "Time", "Client Name", "Client Address", "Service", "Duration"];
   
-  // Track total minutes for summary
   let totalMinutes = 0;
   
   const tableRows = bookings.map(booking => {
@@ -222,7 +219,6 @@ export const generateFutureBookingPlanPDF = (options: FutureBookingReportOptions
     ];
   });
 
-  // Generate table with improved styling
   if (bookings.length > 0) {
     autoTable(doc, {
       head: [tableColumns],
@@ -230,181 +226,101 @@ export const generateFutureBookingPlanPDF = (options: FutureBookingReportOptions
       startY: currentY,
       theme: 'grid',
       styles: {
-        fontSize: 9,
-        cellPadding: 5,
+        fontSize: 8,
+        cellPadding: 4,
         overflow: 'linebreak',
         halign: 'left',
         valign: 'middle',
         lineWidth: 0.1,
-        lineColor: [220, 220, 220],
+        lineColor: [200, 200, 200],
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
-        fontSize: 10,
-        cellPadding: 6,
+        fontSize: 9,
+        cellPadding: 5,
       },
       alternateRowStyles: {
-        fillColor: [248, 249, 250],
+        fillColor: [250, 250, 250],
       },
       columnStyles: {
-        0: { cellWidth: 28, fontStyle: 'bold' },  // Date
-        1: { cellWidth: 30 },  // Time
-        2: { cellWidth: 36 },  // Client Name
+        0: { cellWidth: 26, fontStyle: 'bold' },  // Date
+        1: { cellWidth: 28 },  // Time
+        2: { cellWidth: 34 },  // Client Name
         3: { cellWidth: 52 },  // Client Address
         4: { cellWidth: 26 },  // Service
-        5: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },  // Duration
+        5: { cellWidth: 20, halign: 'center' },  // Duration
       },
+      margin: { left: 15, right: 15 },
       didDrawPage: (data) => {
-        totalPages = doc.getNumberOfPages();
-        
-        // Draw mini header on subsequent pages
+        // Draw header on subsequent pages
         if (data.pageNumber > 1) {
-          doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-          doc.rect(0, 0, pageWidth, 25, 'F');
-          
-          doc.setFontSize(14);
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-          doc.text("Med-Infinite", 20, 15);
-          
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
-          doc.text(`Future Booking Plan - ${carerName}`, pageWidth - 20, 15, { align: 'right' });
-          
-          // Accent line
-          doc.setFillColor(BRAND_COLORS.secondary[0], BRAND_COLORS.secondary[1], BRAND_COLORS.secondary[2]);
-          doc.rect(0, 25, pageWidth, 2, 'F');
+          drawHeader(false);
         }
-        
-        // Footer on each page
-        doc.setFontSize(8);
-        doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
-        doc.text(
-          `Page ${data.pageNumber}`,
-          pageWidth / 2,
-          pageHeight - 12,
-          { align: 'center' }
-        );
-        doc.text(
-          "CONFIDENTIAL - Med-Infinite Healthcare Management System",
-          pageWidth / 2,
-          pageHeight - 6,
-          { align: 'center' }
-        );
       }
     });
 
-    // Get final Y position after table
     const finalY = (doc as any).lastAutoTable.finalY || currentY + 50;
 
     // =====================================================
-    // SUMMARY SECTION
+    // SUMMARY SECTION (Simple, clean)
     // =====================================================
-    let summaryY = finalY + 18;
+    let summaryY = finalY + 12;
     
-    // Check if we need a new page for summary
-    if (summaryY > pageHeight - 60) {
+    if (summaryY > pageHeight - 40) {
       doc.addPage();
-      summaryY = 40;
+      drawHeader(false);
+      summaryY = 20;
     }
 
-    // Summary box background
-    doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    doc.roundedRect(20, summaryY - 8, pageWidth - 40, 45, 5, 5, 'F');
-    
-    // Summary title
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    doc.text("SUMMARY", 30, summaryY + 5);
-    
-    // Decorative line
-    doc.setDrawColor(BRAND_COLORS.secondary[0], BRAND_COLORS.secondary[1], BRAND_COLORS.secondary[2]);
-    doc.setLineWidth(0.5);
-    doc.line(30, summaryY + 10, pageWidth - 30, summaryY + 10);
-    
-    // Calculate stats
+    // Simple summary line
     const totalHours = (totalMinutes / 60).toFixed(1);
-    const avgDurationMinutes = bookings.length > 0 ? Math.round(totalMinutes / bookings.length) : 0;
-    const avgDurationText = formatMinutesToHoursMinutes(avgDurationMinutes);
     
-    // Three-column layout for stats
-    const colWidth = (pageWidth - 60) / 3;
-    const statsY = summaryY + 28;
-    
-    // Column 1: Total Bookings
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-    doc.text("Total Bookings", 30 + colWidth * 0.5, statsY - 8, { align: 'center' });
-    
-    doc.setFontSize(18);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    doc.text(`${bookings.length}`, 30 + colWidth * 0.5, statsY + 5, { align: 'center' });
+    doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+    doc.text("Summary:", 15, summaryY);
     
-    // Vertical divider
-    doc.setDrawColor(BRAND_COLORS.secondary[0], BRAND_COLORS.secondary[1], BRAND_COLORS.secondary[2]);
-    doc.setLineWidth(0.3);
-    doc.line(30 + colWidth, statsY - 12, 30 + colWidth, statsY + 10);
-    
-    // Column 2: Total Hours
-    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-    doc.text("Total Hours", 30 + colWidth * 1.5, statsY - 8, { align: 'center' });
-    
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    doc.text(`${totalHours} hrs`, 30 + colWidth * 1.5, statsY + 5, { align: 'center' });
-    
-    // Vertical divider
-    doc.line(30 + colWidth * 2, statsY - 12, 30 + colWidth * 2, statsY + 10);
-    
-    // Column 3: Avg Duration
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-    doc.text("Avg. Duration", 30 + colWidth * 2.5, statsY - 8, { align: 'center' });
-    
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    doc.text(avgDurationText, 30 + colWidth * 2.5, statsY + 5, { align: 'center' });
+    doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
+    doc.text(`${bookings.length} bookings  |  ${totalHours} hours total`, 42, summaryY);
 
   } else {
     // No bookings message
     doc.setFillColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-    doc.roundedRect(30, currentY, pageWidth - 60, 40, 4, 4, 'F');
+    doc.roundedRect(15, currentY, pageWidth - 30, 30, 3, 3, 'F');
     
-    doc.setFontSize(12);
-    doc.setTextColor(BRAND_COLORS.accent[0], BRAND_COLORS.accent[1], BRAND_COLORS.accent[2]);
-    doc.text("No future bookings found for the selected date range.", pageWidth / 2, currentY + 22, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
+    doc.text("No bookings found for the selected date range.", pageWidth / 2, currentY + 17, { align: 'center' });
   }
 
-  // Update page numbers to show "Page X of Y"
+  // =====================================================
+  // FOOTER on all pages
+  // =====================================================
   const totalPagesCount = doc.getNumberOfPages();
   for (let i = 1; i <= totalPagesCount; i++) {
     doc.setPage(i);
+    
+    // Footer line
+    doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
+    doc.setLineWidth(0.3);
+    doc.line(15, pageHeight - 18, pageWidth - 15, pageHeight - 18);
+    
+    // Page number
     doc.setFontSize(8);
     doc.setTextColor(BRAND_COLORS.muted[0], BRAND_COLORS.muted[1], BRAND_COLORS.muted[2]);
+    doc.text(`Page ${i} of ${totalPagesCount}`, pageWidth / 2, pageHeight - 12, { align: 'center' });
     
-    // Overwrite page number with "Page X of Y"
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, pageHeight - 18, pageWidth, 8, 'F');
-    doc.text(
-      `Page ${i} of ${totalPagesCount}`,
-      pageWidth / 2,
-      pageHeight - 12,
-      { align: 'center' }
-    );
+    // Confidential notice
+    doc.setFontSize(7);
+    doc.text("Confidential", 15, pageHeight - 12);
+    doc.text(orgName, pageWidth - 15, pageHeight - 12, { align: 'right' });
   }
 
   // Save the PDF
   const dateStr = format(new Date(), "yyyy-MM-dd");
   const safeCarerName = carerName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-  doc.save(`Future_Booking_Plan_${safeCarerName}_${dateStr}.pdf`);
+  doc.save(`Carer_Rota_${safeCarerName}_${dateStr}.pdf`);
 };

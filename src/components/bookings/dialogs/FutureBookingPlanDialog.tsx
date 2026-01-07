@@ -22,11 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar, Download, Clock, Users } from "lucide-react";
+import { Calendar, Download, Clock, Users, Loader2 } from "lucide-react";
 import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isAfter, parseISO } from "date-fns";
 import { generateFutureBookingPlanPDF, FutureBookingData } from "@/services/futureBookingPdfGenerator";
 import { Booking } from "../BookingTimeGrid";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
+import { toast } from "sonner";
 
 interface Carer {
   id: string;
@@ -39,6 +40,7 @@ interface FutureBookingPlanDialogProps {
   bookings: Booking[];
   carers: Carer[];
   branchName: string;
+  branchId?: string;
 }
 
 type DateRangePreset = "this-week" | "next-week" | "this-month" | "next-month" | "custom";
@@ -49,7 +51,9 @@ export function FutureBookingPlanDialog({
   bookings,
   carers,
   branchName,
+  branchId,
 }: FutureBookingPlanDialogProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>("this-week");
   const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
@@ -133,39 +137,50 @@ export function FutureBookingPlanDialog({
 
   const selectedCarer = carers.find((c) => c.id === selectedCarerId);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!selectedCarer || filteredBookings.length === 0) return;
 
-    const bookingData: FutureBookingData[] = filteredBookings.map((booking) => {
-      return {
-        id: booking.id,
-        date: booking.date, // Keep as ISO format for PDF generator to parse
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        clientName: booking.clientName || "Unknown Client",
-        clientAddress: booking.location_address || booking.clientAddress || "Address not provided",
-        serviceName: "General Care",
-        status: booking.status || "scheduled",
-      };
-    });
+    setIsGenerating(true);
+    try {
+      const bookingData: FutureBookingData[] = filteredBookings.map((booking) => {
+        return {
+          id: booking.id,
+          date: booking.date,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          clientName: booking.clientName || "Unknown Client",
+          clientAddress: booking.location_address || booking.clientAddress || "Address not provided",
+          serviceName: "General Care",
+          status: booking.status || "scheduled",
+        };
+      });
 
-    generateFutureBookingPlanPDF({
-      carerName: selectedCarer.name,
-      branchName,
-      dateFrom: dateRange.from,
-      dateTo: dateRange.to,
-      bookings: bookingData,
-    });
+      await generateFutureBookingPlanPDF({
+        carerName: selectedCarer.name,
+        branchName,
+        branchId,
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        bookings: bookingData,
+      });
+
+      toast.success("Carer Rota PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Future Booking Plan
-          </DialogTitle>
+        <DialogTitle className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
+          Carer Rota
+        </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -328,10 +343,14 @@ export function FutureBookingPlanDialog({
             </Button>
             <Button
               onClick={handleDownloadPDF}
-              disabled={!selectedCarerId || filteredBookings.length === 0}
+              disabled={!selectedCarerId || filteredBookings.length === 0 || isGenerating}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isGenerating ? "Generating..." : "Download PDF"}
             </Button>
           </div>
         </div>
