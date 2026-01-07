@@ -364,7 +364,7 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
       </Card>
 
       {/* Do's & Don'ts */}
-      {aboutMeData && (aboutMeData.likes || aboutMeData.dislikes || aboutMeData.dos || aboutMeData.donts) && (
+      {aboutMeData && (aboutMeData.dos || aboutMeData.donts) && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
@@ -375,18 +375,6 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {aboutMeData.likes && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Likes/Preferences</h3>
-                  <p className="text-base">{aboutMeData.likes}</p>
-                </div>
-              )}
-              {aboutMeData.dislikes && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Dislikes/Restrictions</h3>
-                  <p className="text-base">{aboutMeData.dislikes}</p>
-                </div>
-              )}
               {aboutMeData.dos && (
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Do's</h3>

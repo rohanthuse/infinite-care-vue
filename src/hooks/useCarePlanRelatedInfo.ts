@@ -32,8 +32,6 @@ export interface CarePlanRelatedInfo {
   cognitive_impairment?: boolean;
   
   // Do's & Don'ts
-  likes_preferences?: string;
-  dislikes_restrictions?: string;
   dos?: string;
   donts?: string;
   
@@ -79,8 +77,6 @@ interface CarePlanAutoSaveData {
     mobility?: string;
     communication_needs?: string;
     ethnicity?: string;
-    likes?: string;
-    dislikes?: string;
     dos?: string;
     donts?: string;
     pets?: string;
@@ -209,8 +205,6 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
     communication_aids: aboutMe.communication_aids || undefined,
     
     // Do's & Don'ts - with fallback to legacy keys (please_do/please_dont)
-    likes_preferences: aboutMe.likes || undefined,
-    dislikes_restrictions: aboutMe.dislikes || undefined,
     dos: aboutMe.dos || (aboutMe as any).please_do || undefined,
     donts: aboutMe.donts || (aboutMe as any).please_dont || undefined,
     
