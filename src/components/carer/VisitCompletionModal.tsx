@@ -204,15 +204,26 @@ export const VisitCompletionModal: React.FC<VisitCompletionModalProps> = ({
                 Visit Completion Failed
               </DialogTitle>
               <DialogDescription>
-                There was a problem completing the visit. Your data has been saved locally.
+                We couldn't complete the visit, but your data has been saved locally.
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-6">
+            <div className="py-6 space-y-4">
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-destructive font-medium mb-2">What happened:</p>
+                <p className="text-sm text-destructive whitespace-pre-wrap">
                   {errorMessage || 'An unexpected error occurred. Please try again.'}
                 </p>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium mb-2">What to try:</p>
+                <ul className="text-sm text-blue-600 dark:text-blue-400 list-disc pl-4 space-y-1">
+                  <li>Check your internet connection</li>
+                  <li>Click "Retry" below to try again</li>
+                  <li>If the problem persists, log out and log back in</li>
+                  <li>Contact support if you continue to have issues</li>
+                </ul>
               </div>
             </div>
 
