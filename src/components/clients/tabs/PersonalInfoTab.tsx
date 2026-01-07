@@ -319,6 +319,20 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       desired_outcomes: db?.desired_outcomes || cp?.desired_outcomes || '',
       success_measures: db?.success_measures || cp?.success_measures || '',
       priority_areas: db?.priority_areas || cp?.priority_areas || '',
+      // NEW: Background & Identity fields
+      sexual_orientation: db?.sexual_orientation || cp?.sexual_orientation || '',
+      gender_identity: db?.gender_identity || cp?.gender_identity || '',
+      nationality: db?.nationality || cp?.nationality || '',
+      primary_language: db?.primary_language || cp?.primary_language || '',
+      preferred_interpreter_language: db?.preferred_interpreter_language || cp?.preferred_interpreter_language || '',
+      // NEW: My Home fields
+      home_accessibility: db?.home_accessibility || cp?.home_accessibility || '',
+      parking_availability: db?.parking_availability || cp?.parking_availability || '',
+      emergency_access: db?.emergency_access || cp?.emergency_access || '',
+      // NEW: Accessibility fields
+      sensory_impairment: db?.sensory_impairment || cp?.sensory_impairment || '',
+      speech_difficulties: db?.speech_difficulties ?? cp?.speech_difficulties ?? null,
+      cognitive_impairment: db?.cognitive_impairment ?? cp?.cognitive_impairment ?? null,
       _source: cp?.source,
     };
   }, [personalInfo, carePlanRelatedInfo]);
@@ -897,19 +911,19 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
-                        <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.sexual_orientation || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
-                        <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.gender_identity || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
-                        <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.nationality || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
-                        <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.primary_language || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
@@ -917,7 +931,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
-                        <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.preferred_interpreter_language || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
@@ -1011,7 +1025,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
-                        <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.home_accessibility || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
@@ -1023,11 +1037,11 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
-                        <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.parking_availability || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
-                        <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.emergency_access || 'Not provided'}</p>
                       </div>
                     </div>
                   )}
@@ -1111,7 +1125,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
-                        <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.sensory_impairment || 'Not provided'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
@@ -1131,11 +1145,11 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
-                        <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.speech_difficulties === null ? 'Not provided' : mergedRelatedInfo.speech_difficulties ? 'Yes' : 'No'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
-                        <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
+                        <p className="mt-1">{mergedRelatedInfo.cognitive_impairment === null ? 'Not provided' : mergedRelatedInfo.cognitive_impairment ? 'Yes' : 'No'}</p>
                       </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>

@@ -189,6 +189,8 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
       queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
       queryClient.invalidateQueries({ queryKey: ['care-plan-draft', data.id] });
       queryClient.invalidateQueries({ queryKey: ['existing-care-plan-draft', clientId] });
+      // Invalidate care-plan-related-info so Personal Info tab updates immediately
+      queryClient.invalidateQueries({ queryKey: ['care-plan-related-info', clientId] });
       
       // Only show toast for manual saves, not auto-saves
       if (!variables.isAutoSave) {
