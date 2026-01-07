@@ -1361,12 +1361,21 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleStartVisit = async () => {
-    if (!currentAppointment || !user?.id) return;
+    // Use carerContext.staffId (staff table PK) instead of user.id (auth UID)
+    const staffId = carerContext?.staffId;
+    
+    if (!currentAppointment || !staffId) {
+      if (!staffId) {
+        toast.error('Staff profile not found. Please log out and log in again.');
+        console.error('[handleStartVisit] Missing staff ID from carerContext');
+      }
+      return;
+    }
     
     try {
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
-        staffId: user.id,
+        staffId: staffId, // Use staff.id, not auth.uid
         branchId: currentAppointment.clients?.branch_id || '',
         action: 'start_visit',
         location: undefined // Could get geolocation here if needed
@@ -1863,29 +1872,42 @@ const CarerVisitWorkflow = () => {
     console.log('[CompleteVisit Button] State Debug:', {
       isCompletingVisit,
       carerSignature: !!carerSignature,
+      clientMood: !!clientMood,
+      clientEngagement: !!clientEngagement,
+      carerObservationsLength: carerObservations?.length || 0,
       visitLoading,
       authLoading,
+      carerContextLoading,
       visitRecord: !!visitRecord,
       visitRecordId: visitRecord?.id,
       userId: !!user?.id,
       userIdValue: user?.id,
       userEmail: user?.email,
-      hasUserObject: !!user,
-      isDisabled: isCompletingVisit || !carerSignature || visitLoading || authLoading || !visitRecord || !user?.id
+      carerStaffId: carerContext?.staffId,
+      hasCarerContext: !!carerContext,
+      disabledReason: getButtonDisabledReason(),
+      isDisabled: isCompletingVisit || completeVisit.isPending || createServiceReport.isPending || 
+                  !carerSignature || !clientMood || !clientEngagement || 
+                  carerObservations.trim().length < 10 || visitLoading || authLoading || 
+                  carerContextLoading || !visitRecord || !user?.id || !carerContext?.staffId
     });
-  }, [isCompletingVisit, carerSignature, visitLoading, authLoading, visitRecord, user]);
+  }, [isCompletingVisit, carerSignature, clientMood, clientEngagement, carerObservations, visitLoading, authLoading, carerContextLoading, visitRecord, user, carerContext, completeVisit.isPending, createServiceReport.isPending]);
 
   // Helper function to determine why button is disabled
   const getButtonDisabledReason = () => {
     if (isCompletingVisit) return "Completing visit...";
+    if (completeVisit.isPending) return "Saving visit...";
+    if (createServiceReport.isPending) return "Creating report...";
     if (!carerSignature) return "Carer signature required";
     if (!clientMood) return "Select client mood";
     if (!clientEngagement) return "Select client engagement";
     if (carerObservations.trim().length < 10) return "Add carer observations (min 10 characters)";
     if (visitLoading) return "Loading visit data...";
     if (authLoading) return "Loading user data...";
+    if (carerContextLoading) return "Loading staff profile...";
     if (!visitRecord) return "Visit record not found";
     if (!user?.id) return "User not authenticated";
+    if (!carerContext?.staffId) return "Staff profile not linked";
     return null;
   };
 
@@ -1986,6 +2008,15 @@ const CarerVisitWorkflow = () => {
     } catch (flushError) {
       console.warn('[handleCompleteVisit] Draft flush failed, continuing:', flushError);
       // Don't block completion - data will be captured in the final save
+    }
+    
+    // Guard: Ensure carerContext.staffId is available before proceeding
+    if (!carerContext?.staffId) {
+      console.error('[handleCompleteVisit] Missing carerContext.staffId');
+      toast.error('Staff profile not linked. Please log out and log in again.', { duration: 8000 });
+      toast.info('💡 If this persists, contact your administrator to ensure your profile is correctly set up.', { duration: 10000 });
+      completionInProgressRef.current = false;
+      return;
     }
     
     if (!currentAppointment || !user?.id || !visitRecord) {
@@ -2232,9 +2263,12 @@ const CarerVisitWorkflow = () => {
       console.log('Step 5: Updating booking status to completed...');
       setCompletionStep('Marking booking as complete...');
       
+      // Use carerContext.staffId (staff table PK) instead of user.id (auth UID)
+      const staffIdForAttendance = carerContext?.staffId || user.id;
+      
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
-        staffId: user.id,
+        staffId: staffIdForAttendance, // Use staff.id, not auth.uid
         branchId: currentAppointment.clients?.branch_id || currentAppointment.branch_id || '',
         action: 'end_visit',
         location: undefined
@@ -2261,6 +2295,9 @@ const CarerVisitWorkflow = () => {
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
       const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
       
+      // Use carerContext.staffId for next booking query
+      const staffIdForNextBooking = carerContext?.staffId || user.id;
+      
       try {
         const nextBookingsResult = await withTimeout(
           Promise.resolve(
@@ -2273,7 +2310,7 @@ const CarerVisitWorkflow = () => {
                 status,
                 clients(first_name, last_name)
               `)
-              .eq('staff_id', user.id)
+              .eq('staff_id', staffIdForNextBooking) // Use staff.id, not auth.uid
               .gte('start_time', todayStart)
               .lte('start_time', todayEnd)
               .in('status', ['scheduled', 'confirmed'])
@@ -4627,8 +4664,10 @@ const CarerVisitWorkflow = () => {
                           carerObservations.trim().length < 10 ||
                           visitLoading || 
                           authLoading || 
+                          carerContextLoading ||
                           !visitRecord || 
-                          !user?.id
+                          !user?.id ||
+                          !carerContext?.staffId
                         }
                       >
                         {isCompletingVisit ? (
@@ -4636,7 +4675,7 @@ const CarerVisitWorkflow = () => {
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                             Completing...
                           </>
-                        ) : (visitLoading || authLoading || !visitRecord) ? (
+                        ) : (visitLoading || authLoading || carerContextLoading || !visitRecord) ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                             Loading...
