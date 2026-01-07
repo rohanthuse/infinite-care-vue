@@ -36,7 +36,7 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
         <label className="text-sm font-medium text-muted-foreground">{label}</label>
         {hasValue ? (
           Array.isArray(value) ? (
-            <ul className="mt-1 space-y-1">
+            <ul className="mt-1 space-y-1 max-h-[150px] overflow-y-auto">
               {value.map((item, idx) => (
                 <li key={idx} className="text-base flex items-start gap-2">
                   <span className="text-primary">•</span>
@@ -45,7 +45,9 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
               ))}
             </ul>
           ) : (
-            <p className="text-base mt-1 whitespace-pre-wrap">{value}</p>
+            <div className="mt-1 max-h-[150px] overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+              <p className="text-base whitespace-pre-wrap">{value}</p>
+            </div>
           )
         ) : (
           <p className="text-sm mt-1 text-muted-foreground italic">No data provided</p>
