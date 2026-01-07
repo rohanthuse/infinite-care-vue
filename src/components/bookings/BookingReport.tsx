@@ -231,6 +231,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
                   <SelectItem value="monthly">Monthly Report</SelectItem>
                   <SelectItem value="carer">Carer Performance</SelectItem>
                   <SelectItem value="client">Client Activity</SelectItem>
+                  <SelectItem value="future">Future Booking Plan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
