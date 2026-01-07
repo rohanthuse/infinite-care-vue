@@ -4,8 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from '@/contexts/TenantContext';
 import { validateBranchInOrganization } from './useTenantAware';
 
-export const useBranchStaffAndClients = (branchId: string) => {
+interface UseBranchStaffAndClientsOptions {
+  includeInactiveClients?: boolean; // When true, includes inactive clients for historical data visibility
+}
+
+export const useBranchStaffAndClients = (
+  branchId: string, 
+  options: UseBranchStaffAndClientsOptions = {}
+) => {
   const { organization } = useTenant();
+  const { includeInactiveClients = false } = options;
 
   const { data: staff = [], isLoading: isLoadingStaff } = useQuery({
     queryKey: ['branch-staff', branchId, organization?.id],
@@ -34,7 +42,7 @@ export const useBranchStaffAndClients = (branchId: string) => {
   });
 
   const { data: clients = [], isLoading: isLoadingClients } = useQuery({
-    queryKey: ['branch-clients', branchId, organization?.id],
+    queryKey: ['branch-clients', branchId, organization?.id, includeInactiveClients],
     queryFn: async () => {
       if (!organization?.id) {
         throw new Error('Organization context required');
@@ -46,11 +54,18 @@ export const useBranchStaffAndClients = (branchId: string) => {
         throw new Error('Branch does not belong to current organization');
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
         .select('id, first_name, last_name, email, status')
-        .eq('branch_id', branchId)
-        .eq('status', 'Active');
+        .eq('branch_id', branchId);
+
+      // Only filter by Active status if not including inactive clients
+      // This allows historical data views to show all clients
+      if (!includeInactiveClients) {
+        query = query.eq('status', 'Active');
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];

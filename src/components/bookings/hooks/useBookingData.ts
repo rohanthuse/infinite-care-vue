@@ -52,9 +52,11 @@ export function useBookingData(branchId?: string) {
   } = useBranchClients({
     branchId: shouldFetchData ? branchId : undefined,
     searchTerm: "",
-    statusFilter: 'Active',
+    // Use 'all' to include inactive clients for historical booking display
+    // This prevents "(Unknown Client)" for past bookings of deactivated clients
+    statusFilter: 'all',
     page: 1,
-    itemsPerPage: 100
+    itemsPerPage: 500  // Increased to ensure all clients are included for proper name mapping
   });
   
   const { data: carersData = [], isLoading: isLoadingCarers, error: carersError } = useBranchCarers(

@@ -65,6 +65,7 @@ export const useClientServiceReports = (
       }
 
       // Get care plan goals with their progress history
+      // Include ALL care plans (not just active) to show historical data for inactive clients
       const { data: carePlans } = await supabase
         .from('client_care_plans')
         .select(`
@@ -73,6 +74,7 @@ export const useClientServiceReports = (
           start_date,
           end_date,
           completion_percentage,
+          status,
           client_care_plan_goals(
             id,
             description,
@@ -82,8 +84,8 @@ export const useClientServiceReports = (
             updated_at
           )
         `)
-        .eq('client_id', clientId)
-        .eq('status', 'active');
+        .eq('client_id', clientId);
+      // Removed: .eq('status', 'active') - to show all care plans including historical/completed
 
       // Filter appointments by date and service type
       const filteredAppointments = (appointments || []).filter(apt => {
