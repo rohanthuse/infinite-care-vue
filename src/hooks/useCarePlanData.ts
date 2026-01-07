@@ -899,6 +899,12 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         id,
         first_name,
         last_name
+      ),
+      staff_assignments:care_plan_staff_assignments(
+        id,
+        staff_id,
+        is_primary,
+        staff:staff(id, first_name, last_name)
       )
     `)
     .in('client_id', assignedClientIds)
@@ -949,6 +955,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
       ...item,
       auto_save_data: autoSaveData, // Override with parsed version to satisfy type
       staff: item.staff || null,
+      staff_assignments: item.staff_assignments || [],
       client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
       // Use auto_save_data if joined tables are empty
       goals: item.goals?.length > 0 ? item.goals : goalsFromAutoSave,
