@@ -690,6 +690,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         bookings={bookings}
         carers={carers.map(c => ({ id: c.id, name: c.name }))}
         branchName={organization?.name || "Branch"}
+        branchId={branchId}
       />
     </div>
   );
