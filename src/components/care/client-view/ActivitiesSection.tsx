@@ -52,7 +52,9 @@ export function ActivitiesSection({ activities }: ActivitiesSectionProps) {
                   <div className="flex-1">
                     <h4 className="font-semibold text-base">{activity.name || activity.activity}</h4>
                     {activity.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                      <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{activity.description}</p>
+                      </div>
                     )}
                   </div>
                   {activity.status && (
@@ -124,14 +126,18 @@ export function ActivitiesSection({ activities }: ActivitiesSectionProps) {
                 {activity.support_needed && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Support Needed</label>
-                    <p className="text-sm mt-1 whitespace-pre-wrap">{activity.support_needed}</p>
+                    <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                      <p className="text-sm whitespace-pre-wrap">{activity.support_needed}</p>
+                    </div>
                   </div>
                 )}
 
                 {activity.notes && (
                   <div className="bg-muted/50 rounded p-3">
                     <label className="text-sm font-medium">Additional Notes</label>
-                    <p className="text-sm mt-1">{activity.notes}</p>
+                    <div className="mt-1 max-h-[100px] overflow-y-auto">
+                      <p className="text-sm whitespace-pre-wrap">{activity.notes}</p>
+                    </div>
                   </div>
                 )}
               </div>

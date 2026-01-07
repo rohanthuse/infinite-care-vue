@@ -75,7 +75,9 @@ export function TasksSection({ tasks }: TasksSectionProps) {
                       <div className="flex-1">
                         <h4 className="font-semibold text-base">{task.name || 'Untitled Task'}</h4>
                         {task.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                          <div className="mt-1 max-h-[100px] overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                          </div>
                         )}
                       </div>
                       <div className="flex gap-2">
