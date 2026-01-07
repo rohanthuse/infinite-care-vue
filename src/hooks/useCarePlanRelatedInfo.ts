@@ -208,11 +208,11 @@ const fetchCarePlanRelatedInfo = async (clientId: string): Promise<CarePlanRelat
     cognitive_impairment: yesNoToBoolean(aboutMe.cognitive_impairment),
     communication_aids: aboutMe.communication_aids || undefined,
     
-    // Do's & Don'ts
+    // Do's & Don'ts - with fallback to legacy keys (please_do/please_dont)
     likes_preferences: aboutMe.likes || undefined,
     dislikes_restrictions: aboutMe.dislikes || undefined,
-    dos: aboutMe.dos || undefined,
-    donts: aboutMe.donts || undefined,
+    dos: aboutMe.dos || (aboutMe as any).please_do || undefined,
+    donts: aboutMe.donts || (aboutMe as any).please_dont || undefined,
     
     // GP Info
     gp_name: gpInfo.gp_name || undefined,
