@@ -93,11 +93,11 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
   
   return (
     <>
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
+      <Card className="w-full overflow-hidden">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h2 className="text-xl font-semibold">Dietary Requirements</h2>
-            <Button variant="outline" onClick={onEditDietaryRequirements} className="flex items-center gap-2">
+            <Button variant="outline" onClick={onEditDietaryRequirements} className="flex items-center justify-center gap-2 w-full sm:w-auto">
               <Edit className="h-4 w-4" />
               Edit
             </Button>
@@ -315,12 +315,16 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
             {/* Fluid Balance Section */}
             {clientId && clientName && (
               <div className="space-y-4 border-t pt-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <h3 className="text-lg font-medium flex items-center gap-2">
                     <Droplets className="h-5 w-5 text-blue-500" />
                     Fluid Intake & Output Monitoring
                   </h3>
-                  <Button variant="outline" onClick={() => setFluidBalanceDialogOpen(true)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setFluidBalanceDialogOpen(true)}
+                    className="w-full sm:w-auto flex-shrink-0"
+                  >
                     <ClipboardList className="h-4 w-4 mr-2" />
                     Record Fluid Balance
                   </Button>
