@@ -176,6 +176,15 @@ const CarerVisitWorkflow = () => {
   const createServiceReport = useCreateServiceReport();
   const queryClient = useQueryClient();
   
+  // Centralized session health tracking for long-duration visits
+  const navigateToLogin = useCallback(() => navigate('/carer-login'), [navigate]);
+  const { 
+    isHealthy: sessionHealthy, 
+    validateBeforeMutation, 
+    markSessionRefreshed,
+    markSessionUnhealthy 
+  } = useSessionHealth(navigateToLogin);
+  
   // Early validation - if no appointmentId, show error
   if (!appointmentId) {
     return (
@@ -251,7 +260,11 @@ const CarerVisitWorkflow = () => {
         
         if (error || !session) {
           console.warn('[CarerVisitWorkflow] Session expired - showing warning');
-          toast.error('Your session has expired. Please save your work and log in again.');
+          markSessionUnhealthy();
+          toast.error('Your session has expired. Please save your work and log in again.', {
+            id: 'session-expired',
+            duration: Infinity,
+          });
           return;
         }
         
@@ -259,11 +272,14 @@ const CarerVisitWorkflow = () => {
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
           console.warn('[CarerVisitWorkflow] Session refresh failed:', refreshError);
+          markSessionUnhealthy();
         } else {
           console.log('[CarerVisitWorkflow] Session keep-alive successful');
+          markSessionRefreshed();
         }
       } catch (error) {
         console.error('[CarerVisitWorkflow] Session keep-alive error:', error);
+        markSessionUnhealthy();
       }
     };
     
@@ -276,7 +292,7 @@ const CarerVisitWorkflow = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, []);
+  }, [markSessionRefreshed, markSessionUnhealthy]);
   
   // Session stability: refresh auth when tab becomes visible after idle
   useEffect(() => {
@@ -694,7 +710,19 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Session validation before mutation
+    const sessionValid = await validateBeforeMutation();
+    if (!sessionValid) return;
+    
     setIsUpdatingGoal(goal.id);
+    
+    // Timeout protection
+    const timeoutId = setTimeout(() => {
+      console.warn('[handleGoalUpdate] Mutation timeout - resetting state');
+      setIsUpdatingGoal(null);
+      toast.error('Request timed out. Please check your connection and try again.');
+    }, MUTATION_TIMEOUT_MS);
+    
     try {
       if (goal.id.startsWith('json-')) {
         // First time: Create with all updates
@@ -726,6 +754,7 @@ const CarerVisitWorkflow = () => {
       console.error('[handleGoalUpdate] Error:', error);
       toast.error("Failed to update goal status");
     } finally {
+      clearTimeout(timeoutId);
       setIsUpdatingGoal(null);
     }
   };
@@ -740,7 +769,19 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Session validation before mutation
+    const sessionValid = await validateBeforeMutation();
+    if (!sessionValid) return;
+    
     setIsUpdatingGoal(goal.id);
+    
+    // Timeout protection
+    const timeoutId = setTimeout(() => {
+      console.warn('[handleGoalNotesUpdate] Mutation timeout - resetting state');
+      setIsUpdatingGoal(null);
+      toast.error('Request timed out. Please check your connection and try again.');
+    }, MUTATION_TIMEOUT_MS);
+    
     try {
       if (goal.id.startsWith('json-')) {
         // First time: Create with notes
@@ -766,6 +807,7 @@ const CarerVisitWorkflow = () => {
       console.error('[handleGoalNotesUpdate] Error:', error);
       toast.error("Failed to save goal notes");
     } finally {
+      clearTimeout(timeoutId);
       setIsUpdatingGoal(null);
     }
   };
@@ -780,7 +822,19 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Session validation before mutation
+    const sessionValid = await validateBeforeMutation();
+    if (!sessionValid) return;
+    
     setIsUpdatingActivity(activity.id);
+    
+    // Timeout protection
+    const timeoutId = setTimeout(() => {
+      console.warn('[handleActivityUpdate] Mutation timeout - resetting state');
+      setIsUpdatingActivity(null);
+      toast.error('Request timed out. Please check your connection and try again.');
+    }, MUTATION_TIMEOUT_MS);
+    
     try {
       // Check if this is a JSON-sourced activity that might already exist in database
       if (activity.id.startsWith('json-')) {
@@ -824,6 +878,7 @@ const CarerVisitWorkflow = () => {
       console.error('[handleActivityUpdate] Error:', error);
       toast.error("Failed to update activity status");
     } finally {
+      clearTimeout(timeoutId);
       setIsUpdatingActivity(null);
     }
   };
@@ -1089,7 +1144,7 @@ const CarerVisitWorkflow = () => {
     }
   }, [visitRecord, clientSignature, carerSignature, notesInitialized]);
 
-  // Auto-save visit notes with debouncing
+  // Auto-save visit notes with debouncing and session validation
   useEffect(() => {
     // Skip if no visit record or notes haven't changed from loaded value
     if (!visitRecord?.id || notes === (visitRecord.visit_notes || '')) return;
@@ -1097,7 +1152,21 @@ const CarerVisitWorkflow = () => {
     if (isViewOnly) return;
 
     const timeoutId = setTimeout(async () => {
+      // Validate session before auto-saving
+      const sessionValid = await validateBeforeMutation();
+      if (!sessionValid) {
+        console.warn('[CarerVisitWorkflow] Session expired - skipping notes auto-save');
+        return;
+      }
+      
       setNotesIsSaving(true);
+      
+      // Mutation timeout protection
+      const mutationTimeout = setTimeout(() => {
+        setNotesIsSaving(false);
+        console.warn('[CarerVisitWorkflow] Notes save timeout');
+      }, MUTATION_TIMEOUT_MS);
+      
       try {
         await updateVisitRecord.mutateAsync({
           id: visitRecord.id,
@@ -1108,12 +1177,13 @@ const CarerVisitWorkflow = () => {
       } catch (error) {
         console.error('[CarerVisitWorkflow] Error auto-saving notes:', error);
       } finally {
+        clearTimeout(mutationTimeout);
         setNotesIsSaving(false);
       }
     }, 2000); // 2-second debounce
 
     return () => clearTimeout(timeoutId);
-  }, [notes, visitRecord?.id, visitRecord?.visit_notes, isViewOnly]);
+  }, [notes, visitRecord?.id, visitRecord?.visit_notes, isViewOnly, validateBeforeMutation]);
   
   // Load draft assessment data from location_data on mount (once)
   useEffect(() => {
@@ -1132,7 +1202,7 @@ const CarerVisitWorkflow = () => {
     }
   }, [visitRecord, assessmentInitialized, isViewOnly]);
   
-  // Auto-save Complete tab assessment fields with debouncing (draft persistence)
+  // Auto-save Complete tab assessment fields with debouncing (draft persistence) and session validation
   useEffect(() => {
     if (!visitRecord?.id || isViewOnly || !assessmentInitialized) return;
     
@@ -1142,6 +1212,13 @@ const CarerVisitWorkflow = () => {
     }
     
     draftSaveTimeoutRef.current = setTimeout(async () => {
+      // Validate session before auto-saving
+      const sessionValid = await validateBeforeMutation();
+      if (!sessionValid) {
+        console.warn('[CarerVisitWorkflow] Session expired - skipping assessment auto-save');
+        return;
+      }
+      
       const draftAssessment = {
         clientMood,
         clientEngagement,
@@ -1154,6 +1231,11 @@ const CarerVisitWorkflow = () => {
       // Only save if there's meaningful data
       const hasData = Object.values(draftAssessment).some(v => v && v.trim().length > 0);
       if (!hasData) return;
+      
+      // Mutation timeout protection
+      const mutationTimeout = setTimeout(() => {
+        console.warn('[CarerVisitWorkflow] Assessment save timeout');
+      }, MUTATION_TIMEOUT_MS);
       
       try {
         const currentLocationData = visitRecord.location_data || {};
@@ -1169,6 +1251,8 @@ const CarerVisitWorkflow = () => {
         console.log('[CarerVisitWorkflow] Auto-saved assessment draft');
       } catch (error) {
         console.error('[CarerVisitWorkflow] Error auto-saving assessment:', error);
+      } finally {
+        clearTimeout(mutationTimeout);
       }
     }, 2000); // 2-second debounce
     
@@ -1177,7 +1261,7 @@ const CarerVisitWorkflow = () => {
         clearTimeout(draftSaveTimeoutRef.current);
       }
     };
-  }, [clientMood, clientEngagement, activitiesUndertaken, carerObservations, clientFeedback, nextVisitPreparations, visitRecord?.id, isViewOnly, assessmentInitialized]);
+  }, [clientMood, clientEngagement, activitiesUndertaken, carerObservations, clientFeedback, nextVisitPreparations, visitRecord?.id, isViewOnly, assessmentInitialized, validateBeforeMutation]);
   
   // Function to flush all pending draft saves before completion
   const flushDraftSaves = useCallback(async () => {
@@ -4522,6 +4606,24 @@ const CarerVisitWorkflow = () => {
         onClose={() => setViewMedicationDetails(null)}
         medication={viewMedicationDetails}
       />
+      
+      {/* Session Health Warning Banner */}
+      {!sessionHealthy && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-50">
+          <div className="bg-orange-500/95 text-white px-4 py-3 rounded-lg flex items-center gap-3 shadow-lg backdrop-blur-sm">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium">Session may have expired. Data may not save.</span>
+            <Button 
+              size="sm" 
+              variant="secondary"
+              onClick={() => window.location.reload()}
+              className="ml-2 whitespace-nowrap"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
