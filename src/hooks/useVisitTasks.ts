@@ -37,10 +37,10 @@ export const useVisitTasks = (visitRecordId?: string) => {
       return data as VisitTask[];
     },
     enabled: !!visitRecordId,
-    // Session-stable: prevent unnecessary refetches during long visits
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 2 * 60 * 60 * 1000, // 2 hours
-    refetchOnMount: false,
+    // Reduced stale time to allow fresher data after edits
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnMount: 'always', // Always refetch when component remounts
     refetchOnWindowFocus: false,
   });
 

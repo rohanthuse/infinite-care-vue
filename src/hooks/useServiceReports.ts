@@ -167,12 +167,28 @@ export const useUpdateServiceReport = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate ALL relevant queries for data consistency
+      // Invalidate ALL service report queries
       queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['approved-service-reports'] });
+      
+      // Also invalidate specific report detail if ID is available
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: ['service-report-detail', data.id] });
+      }
+      
+      // Invalidate visit-related data if visit_record_id exists
+      if (data?.visit_record_id) {
+        queryClient.invalidateQueries({ queryKey: ['visit-tasks', data.visit_record_id] });
+        queryClient.invalidateQueries({ queryKey: ['visit-medications', data.visit_record_id] });
+        queryClient.invalidateQueries({ queryKey: ['visit-vitals', data.visit_record_id] });
+        queryClient.invalidateQueries({ queryKey: ['visit-events', data.visit_record_id] });
+        queryClient.invalidateQueries({ queryKey: ['visit-record', data.visit_record_id] });
+      }
       
       toast.success('Service report updated successfully');
     },

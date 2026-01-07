@@ -988,12 +988,27 @@ export function CreateServiceReportDialog({
           }
         }
 
-        // Invalidate queries
+        // Invalidate queries with SPECIFIC IDs to match cache keys
+        if (effectiveVisitRecordId) {
+          queryClient.invalidateQueries({ queryKey: ['visit-tasks', effectiveVisitRecordId] });
+          queryClient.invalidateQueries({ queryKey: ['visit-medications', effectiveVisitRecordId] });
+          queryClient.invalidateQueries({ queryKey: ['visit-vitals', effectiveVisitRecordId] });
+          queryClient.invalidateQueries({ queryKey: ['visit-events', effectiveVisitRecordId] });
+          queryClient.invalidateQueries({ queryKey: ['visit-record', effectiveVisitRecordId] });
+        }
+        // Also invalidate broadly to catch any other views
         queryClient.invalidateQueries({ queryKey: ['visit-tasks'] });
         queryClient.invalidateQueries({ queryKey: ['visit-medications'] });
         queryClient.invalidateQueries({ queryKey: ['visit-vitals'] });
         queryClient.invalidateQueries({ queryKey: ['visit-events'] });
         queryClient.invalidateQueries({ queryKey: ['visit-record-details'] });
+        
+        // Care plan data with specific IDs
+        const carePlanId = clientCarePlan?.id;
+        if (carePlanId) {
+          queryClient.invalidateQueries({ queryKey: ['care-plan-goals', carePlanId] });
+          queryClient.invalidateQueries({ queryKey: ['client-activities', carePlanId] });
+        }
         queryClient.invalidateQueries({ queryKey: ['care-plan-goals'] });
         queryClient.invalidateQueries({ queryKey: ['client-activities'] });
       } catch (error) {
@@ -1052,12 +1067,34 @@ export function CreateServiceReportDialog({
           submitted_at: new Date().toISOString(),
         }
       }, {
-        onSuccess: () => {
-          // Ensure View mode sees the updated data
-          queryClient.invalidateQueries({ queryKey: ['care-plan-goals'] });
-          queryClient.invalidateQueries({ queryKey: ['client-activities'] });
-          queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
-          queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
+        onSuccess: async () => {
+          // Invalidate ALL relevant queries with specific keys
+          const carePlanId = clientCarePlan?.id;
+          
+          // Specific invalidations
+          if (carePlanId) {
+            await queryClient.invalidateQueries({ queryKey: ['care-plan-goals', carePlanId] });
+            await queryClient.invalidateQueries({ queryKey: ['client-activities', carePlanId] });
+          }
+          await queryClient.invalidateQueries({ queryKey: ['service-report-detail', existingReport.id] });
+          
+          // Broad invalidations to catch all caches
+          await queryClient.invalidateQueries({ queryKey: ['care-plan-goals'] });
+          await queryClient.invalidateQueries({ queryKey: ['client-activities'] });
+          await queryClient.invalidateQueries({ queryKey: ['service-report-detail'] });
+          await queryClient.invalidateQueries({ queryKey: ['carer-service-reports-summary'] });
+          await queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
+          await queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
+          
+          // Visit-specific data with specific ID
+          if (effectiveVisitRecordId) {
+            await queryClient.invalidateQueries({ queryKey: ['visit-tasks', effectiveVisitRecordId] });
+            await queryClient.invalidateQueries({ queryKey: ['visit-medications', effectiveVisitRecordId] });
+            await queryClient.invalidateQueries({ queryKey: ['visit-vitals', effectiveVisitRecordId] });
+            await queryClient.invalidateQueries({ queryKey: ['visit-events', effectiveVisitRecordId] });
+            await queryClient.invalidateQueries({ queryKey: ['visit-record', effectiveVisitRecordId] });
+          }
+          
           onOpenChange(false);
           form.reset();
           toast.success('Service report updated and submitted for review');
