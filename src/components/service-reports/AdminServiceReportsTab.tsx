@@ -65,26 +65,8 @@ export function AdminServiceReportsTab({
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <Card className="p-6">
-        <div className="text-center text-muted-foreground">
-          <XCircle className="h-8 w-8 mx-auto mb-2" />
-          <p>Failed to load service reports</p>
-        </div>
-      </Card>
-    );
-  }
-
-  // Filter reports based on search term
+  // IMPORTANT: All useMemo hooks MUST be called before any early returns
+  // to avoid "Rendered more hooks than during the previous render" error
   const filteredReports = useMemo(() => {
     if (!debouncedSearchTerm.trim()) return reports;
     
@@ -107,12 +89,32 @@ export function AdminServiceReportsTab({
     });
   }, [reports, debouncedSearchTerm]);
 
-  // Get reports for current month
+  // Get reports for current month - use getTime() for stable dependency
   const now = new Date();
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const filteredThisMonthReports = useMemo(() => {
     return filteredReports.filter(r => new Date(r.service_date) >= thisMonthStart);
-  }, [filteredReports, thisMonthStart]);
+  }, [filteredReports, thisMonthStart.getTime()]);
+
+  // Now safe to do early returns after all hooks have been called
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-muted-foreground">
+          <XCircle className="h-8 w-8 mx-auto mb-2" />
+          <p>Failed to load service reports</p>
+        </div>
+      </Card>
+    );
+  }
 
   const openViewDialog = (report: any) => {
     setViewReportDialog({
