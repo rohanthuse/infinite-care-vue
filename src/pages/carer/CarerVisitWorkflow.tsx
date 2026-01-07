@@ -4327,88 +4327,6 @@ const CarerVisitWorkflow = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                   <div className="text-center py-6">
-                     {isViewOnly ? (
-                       <>
-                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                           <CheckCircle className="w-8 h-8 text-green-600" />
-                         </div>
-                         <h3 className="text-lg font-medium text-gray-900">Visit Completed</h3>
-                         <p className="text-gray-600 mt-1">This visit has been successfully completed and archived.</p>
-                       </>
-                     ) : isTabCompleted("complete") ? (
-                       <>
-                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                           <CheckCircle className="w-8 h-8 text-green-600" />
-                         </div>
-                         <h3 className="text-lg font-medium text-gray-900">Visit Ready for Completion</h3>
-                         <p className="text-gray-600 mt-1">Review the summary below and click Complete Visit to finish.</p>
-                       </>
-                     ) : (
-                       <>
-                         <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                           <CheckCircle className="w-8 h-8 text-orange-600" />
-                         </div>
-                         <h3 className="text-lg font-medium text-gray-900">Complete Required Sections</h3>
-                         <p className="text-gray-600 mt-1">Please complete all required sections before finishing the visit.</p>
-                         
-                         {/* Validation checklist */}
-                         <div className="mt-4 text-left max-w-md mx-auto">
-                           <ul className="space-y-2 text-sm">
-                             {!visitStarted && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Complete check-in process
-                               </li>
-                             )}
-                             {tasks && tasks.filter(task => task.priority === 'high' || task.priority === 'urgent').some(task => !task.is_completed) && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Complete all high/urgent priority tasks
-                               </li>
-                             )}
-                             {medications && medications.some(med => !med.is_administered && !med.missed_reason) && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Address all medications (administer or record reason)
-                               </li>
-                             )}
-                             {notes.trim().length < 10 && (
-                               <li className="flex items-center gap-2 text-red-600">
-                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                 Add visit notes (minimum 10 characters)
-                               </li>
-                             )}
-                              {!carerSignature && (
-                                <li className="flex items-center gap-2 text-red-600">
-                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                  Add carer signature
-                                </li>
-                              )}
-                              {!clientMood && (
-                                <li className="flex items-center gap-2 text-red-600">
-                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                  Select client mood
-                                </li>
-                              )}
-                              {!clientEngagement && (
-                                <li className="flex items-center gap-2 text-red-600">
-                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                  Select client engagement level
-                                </li>
-                              )}
-                              {carerObservations.trim().length < 10 && (
-                                <li className="flex items-center gap-2 text-red-600">
-                                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                                  Add carer observations (minimum 10 characters)
-                                </li>
-                              )}
-                            </ul>
-                         </div>
-                       </>
-                     )}
-                   </div>
-                  
                   {/* Client Mood & Engagement Section */}
                   {!isViewOnly && (
                     <Card className="mt-6 bg-blue-50/50 border-blue-100">
@@ -4537,6 +4455,89 @@ const CarerVisitWorkflow = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
+                      {/* Completion Status Section */}
+                      <div className="text-center py-4 mb-4 border-b border-green-200 dark:border-green-800">
+                        {isViewOnly ? (
+                          <>
+                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <h3 className="text-base font-medium text-foreground">Visit Completed</h3>
+                            <p className="text-sm text-muted-foreground mt-1">This visit has been successfully completed.</p>
+                          </>
+                        ) : isTabCompleted("complete") ? (
+                          <>
+                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <h3 className="text-base font-medium text-foreground">Ready for Completion</h3>
+                            <p className="text-sm text-muted-foreground mt-1">All required sections complete. Click Complete Visit to finish.</p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <h3 className="text-base font-medium text-foreground">Complete Required Sections</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Please complete all required sections before finishing the visit.</p>
+                            
+                            {/* Validation checklist */}
+                            <div className="mt-3 text-left max-w-md mx-auto">
+                              <ul className="space-y-2 text-sm">
+                                {!visitStarted && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Complete check-in process
+                                  </li>
+                                )}
+                                {tasks && tasks.filter(task => task.priority === 'high' || task.priority === 'urgent').some(task => !task.is_completed) && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Complete all high/urgent priority tasks
+                                  </li>
+                                )}
+                                {medications && medications.some(med => !med.is_administered && !med.missed_reason) && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Address all medications (administer or record reason)
+                                  </li>
+                                )}
+                                {notes.trim().length < 10 && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Add visit notes (minimum 10 characters)
+                                  </li>
+                                )}
+                                {!carerSignature && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Add carer signature
+                                  </li>
+                                )}
+                                {!clientMood && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Select client mood
+                                  </li>
+                                )}
+                                {!clientEngagement && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Select client engagement level
+                                  </li>
+                                )}
+                                {carerObservations.trim().length < 10 && (
+                                  <li className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                                    Add carer observations (minimum 10 characters)
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div>
                           <h4 className="font-medium text-foreground dark:text-foreground">Visit Details</h4>
