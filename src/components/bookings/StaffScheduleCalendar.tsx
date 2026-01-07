@@ -272,14 +272,22 @@ export function StaffScheduleCalendar({
         
         // Group bookings by day
         const staffBookings = bookings.filter(b => b.carerId === member.id);
-        staffBookings.forEach(booking => {
+        
+        // Filter to only bookings within this week's date range for accurate weekly total
+        const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+        const weekEndStr = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+        const weeklyStaffBookings = staffBookings.filter(b => 
+          b.date >= weekStartStr && b.date <= weekEndStr
+        );
+        
+        weeklyStaffBookings.forEach(booking => {
           if (weekBookings[booking.date]) {
             weekBookings[booking.date].push(booking);
           }
         });
         
-        // Calculate total hours for the week
-        const totalWeekHours = staffBookings.reduce((sum, b) => {
+        // Calculate total hours for the week using only this week's bookings
+        const totalWeekHours = weeklyStaffBookings.reduce((sum, b) => {
           const [startH, startM] = b.startTime.split(':').map(Number);
           const [endH, endM] = b.endTime.split(':').map(Number);
           let durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
