@@ -196,10 +196,19 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
             {renderField('How and When to Support Me', data.how_and_when_to_support_me)}
           </div>
 
+          {/* Do's & Don'ts Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderField('Likes/Preferences', data.likes)}
+            {renderField('Dislikes/Restrictions', data.dislikes)}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderField("Do's", data.dos || data.please_do)}
+            {renderField("Don'ts", data.donts || data.please_dont)}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderField('Meaningful Activities', data.meaningful_activities)}
-            {renderField('Please Do', data.please_do)}
-            {renderField("Please Don't", data.please_dont)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -209,13 +218,11 @@ export function AboutMeSection({ aboutMe }: AboutMeSectionProps) {
           </div>
 
           {/* Legacy field mappings for backward compatibility */}
-          {(data.background || data.likes || data.dislikes || data.communication_preferences || data.cultural_religious_needs || data.daily_routine || data.hobbies) && (
+          {(data.background || data.communication_preferences || data.cultural_religious_needs || data.daily_routine || data.hobbies) && (
             <div>
-              <h3 className="font-semibold text-base mb-3">Additional Information (Legacy)</h3>
+              <h3 className="font-semibold text-base mb-3">Additional Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {data.background && renderField('Background & History', data.background)}
-                {data.likes && renderField('Likes & Interests', data.likes)}
-                {data.dislikes && renderField('Dislikes', data.dislikes)}
                 {data.communication_preferences && renderField('Communication Preferences', data.communication_preferences)}
                 {data.cultural_religious_needs && renderField('Cultural/Religious Needs', data.cultural_religious_needs)}
                 {data.daily_routine && renderField('Daily Routine Preferences', data.daily_routine)}

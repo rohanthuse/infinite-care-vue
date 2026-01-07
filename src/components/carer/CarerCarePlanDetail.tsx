@@ -388,6 +388,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                     }}
                     personalCare={transformedPersonalCare}
                     aboutMeData={(patientDataState.aboutMe as any)?.has_key_safe !== undefined ? {
+                      // Existing fields
                       has_key_safe: (patientDataState.aboutMe as any)?.has_key_safe,
                       key_safe_code: (patientDataState.aboutMe as any)?.key_safe_code,
                       requires_heating_help: (patientDataState.aboutMe as any)?.requires_heating_help,
@@ -406,6 +407,29 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       has_respect: (patientDataState.aboutMe as any)?.has_respect,
                       has_dols: (patientDataState.aboutMe as any)?.has_dols,
                       has_lpa: (patientDataState.aboutMe as any)?.has_lpa,
+                      // My Home fields
+                      pets: (patientDataState.aboutMe as any)?.pets,
+                      home_accessibility: (patientDataState.aboutMe as any)?.home_accessibility,
+                      parking_availability: (patientDataState.aboutMe as any)?.parking_availability,
+                      emergency_access: (patientDataState.aboutMe as any)?.emergency_access,
+                      // Accessibility & Communication fields
+                      requires_interpreter: (patientDataState.aboutMe as any)?.requires_interpreter,
+                      sensory_impairment: (patientDataState.aboutMe as any)?.sensory_impairment,
+                      speech_difficulties: (patientDataState.aboutMe as any)?.speech_difficulties,
+                      cognitive_impairment: (patientDataState.aboutMe as any)?.cognitive_impairment,
+                      communication_aids: (patientDataState.aboutMe as any)?.communication_aids,
+                      // Background & Identity fields
+                      religion: (patientDataState.aboutMe as any)?.religion,
+                      sexual_orientation: (patientDataState.aboutMe as any)?.sexual_orientation,
+                      gender_identity: (patientDataState.aboutMe as any)?.gender_identity,
+                      nationality: (patientDataState.aboutMe as any)?.nationality,
+                      primary_language: (patientDataState.aboutMe as any)?.primary_language,
+                      preferred_interpreter_language: (patientDataState.aboutMe as any)?.preferred_interpreter_language,
+                      // Do's & Don'ts fields
+                      likes: (patientDataState.aboutMe as any)?.likes,
+                      dislikes: (patientDataState.aboutMe as any)?.dislikes,
+                      dos: (patientDataState.aboutMe as any)?.dos,
+                      donts: (patientDataState.aboutMe as any)?.donts,
                     } : null}
                   />
                 </TabsContent>
