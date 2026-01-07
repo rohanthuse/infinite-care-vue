@@ -986,15 +986,16 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
                 )}
               />
 
+              {/* Do's & Don'ts Section */}
               <FormField
                 control={form.control}
-                name="about_me.please_do"
+                name="about_me.likes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Please do</FormLabel>
+                    <FormLabel>Likes/Preferences</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Things the client would like caregivers to do..."
+                        placeholder="Things the client likes or prefers..."
                         className="min-h-[80px]"
                         {...field} 
                       />
@@ -1006,13 +1007,49 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
 
               <FormField
                 control={form.control}
-                name="about_me.please_dont"
+                name="about_me.dislikes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Please don't</FormLabel>
+                    <FormLabel>Dislikes/Restrictions</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Things the client would prefer caregivers not to do..."
+                        placeholder="Things the client dislikes or restrictions..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.dos"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do's</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Things to do for the client..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="about_me.donts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Don'ts</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Things to avoid for the client..."
                         className="min-h-[80px]"
                         {...field} 
                       />
