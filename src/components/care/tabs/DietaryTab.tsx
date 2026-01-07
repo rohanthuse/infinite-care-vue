@@ -17,6 +17,7 @@ interface DietaryTabProps {
   clientName?: string;
   visitRecordId?: string;
   onEditDietaryRequirements?: () => void;
+  validateSession?: () => Promise<boolean>;
 }
 
 export const DietaryTab: React.FC<DietaryTabProps> = ({ 
@@ -25,7 +26,8 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
   clientId,
   clientName,
   visitRecordId,
-  onEditDietaryRequirements 
+  onEditDietaryRequirements,
+  validateSession,
 }) => {
   const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -422,6 +424,7 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({
           clientId={clientId}
           clientName={clientName}
           visitRecordId={visitRecordId}
+          validateSession={validateSession}
         />
       )}
     </>

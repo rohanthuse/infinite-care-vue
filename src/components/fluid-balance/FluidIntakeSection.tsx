@@ -13,12 +13,15 @@ interface FluidIntakeSectionProps {
   clientId: string;
   date: string;
   visitRecordId?: string;
+  validateSession?: () => Promise<boolean>;
 }
+
+const MUTATION_TIMEOUT_MS = 15000;
 
 const FLUID_TYPES = ['Water', 'Tea', 'Coffee', 'Juice', 'Soup', 'Milk', 'Smoothie', 'Other'];
 const METHODS = ['Oral', 'PEG', 'NG Tube', 'IV', 'Other'];
 
-export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntakeSectionProps) {
+export function FluidIntakeSection({ clientId, date, visitRecordId, validateSession }: FluidIntakeSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidIntakeRecords(clientId, date);
   const addRecord = useAddFluidIntakeRecord();
@@ -32,7 +35,7 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
     comments: '',
   });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!clientId) {
       console.error('[FluidIntake] Save failed: clientId is missing');
       toast({ 
@@ -45,6 +48,19 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
     
     if (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0) return;
 
+    // Validate session before mutation
+    if (validateSession) {
+      const isValid = await validateSession();
+      if (!isValid) {
+        toast({ 
+          title: 'Session Expired', 
+          description: 'Please refresh the page and try again.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
 
     console.log('[FluidIntake] Attempting to save:', {
@@ -53,6 +69,20 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
       amount_ml: newRecord.amount_ml,
       fluid_type: newRecord.fluid_type
     });
+
+    // Timeout protection
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let hasTimedOut = false;
+
+    timeoutId = setTimeout(() => {
+      hasTimedOut = true;
+      console.warn('[FluidIntake] Mutation timeout after', MUTATION_TIMEOUT_MS, 'ms');
+      toast({ 
+        title: 'Timeout', 
+        description: 'Request timed out. Please check your connection and try again.', 
+        variant: 'destructive' 
+      });
+    }, MUTATION_TIMEOUT_MS);
 
     addRecord.mutate({
       client_id: clientId,
@@ -64,17 +94,23 @@ export function FluidIntakeSection({ clientId, date, visitRecordId }: FluidIntak
       method: newRecord.method,
       comments: newRecord.comments || undefined,
     }, {
+      onSettled: () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      },
       onSuccess: () => {
-        console.log('[FluidIntake] Save successful');
-        setNewRecord({
-          time: format(new Date(), 'HH:mm'),
-          fluid_type: 'Water',
-          amount_ml: '',
-          method: 'Oral',
-          comments: '',
-        });
+        if (!hasTimedOut) {
+          console.log('[FluidIntake] Save successful');
+          setNewRecord({
+            time: format(new Date(), 'HH:mm'),
+            fluid_type: 'Water',
+            amount_ml: '',
+            method: 'Oral',
+            comments: '',
+          });
+        }
       },
       onError: (error) => {
+        if (timeoutId) clearTimeout(timeoutId);
         console.error('[FluidIntake] Save failed:', error);
       }
     });

@@ -75,6 +75,7 @@ import { useFluidIntakeSummary } from "@/hooks/useFluidIntakeRecords";
 import { useFluidOutputSummary } from "@/hooks/useFluidOutputRecords";
 import { useUrinaryOutputSummary } from "@/hooks/useUrinaryOutputRecords";
 import { useFluidBalanceTarget } from "@/hooks/useFluidBalanceTargets";
+import { useSessionHealth } from "@/hooks/useSessionHealth";
 
 interface NextBookingInfo {
   id: string;
@@ -1300,7 +1301,10 @@ const CarerVisitWorkflow = () => {
     toast.info(visitStarted ? "Visit paused" : "Visit resumed");
   };
   
-  const handleTaskToggle = (taskId: string) => {
+  // State for task update loading (prevents multiple clicks)
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  
+  const handleTaskToggle = async (taskId: string) => {
     console.log('[handleTaskToggle] Called', { taskId, isViewOnly, visitRecordId: visitRecord?.id });
     
     if (isViewOnly) {
@@ -1308,16 +1312,43 @@ const CarerVisitWorkflow = () => {
       return;
     }
     
+    // Prevent multiple simultaneous updates
+    if (updatingTaskId) {
+      toast.info("Please wait for the current task update to complete");
+      return;
+    }
+    
+    // Session validation before mutation
+    const sessionValid = await ensureValidSession();
+    if (!sessionValid) {
+      toast.error('Session expired. Please refresh the page.');
+      return;
+    }
+    
     const task = tasks?.find(t => t.id === taskId);
     console.log('[handleTaskToggle] Task found:', task);
     
     if (task) {
+      setUpdatingTaskId(taskId);
       console.log('[handleTaskToggle] Calling mutation to toggle task');
+      
+      // Timeout protection (15 seconds)
+      const timeoutId = setTimeout(() => {
+        console.warn('[handleTaskToggle] Mutation timeout - resetting state');
+        setUpdatingTaskId(null);
+        toast.error('Request timed out. Please check your connection and try again.');
+      }, MUTATION_TIMEOUT_MS);
+      
       updateTask.mutate({
         taskId,
         isCompleted: !task.is_completed,
         notes: `Task ${task.is_completed ? 'unchecked' : 'completed'} at ${format(new Date(), 'HH:mm')}`,
         completionTimeMinutes: task.is_completed ? undefined : 15,
+      }, {
+        onSettled: () => {
+          clearTimeout(timeoutId);
+          setUpdatingTaskId(null);
+        }
       });
     } else {
       console.error('[handleTaskToggle] Task not found!', { taskId, tasksCount: tasks?.length });
@@ -3823,6 +3854,7 @@ const CarerVisitWorkflow = () => {
                     clientId={currentAppointment?.client_id}
                     clientName={`${currentAppointment?.clients?.first_name || ''} ${currentAppointment?.clients?.last_name || ''}`}
                     visitRecordId={visitRecord?.id}
+                    validateSession={ensureValidSession}
                   />
                 )}
               </CardContent>

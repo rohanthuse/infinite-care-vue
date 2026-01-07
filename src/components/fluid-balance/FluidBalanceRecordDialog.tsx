@@ -18,6 +18,7 @@ interface FluidBalanceRecordDialogProps {
   clientId: string;
   clientName: string;
   visitRecordId?: string;
+  validateSession?: () => Promise<boolean>;
 }
 
 export function FluidBalanceRecordDialog({
@@ -26,6 +27,7 @@ export function FluidBalanceRecordDialog({
   clientId,
   clientName,
   visitRecordId,
+  validateSession,
 }: FluidBalanceRecordDialogProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const dateString = format(selectedDate, 'yyyy-MM-dd');
@@ -77,15 +79,15 @@ export function FluidBalanceRecordDialog({
 
           <div className="flex-1 overflow-auto mt-4">
             <TabsContent value="intake" className="mt-0">
-              <FluidIntakeSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
+              <FluidIntakeSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} validateSession={validateSession} />
             </TabsContent>
 
             <TabsContent value="output" className="mt-0">
-              <FluidOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
+              <FluidOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} validateSession={validateSession} />
             </TabsContent>
 
             <TabsContent value="urinary" className="mt-0">
-              <UrinaryOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} />
+              <UrinaryOutputSection clientId={clientId} date={dateString} visitRecordId={visitRecordId} validateSession={validateSession} />
             </TabsContent>
 
             <TabsContent value="summary" className="mt-0">

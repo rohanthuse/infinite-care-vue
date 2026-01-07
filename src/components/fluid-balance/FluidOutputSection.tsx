@@ -14,13 +14,16 @@ interface FluidOutputSectionProps {
   clientId: string;
   date: string;
   visitRecordId?: string;
+  validateSession?: () => Promise<boolean>;
 }
+
+const MUTATION_TIMEOUT_MS = 15000;
 
 const OUTPUT_TYPES = ['Urine', 'Vomit', 'Drain', 'Stoma', 'Wound', 'Other'];
 const ESTIMATES = ['Small', 'Moderate', 'Large'];
 const APPEARANCES = ['Clear', 'Cloudy', 'Dark', 'Blood-stained', 'Yellow', 'Brown', 'Other'];
 
-export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutputSectionProps) {
+export function FluidOutputSection({ clientId, date, visitRecordId, validateSession }: FluidOutputSectionProps) {
   const { toast } = useToast();
   const { data: records = [], isLoading } = useFluidOutputRecords(clientId, date);
   const addRecord = useAddFluidOutputRecord();
@@ -37,7 +40,7 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
 
   const [useEstimate, setUseEstimate] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!clientId) {
       console.error('[FluidOutput] Save failed: clientId is missing');
       toast({ 
@@ -51,6 +54,19 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
     if (!useEstimate && (!newRecord.amount_ml || parseInt(newRecord.amount_ml) <= 0)) return;
     if (useEstimate && !newRecord.amount_estimate) return;
 
+    // Validate session before mutation
+    if (validateSession) {
+      const isValid = await validateSession();
+      if (!isValid) {
+        toast({ 
+          title: 'Session Expired', 
+          description: 'Please refresh the page and try again.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     const timeDate = new Date(`${date}T${newRecord.time}:00`);
 
     console.log('[FluidOutput] Attempting to save:', {
@@ -58,6 +74,20 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
       record_date: date,
       output_type: newRecord.output_type
     });
+
+    // Timeout protection
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let hasTimedOut = false;
+
+    timeoutId = setTimeout(() => {
+      hasTimedOut = true;
+      console.warn('[FluidOutput] Mutation timeout after', MUTATION_TIMEOUT_MS, 'ms');
+      toast({ 
+        title: 'Timeout', 
+        description: 'Request timed out. Please check your connection and try again.', 
+        variant: 'destructive' 
+      });
+    }, MUTATION_TIMEOUT_MS);
 
     addRecord.mutate({
       client_id: clientId,
@@ -70,18 +100,24 @@ export function FluidOutputSection({ clientId, date, visitRecordId }: FluidOutpu
       appearance: newRecord.appearance || undefined,
       comments: newRecord.comments || undefined,
     }, {
+      onSettled: () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      },
       onSuccess: () => {
-        console.log('[FluidOutput] Save successful');
-        setNewRecord({
-          time: format(new Date(), 'HH:mm'),
-          output_type: 'Urine',
-          amount_ml: '',
-          amount_estimate: '',
-          appearance: 'Clear',
-          comments: '',
-        });
+        if (!hasTimedOut) {
+          console.log('[FluidOutput] Save successful');
+          setNewRecord({
+            time: format(new Date(), 'HH:mm'),
+            output_type: 'Urine',
+            amount_ml: '',
+            amount_estimate: '',
+            appearance: 'Clear',
+            comments: '',
+          });
+        }
       },
       onError: (error) => {
+        if (timeoutId) clearTimeout(timeoutId);
         console.error('[FluidOutput] Save failed:', error);
       }
     });
