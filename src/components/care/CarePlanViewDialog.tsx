@@ -635,7 +635,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
     // Enhanced read-only styles for staff context
     const readOnlyStyles = `[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_input]:cursor-not-allowed
-         [&_textarea]:pointer-events-none [&_textarea]:bg-muted/50 [&_textarea]:cursor-not-allowed
+         [&_textarea]:bg-muted/50 [&_textarea]:cursor-default [&_textarea]:select-text [&_textarea]:focus:outline-none [&_textarea]:caret-transparent
          [&_select]:pointer-events-none [&_button[role=combobox]]:pointer-events-none [&_button[role=combobox]]:bg-muted/50 [&_button[role=combobox]]:cursor-not-allowed
          [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:pointer-events-none [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:opacity-50 [&_button:not(.sidebar-nav-button):not(.document-action-button):not(.service-view-button)]:cursor-not-allowed`;
 

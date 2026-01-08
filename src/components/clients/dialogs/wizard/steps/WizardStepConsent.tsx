@@ -35,7 +35,8 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
           </TabsList>
           
           <TabsContent value="having-capacity" className="space-y-4 mt-6">
-            <div className="grid gap-4">
+            <div className="max-h-[55vh] overflow-y-auto pr-2">
+              <div className="grid gap-4">
               <Alert>
                 <AlertDescription>
                   The purpose of this care plan is to ensure that care and support is provided in line with your assessed needs, preferences and choices. We are committed to working with you to achieve your desired outcomes in a way that promotes your dignity and respects your human rights.
@@ -575,12 +576,14 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
                     </FormItem>
                   )}
                 />
+                </div>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="lacking-capacity" className="space-y-4 mt-6">
-            <div className="grid gap-4">
+            <div className="max-h-[55vh] overflow-y-auto pr-2">
+              <div className="grid gap-4">
               <Alert>
                 <AlertDescription>
                   This section is to be completed when the person lacks capacity to consent to their care and support plan. The assessment should be conducted in accordance with the Mental Capacity Act 2005.
@@ -1065,12 +1068,14 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
                     </FormItem>
                   )}
                 />
+                </div>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="third-party" className="space-y-4 mt-6">
-            <div className="grid gap-4">
+            <div className="max-h-[55vh] overflow-y-auto pr-2">
+              <div className="grid gap-4">
               <FormField
                 control={form.control}
                 name="consent.third_party_consent"
@@ -1180,6 +1185,7 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
                   </FormItem>
                 )}
               />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
