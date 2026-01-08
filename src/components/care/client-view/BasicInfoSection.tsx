@@ -57,8 +57,8 @@ export function BasicInfoSection({ carePlan }: BasicInfoSectionProps) {
     if (providerType === 'external') {
       return { label: 'External Provider', variant: 'secondary' as const };
     }
-    // Default based on whether staff_id exists
-    if (carePlan.staff_id || carePlan.staff || carePlan.staff_ids?.length > 0) {
+    // Default based on whether staff_id exists OR staff_assignments has data
+    if (carePlan.staff_id || carePlan.staff || carePlan.staff_ids?.length > 0 || carePlan.staff_assignments?.length > 0) {
       return { label: 'Internal Staff Member', variant: 'default' as const };
     }
     return null;

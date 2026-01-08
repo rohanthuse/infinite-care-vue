@@ -168,9 +168,13 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
     // Basic Information - Enhanced with missing fields
     title: safeString(carePlan.title || autoSaveData.title),
     provider_name: safeString(carePlan.provider_name || carePlan.staff?.first_name + ' ' + carePlan.staff?.last_name || autoSaveData.provider_name),
-    provider_type: autoSaveData.provider_type || (carePlan.staff_id ? 'staff' : 'external'),
+    provider_type: autoSaveData.provider_type || 
+      (carePlan.staff_id ? 'staff' : 
+        (carePlan.staff_assignments?.length > 0 ? 'staff' : 'external')),
     staff_id: carePlan.staff_id || autoSaveData.staff_id,
-    staff_ids: autoSaveData.staff_ids || [],
+    staff_ids: (autoSaveData.staff_ids?.length > 0 
+      ? autoSaveData.staff_ids 
+      : (carePlan.staff_assignments?.map((a: any) => a.staff_id) || [])),
     staff_assignments: carePlan.staff_assignments || [],
     staff: carePlan.staff,
     start_date: carePlan.start_date ? new Date(carePlan.start_date).toISOString().split('T')[0] : (autoSaveData.start_date ? new Date(autoSaveData.start_date).toISOString().split('T')[0] : ''),
