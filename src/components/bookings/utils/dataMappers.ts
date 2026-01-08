@@ -38,6 +38,7 @@ export function mapDBClientToClient(db: any): Client {
     bookings: [],
     bookingCount: 0,
     address: address || undefined,
+    status: db.status,  // Preserve client status for UI indicators
   };
   
   console.log("[mapDBClientToClient] Mapped to:", mappedClient);

@@ -62,6 +62,7 @@ interface BookingBlock {
 interface ClientScheduleRow {
   id: string;
   name: string;
+  status?: string;  // Client status for inactive indicator
   address?: string;
   carePackage?: string;
   schedule: Record<string, ClientStatus>;
@@ -306,6 +307,7 @@ export function ClientScheduleCalendar({
         return {
           id: client.id,
           name: client.name,
+          status: client.status,
           address: client.address || 'Address not available',
           weekBookings,
           totalWeekHours,
@@ -540,6 +542,7 @@ export function ClientScheduleCalendar({
         return {
           id: client.id,
           name: client.name,
+          status: client.status,
           address: client.address || 'Address not available',
           carePackage: 'Standard Care',
           schedule,
@@ -889,8 +892,18 @@ export function ClientScheduleCalendar({
                   style={{ width: LEFT_COL_WIDTH }}
                 >
                   <div className="space-y-1">
-                    <div className="font-medium text-sm truncate">
-                      {client.name}
+                    <div className="font-medium text-sm truncate flex items-center gap-1.5">
+                      <span className={client.status === 'Inactive' ? 'text-muted-foreground' : ''}>
+                        {client.name}
+                      </span>
+                      {client.status === 'Inactive' && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-[10px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-muted-foreground/30 flex-shrink-0"
+                        >
+                          Inactive
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {client.address || 'No address'}
