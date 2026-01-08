@@ -26,6 +26,8 @@ export interface ClientProfile {
   other_identifier?: string;
   additional_information?: string;
   avatar_initials?: string;
+  active_from?: string;
+  active_until?: string;
 }
 
 export interface ClientCarePlan {

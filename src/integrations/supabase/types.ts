@@ -4817,6 +4817,8 @@ export type Database = {
       }
       clients: {
         Row: {
+          active_from: string | null
+          active_until: string | null
           additional_information: string | null
           address: string | null
           age_group: Database["public"]["Enums"]["age_group"]
@@ -4869,6 +4871,8 @@ export type Database = {
           uninvoiced_bookings_count: number | null
         }
         Insert: {
+          active_from?: string | null
+          active_until?: string | null
           additional_information?: string | null
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
@@ -4921,6 +4925,8 @@ export type Database = {
           uninvoiced_bookings_count?: number | null
         }
         Update: {
+          active_from?: string | null
+          active_until?: string | null
           additional_information?: string | null
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
