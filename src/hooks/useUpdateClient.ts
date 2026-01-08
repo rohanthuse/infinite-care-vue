@@ -33,6 +33,8 @@ interface UpdateClientParams {
     show_in_task_matrix?: boolean;
     show_in_form_matrix?: boolean;
     enable_geo_fencing?: boolean;
+    active_from?: string | null;
+    active_until?: string | null;
   };
 }
 

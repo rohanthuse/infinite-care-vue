@@ -465,6 +465,7 @@ export function ClientsManagementSection({
                         </button>
                       </th>
                       <th className="text-left py-3 px-4 font-medium">Status</th>
+                      <th className="text-left py-3 px-4 font-medium">Inactive From</th>
                       <th className="text-left py-3 px-4 font-medium">
                         <button 
                           onClick={() => handleSort('region')}
@@ -485,8 +486,12 @@ export function ClientsManagementSection({
                     </tr>
                   </thead>
                   <tbody>
-                    {clients.map((client) => (
-                      <tr key={client.id} className="border-b hover:bg-muted">
+                    {clients.map((client) => {
+                      const isExpired = client.active_until && new Date(client.active_until) < new Date();
+                      const isInactive = client.status === 'Inactive' || isExpired;
+                      
+                      return (
+                      <tr key={client.id} className={`border-b hover:bg-muted ${isInactive ? 'opacity-60 bg-muted/30' : ''}`}>
                         <td className="py-3 px-4">
                           <Checkbox
                             checked={isClientSelected(client)}
@@ -522,9 +527,25 @@ export function ClientsManagementSection({
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
-                            {client.status || 'N/A'}
+                          <Badge variant={client.status === 'Active' && !isExpired ? 'default' : 'secondary'}>
+                            {isExpired ? 'Inactive' : (client.status || 'N/A')}
                           </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {client.active_until ? (
+                            <span className={`${
+                              new Date(client.active_until) < new Date() 
+                                ? 'text-destructive font-medium' 
+                                : 'text-muted-foreground'
+                            }`}>
+                              {new Date(client.active_until).toLocaleDateString('en-GB')}
+                              {new Date(client.active_until) < new Date() && (
+                                <Badge variant="destructive" className="ml-2 text-xs">Expired</Badge>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Not set</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-sm">{client.region || 'N/A'}</td>
                         <td className="py-3 px-4 text-sm">
@@ -593,7 +614,8 @@ export function ClientsManagementSection({
                           </DropdownMenu>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

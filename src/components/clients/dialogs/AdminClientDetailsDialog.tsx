@@ -430,6 +430,31 @@ export function AdminClientDetailsDialog({
                               <p className="font-medium capitalize">{client.status || "Active"}</p>
                             </div>
                             <div>
+                              <span className="font-medium text-muted-foreground">Active From:</span>
+                              <p className="font-medium">
+                                {client.active_from 
+                                  ? new Date(client.active_from).toLocaleDateString('en-GB')
+                                  : "Not set"}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Active Until:</span>
+                              <p className={`font-medium ${
+                                client.active_until && new Date(client.active_until) < new Date()
+                                  ? 'text-destructive'
+                                  : ''
+                              }`}>
+                                {client.active_until 
+                                  ? new Date(client.active_until).toLocaleDateString('en-GB')
+                                  : "Not set"}
+                                {client.active_until && new Date(client.active_until) < new Date() && (
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-destructive text-destructive-foreground">
+                                    Expired
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div>
                               <span className="font-medium text-muted-foreground">Email:</span>
                               <p className="font-medium">{client.email || "Not provided"}</p>
                             </div>

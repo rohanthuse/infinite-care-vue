@@ -10,6 +10,8 @@ export interface EnhancedClient {
   pin_code?: string;
   address?: string;
   status?: string;
+  active_from?: string;
+  active_until?: string;
   full_name: string;
   search_text: string;
 }
@@ -35,13 +37,19 @@ const fetchSearchableClients = async ({
 
   let query = supabase
     .from('clients')
-    .select('id, first_name, last_name, email, pin_code, address, status', { count: 'exact' })
+    .select('id, first_name, last_name, email, pin_code, address, status, active_from, active_until', { count: 'exact' })
     .eq('branch_id', branchId);
 
-  // Apply status filter
+  // Apply status filter - also check active_until for active clients
   if (clientStatus !== 'all') {
     const statusValue = clientStatus === 'active' ? 'Active' : 'Former';
     query = query.eq('status', statusValue);
+    
+    // For active clients, also exclude those whose active_until has passed
+    if (clientStatus === 'active') {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.or(`active_until.is.null,active_until.gte.${today}`);
+    }
   }
 
   // Apply search filter if searchTerm is provided
@@ -163,11 +171,14 @@ export const useRecentClients = (branchId: string, limit = 5) => {
     queryFn: async () => {
       if (!branchId) return [];
 
+      const today = new Date().toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, pin_code, status, created_at')
+        .select('id, first_name, last_name, pin_code, status, active_until, created_at')
         .eq('branch_id', branchId)
         .eq('status', 'Active')
+        .or(`active_until.is.null,active_until.gte.${today}`)
         .order('created_at', { ascending: false })
         .limit(limit);
 

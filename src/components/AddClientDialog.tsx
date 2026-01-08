@@ -63,7 +63,9 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     gp_details: "",
     mobility_status: "",
     communication_preferences: "",
-    additional_information: ""
+    additional_information: "",
+    active_from: "",
+    active_until: ""
   };
   
   const [formData, setFormData] = useState(defaultFormData);
@@ -119,7 +121,9 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         gp_details: clientToEdit.gp_details || "",
         mobility_status: clientToEdit.mobility_status || "",
         communication_preferences: clientToEdit.communication_preferences || "",
-        additional_information: clientToEdit.additional_information || ""
+        additional_information: clientToEdit.additional_information || "",
+        active_from: clientToEdit.active_from || "",
+        active_until: clientToEdit.active_until || ""
       });
     } else if (open && mode === 'add') {
       // Reset for add mode when opening
@@ -674,6 +678,46 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
                 </Select>
               </div>
             </div>
+          </div>
+
+          {/* SECTION: Client Active Period */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-foreground">Client Active Period</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Client will automatically become inactive after the end date
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="active_from">Active From <span className="text-red-500">*</span></Label>
+                <Input 
+                  id="active_from" 
+                  type="date" 
+                  value={formData.active_from} 
+                  onChange={e => handleInputChange("active_from", e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="active_until">Active Until <span className="text-red-500">*</span></Label>
+                <Input 
+                  id="active_until" 
+                  type="date" 
+                  value={formData.active_until} 
+                  onChange={e => handleInputChange("active_until", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            {formData.active_from && formData.active_until && 
+             new Date(formData.active_until) < new Date(formData.active_from) && (
+              <p className="text-sm text-destructive">
+                End date cannot be earlier than start date
+              </p>
+            )}
           </div>
 
           {/* SECTION 5: Emergency Contact */}
