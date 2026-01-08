@@ -656,7 +656,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
             currentStep={currentStep} 
             form={form} 
             clientId={carePlanWithDetails.client_id} 
-            effectiveCarePlanId={carePlanId}
+            effectiveCarePlanId={carePlanWithDetails.id}
           />
         </Form>
       </div>
