@@ -549,7 +549,11 @@ export function CarerReportsTab() {
                     key={report.id} 
                     report={report} 
                     canEdit={true} 
-                    onEdit={() => handleEditReport(report)} 
+                    onEdit={() => handleEditReport(report)}
+                    onView={() => {
+                      setSelectedReport(report);
+                      setViewDialogOpen(true);
+                    }}
                   />
                 ))}
               </CardContent>
@@ -588,7 +592,11 @@ export function CarerReportsTab() {
                 key={report.id} 
                 report={report} 
                 canEdit={true} 
-                onEdit={() => handleEditReport(report)} 
+                onEdit={() => handleEditReport(report)}
+                onView={() => {
+                  setSelectedReport(report);
+                  setViewDialogOpen(true);
+                }}
               />
             ))
           )}
@@ -614,7 +622,11 @@ export function CarerReportsTab() {
                   key={report.id} 
                   report={report} 
                   canEdit={report.status === 'rejected'} 
-                  onEdit={() => handleEditReport(report)} 
+                  onEdit={() => handleEditReport(report)}
+                  onView={() => {
+                    setSelectedReport(report);
+                    setViewDialogOpen(true);
+                  }}
                 />
               ))
           )}
@@ -662,11 +674,13 @@ export function CarerReportsTab() {
 function ReportCard({
   report,
   canEdit = false,
-  onEdit
+  onEdit,
+  onView
 }: {
   report: any;
   canEdit?: boolean;
   onEdit?: () => void;
+  onView?: () => void;
 }) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -724,6 +738,12 @@ function ReportCard({
           </div>
           
           <div className="flex gap-2">
+            {onView && (
+              <Button onClick={onView} size="sm" variant="outline">
+                <Eye className="h-4 w-4 mr-1" />
+                View
+              </Button>
+            )}
             {canEdit && onEdit && <Button onClick={onEdit} size="sm" variant="outline">
                 <Edit className="h-4 w-4 mr-1" />
                 Edit

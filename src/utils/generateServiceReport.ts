@@ -130,8 +130,8 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     client_engagement: data.assessmentData?.clientEngagement || undefined,
     client_feedback: data.assessmentData?.clientFeedback || undefined,
     next_visit_preparations: data.assessmentData?.nextVisitPreparations || undefined,
-    // Service reports start as 'pending' for admin review
-    status: 'pending' as const,
+    // Service reports are auto-approved on completion
+    status: 'approved' as const,
     visible_to_client: false,
     created_by: data.createdBy,
   };
