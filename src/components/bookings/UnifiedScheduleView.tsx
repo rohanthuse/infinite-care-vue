@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import {
 import { createBookingDateTime } from "./utils/dateUtils";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useUpdateMultipleBookings } from "@/hooks/useUpdateMultipleBookings";
+import { validateBookingAgainstClientActiveDate } from "@/utils/clientActiveValidation";
 
 interface UnifiedScheduleViewProps {
   date: Date;
@@ -74,6 +75,15 @@ export function UnifiedScheduleView({
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
   const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
 
+  // Build client active_until map for drag-drop validation
+  const clientActiveMap = useMemo(() => {
+    const map = new Map<string, string | null>();
+    clients.forEach(c => {
+      map.set(c.id, (c as any).active_until || null);
+    });
+    return map;
+  }, [clients]);
+
   // Track mouse position for precise drop detection
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -92,13 +102,27 @@ export function UnifiedScheduleView({
     const { draggableId, source, destination } = result;
     
     // Extract actual booking ID from prefixed draggableId
-    // Format: "client-{bookingId}-{idx}" or "staff-{bookingId}-{idx}"
     const bookingIdMatch = draggableId.match(/^(?:client|staff)-(.+)-\d+$/);
     const actualBookingId = bookingIdMatch ? bookingIdMatch[1] : draggableId;
     
     // Find the booking being dragged
     const booking = bookings.find(b => b.id === actualBookingId);
     if (!booking) return;
+
+    // Get date for validation
+    const dateString = format(date, 'yyyy-MM-dd');
+
+    // VALIDATE CLIENT ACTIVE DATE before allowing reschedule
+    if (booking.clientId) {
+      const clientActiveUntil = clientActiveMap.get(booking.clientId);
+      const validation = validateBookingAgainstClientActiveDate(dateString, clientActiveUntil);
+      if (!validation.isValid) {
+        toast.error("Cannot Reschedule", {
+          description: validation.error
+        });
+        return;
+      }
+    }
 
     // Determine if this is a staff or client drop
     const isStaffDrop = destination.droppableId.startsWith('staff-');
@@ -130,7 +154,6 @@ export function UnifiedScheduleView({
     // Calculate duration and new end time
     const duration = calculateDuration(booking.startTime, booking.endTime);
     const newEndTime = addMinutesToTime(newStartTime, duration);
-    const dateString = format(date, 'yyyy-MM-dd');
 
     if (isStaffDrop) {
       // Staff drop - reassign to different staff and/or time
