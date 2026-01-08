@@ -229,7 +229,7 @@ export function ViewFullCarerProfileDialog({
                 }}
               />
               
-              <div className="p-6 space-y-1">
+              <div className="p-4 space-y-0.5 flex-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
@@ -238,14 +238,14 @@ export function ViewFullCarerProfileDialog({
                       key={tab.value}
                       onClick={() => setActiveTab(tab.value)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                        "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all duration-200",
+                        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-foreground hover:bg-muted hover:text-primary"
                       )}
                     >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                       <span className="truncate text-left">{tab.label}</span>
                     </button>
                   );
