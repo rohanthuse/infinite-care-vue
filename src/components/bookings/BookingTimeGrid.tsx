@@ -84,6 +84,7 @@ export interface Client {
   bookingCount: number;
   bookings?: Booking[];
   address?: string;
+  status?: string;  // Client status (Active, Inactive, Former, etc.)
 }
 
 export interface Carer {
