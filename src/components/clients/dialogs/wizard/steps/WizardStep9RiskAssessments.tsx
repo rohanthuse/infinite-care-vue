@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AutoExpandingTextarea } from "@/components/ui/auto-expanding-textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -247,7 +248,12 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <FormControl>
-                            <Input placeholder="Enter risk factor" {...field} />
+                            <AutoExpandingTextarea 
+                              placeholder="Enter risk factor" 
+                              minRows={1} 
+                              maxHeight={80} 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -287,7 +293,12 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <FormControl>
-                            <Input placeholder="Enter mitigation strategy" {...field} />
+                            <AutoExpandingTextarea 
+                              placeholder="Enter mitigation strategy" 
+                              minRows={1} 
+                              maxHeight={80} 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -378,7 +389,12 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                     <FormItem>
                       <FormLabel>Fall Risk</FormLabel>
                       <FormControl>
-                        <Input placeholder="Describe fall risk factors..." {...field} />
+                        <AutoExpandingTextarea 
+                          placeholder="Describe fall risk factors..." 
+                          minRows={2} 
+                          maxHeight={150} 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -392,7 +408,12 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                     <FormItem>
                       <FormLabel>Adverse Weather Plan</FormLabel>
                       <FormControl>
-                        <Input placeholder="Describe adverse weather contingency plan..." {...field} />
+                        <AutoExpandingTextarea 
+                          placeholder="Describe adverse weather contingency plan..." 
+                          minRows={2} 
+                          maxHeight={150} 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

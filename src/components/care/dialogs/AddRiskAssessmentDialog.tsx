@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AutoExpandingTextarea } from "@/components/ui/auto-expanding-textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -206,10 +207,10 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
                 <FormItem>
                   <FormLabel>Risk Factors (one per line)</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <AutoExpandingTextarea
                       placeholder="Enter risk factors, one per line..."
-                      className="resize-none"
-                      rows={3}
+                      minRows={2}
+                      maxHeight={150}
                       {...field}
                     />
                   </FormControl>
@@ -225,10 +226,10 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
                 <FormItem>
                   <FormLabel>Mitigation Strategies (one per line)</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <AutoExpandingTextarea
                       placeholder="Enter mitigation strategies, one per line..."
-                      className="resize-none"
-                      rows={3}
+                      minRows={2}
+                      maxHeight={150}
                       {...field}
                     />
                   </FormControl>
@@ -408,10 +409,10 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
                   <FormItem>
                     <FormLabel>Fall Risk</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <AutoExpandingTextarea
                         placeholder="Describe fall risk factors..."
-                        className="resize-none"
-                        rows={3}
+                        minRows={2}
+                        maxHeight={150}
                         {...field}
                       />
                     </FormControl>
@@ -446,10 +447,10 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
                   <FormItem>
                     <FormLabel>Adverse Weather Plan</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <AutoExpandingTextarea
                         placeholder="Describe adverse weather contingency plan..."
-                        className="resize-none"
-                        rows={3}
+                        minRows={2}
+                        maxHeight={150}
                         {...field}
                       />
                     </FormControl>
