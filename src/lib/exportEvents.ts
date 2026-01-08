@@ -2041,18 +2041,24 @@ export const exportEventsListToPDF = (events: ExportableEvent[], filename: strin
   pdf.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 
-// Client share sections interface for PDF generation - 19 modules
+// Client share sections interface for PDF generation - 26 modules
 interface ClientPdfSections {
-  // Basic Information (3)
+  // Basic Information (5)
   personalInfo?: boolean;
   generalInfo?: boolean;
   emergencyContacts?: boolean;
-  // Care & Medical (5)
+  keyContacts?: boolean;
+  addresses?: boolean;
+  // Care & Medical (9)
   carePlans?: boolean;
   medicalInfo?: boolean;
   medications?: boolean;
   news2Assessments?: boolean;
   activities?: boolean;
+  riskAssessments?: boolean;
+  vaccinations?: boolean;
+  safeguarding?: boolean;
+  dietaryRequirements?: boolean;
   // Appointments & Records (4)
   appointments?: boolean;
   visitRecords?: boolean;
@@ -2082,11 +2088,17 @@ export const exportClientProfileToPDF = async (
     personalInfo: true,
     generalInfo: true,
     emergencyContacts: true,
+    keyContacts: true,
+    addresses: true,
     carePlans: true,
     medicalInfo: true,
     medications: true,
     news2Assessments: true,
     activities: true,
+    riskAssessments: true,
+    vaccinations: true,
+    safeguarding: true,
+    dietaryRequirements: true,
     appointments: true,
     visitRecords: true,
     serviceReports: true,
@@ -2321,6 +2333,90 @@ export const exportClientProfileToPDF = async (
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
+    }
+    
+    // NEW SECTION: Key Contacts (from client_key_contacts table)
+    if (sections.keyContacts) {
+      const { data: keyContacts } = await supabase
+        .from('client_key_contacts')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('is_next_of_kin', { ascending: false });
+
+      if (keyContacts && keyContacts.length > 0) {
+        await addSectionHeader('Key Contacts');
+
+        const contactRows = keyContacts.map((c: any) => [
+          `${c.first_name || ''} ${c.surname || ''}`.trim() || 'N/A',
+          c.relationship || 'N/A',
+          c.contact_type || 'N/A',
+          c.phone || c.mobile || 'N/A',
+          c.email || 'N/A',
+          [
+            c.is_next_of_kin ? 'NOK' : '',
+            c.is_emergency_contact ? 'Emergency' : ''
+          ].filter(Boolean).join(', ') || '-'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Name', 'Relationship', 'Type', 'Phone', 'Email', 'Flags']],
+          body: contactRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // NEW SECTION: Client Addresses (from client_addresses table)
+    if (sections.addresses) {
+      const { data: addresses } = await supabase
+        .from('client_addresses')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('is_default', { ascending: false });
+
+      if (addresses && addresses.length > 0) {
+        await addSectionHeader('Client Addresses');
+
+        const addressRows = addresses.map((a: any) => {
+          const fullAddress = [
+            a.address_line_1,
+            a.address_line_2,
+            a.city,
+            a.state_county,
+            a.postcode,
+            a.country
+          ].filter(Boolean).join(', ');
+          
+          return [
+            a.address_label || 'Primary',
+            fullAddress || 'N/A',
+            a.is_default ? 'Yes' : 'No'
+          ];
+        });
+
+        autoTable(pdf, {
+          head: [['Label', 'Address', 'Default']],
+          body: addressRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          columnStyles: { 
+            0: { cellWidth: 30 },
+            1: { cellWidth: 120 },
+            2: { cellWidth: 20 }
+          },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
     }
     
     // Section 4-13: General Information (Personal Background, Home Info, Accessibility, GP, Care Preferences, etc.)
@@ -2744,6 +2840,205 @@ export const exportClientProfileToPDF = async (
         });
 
         currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // NEW SECTION: Risk Assessments (from client_risk_assessments table)
+    if (sections.riskAssessments) {
+      const { data: riskAssessments } = await supabase
+        .from('client_risk_assessments')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('assessment_date', { ascending: false })
+        .limit(15);
+
+      if (riskAssessments && riskAssessments.length > 0) {
+        await addSectionHeader('Risk Assessments');
+
+        const riskRows = riskAssessments.map((r: any) => [
+          r.risk_type || 'N/A',
+          r.risk_level || 'N/A',
+          r.rag_status || 'N/A',
+          r.assessment_date ? format(new Date(r.assessment_date), 'PP') : 'N/A',
+          r.review_date ? format(new Date(r.review_date), 'PP') : 'N/A',
+          (r.control_measures || 'N/A').substring(0, 40) + ((r.control_measures?.length || 0) > 40 ? '...' : '')
+        ]);
+
+        autoTable(pdf, {
+          head: [['Risk Type', 'Level', 'RAG', 'Assessed', 'Review', 'Control Measures']],
+          body: riskRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+
+        // Add risk flags summary if any exist
+        const firstAssessment = riskAssessments[0];
+        const riskFlags = [];
+        if (firstAssessment.fall_risk) riskFlags.push('Fall Risk');
+        if (firstAssessment.lives_alone) riskFlags.push('Lives Alone');
+        if (firstAssessment.smoker) riskFlags.push('Smoker');
+        if (firstAssessment.cared_in_bed) riskFlags.push('Cared in Bed');
+        
+        if (riskFlags.length > 0) {
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Risk Flags: ', leftMargin, currentY);
+          pdf.setFont(undefined, 'normal');
+          pdf.text(riskFlags.join(', '), leftMargin + 25, currentY);
+          currentY += 10;
+        }
+      }
+    }
+
+    // NEW SECTION: Vaccinations (from client_vaccinations table)
+    if (sections.vaccinations) {
+      const { data: vaccinations } = await supabase
+        .from('client_vaccinations')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('vaccination_date', { ascending: false })
+        .limit(15);
+
+      if (vaccinations && vaccinations.length > 0) {
+        await addSectionHeader('Vaccination Records');
+
+        const vaccRows = vaccinations.map((v: any) => [
+          v.vaccination_name || v.vaccine_type || 'N/A',
+          v.vaccination_date ? format(new Date(v.vaccination_date), 'PP') : 'N/A',
+          v.next_due_date ? format(new Date(v.next_due_date), 'PP') : 'N/A',
+          v.administered_by || 'N/A',
+          v.status || 'Completed',
+          (v.notes || '-').substring(0, 30) + ((v.notes?.length || 0) > 30 ? '...' : '')
+        ]);
+
+        autoTable(pdf, {
+          head: [['Vaccination', 'Date Given', 'Next Due', 'Administered By', 'Status', 'Notes']],
+          body: vaccRows,
+          startY: currentY,
+          theme: 'striped',
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [240, 243, 246], textColor: [40, 40, 40], fontStyle: 'bold' },
+          margin: { left: 20, right: 20 }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+
+    // NEW SECTION: Safeguarding (from client_safeguarding table)
+    if (sections.safeguarding) {
+      const { data: safeguarding } = await supabase
+        .from('client_safeguarding')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (safeguarding && safeguarding.length > 0) {
+        const sg = safeguarding[0];
+        await addSectionHeader('Safeguarding Information');
+
+        const safeguardingData = [];
+        
+        // Risk levels
+        if (sg.absconding_risk) safeguardingData.push(['Absconding Risk', sg.absconding_risk]);
+        if (sg.self_harm_risk) safeguardingData.push(['Self-Harm Risk', sg.self_harm_risk]);
+        if (sg.violence_aggression_risk) safeguardingData.push(['Violence/Aggression Risk', sg.violence_aggression_risk]);
+        
+        // Risk management plans (using correct field names from DB schema)
+        if (sg.absconding_plan) safeguardingData.push(['Absconding Management Plan', sg.absconding_plan.substring(0, 100) + (sg.absconding_plan.length > 100 ? '...' : '')]);
+        if (sg.self_harm_plan) safeguardingData.push(['Self-Harm Management Plan', sg.self_harm_plan.substring(0, 100) + (sg.self_harm_plan.length > 100 ? '...' : '')]);
+        if (sg.violence_plan) safeguardingData.push(['Violence Management Plan', sg.violence_plan.substring(0, 100) + (sg.violence_plan.length > 100 ? '...' : '')]);
+        
+        // Other safeguarding info
+        if (sg.environmental_risks) safeguardingData.push(['Environmental Risks', sg.environmental_risks.substring(0, 100) + (sg.environmental_risks.length > 100 ? '...' : '')]);
+        if (sg.safeguarding_restrictions) safeguardingData.push(['Safeguarding Restrictions', sg.safeguarding_restrictions.substring(0, 100) + (sg.safeguarding_restrictions.length > 100 ? '...' : '')]);
+        if (sg.safeguarding_notes) safeguardingData.push(['Safeguarding Notes', sg.safeguarding_notes.substring(0, 100) + (sg.safeguarding_notes.length > 100 ? '...' : '')]);
+
+        if (safeguardingData.length > 0) {
+          autoTable(pdf, {
+            body: safeguardingData,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 3 },
+            columnStyles: { 
+              0: { fontStyle: 'bold', fillColor: [240, 243, 246], cellWidth: 55, textColor: [40, 40, 40] },
+              1: { cellWidth: 115 }
+            },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 10;
+        }
+      }
+    }
+
+    // NEW SECTION: Dietary Requirements (from client_dietary_requirements table)
+    if (sections.dietaryRequirements) {
+      const { data: dietary } = await supabase
+        .from('client_dietary_requirements')
+        .select('*')
+        .eq('client_id', clientId)
+        .maybeSingle();
+
+      if (dietary) {
+        await addSectionHeader('Dietary Requirements');
+
+        const dietaryData = [];
+        
+        // Core dietary info
+        if (dietary.dietary_restrictions && Array.isArray(dietary.dietary_restrictions) && dietary.dietary_restrictions.length > 0) {
+          dietaryData.push(['Dietary Restrictions', dietary.dietary_restrictions.join(', ')]);
+        }
+        if (dietary.food_allergies && Array.isArray(dietary.food_allergies) && dietary.food_allergies.length > 0) {
+          dietaryData.push(['Food Allergies', dietary.food_allergies.join(', ')]);
+        }
+        if (dietary.food_preferences && Array.isArray(dietary.food_preferences) && dietary.food_preferences.length > 0) {
+          dietaryData.push(['Food Preferences', dietary.food_preferences.join(', ')]);
+        }
+        if (dietary.nutritional_needs) {
+          dietaryData.push(['Nutritional Needs', dietary.nutritional_needs]);
+        }
+        if (dietary.supplements && Array.isArray(dietary.supplements) && dietary.supplements.length > 0) {
+          dietaryData.push(['Supplements', dietary.supplements.join(', ')]);
+        }
+        
+        // Additional dietary info
+        if (dietary.texture_modifications) dietaryData.push(['Texture Modifications', dietary.texture_modifications]);
+        if (dietary.fluid_restrictions) dietaryData.push(['Fluid Restrictions', dietary.fluid_restrictions]);
+        if (dietary.hydration_needs) dietaryData.push(['Hydration Needs', dietary.hydration_needs]);
+        if (dietary.meal_preparation_needs) dietaryData.push(['Meal Preparation Needs', dietary.meal_preparation_needs]);
+        if (dietary.eating_assistance) dietaryData.push(['Eating Assistance', dietary.eating_assistance]);
+        if (dietary.special_equipment_needed) dietaryData.push(['Special Equipment', dietary.special_equipment_needed]);
+        
+        // Boolean flags
+        if (dietary.feeding_assistance_required !== null && dietary.feeding_assistance_required !== undefined) {
+          dietaryData.push(['Feeding Assistance Required', dietary.feeding_assistance_required ? 'Yes' : 'No']);
+        }
+        if (dietary.weight_monitoring !== null && dietary.weight_monitoring !== undefined) {
+          dietaryData.push(['Weight Monitoring', dietary.weight_monitoring ? 'Yes' : 'No']);
+        }
+
+        if (dietaryData.length > 0) {
+          autoTable(pdf, {
+            body: dietaryData,
+            startY: currentY,
+            theme: 'striped',
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: { 
+              0: { fontStyle: 'bold', fillColor: [240, 243, 246], cellWidth: 55, textColor: [40, 40, 40] },
+              1: { cellWidth: 115 }
+            },
+            margin: { left: 20, right: 20 }
+          });
+
+          currentY = (pdf as any).lastAutoTable.finalY + 10;
+        }
       }
     }
     

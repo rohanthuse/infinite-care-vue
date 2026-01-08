@@ -48,18 +48,24 @@ export interface StaffShareSections {
   notes: boolean;
 }
 
-// Client share section keys - expanded to 19 modules
+// Client share section keys - expanded to 26 modules
 export interface ClientShareSections {
-  // Basic Information (3)
+  // Basic Information (5)
   personalInfo: boolean;
   generalInfo: boolean;
   emergencyContacts: boolean;
-  // Care & Medical (5)
+  keyContacts: boolean;
+  addresses: boolean;
+  // Care & Medical (9)
   carePlans: boolean;
   medicalInfo: boolean;
   medications: boolean;
   news2Assessments: boolean;
   activities: boolean;
+  riskAssessments: boolean;
+  vaccinations: boolean;
+  safeguarding: boolean;
+  dietaryRequirements: boolean;
   // Appointments & Records (4)
   appointments: boolean;
   visitRecords: boolean;
@@ -122,13 +128,13 @@ export const CLIENT_SECTION_GROUPS: SectionGroup[] = [
     id: 'basic',
     label: 'Basic Information',
     icon: '📋',
-    sections: ['personalInfo', 'generalInfo', 'emergencyContacts']
+    sections: ['personalInfo', 'generalInfo', 'emergencyContacts', 'keyContacts', 'addresses']
   },
   {
     id: 'care',
     label: 'Care & Medical',
     icon: '🏥',
-    sections: ['carePlans', 'medicalInfo', 'medications', 'news2Assessments', 'activities']
+    sections: ['carePlans', 'medicalInfo', 'medications', 'news2Assessments', 'activities', 'riskAssessments', 'vaccinations', 'safeguarding', 'dietaryRequirements']
   },
   {
     id: 'appointments',
@@ -379,6 +385,24 @@ export const CLIENT_SHAREABLE_SECTIONS: ShareableSection[] = [
     isExternallyShareable: true,
     category: 'basic',
   },
+  {
+    id: 'keyContacts',
+    label: 'Key Contacts',
+    description: 'Family, GP, social worker, and other key contacts',
+    isDefault: false,
+    isSensitive: false,
+    isExternallyShareable: true,
+    category: 'basic',
+  },
+  {
+    id: 'addresses',
+    label: 'Client Addresses',
+    description: 'All registered addresses for the client',
+    isDefault: false,
+    isSensitive: false,
+    isExternallyShareable: true,
+    category: 'basic',
+  },
   // Care & Medical
   {
     id: 'carePlans',
@@ -420,6 +444,42 @@ export const CLIENT_SHAREABLE_SECTIONS: ShareableSection[] = [
     id: 'activities',
     label: 'Activities',
     description: 'Daily activities and routines',
+    isDefault: false,
+    isSensitive: false,
+    isExternallyShareable: true,
+    category: 'care',
+  },
+  {
+    id: 'riskAssessments',
+    label: 'Risk Assessments',
+    description: 'Risk assessments and mitigation strategies',
+    isDefault: false,
+    isSensitive: true,
+    isExternallyShareable: false,
+    category: 'care',
+  },
+  {
+    id: 'vaccinations',
+    label: 'Vaccinations',
+    description: 'Vaccination records and immunization history',
+    isDefault: false,
+    isSensitive: true,
+    isExternallyShareable: false,
+    category: 'care',
+  },
+  {
+    id: 'safeguarding',
+    label: 'Safeguarding',
+    description: 'Safeguarding risks and management plans',
+    isDefault: false,
+    isSensitive: true,
+    isExternallyShareable: false,
+    category: 'care',
+  },
+  {
+    id: 'dietaryRequirements',
+    label: 'Dietary Requirements',
+    description: 'Dietary needs, allergies, and preferences',
     isDefault: false,
     isSensitive: false,
     isExternallyShareable: true,
@@ -560,18 +620,24 @@ export const getDefaultStaffSections = (): StaffShareSections => ({
   notes: false,
 });
 
-// Helper to get default selections for client - 19 modules
+// Helper to get default selections for client - 26 modules
 export const getDefaultClientSections = (): ClientShareSections => ({
   // Basic Information
   personalInfo: true,
   generalInfo: true,
   emergencyContacts: true,
+  keyContacts: false,
+  addresses: false,
   // Care & Medical
   carePlans: false,
   medicalInfo: false,
   medications: false,
   news2Assessments: false,
   activities: false,
+  riskAssessments: false,
+  vaccinations: false,
+  safeguarding: false,
+  dietaryRequirements: false,
   // Appointments & Records
   appointments: false,
   visitRecords: false,
