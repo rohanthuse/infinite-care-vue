@@ -14,7 +14,7 @@ export const ClientNews2Tab: React.FC<ClientNews2TabProps> = ({ clientId }) => {
         <h2 className="text-xl font-semibold">NEWS2 Health Monitoring</h2>
       </div>
       <div className="rounded-lg bg-card border">
-        <ClientNews2Dashboard isAdminView={true} />
+        <ClientNews2Dashboard isAdminView={true} clientId={clientId} />
       </div>
     </div>
   );

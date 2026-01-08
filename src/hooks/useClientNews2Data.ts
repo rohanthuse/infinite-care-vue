@@ -58,8 +58,13 @@ export interface ClientNews2Observation {
   };
 }
 
-export const useClientNews2Data = () => {
-  const { clientId, isAuthenticated } = useClientAuth();
+export const useClientNews2Data = (overrideClientId?: string | null) => {
+  const { clientId: authClientId, isAuthenticated } = useClientAuth();
+  
+  // Use override if provided, otherwise use authenticated client ID
+  const clientId = overrideClientId || authClientId;
+  // Enable query if we have a clientId (either from override or auth)
+  const isEnabled = !!clientId && (!!overrideClientId || isAuthenticated);
 
   return useQuery({
     queryKey: ['client-news2-data', clientId],
@@ -123,12 +128,17 @@ export const useClientNews2Data = () => {
 
       return transformedData as ClientNews2Data;
     },
-    enabled: !!clientId && isAuthenticated,
+    enabled: isEnabled,
   });
 };
 
-export const useClientNews2History = () => {
-  const { clientId, isAuthenticated } = useClientAuth();
+export const useClientNews2History = (overrideClientId?: string | null) => {
+  const { clientId: authClientId, isAuthenticated } = useClientAuth();
+  
+  // Use override if provided, otherwise use authenticated client ID
+  const clientId = overrideClientId || authClientId;
+  // Enable query if we have a clientId (either from override or auth)
+  const isEnabled = !!clientId && (!!overrideClientId || isAuthenticated);
 
   return useQuery({
     queryKey: ['client-news2-history', clientId],
@@ -169,6 +179,6 @@ export const useClientNews2History = () => {
 
       return transformedData as ClientNews2Observation[];
     },
-    enabled: !!clientId && isAuthenticated,
+    enabled: isEnabled,
   });
 };
