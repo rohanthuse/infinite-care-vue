@@ -216,8 +216,12 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
     goals: safeArray(autoSaveData.goals?.length > 0 ? autoSaveData.goals : carePlan.goals),
     activities: safeArray(autoSaveData.activities?.length > 0 ? autoSaveData.activities : carePlan.activities),
     
-    // Medications
-    medications: safeArray(autoSaveData.medications?.length > 0 ? autoSaveData.medications : carePlan.medications),
+    // Medications - prioritize merged carePlan.medications (from useCarePlanData which merges DB + JSON)
+    medications: safeArray(
+      (carePlan.medications && carePlan.medications.length > 0) 
+        ? carePlan.medications 
+        : (autoSaveData.medications || autoSaveData.medical_info?.medication_manager?.medications || [])
+    ),
     
     // Admin Medication - autoSaveData takes priority
     admin_medication: {
