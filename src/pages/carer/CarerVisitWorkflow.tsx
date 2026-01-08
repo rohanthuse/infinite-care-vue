@@ -2943,42 +2943,70 @@ const CarerVisitWorkflow = () => {
                     ) : tasks && tasks.length > 0 ? (
                       <div className="space-y-3">
                         {tasks.map((task) => (
-                          <div key={task.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                            <Checkbox
-                              checked={task.is_completed}
-                              onCheckedChange={() => {
-                                if (!isViewOnly) {
-                                  updateTask.mutate({
-                                    taskId: task.id,
-                                    isCompleted: !task.is_completed,
-                                  });
-                                }
-                              }}
-                              className="flex-shrink-0"
-                              disabled={isViewOnly || updateTask.isPending}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className={`font-medium ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                                  {task.task_name}
-                                </p>
-                                <Badge variant="outline" className="text-xs">
-                                  {task.task_category}
-                                </Badge>
-                                {task.priority && task.priority !== 'medium' && getPriorityBadge(task.priority)}
+                          <div key={task.id} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors bg-card">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={task.is_completed}
+                                onCheckedChange={() => {
+                                  if (!isViewOnly) {
+                                    updateTask.mutate({
+                                      taskId: task.id,
+                                      isCompleted: !task.is_completed,
+                                    });
+                                  }
+                                }}
+                                className="mt-1 flex-shrink-0"
+                                disabled={isViewOnly || updateTask.isPending}
+                              />
+                              <div className="flex-1 min-w-0">
+                                {/* Task Name Row */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className={`font-semibold text-base ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                    {task.task_name}
+                                  </p>
+                                  <Badge variant="secondary" className="text-xs capitalize">
+                                    {task.task_category?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'General'}
+                                  </Badge>
+                                  {task.priority && task.priority !== 'medium' && getPriorityBadge(task.priority)}
+                                  {task.is_completed && (
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                  )}
+                                </div>
+                                
+                                {/* Task Description */}
+                                <div className="mt-2">
+                                  {task.task_description ? (
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                      {task.task_description}
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground/60 italic">
+                                      No description provided
+                                    </p>
+                                  )}
+                                </div>
+                                
+                                {/* Completion Notes */}
+                                {task.completion_notes && (
+                                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                                    <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">
+                                      Notes:
+                                    </p>
+                                    <p className="text-sm text-green-600 dark:text-green-300">
+                                      {task.completion_notes}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {/* Completion Time */}
+                                {task.completed_at && (
+                                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                                    ✓ Completed at {format(new Date(task.completed_at), 'HH:mm')}
+                                    {task.completion_time_minutes && ` (${task.completion_time_minutes} mins)`}
+                                  </p>
+                                )}
                               </div>
-                              {task.task_description && (
-                                <p className="text-sm text-muted-foreground mt-1">{task.task_description}</p>
-                              )}
-                              {task.completed_at && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Completed at {format(new Date(task.completed_at), 'h:mm a')}
-                                </p>
-                              )}
                             </div>
-                            {task.is_completed && (
-                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            )}
                           </div>
                         ))}
                       </div>
