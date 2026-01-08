@@ -1039,14 +1039,29 @@ const CarerVisitWorkflow = () => {
         if (!carePlan) return;
         
         const autoSave = carePlan.auto_save_data as any;
-        const tasksToSync: Array<{ task_category: string; task_name: string; priority: string }> = [];
+        const tasksToSync: Array<{ 
+          task_category: string; 
+          task_name: string; 
+          task_description: string;
+          priority: string;
+        }> = [];
         const seenTaskKeys = new Set<string>();
         
-        const addTask = (category: string, name: string, priority: string = 'medium') => {
+        const addTask = (
+          category: string, 
+          name: string, 
+          description: string = '',
+          priority: string = 'medium'
+        ) => {
           const normalizedName = name.toLowerCase().trim();
           const key = `${category}:${normalizedName}`;
           if (normalizedName && !seenTaskKeys.has(key)) {
-            tasksToSync.push({ task_category: category, task_name: name.trim(), priority });
+            tasksToSync.push({ 
+              task_category: category, 
+              task_name: name.trim(), 
+              task_description: description,
+              priority 
+            });
             seenTaskKeys.add(key);
           }
         };
@@ -1055,7 +1070,12 @@ const CarerVisitWorkflow = () => {
         if (autoSave?.tasks && Array.isArray(autoSave.tasks)) {
           autoSave.tasks.forEach((task: any) => {
             if (task.name) {
-              addTask(task.category || 'General', task.name, task.priority || 'medium');
+              addTask(
+                task.category || 'General', 
+                task.name, 
+                task.description || '',
+                task.priority || 'medium'
+              );
             }
           });
         }
@@ -1080,6 +1100,7 @@ const CarerVisitWorkflow = () => {
               visit_record_id: visitRecord.id,
               task_category: t.task_category,
               task_name: t.task_name,
+              task_description: t.task_description,
               is_completed: false,
               priority: t.priority,
             }));
