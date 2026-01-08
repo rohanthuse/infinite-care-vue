@@ -42,11 +42,11 @@ interface CarePlanStatusChangeDialogProps {
 const statusTransitions: Record<string, string[]> = {
   'draft': ['pending_client_approval', 'archived'],
   'pending_client_approval': ['active', 'draft', 'on_hold', 'archived'],
-  'active': ['on_hold', 'completed', 'archived'],
-  'approved': ['active', 'on_hold', 'archived'],
+  'active': ['draft', 'on_hold', 'completed', 'archived'],
+  'approved': ['active', 'draft', 'on_hold', 'archived'],
   'rejected': ['draft', 'pending_client_approval', 'archived'],
-  'on_hold': ['active', 'completed', 'archived'],
-  'completed': ['archived', 'active'],
+  'on_hold': ['draft', 'active', 'completed', 'archived'],
+  'completed': ['archived', 'active', 'draft'],
   'archived': [], // Final state - no transitions
 };
 
