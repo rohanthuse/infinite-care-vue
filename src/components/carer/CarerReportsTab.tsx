@@ -59,6 +59,11 @@ export function CarerReportsTab() {
   const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
   const [pastSearchQuery, setPastSearchQuery] = useState('');
 
+  // NEW: Completed tab search and filter state
+  const [completedSearchQuery, setCompletedSearchQuery] = useState('');
+  const [completedDateFrom, setCompletedDateFrom] = useState('');
+  const [completedDateTo, setCompletedDateTo] = useState('');
+
   // Fetch visit record ID when a booking is selected for report
   // ✅ This useEffect is now at the TOP, before any conditional returns
   useEffect(() => {
@@ -92,6 +97,37 @@ export function CarerReportsTab() {
       revisionReports: reports.filter(r => r.status === 'requires_revision')
     };
   }, [reports]);
+
+  // Derived state: Filtered and sorted completed reports (latest first + search/date filter)
+  const filteredCompletedReports = useMemo(() => {
+    // First, sort by completion timestamp (reviewed_at > submitted_at > created_at) DESC
+    let sorted = [...completedReports].sort((a, b) => {
+      const dateA = new Date(a.reviewed_at || a.submitted_at || a.created_at).getTime();
+      const dateB = new Date(b.reviewed_at || b.submitted_at || b.created_at).getTime();
+      return dateB - dateA; // Latest first
+    });
+
+    // Apply client name search filter
+    if (completedSearchQuery.trim()) {
+      const query = completedSearchQuery.toLowerCase().trim();
+      sorted = sorted.filter(report => {
+        const clientName = `${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`.toLowerCase();
+        return clientName.includes(query);
+      });
+    }
+
+    // Apply date from filter
+    if (completedDateFrom) {
+      sorted = sorted.filter(report => report.service_date >= completedDateFrom);
+    }
+
+    // Apply date to filter
+    if (completedDateTo) {
+      sorted = sorted.filter(report => report.service_date <= completedDateTo);
+    }
+
+    return sorted;
+  }, [completedReports, completedSearchQuery, completedDateFrom, completedDateTo]);
 
   // Derived state: Past appointments with report status
   const pastAppointmentsWithReportStatus = useMemo(() => {
@@ -604,31 +640,100 @@ export function CarerReportsTab() {
 
         {/* Completed Tab - Approved + Rejected */}
         <TabsContent value="completed" className="space-y-4">
-          {completedReports.length === 0 ? (
+          {/* Search and Filter Controls */}
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search by Client Name */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by client name..."
+                  value={completedSearchQuery}
+                  onChange={(e) => setCompletedSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {completedSearchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                    onClick={() => setCompletedSearchQuery('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Date From */}
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  type="date"
+                  value={completedDateFrom}
+                  onChange={(e) => setCompletedDateFrom(e.target.value)}
+                  className="w-[140px]"
+                />
+              </div>
+              
+              {/* Date To */}
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">to</span>
+                <Input
+                  type="date"
+                  value={completedDateTo}
+                  onChange={(e) => setCompletedDateTo(e.target.value)}
+                  className="w-[140px]"
+                />
+              </div>
+              
+              {/* Clear Filters */}
+              {(completedSearchQuery || completedDateFrom || completedDateTo) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCompletedSearchQuery('');
+                    setCompletedDateFrom('');
+                    setCompletedDateTo('');
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Reports List */}
+          {filteredCompletedReports.length === 0 ? (
             <Card className="p-8">
               <div className="text-center">
                 <CheckCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">No Completed Reports</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  {completedSearchQuery || completedDateFrom || completedDateTo 
+                    ? "No Service Reports Found" 
+                    : "No Completed Reports"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Your approved and finalized reports will appear here.
+                  {completedSearchQuery || completedDateFrom || completedDateTo 
+                    ? "No service reports found for the selected criteria."
+                    : "Your approved and finalized reports will appear here."}
                 </p>
               </div>
             </Card>
           ) : (
-            completedReports
-              .sort((a, b) => new Date(b.service_date).getTime() - new Date(a.service_date).getTime())
-              .map(report => (
-                <ReportCard 
-                  key={report.id} 
-                  report={report} 
-                  canEdit={true} 
-                  onEdit={() => handleEditReport(report)}
-                  onView={() => {
-                    setSelectedReport(report);
-                    setViewDialogOpen(true);
-                  }}
-                />
-              ))
+            filteredCompletedReports.map(report => (
+              <ReportCard 
+                key={report.id} 
+                report={report} 
+                canEdit={true} 
+                onEdit={() => handleEditReport(report)}
+                onView={() => {
+                  setSelectedReport(report);
+                  setViewDialogOpen(true);
+                }}
+              />
+            ))
           )}
         </TabsContent>
       </Tabs>
