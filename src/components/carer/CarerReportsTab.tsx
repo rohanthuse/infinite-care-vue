@@ -59,10 +59,20 @@ export function CarerReportsTab() {
   const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
   const [pastSearchQuery, setPastSearchQuery] = useState('');
 
-  // NEW: Completed tab search and filter state
+  // Completed tab search and filter state
   const [completedSearchQuery, setCompletedSearchQuery] = useState('');
   const [completedDateFrom, setCompletedDateFrom] = useState('');
   const [completedDateTo, setCompletedDateTo] = useState('');
+
+  // Submitted tab search and filter state
+  const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
+  const [submittedDateFrom, setSubmittedDateFrom] = useState('');
+  const [submittedDateTo, setSubmittedDateTo] = useState('');
+
+  // Action Required tab search and filter state
+  const [actionSearchQuery, setActionSearchQuery] = useState('');
+  const [actionDateFrom, setActionDateFrom] = useState('');
+  const [actionDateTo, setActionDateTo] = useState('');
 
   // Fetch visit record ID when a booking is selected for report
   // ✅ This useEffect is now at the TOP, before any conditional returns
@@ -129,6 +139,33 @@ export function CarerReportsTab() {
     return sorted;
   }, [completedReports, completedSearchQuery, completedDateFrom, completedDateTo]);
 
+  // Derived state: Filtered submitted (pending) reports
+  const filteredSubmittedReports = useMemo(() => {
+    let filtered = [...pendingReports].sort((a, b) => {
+      const dateA = new Date(a.submitted_at || a.created_at).getTime();
+      const dateB = new Date(b.submitted_at || b.created_at).getTime();
+      return dateB - dateA; // Latest first
+    });
+
+    if (submittedSearchQuery.trim()) {
+      const query = submittedSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(report => {
+        const clientName = `${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`.toLowerCase();
+        return clientName.includes(query);
+      });
+    }
+
+    if (submittedDateFrom) {
+      filtered = filtered.filter(report => report.service_date >= submittedDateFrom);
+    }
+    if (submittedDateTo) {
+      filtered = filtered.filter(report => report.service_date <= submittedDateTo);
+    }
+
+    return filtered;
+  }, [pendingReports, submittedSearchQuery, submittedDateFrom, submittedDateTo]);
+
+
   // Derived state: Past appointments with report status
   const pastAppointmentsWithReportStatus = useMemo(() => {
     // Filter past appointments - match Appointments tab logic (only exclude cancelled)
@@ -173,6 +210,42 @@ export function CarerReportsTab() {
       };
     });
   }, [allBookings, reports]);
+
+  // Derived state: Filtered action required data
+  const filteredActionRequiredData = useMemo(() => {
+    let filteredVisits = pastAppointmentsWithReportStatus.filter(b => !b.has_report);
+    let filteredRevisions = [...revisionReports];
+
+    if (actionSearchQuery.trim()) {
+      const query = actionSearchQuery.toLowerCase().trim();
+      filteredVisits = filteredVisits.filter(booking => {
+        const clientName = `${booking.client_first_name || ''} ${booking.client_last_name || ''}`.toLowerCase();
+        return clientName.includes(query);
+      });
+      filteredRevisions = filteredRevisions.filter(report => {
+        const clientName = `${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`.toLowerCase();
+        return clientName.includes(query);
+      });
+    }
+
+    if (actionDateFrom) {
+      filteredVisits = filteredVisits.filter(booking => {
+        const bookingDate = booking.start_time?.split('T')[0];
+        return bookingDate && bookingDate >= actionDateFrom;
+      });
+      filteredRevisions = filteredRevisions.filter(report => report.service_date >= actionDateFrom);
+    }
+    
+    if (actionDateTo) {
+      filteredVisits = filteredVisits.filter(booking => {
+        const bookingDate = booking.start_time?.split('T')[0];
+        return bookingDate && bookingDate <= actionDateTo;
+      });
+      filteredRevisions = filteredRevisions.filter(report => report.service_date <= actionDateTo);
+    }
+
+    return { filteredVisits, filteredRevisions };
+  }, [pastAppointmentsWithReportStatus, revisionReports, actionSearchQuery, actionDateFrom, actionDateTo]);
 
   // Derived state: Filtered past appointments based on search query
   const filteredPastAppointments = useMemo(() => {
@@ -471,13 +544,57 @@ export function CarerReportsTab() {
 
         {/* Action Required Tab - Visits needing reports + Reports needing revision */}
         <TabsContent value="action-required" className="space-y-4">
+          {/* Search and Filter Controls */}
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by client name..."
+                  value={actionSearchQuery}
+                  onChange={(e) => setActionSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {actionSearchQuery && (
+                  <Button variant="ghost" size="icon" 
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                    onClick={() => setActionSearchQuery('')}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input type="date" value={actionDateFrom}
+                  onChange={(e) => setActionDateFrom(e.target.value)}
+                  className="w-[140px]" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">to</span>
+                <Input type="date" value={actionDateTo}
+                  onChange={(e) => setActionDateTo(e.target.value)}
+                  className="w-[140px]" />
+              </div>
+              {(actionSearchQuery || actionDateFrom || actionDateTo) && (
+                <Button variant="outline" size="sm"
+                  onClick={() => {
+                    setActionSearchQuery('');
+                    setActionDateFrom('');
+                    setActionDateTo('');
+                  }}>
+                  <X className="h-4 w-4 mr-1" /> Clear
+                </Button>
+              )}
+            </div>
+          </Card>
+
           {/* Section 1: Visits Needing Reports */}
-          {pastAppointmentsWithReportStatus.filter(b => !b.has_report).length > 0 && (
+          {filteredActionRequiredData.filteredVisits.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <FileText className="h-5 w-5 text-orange-500" />
-                  Visits Needing Reports ({pastAppointmentsWithReportStatus.filter(b => !b.has_report).length})
+                  Visits Needing Reports ({filteredActionRequiredData.filteredVisits.length})
                 </CardTitle>
                 <CardDescription>
                   Complete service reports for these past visits
@@ -497,8 +614,7 @@ export function CarerReportsTab() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pastAppointmentsWithReportStatus
-                        .filter(b => !b.has_report)
+                      {filteredActionRequiredData.filteredVisits
                         .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
                         .map(booking => {
                           const startTime = new Date(booking.start_time);
@@ -568,19 +684,19 @@ export function CarerReportsTab() {
           )}
 
           {/* Section 2: Reports Needing Revision */}
-          {revisionReports.length > 0 && (
+          {filteredActionRequiredData.filteredRevisions.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <RefreshCw className="h-5 w-5 text-orange-500" />
-                  Reports Needing Revision ({revisionReports.length})
+                  Reports Needing Revision ({filteredActionRequiredData.filteredRevisions.length})
                 </CardTitle>
                 <CardDescription>
                   Admin has requested changes to these reports
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {revisionReports.map(report => (
+                {filteredActionRequiredData.filteredRevisions.map(report => (
                   <ReportCard 
                     key={report.id} 
                     report={report} 
@@ -597,14 +713,26 @@ export function CarerReportsTab() {
           )}
 
           {/* Empty State */}
-          {pastAppointmentsWithReportStatus.filter(b => !b.has_report).length === 0 && revisionReports.length === 0 && (
+          {filteredActionRequiredData.filteredVisits.length === 0 && filteredActionRequiredData.filteredRevisions.length === 0 && (
             <Card className="p-8">
               <div className="text-center">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <h3 className="text-lg font-medium mb-2">All Caught Up!</h3>
-                <p className="text-sm text-muted-foreground">
-                  No visits need reports and no reports need revision.
-                </p>
+                {(actionSearchQuery || actionDateFrom || actionDateTo) ? (
+                  <>
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium mb-2">No Service Reports Found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      No service reports found for the selected criteria.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <h3 className="text-lg font-medium mb-2">All Caught Up!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      No visits need reports and no reports need revision.
+                    </p>
+                  </>
+                )}
               </div>
             </Card>
           )}
@@ -612,18 +740,69 @@ export function CarerReportsTab() {
 
         {/* Submitted Tab - Pending admin review */}
         <TabsContent value="submitted" className="space-y-4">
-          {pendingReports.length === 0 ? (
+          {/* Search and Filter Controls */}
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by client name..."
+                  value={submittedSearchQuery}
+                  onChange={(e) => setSubmittedSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {submittedSearchQuery && (
+                  <Button variant="ghost" size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                    onClick={() => setSubmittedSearchQuery('')}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input type="date" value={submittedDateFrom}
+                  onChange={(e) => setSubmittedDateFrom(e.target.value)}
+                  className="w-[140px]" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">to</span>
+                <Input type="date" value={submittedDateTo}
+                  onChange={(e) => setSubmittedDateTo(e.target.value)}
+                  className="w-[140px]" />
+              </div>
+              {(submittedSearchQuery || submittedDateFrom || submittedDateTo) && (
+                <Button variant="outline" size="sm"
+                  onClick={() => {
+                    setSubmittedSearchQuery('');
+                    setSubmittedDateFrom('');
+                    setSubmittedDateTo('');
+                  }}>
+                  <X className="h-4 w-4 mr-1" /> Clear
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Reports List */}
+          {filteredSubmittedReports.length === 0 ? (
             <Card className="p-8">
               <div className="text-center">
                 <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">No Submitted Reports</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  {submittedSearchQuery || submittedDateFrom || submittedDateTo 
+                    ? "No Service Reports Found" 
+                    : "No Submitted Reports"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Reports awaiting admin review will appear here.
+                  {submittedSearchQuery || submittedDateFrom || submittedDateTo 
+                    ? "No service reports found for the selected criteria."
+                    : "Reports awaiting admin review will appear here."}
                 </p>
               </div>
             </Card>
           ) : (
-            pendingReports.map(report => (
+            filteredSubmittedReports.map(report => (
               <ReportCard 
                 key={report.id} 
                 report={report} 
