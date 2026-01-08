@@ -621,7 +621,7 @@ export function CarerReportsTab() {
                 <ReportCard 
                   key={report.id} 
                   report={report} 
-                  canEdit={report.status === 'rejected'} 
+                  canEdit={true} 
                   onEdit={() => handleEditReport(report)}
                   onView={() => {
                     setSelectedReport(report);
