@@ -732,7 +732,7 @@ function ReportCard({
                 {report.service_duration_minutes} minutes
               </span>
               <span className="text-xs text-muted-foreground">
-                Submitted: {format(new Date(report.submitted_at), 'MMM d, h:mm a')}
+                Submitted: {format(new Date(report.submitted_at), 'MMM d, HH:mm')}
               </span>
             </CardDescription>
           </div>

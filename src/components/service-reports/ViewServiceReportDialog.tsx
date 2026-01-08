@@ -404,7 +404,7 @@ export function ViewServiceReportDialog({
           carer_observations: formData.carer_observations,
           client_feedback: formData.client_feedback,
           next_visit_preparations: formData.next_visit_preparations,
-          status: 'pending',
+          status: 'approved',
           submitted_at: new Date().toISOString(),
         },
       });
