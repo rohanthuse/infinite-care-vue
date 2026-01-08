@@ -2877,60 +2877,10 @@ const CarerVisitWorkflow = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Assigned Tasks from Admin/Staff */}
+                <div className="space-y-4">
+                  {/* Visit Tasks Section (from Care Plan) */}
                   <div>
-                    <h3 className="text-lg font-medium text-foreground mb-3">Assigned Tasks (Admin/Staff)</h3>
-                    {carerTasksLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-500">Loading assigned tasks...</p>
-                      </div>
-                    ) : assignedTasks && assignedTasks.length > 0 ? (
-                      <div className="space-y-3">
-                        {assignedTasks.map((task) => (
-                          <div key={task.id} className="flex items-center space-x-3 p-3 border border-blue-200 rounded-lg hover:bg-blue-50">
-                            <Checkbox
-                              checked={task.status === 'done'}
-                              onCheckedChange={() => !isViewOnly && completeTask(task.id)}
-                              className="flex-shrink-0"
-                              disabled={isViewOnly}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className={`font-medium ${task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                  {task.title}
-                                </p>
-                                {task.priority && getPriorityBadge(task.priority)}
-                                <Badge variant="outline" className="text-xs">
-                                  Admin/Staff
-                                </Badge>
-                              </div>
-                              {task.description && (
-                                <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                              )}
-                              {task.dueDate && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                                </p>
-                              )}
-                            </div>
-                            {task.status === 'done' && (
-                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <p>No tasks assigned by admin/staff for this client</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Visit Tasks Section (from Care Plan Goals & Activities) */}
-                  <div className="mt-6">
-                    <h3 className="text-lg font-medium text-foreground mb-3">Visit Tasks</h3>
+                    <h3 className="text-lg font-medium text-foreground mb-3">Tasks</h3>
                     {tasksLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
