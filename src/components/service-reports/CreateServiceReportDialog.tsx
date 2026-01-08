@@ -577,15 +577,15 @@ export function CreateServiceReportDialog({
         
         if (carePlan) {
           const autoSave = carePlan.auto_save_data as any;
-          const tasks: Array<{ task_category: string; task_name: string }> = [];
+          const tasks: Array<{ task_category: string; task_name: string; task_description: string }> = [];
           // Use a Set with composite key: "category:normalizedName" for deduplication
           const seenTaskKeys = new Set<string>();
           
-          const addTask = (category: string, name: string) => {
+          const addTask = (category: string, name: string, description: string = '') => {
             const normalizedName = normalizeTaskName(name);
             const key = `${category}:${normalizedName}`;
             if (normalizedName && !seenTaskKeys.has(key)) {
-              tasks.push({ task_category: category, task_name: name.trim() });
+              tasks.push({ task_category: category, task_name: name.trim(), task_description: description });
               seenTaskKeys.add(key);
             }
           };
@@ -594,7 +594,7 @@ export function CreateServiceReportDialog({
           if (autoSave?.tasks && Array.isArray(autoSave.tasks)) {
             autoSave.tasks.forEach((task: any) => {
               if (task.name) {
-                addTask(task.category || 'General', task.name);
+                addTask(task.category || 'General', task.name, task.description || '');
               }
             });
           }
@@ -682,6 +682,7 @@ export function CreateServiceReportDialog({
                 visit_record_id: effectiveVisitRecordId,
                 task_category: t.task_category,
                 task_name: t.task_name,
+                task_description: t.task_description,
                 is_completed: false,
                 priority: 'medium' as const,
               }));
