@@ -57,10 +57,11 @@ import { toast } from "sonner";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { updateBookingServices, useBookingServices } from "@/hooks/useBookingServices";
 import { notifyBookingCancelled } from "@/utils/bookingNotifications";
+import { validateBookingAgainstClientActiveDate } from "@/utils/clientActiveValidation";
 import { AdvancedCancellationDialog, CancellationData } from "./AdvancedCancellationDialog";
 import { MultiCarerDeleteDialog } from "./MultiCarerDeleteDialog";
 import {
@@ -177,6 +178,27 @@ export function EditBookingDialog({
   // Fetch client addresses for location field
   const clientId = booking?.clientId || booking?.client_id;
   const { data: clientAddresses = [] } = useClientAddresses(clientId || "");
+
+  // Fetch client data for active_until validation
+  const { data: clientData } = useQuery({
+    queryKey: ['client-active-period', clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const { data } = await supabase
+        .from('clients')
+        .select('id, active_until, status')
+        .eq('id', clientId)
+        .single();
+      return data;
+    },
+    enabled: Boolean(clientId)
+  });
+
+  // State for client active validation alert
+  const [clientActiveAlert, setClientActiveAlert] = useState<{
+    show: boolean;
+    message: string;
+  } | null>(null);
 
   // Format address for display
   const formatAddress = (addr: ClientAddress): string => {
@@ -674,7 +696,19 @@ export function EditBookingDialog({
   };
 
   const onSubmit = async (data: EditBookingFormData) => {
-    // Validate before submitting
+    // STEP 1: Validate client active date FIRST
+    if (clientData?.active_until) {
+      const validation = validateBookingAgainstClientActiveDate(
+        data.booking_date,
+        clientData.active_until
+      );
+      if (!validation.isValid) {
+        setClientActiveAlert({ show: true, message: validation.error! });
+        return;
+      }
+    }
+
+    // Validate overlaps before submitting
     const isValidBooking = await validateCurrentBooking();
     if (!isValidBooking) {
       console.log("[EditBookingDialog] Validation failed, not submitting");
@@ -1517,6 +1551,26 @@ export function EditBookingDialog({
             </div>
           </div>
         </DialogFooter>
+
+        {/* Client Inactive Alert Dialog */}
+        <AlertDialog open={clientActiveAlert?.show} onOpenChange={() => setClientActiveAlert(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Booking Not Allowed
+              </AlertDialogTitle>
+              <AlertDialogDescription className="whitespace-pre-line">
+                {clientActiveAlert?.message}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setClientActiveAlert(null)}>
+                OK
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

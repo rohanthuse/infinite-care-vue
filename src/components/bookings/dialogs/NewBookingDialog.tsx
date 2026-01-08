@@ -14,6 +14,10 @@ import {
 } from "@/hooks/useStaffLeaveAvailability";
 import { previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { LeaveConflictDialog, LeaveConflictResolution } from "./LeaveConflictDialog";
+import { 
+  validateBookingAgainstClientActiveDate,
+  validateDateRangeAgainstClientActiveDate 
+} from "@/utils/clientActiveValidation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +28,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -213,6 +226,12 @@ export function NewBookingDialog({
   const [leaveConflictDialogOpen, setLeaveConflictDialogOpen] = useState(false);
   const [leaveConflictData, setLeaveConflictData] = useState<RecurringLeaveValidationResult | null>(null);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
+  
+  // Client active date validation alert state
+  const [clientActiveAlert, setClientActiveAlert] = useState<{
+    show: boolean;
+    message: string;
+  } | null>(null);
   
   // Get backdating policy for date restrictions
   const backdatingPolicy = getBackdatingPolicy();
@@ -516,7 +535,34 @@ export function NewBookingDialog({
   }, [bookingMode, form.watch("fromDate"), form]);
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    // Skip validation if assigning later
+    // STEP 1: Validate client active date FIRST (before any other validation)
+    const selectedClient = clients.find(c => c.id === data.clientId);
+    if (selectedClient?.active_until) {
+      if (data.bookingMode === "recurring") {
+        // For recurring bookings, check the untilDate against client's active_until
+        const validation = validateDateRangeAgainstClientActiveDate(
+          data.fromDate,
+          data.untilDate || data.fromDate,
+          selectedClient.active_until
+        );
+        if (!validation.isValid) {
+          setClientActiveAlert({ show: true, message: validation.error! });
+          return;
+        }
+      } else {
+        // For single bookings, check the fromDate
+        const validation = validateBookingAgainstClientActiveDate(
+          data.fromDate,
+          selectedClient.active_until
+        );
+        if (!validation.isValid) {
+          setClientActiveAlert({ show: true, message: validation.error! });
+          return;
+        }
+      }
+    }
+
+    // Skip leave validation if assigning later
     if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
       createBookingsFromData(data);
       return;
@@ -1675,6 +1721,26 @@ export function NewBookingDialog({
         onResolve={handleLeaveConflictResolution}
       />
     )}
+
+    {/* Client Inactive Alert Dialog */}
+    <AlertDialog open={clientActiveAlert?.show} onOpenChange={() => setClientActiveAlert(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            Booking Not Allowed
+          </AlertDialogTitle>
+          <AlertDialogDescription className="whitespace-pre-line">
+            {clientActiveAlert?.message}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction onClick={() => setClientActiveAlert(null)}>
+            OK
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }

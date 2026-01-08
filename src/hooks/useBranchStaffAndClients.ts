@@ -56,7 +56,7 @@ export const useBranchStaffAndClients = (
 
       let query = supabase
         .from('clients')
-        .select('id, first_name, last_name, email, status')
+        .select('id, first_name, last_name, email, status, active_until')
         .eq('branch_id', branchId);
 
       // Only filter by Active status if not including inactive clients
