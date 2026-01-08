@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useCarePlanStatusChange } from '@/hooks/useCarePlanStatusChange';
+import { useControlledDialog } from '@/hooks/useDialogManager';
 import { RefreshCw } from 'lucide-react';
 
 interface CarePlan {
@@ -65,9 +66,44 @@ export const CarePlanStatusChangeDialog: React.FC<CarePlanStatusChangeDialogProp
   onOpenChange,
   carePlan,
 }) => {
+  const dialogId = `care-plan-status-change-${carePlan?.id || 'unknown'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
   const [newStatus, setNewStatus] = useState<string>('');
   const [reason, setReason] = useState('');
   const { changeStatus, isChanging } = useCarePlanStatusChange();
+
+  // Force UI unlock function for comprehensive cleanup
+  const forceUIUnlock = useCallback(() => {
+    // Remove any stuck overlays
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    // Remove aria-hidden and inert from any elements
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    // Aggressive body/html cleanup
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.documentElement.style.removeProperty('pointer-events');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
+
+  // Sync with parent state and ensure proper cleanup
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    controlledDialog.onOpenChange(newOpen);
+    onOpenChange(newOpen);
+    if (!newOpen) {
+      setTimeout(forceUIUnlock, 50);
+    }
+  }, [controlledDialog, onOpenChange, forceUIUnlock]);
 
   const currentStatus = carePlan?.status || 'draft';
   const allowedTransitions = statusTransitions[currentStatus] || [];
@@ -81,7 +117,7 @@ export const CarePlanStatusChangeDialog: React.FC<CarePlanStatusChangeDialogProp
         onSuccess: () => {
           setNewStatus('');
           setReason('');
-          onOpenChange(false);
+          handleOpenChange(false);
         },
       }
     );
@@ -90,14 +126,25 @@ export const CarePlanStatusChangeDialog: React.FC<CarePlanStatusChangeDialogProp
   const handleClose = () => {
     setNewStatus('');
     setReason('');
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   if (!carePlan) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        className="sm:max-w-[425px]"
+        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+        onEscapeKeyDown={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+        onPointerDownOutside={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5" />
