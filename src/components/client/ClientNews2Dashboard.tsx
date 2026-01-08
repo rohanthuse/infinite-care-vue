@@ -11,9 +11,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AIRecommendationsCard } from "@/components/news2/AIRecommendationsCard";
 import { formatNews2Frequency } from "@/utils/news2FrequencyUtils";
 
-export const ClientNews2Dashboard = ({ isAdminView = false }: { isAdminView?: boolean } = {}) => {
-  const { data: news2Data, isLoading, error } = useClientNews2Data();
-  const { data: observations } = useClientNews2History();
+interface ClientNews2DashboardProps {
+  isAdminView?: boolean;
+  clientId?: string | null;
+}
+
+export const ClientNews2Dashboard = ({ 
+  isAdminView = false, 
+  clientId = null 
+}: ClientNews2DashboardProps) => {
+  // Pass clientId to hooks - they will use it if provided, otherwise fall back to authenticated client
+  const { data: news2Data, isLoading, error } = useClientNews2Data(clientId);
+  const { data: observations } = useClientNews2History(clientId);
   const { navigateToClientPage } = useClientNavigation();
 
   if (isLoading) {
