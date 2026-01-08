@@ -85,36 +85,37 @@ export function ViewServicePlanDialog({ open, onOpenChange, plan }: ViewServiceP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
           <DialogTitle className="text-xl">Service Plan Details</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* General Information */}
-          <div>
-            <h3 className="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
-              General Information
-            </h3>
-            <div className="bg-muted/30 rounded-lg p-4">
-              <DetailRow label="Caption" value={plan.caption || "—"} />
-              <DetailRow
-                label="Status"
-                value={
-                  <Badge
-                    variant="custom"
-                    className={
-                      plan.status === "active"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                    }
-                  >
-                    {plan.status === "active" ? "Active" : "Inactive"}
-                  </Badge>
-                }
-              />
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="space-y-6 py-4">
+            {/* General Information */}
+            <div>
+              <h3 className="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
+                General Information
+              </h3>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <DetailRow label="Caption" value={plan.caption || "—"} />
+                <DetailRow
+                  label="Status"
+                  value={
+                    <Badge
+                      variant="custom"
+                      className={
+                        plan.status === "active"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                      }
+                    >
+                      {plan.status === "active" ? "Active" : "Inactive"}
+                    </Badge>
+                  }
+                />
+              </div>
             </div>
-          </div>
 
           {/* Service Details */}
           <div>
@@ -171,26 +172,27 @@ export function ViewServicePlanDialog({ open, onOpenChange, plan }: ViewServiceP
             </div>
           )}
 
-          {/* Registration Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
-              Registration Info
-            </h3>
-            <div className="bg-muted/30 rounded-lg p-4">
-              <DetailRow label="Registered On" value={formatDateTime(plan.registered_on)} />
-              <DetailRow
-                label="Registered By"
-                value={
-                  plan.registered_by_name && plan.registered_by_name !== "Unknown"
-                    ? plan.registered_by_name
-                    : "—"
-                }
-              />
+            {/* Registration Info */}
+            <div>
+              <h3 className="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
+                Registration Info
+              </h3>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <DetailRow label="Registered On" value={formatDateTime(plan.registered_on)} />
+                <DetailRow
+                  label="Registered By"
+                  value={
+                    plan.registered_by_name && plan.registered_by_name !== "Unknown"
+                      ? plan.registered_by_name
+                      : "—"
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 pb-6 pt-4 flex-shrink-0 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
