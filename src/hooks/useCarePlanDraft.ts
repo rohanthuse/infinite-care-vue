@@ -112,9 +112,10 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         throw new Error('Manual save in progress, skipping auto-save');
       }
 
-      // CRITICAL: Block saves until existing draft check is complete to prevent duplicates
-      if (isCheckingExistingDraft) {
-        throw new Error('Still checking for existing draft, please wait');
+      // For auto-saves, skip if still checking for existing draft
+      // For manual saves, proceed with synchronous check below
+      if (isCheckingExistingDraft && isAutoSave) {
+        throw new Error('Still checking for existing draft, skipping auto-save');
       }
       
       // Calculate content-based completion percentage using unified utility
@@ -200,18 +201,43 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
         });
       }
     },
-    onError: (error, variables) => {
-      console.error('Error saving draft:', error);
+    onError: (error: any, variables) => {
+      // Enhanced error logging for debugging
+      console.error('[useCarePlanDraft] Error saving draft:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        isAutoSave: variables.isAutoSave,
+        clientId,
+        targetCarePlanId: effectiveCarePlanId,
+      });
       
       // Skip error toast for cancelled auto-saves during manual save
       if (variables.isAutoSave && error.message?.includes('Manual save in progress')) {
         return;
       }
       
+      // Skip toast for "still checking" errors during auto-save
+      if (variables.isAutoSave && error.message?.includes('Still checking')) {
+        return;
+      }
+      
       if (!variables.isAutoSave) {
+        // Build a more descriptive error message
+        let errorDescription = "Failed to save draft. Please try again.";
+        
+        if (error?.code === '42501' || error?.message?.includes('RLS') || error?.message?.includes('policy')) {
+          errorDescription = "Permission denied. Please ensure you're logged in.";
+        } else if (error?.code === '23505') {
+          errorDescription = "A draft already exists. Refreshing...";
+        } else if (error?.message) {
+          errorDescription = `Error: ${error.message.substring(0, 100)}`;
+        }
+        
         toast({
-          title: "Error",
-          description: "Failed to save draft. Please try again.",
+          title: "Error Saving Draft",
+          description: errorDescription,
           variant: "destructive",
         });
       }

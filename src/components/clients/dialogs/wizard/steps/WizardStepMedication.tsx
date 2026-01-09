@@ -65,7 +65,8 @@ export function WizardStepMedication({
         onSuccess: () => {
           // Wait for the query to invalidate and refetch before removing from local state
           // This prevents a race condition where local state is cleared before DB data loads
-          queryClient.invalidateQueries({ queryKey: ['medications-by-care-plan', effectiveCarePlanId] }).then(() => {
+          // FIX: Use correct query key that matches useMedicationsByCarePlan
+          queryClient.invalidateQueries({ queryKey: ['medications', 'care-plan', effectiveCarePlanId] }).then(() => {
             // Remove local medication from form state after successful DB save
             // The database version will be fetched via existingMedications query
             const updatedMedications = form.getValues("medical_info.medication_manager.medications") || [];
