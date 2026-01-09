@@ -138,8 +138,14 @@ export function useCreateMultipleBookings(branchId?: string) {
               }
             }
           } catch (invoiceError: any) {
-            console.error('[useCreateMultipleBookings] Invoice generation error:', invoiceError);
-            toast.error('Some invoices could not be generated');
+            console.error('[useCreateMultipleBookings] Invoice generation error:', {
+              message: invoiceError.message,
+              code: invoiceError.code,
+              details: invoiceError.details
+            });
+            toast.error('Some invoices could not be generated', {
+              description: invoiceError.message || 'Please check booking details'
+            });
           }
         }
         
