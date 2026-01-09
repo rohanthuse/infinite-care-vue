@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useRef, useState } from "react";
 import { calculateCompletionPercentage, CompletionContext } from "@/utils/carePlanCompletionUtils";
-
+import { sanitizeFormData } from "@/utils/sanitizeText";
 interface DraftData {
   form_data: any;
   current_step: number;
@@ -123,18 +123,22 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
       const ctx: CompletionContext = { medicationCount };
       const completionPercentage = calculateCompletionPercentage(formData, isChild, ctx);
       
+      // Sanitize form data to remove problematic Unicode characters (e.g., \u0000)
+      // This prevents "unsupported Unicode escape sequence" errors from Supabase
+      const sanitizedFormData = sanitizeFormData(formData);
+      
       const draftPayload: any = {
         client_id: clientId,
-        title: formData.title || `Draft Care Plan for Client`,
-        auto_save_data: formData,
+        title: sanitizedFormData.title || `Draft Care Plan for Client`,
+        auto_save_data: sanitizedFormData,
         last_step_completed: currentStep,
         completion_percentage: completionPercentage,
-        start_date: formatDateSafely(formData.start_date),
-        priority: formData.priority || 'medium',
-        care_plan_type: formData.care_plan_type || 'standard',
-        provider_name: formData.provider_name || 'Not Assigned',
+        start_date: formatDateSafely(sanitizedFormData.start_date),
+        priority: sanitizedFormData.priority || 'medium',
+        care_plan_type: sanitizedFormData.care_plan_type || 'standard',
+        provider_name: sanitizedFormData.provider_name || 'Not Assigned',
         // Explicitly save primary staff_id for backward compatibility
-        staff_id: formData.staff_id || (formData.staff_ids?.length > 0 ? formData.staff_ids[0] : null),
+        staff_id: sanitizedFormData.staff_id || (sanitizedFormData.staff_ids?.length > 0 ? sanitizedFormData.staff_ids[0] : null),
       };
 
       // Use existing draft ID if available

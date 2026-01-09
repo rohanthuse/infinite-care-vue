@@ -851,7 +851,7 @@ export function CarePlanCreationWizard({
                   onSaveDraft={handleSaveDraft}
                   onFinalize={handleFinalize}
                   isLoading={isSaving || isCreating}
-                  isDraft={!!draftData}
+                  isDraft={draftData?.status === 'draft'}
                   formData={formData}
                   onUndo={handleUndo}
                   canUndo={canUndo}

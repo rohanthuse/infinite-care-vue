@@ -74,6 +74,10 @@ export function useCarePlanStatusChange() {
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['admin-care-plans'] });
+      // Also invalidate draft-related queries to ensure wizard shows correct status
+      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['care-plan-draft'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-care-plan-draft'] });
       
       const statusLabel = statusLabels[newStatus] || newStatus;
       toast({
