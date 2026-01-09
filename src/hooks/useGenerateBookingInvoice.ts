@@ -269,7 +269,8 @@ export const useGenerateBookingInvoice = () => {
           invoice_date: new Date().toISOString().split('T')[0],
           due_date: dueDate.toISOString().split('T')[0],
           status: 'draft',
-          invoice_type: 'booking',
+          // invoice_type must be 'manual' or 'automatic' per database constraint
+          invoice_type: 'automatic', // auto-generated from booking
           bill_to_type: billingConfig.billToType,
           authority_id: billingConfig.billToType === 'authority' ? billingConfig.authorityId : null,
           generated_from_booking: true,
