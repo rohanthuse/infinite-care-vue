@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { format, startOfWeek, addDays } from "date-fns";
+import { format, startOfWeek, addDays, isBefore, parseISO, startOfDay } from "date-fns";
 import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, StickyNote, XCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,48 @@ interface ClientScheduleRow {
   bookingBlocks: BookingBlock[];
   totalCareHours: number;
   contractedHours: number;
+}
+
+/**
+ * Determine if a client should be visible in the schedule for a given date.
+ * Inactive clients are only shown for past dates (before today).
+ * Active clients are always shown.
+ */
+function shouldShowClientForDate(
+  client: Client,
+  scheduleDate: Date
+): boolean {
+  const today = startOfDay(new Date());
+  const checkDate = startOfDay(scheduleDate);
+  const isPastDate = isBefore(checkDate, today);
+  
+  // If no status or active_until, always show (assume active)
+  if (!client.status && !client.active_until) {
+    return true;
+  }
+  
+  // Check if client has an expired active_until date
+  if (client.active_until) {
+    const activeUntilDate = startOfDay(parseISO(client.active_until));
+    
+    // If active_until has passed, client is effectively inactive
+    if (isBefore(activeUntilDate, today)) {
+      // Only show for past dates
+      return isPastDate;
+    }
+  }
+  
+  // Inactive client: only show for past dates (before today)
+  if (client.status === 'Inactive') {
+    return isPastDate;
+  }
+  
+  // For other non-active statuses, apply same logic as inactive
+  if (client.status && client.status !== 'Active') {
+    return isPastDate;
+  }
+  
+  return true;
 }
 
 export function ClientScheduleCalendar({ 
@@ -236,13 +278,24 @@ export function ClientScheduleCalendar({
   const clientSchedule = useMemo(() => {
     if (viewType === 'weekly') {
       // Weekly view data structure
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      
       const scheduleData = clients
         .filter(client => {
           // Filter by selected clients if any
-          if (selectedClientIds && selectedClientIds.length > 0) {
-            return selectedClientIds.includes(client.id);
+          if (selectedClientIds && selectedClientIds.length > 0 && !selectedClientIds.includes(client.id)) {
+            return false;
           }
-          return true;
+          
+          // For weekly view, show client if they should be visible on ANY day of the week
+          // This allows historical viewing while hiding inactive clients from future weeks
+          for (let i = 0; i < 7; i++) {
+            const dayDate = addDays(weekStart, i);
+            if (shouldShowClientForDate(client, dayDate)) {
+              return true;
+            }
+          }
+          return false;
         })
         .map(client => {
         const weekBookings: Record<string, Booking[]> = {};
@@ -333,9 +386,15 @@ export function ClientScheduleCalendar({
       const scheduleData: ClientScheduleRow[] = clients
         .filter(client => {
           // Filter by selected clients if any
-          if (selectedClientIds && selectedClientIds.length > 0) {
-            return selectedClientIds.includes(client.id);
+          if (selectedClientIds && selectedClientIds.length > 0 && !selectedClientIds.includes(client.id)) {
+            return false;
           }
+          
+          // Hide inactive clients for today and future dates
+          if (!shouldShowClientForDate(client, date)) {
+            return false;
+          }
+          
           return true;
         })
         .map(client => {

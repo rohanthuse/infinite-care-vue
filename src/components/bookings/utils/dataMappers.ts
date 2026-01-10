@@ -52,6 +52,7 @@ export function mapDBClientToClient(db: any): Client {
     address: address || undefined,
     postcode: postcode || undefined,
     status: db.status,  // Preserve client status for UI indicators
+    active_until: db.active_until || null,  // Include active_until for schedule filtering
   };
   
   console.log("[mapDBClientToClient] Mapped to:", mappedClient);
