@@ -109,7 +109,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams]);
 
   const { data: services = [], isLoading: isLoadingServices } = useServices(organization?.id);
-  const { clients, carers, bookings, isLoading } = useBookingData(branchId);
+  const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId);
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
@@ -593,6 +593,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         <TabsContent value="list">
           <BookingsList 
             bookings={filteredBookings} 
+            totalCount={totalBookingsCount}
             onEditBooking={handleEditBooking}
             onViewBooking={handleViewBooking}
             branchId={branchId}

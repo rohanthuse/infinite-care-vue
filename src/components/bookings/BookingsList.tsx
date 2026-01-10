@@ -35,6 +35,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BookingsListProps {
   bookings: Booking[];
+  totalCount?: number;
   onEditBooking?: (booking: Booking) => void;
   onViewBooking?: (booking: Booking) => void;
   branchId?: string;
@@ -42,6 +43,7 @@ interface BookingsListProps {
 
 export const BookingsList: React.FC<BookingsListProps> = ({ 
   bookings, 
+  totalCount,
   onEditBooking,
   onViewBooking,
   branchId
@@ -685,7 +687,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       {paginatedBookings.length > 0 && (
         <div className="flex items-center justify-between p-4 border-t border-border">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBookings.length)} of {filteredBookings.length} bookings
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBookings.length)} of {statusFilter === 'all' && !searchQuery && totalCount ? totalCount.toLocaleString() : filteredBookings.length.toLocaleString()} bookings
           </div>
           <div className="flex items-center gap-2">
             <Button 

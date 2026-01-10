@@ -42,7 +42,7 @@ export function useBookingData(branchId?: string) {
     reason: shouldFetchData ? "branchId provided" : "no branchId"
   });
   
-  const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(
+  const { data: bookingsDB = [], totalCount: totalBookingsCount, isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(
     shouldFetchData ? branchId : undefined
   );
   const {
@@ -369,6 +369,7 @@ export function useBookingData(branchId?: string) {
     clients,
     carers,
     bookings,
+    totalBookingsCount,
     isLoading: authLoading || isLoadingBookings || isLoadingClients || isLoadingCarers,
     hasAuthError: !authLoading && !user,
     hasDataError: !!(bookingsError || clientsError || carersError)

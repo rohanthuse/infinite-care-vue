@@ -62,15 +62,20 @@ export interface BookingDB {
   } | null;
 }
 
-export async function fetchBranchBookings(branchId?: string) {
+export interface BranchBookingsResult {
+  bookings: BookingDB[];
+  totalCount: number;
+}
+
+export async function fetchBranchBookings(branchId?: string): Promise<BranchBookingsResult> {
   console.log("[fetchBranchBookings] Fetching bookings for branch:", branchId);
   
   if (!branchId) {
     console.log("[fetchBranchBookings] No branch ID provided");
-    return [];
+    return { bookings: [], totalCount: 0 };
   }
   
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("bookings")
     .select(`
       id, client_id, staff_id, branch_id, start_time, end_time, 
@@ -119,7 +124,7 @@ export async function fetchBranchBookings(branchId?: string) {
         visit_end_time,
         status
       )
-    `)
+    `, { count: 'exact' })
     .eq("branch_id", branchId)
     .order("start_time", { ascending: true });
 
@@ -136,8 +141,8 @@ export async function fetchBranchBookings(branchId?: string) {
     clients: booking.clients || null,
   }));
   
-  console.log("[fetchBranchBookings] Successfully fetched", mappedData.length, "bookings");
-  return mappedData;
+  console.log("[fetchBranchBookings] Successfully fetched", mappedData.length, "bookings, total count:", count);
+  return { bookings: mappedData, totalCount: count || 0 };
 }
 
 export function useBranchBookings(branchId?: string) {
@@ -150,11 +155,15 @@ export function useBranchBookings(branchId?: string) {
 
   // Log query results
   if (result.data) {
-    console.log("[useBranchBookings] Query success - fetched", result.data?.length || 0, "bookings for branch:", branchId);
+    console.log("[useBranchBookings] Query success - fetched", result.data?.bookings?.length || 0, "bookings, total:", result.data?.totalCount, "for branch:", branchId);
   }
   if (result.error) {
     console.error("[useBranchBookings] Query error for branch", branchId, ":", result.error);
   }
 
-  return result;
+  return {
+    ...result,
+    data: result.data?.bookings || [],
+    totalCount: result.data?.totalCount || 0,
+  };
 }
