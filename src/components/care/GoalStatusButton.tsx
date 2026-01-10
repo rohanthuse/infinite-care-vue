@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { CheckCircle2, PlayCircle, Circle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface GoalStatusButtonProps {
   status: string;
@@ -18,6 +18,11 @@ export const GoalStatusButton = ({
   disabled = false,
 }: GoalStatusButtonProps) => {
   const [localProgress, setLocalProgress] = useState(progress);
+
+  // Sync localProgress when external progress prop changes (e.g., after refetch)
+  useEffect(() => {
+    setLocalProgress(progress);
+  }, [progress]);
 
   const handleStartGoal = () => {
     onStatusChange("in-progress", 25);
