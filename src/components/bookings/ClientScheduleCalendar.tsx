@@ -853,15 +853,15 @@ export function ClientScheduleCalendar({
             />
           </ScrollArea>
         ) : (
-        <div className="flex-1 min-h-0">
-        <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-x-hidden">
-          <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b sticky top-0 z-20 flex-shrink-0">
+        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="schedule-scroll border rounded-lg flex flex-col flex-1 min-h-0 max-w-full overflow-hidden">
+          <div className="text-xs text-muted-foreground py-2 px-3 bg-muted/30 border-b flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 relative">
-            <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
+          <div className="flex-1 overflow-auto min-h-0">
+            <div className="time-grid-inner" style={{ width: TOTAL_WIDTH }}>
               {/* Header row - sticky */}
-              <div className="bg-muted/50 border-b flex sticky top-0 z-20 bg-background" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
+              <div className="bg-muted/50 border-b flex sticky top-0 z-20" style={{ width: TOTAL_WIDTH }}>
                 <div 
                   className="p-3 font-medium border-r sticky left-0 z-30 bg-muted/50 flex-shrink-0 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.2)]"
                   style={{ width: LEFT_COL_WIDTH }}
@@ -1186,24 +1186,23 @@ export function ClientScheduleCalendar({
             ))}
           </div>
           </div>
+          {/* Summary - sticky footer inside scroll container */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground py-3 px-4 bg-muted/50 border-t flex-shrink-0">
+            <div>
+              Showing {clientSchedule.length} of {clients.length} clients
+            </div>
+            <div className="font-medium">
+              Total scheduled hours: {clientSchedule.reduce((sum: number, client: any) => {
+                if (viewType === 'weekly') {
+                  return sum + (client.totalWeekHours || 0);
+                }
+                return sum + (client.totalCareHours || 0);
+              }, 0).toFixed(1)}
+            </div>
+          </div>
         </div>
         </div>
         )}
-
-        {/* Summary */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            Showing {clientSchedule.length} of {clients.length} clients
-          </div>
-          <div>
-            Total scheduled hours: {clientSchedule.reduce((sum: number, client: any) => {
-              if (viewType === 'weekly') {
-                return sum + (client.totalWeekHours || 0);
-              }
-              return sum + (client.totalCareHours || 0);
-            }, 0).toFixed(1)}
-          </div>
-        </div>
       </div>
     </TooltipProvider>
   );
