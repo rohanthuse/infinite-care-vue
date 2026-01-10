@@ -849,7 +849,9 @@ export function StaffScheduleCalendar({
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">Click to view details</p>
+          <p className="text-xs text-muted-foreground pt-1 border-t border-muted mt-2">
+            💡 Click the booking card to view full details
+          </p>
         </div>
       );
     }
