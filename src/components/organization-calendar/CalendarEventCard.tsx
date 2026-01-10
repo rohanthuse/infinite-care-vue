@@ -78,13 +78,21 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
+      assigned: 'bg-green-500',
+      unassigned: 'bg-yellow-500',
+      done: 'bg-blue-500',
+      'in-progress': 'bg-purple-500',
+      cancelled: 'bg-rose-500',
+      departed: 'bg-teal-500',
+      suspended: 'bg-gray-500',
+      missed: 'bg-red-500',
+      late: 'bg-orange-500',
+      training: 'bg-amber-500',
       scheduled: 'bg-blue-500',
-      'in-progress': 'bg-green-500',
       completed: 'bg-gray-500',
-      cancelled: 'bg-rose-500'
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-500';
+    return colors[status] || 'bg-gray-500';
   };
 
   const EventIcon = getEventIcon(event.type);

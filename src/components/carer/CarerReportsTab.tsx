@@ -644,7 +644,7 @@ export function CarerReportsTab() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge 
+                              <Badge 
                                   variant="outline"
                                   className={cn(
                                     "text-xs",
@@ -654,7 +654,12 @@ export function CarerReportsTab() {
                                     booking.status === 'in-progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
                                     booking.status === 'assigned' && "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
                                     booking.status === 'unassigned' && "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700",
-                                    !['done', 'missed', 'in_progress', 'in-progress', 'assigned', 'unassigned'].includes(booking.status || '') && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                                    booking.status === 'cancelled' && "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:border-rose-700",
+                                    booking.status === 'departed' && "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700",
+                                    booking.status === 'suspended' && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600",
+                                    booking.status === 'late' && "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700",
+                                    booking.status === 'training' && "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700",
+                                    !['done', 'missed', 'in_progress', 'in-progress', 'assigned', 'unassigned', 'cancelled', 'departed', 'suspended', 'late', 'training'].includes(booking.status || '') && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
                                   )}
                                 >
                                   {getBookingStatusLabel(booking.status || 'unknown')}
