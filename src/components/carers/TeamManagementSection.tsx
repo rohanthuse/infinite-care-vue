@@ -58,6 +58,37 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
+// Helper to extract postcode/PIN code from address string
+const extractPostcodeFromAddress = (address: string | undefined): string => {
+  if (!address) return '';
+  
+  // Try UK postcode pattern first (e.g., SW1A 1AA, M1 1AE, AL10 9HX)
+  const ukPostcodeRegex = /\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i;
+  const ukMatch = address.match(ukPostcodeRegex);
+  if (ukMatch) return ukMatch[1].toUpperCase();
+  
+  // Try Indian PIN code pattern (6 digits)
+  const indianPinRegex = /\b(\d{6})\b/;
+  const indianMatch = address.match(indianPinRegex);
+  if (indianMatch) return indianMatch[1];
+  
+  // Try 5-digit codes (US ZIP, other formats)
+  const fiveDigitRegex = /\b(\d{5})\b/;
+  const fiveDigitMatch = address.match(fiveDigitRegex);
+  if (fiveDigitMatch) return fiveDigitMatch[1];
+  
+  // Fallback: Try to extract last comma-separated part if it looks like a code
+  const parts = address.split(',').map(p => p.trim());
+  const lastPart = parts[parts.length - 1];
+  
+  // Check if last part is alphanumeric and reasonable length (3-10 chars)
+  if (lastPart && /^[A-Z0-9\s]{3,10}$/i.test(lastPart)) {
+    return lastPart.toUpperCase();
+  }
+  
+  return '';
+};
+
 interface TeamManagementSectionProps {
   branchId: string;
   branchName?: string;
@@ -380,7 +411,7 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
       {/* Table */}
       <div className="bg-card rounded-lg border border-border shadow-sm overflow-x-auto">
         <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see all columns</div>
-        <Table className="min-w-[1100px]">
+        <Table className="min-w-[1200px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
@@ -392,6 +423,7 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
               <TableHead className="whitespace-nowrap">Name</TableHead>
               <TableHead className="hidden md:table-cell whitespace-nowrap">Email</TableHead>
               <TableHead className="hidden lg:table-cell whitespace-nowrap">Phone</TableHead>
+              <TableHead className="hidden lg:table-cell whitespace-nowrap">Postcode</TableHead>
               <TableHead className="hidden lg:table-cell whitespace-nowrap">Specialization</TableHead>
               <TableHead className="whitespace-nowrap">Status</TableHead>
               <TableHead className="hidden md:table-cell whitespace-nowrap">Registered</TableHead>
@@ -415,6 +447,11 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
                 </TableCell>
                 <TableCell className="hidden md:table-cell">{carer.email}</TableCell>
                 <TableCell className="hidden lg:table-cell">{carer.phone}</TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  <span className="text-sm text-muted-foreground">
+                    {extractPostcodeFromAddress(carer.address) || 'Postcode not available'}
+                  </span>
+                </TableCell>
                 <TableCell className="hidden lg:table-cell">{carer.specialization}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
