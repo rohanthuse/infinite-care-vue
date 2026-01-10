@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -10,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
 import { useUpdateGoal } from '@/hooks/useCarePlanGoalsMutations';
 import { useVisitRecord } from '@/hooks/useVisitRecord';
-import { FileBarChart2, Target, TrendingUp, Clock, MessageCircle, CheckCircle2 } from 'lucide-react';
+import { FileBarChart2, Target, Clock, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -24,9 +23,13 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
   visitRecordId 
 }) => {
   const [visitNotes, setVisitNotes] = useState('');
-  const [goalUpdates, setGoalUpdates] = useState<Record<string, { progress: number; notes: string }>>({});
+  const [goalUpdates, setGoalUpdates] = useState<Record<string, { progress?: number; notes?: string }>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [savingGoals, setSavingGoals] = useState<Record<string, boolean>>({});
+  const [savedGoals, setSavedGoals] = useState<Record<string, Date | null>>({});
+  
+  const queryClient = useQueryClient();
   
   // Get visit record hooks for saving
   const { visitRecord, updateVisitRecord } = useVisitRecord(visitRecordId);
@@ -88,30 +91,36 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
     return () => clearTimeout(timeoutId);
   }, [visitNotes, visitRecordId, visitRecord?.visit_summary, updateVisitRecord]);
 
-  // Auto-save goal updates with debouncing
+  // Auto-save goal updates with debouncing - FIXED: Don't clear goalUpdates
   useEffect(() => {
     const pendingUpdates = Object.entries(goalUpdates);
     if (pendingUpdates.length === 0 || !goals) return;
 
-    const timeoutId = setTimeout(() => {
-      pendingUpdates.forEach(([goalId, update]) => {
+    const timeoutId = setTimeout(async () => {
+      for (const [goalId, update] of pendingUpdates) {
         const goal = goals.find(g => g.id === goalId);
-        if (goal && (update.progress !== undefined || update.notes)) {
-          handleGoalUpdate(
-            goalId, 
-            update.progress ?? goal.progress ?? 0,
-            update.notes ?? ''
-          );
+        if (goal) {
+          // Only save if there are actual changes from the original
+          const hasProgressChange = update.progress !== undefined && update.progress !== goal.progress;
+          const hasNotesChange = update.notes !== undefined && update.notes !== (goal.notes || '');
+          
+          if (hasProgressChange || hasNotesChange) {
+            await handleGoalUpdate(
+              goalId, 
+              update.progress ?? goal.progress ?? 0,
+              update.notes ?? goal.notes ?? ''
+            );
+          }
         }
-      });
-      // Clear pending updates after save
-      setGoalUpdates({});
+      }
+      // DO NOT clear goalUpdates here - keep local state to show in textarea
     }, 2000); // 2-second debounce for goal updates
 
     return () => clearTimeout(timeoutId);
   }, [goalUpdates, goals]);
 
   const handleGoalUpdate = async (goalId: string, progress: number, notes: string) => {
+    setSavingGoals(prev => ({ ...prev, [goalId]: true }));
     try {
       await updateGoal.mutateAsync({
         goalId,
@@ -122,10 +131,15 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
         }
       });
       
-      toast.success('Goal updated successfully');
+      // Invalidate to refetch latest data
+      queryClient.invalidateQueries({ queryKey: ['care-plan-goals', carePlan?.id] });
+      setSavedGoals(prev => ({ ...prev, [goalId]: new Date() }));
+      // Don't show toast for auto-save to avoid noise
     } catch (error) {
       console.error('Error updating goal:', error);
       toast.error('Failed to update goal');
+    } finally {
+      setSavingGoals(prev => ({ ...prev, [goalId]: false }));
     }
   };
 
@@ -275,29 +289,29 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Visit Notes
+                          Goal Progress Notes
                         </label>
                         <Textarea
                           placeholder="Add notes about progress on this goal during the visit..."
-                          value={goalUpdates[goal.id]?.notes ?? ''}
+                          value={goalUpdates[goal.id]?.notes ?? goal.notes ?? ''}
                           onChange={(e) => handleNotesChange(goal.id, e.target.value)}
                           rows={2}
                         />
+                        <div className="flex items-center justify-end text-sm mt-1 h-5">
+                          {savingGoals[goal.id] && (
+                            <div className="text-blue-600 flex items-center gap-1">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                              Saving...
+                            </div>
+                          )}
+                          {savedGoals[goal.id] && !savingGoals[goal.id] && (
+                            <div className="text-green-600 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Saved
+                            </div>
+                          )}
+                        </div>
                       </div>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handleGoalUpdate(
-                          goal.id,
-                          goalUpdates[goal.id]?.progress ?? goal.progress ?? 0,
-                          goalUpdates[goal.id]?.notes ?? ''
-                        )}
-                        disabled={updateGoal.isPending}
-                        className="w-full"
-                      >
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Update Goal
-                      </Button>
                     </div>
                   </div>
                 ))}
