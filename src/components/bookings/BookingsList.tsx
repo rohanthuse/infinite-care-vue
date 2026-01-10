@@ -335,9 +335,9 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "done":
-        return "bg-green-500/10 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-0";
-      case "assigned":
         return "bg-blue-500/10 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-0";
+      case "assigned":
+        return "bg-green-500/10 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-0";
       case "unassigned":
         return "bg-yellow-500/10 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-0";
       case "in-progress":
@@ -345,11 +345,15 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       case "departed":
         return "bg-teal-500/10 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 border-0";
       case "cancelled":
-        return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
+        return "bg-rose-500/10 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 border-0";
       case "late":
         return "bg-orange-500/10 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 border-0";
       case "missed":
         return "bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-0";
+      case "suspended":
+        return "bg-gray-500/10 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-0";
+      case "training":
+        return "bg-amber-500/10 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0";
       default:
         return "bg-muted text-muted-foreground border-0";
     }
