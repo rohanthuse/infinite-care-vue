@@ -33,6 +33,21 @@ const LEGEND_DOT_COLORS: Record<BookingStatusType, string> = {
   meeting: 'bg-indigo-500',
 };
 
+// Human-readable color names for tooltips
+const STATUS_COLOR_NAMES: Record<BookingStatusType, string> = {
+  assigned: 'Green',
+  unassigned: 'Yellow',
+  done: 'Blue',
+  'in-progress': 'Purple',
+  missed: 'Red',
+  late: 'Orange',
+  cancelled: 'Rose',
+  departed: 'Teal',
+  suspended: 'Gray',
+  training: 'Amber',
+  meeting: 'Indigo',
+};
+
 export function BookingStatusLegend() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -56,7 +71,7 @@ export function BookingStatusLegend() {
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{BOOKING_STATUS_COLORS[status].label}</p>
+                <p>{BOOKING_STATUS_COLORS[status].label} - {STATUS_COLOR_NAMES[status]}</p>
               </TooltipContent>
             </Tooltip>
           ))}
@@ -82,7 +97,7 @@ export function BookingStatusLegend() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{BOOKING_STATUS_COLORS[status].label}</p>
+                    <p>{BOOKING_STATUS_COLORS[status].label} - {STATUS_COLOR_NAMES[status]}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
