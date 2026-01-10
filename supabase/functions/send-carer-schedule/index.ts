@@ -42,15 +42,18 @@ const formatDuration = (minutes: number): string => {
 const getStatusBadgeColor = (status: string): string => {
   const statusLower = status?.toLowerCase() || 'assigned';
   const colors: Record<string, string> = {
-    'done': '#3b82f6',
-    'completed': '#3b82f6',
-    'missed': '#ef4444',
-    'in_progress': '#8b5cf6',
-    'in-progress': '#8b5cf6',
-    'assigned': '#22c55e',
-    'cancelled': '#ef4444',
-    'departed': '#14b8a6',
-    'late': '#f59e0b',
+    'done': '#3b82f6',        // blue-500
+    'completed': '#3b82f6',   // blue-500
+    'missed': '#ef4444',      // red-500
+    'in_progress': '#8b5cf6', // purple-500
+    'in-progress': '#8b5cf6', // purple-500
+    'assigned': '#22c55e',    // green-500
+    'cancelled': '#f43f5e',   // rose-500 (changed from red)
+    'departed': '#14b8a6',    // teal-500
+    'suspended': '#6b7280',   // gray-500
+    'unassigned': '#eab308',  // yellow-500
+    'late': '#f97316',        // orange-500
+    'training': '#f59e0b',    // amber-500
   };
   return colors[statusLower] || '#6b7280';
 };
