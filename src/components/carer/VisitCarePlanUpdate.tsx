@@ -23,11 +23,9 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
   visitRecordId 
 }) => {
   const [visitNotes, setVisitNotes] = useState('');
-  const [goalUpdates, setGoalUpdates] = useState<Record<string, { progress?: number; notes?: string }>>({});
+  const [goalUpdates, setGoalUpdates] = useState<Record<string, { progress?: number }>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [savingGoals, setSavingGoals] = useState<Record<string, boolean>>({});
-  const [savedGoals, setSavedGoals] = useState<Record<string, Date | null>>({});
   
   const queryClient = useQueryClient();
   
@@ -91,7 +89,7 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
     return () => clearTimeout(timeoutId);
   }, [visitNotes, visitRecordId, visitRecord?.visit_summary, updateVisitRecord]);
 
-  // Auto-save goal updates with debouncing - FIXED: Don't clear goalUpdates
+  // Auto-save goal progress updates with debouncing
   useEffect(() => {
     const pendingUpdates = Object.entries(goalUpdates);
     if (pendingUpdates.length === 0 || !goals) return;
@@ -100,27 +98,23 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
       for (const [goalId, update] of pendingUpdates) {
         const goal = goals.find(g => g.id === goalId);
         if (goal) {
-          // Only save if there are actual changes from the original
           const hasProgressChange = update.progress !== undefined && update.progress !== goal.progress;
-          const hasNotesChange = update.notes !== undefined && update.notes !== (goal.notes || '');
           
-          if (hasProgressChange || hasNotesChange) {
+          if (hasProgressChange) {
             await handleGoalUpdate(
               goalId, 
               update.progress ?? goal.progress ?? 0,
-              update.notes ?? goal.notes ?? ''
+              goal.notes ?? '' // Keep existing notes unchanged
             );
           }
         }
       }
-      // DO NOT clear goalUpdates here - keep local state to show in textarea
-    }, 2000); // 2-second debounce for goal updates
+    }, 2000);
 
     return () => clearTimeout(timeoutId);
   }, [goalUpdates, goals]);
 
   const handleGoalUpdate = async (goalId: string, progress: number, notes: string) => {
-    setSavingGoals(prev => ({ ...prev, [goalId]: true }));
     try {
       await updateGoal.mutateAsync({
         goalId,
@@ -133,13 +127,9 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
       
       // Invalidate to refetch latest data
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', carePlan?.id] });
-      setSavedGoals(prev => ({ ...prev, [goalId]: new Date() }));
-      // Don't show toast for auto-save to avoid noise
     } catch (error) {
       console.error('Error updating goal:', error);
       toast.error('Failed to update goal');
-    } finally {
-      setSavingGoals(prev => ({ ...prev, [goalId]: false }));
     }
   };
 
@@ -153,15 +143,6 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
     }));
   };
 
-  const handleNotesChange = (goalId: string, notes: string) => {
-    setGoalUpdates(prev => ({
-      ...prev,
-      [goalId]: {
-        ...prev[goalId],
-        notes
-      }
-    }));
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -287,31 +268,6 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Goal Progress Notes
-                        </label>
-                        <Textarea
-                          placeholder="Add notes about progress on this goal during the visit..."
-                          value={goalUpdates[goal.id]?.notes ?? goal.notes ?? ''}
-                          onChange={(e) => handleNotesChange(goal.id, e.target.value)}
-                          rows={2}
-                        />
-                        <div className="flex items-center justify-end text-sm mt-1 h-5">
-                          {savingGoals[goal.id] && (
-                            <div className="text-blue-600 flex items-center gap-1">
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                              Saving...
-                            </div>
-                          )}
-                          {savedGoals[goal.id] && !savingGoals[goal.id] && (
-                            <div className="text-green-600 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Saved
-                            </div>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 ))}
