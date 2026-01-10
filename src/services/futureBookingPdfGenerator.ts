@@ -91,102 +91,151 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
   const orgSubtitle = "Your Dignity is Our Business";
 
   // =====================================================
-  // HEADER SECTION - Clean Professional Design
+  // HEADER SECTION - Dynamic height, professional layout
   // =====================================================
-  const drawHeader = (isFirstPage: boolean = true) => {
+  const HEADER_CONFIG = {
+    topBarHeight: 8,
+    logoMaxWidth: 45,
+    logoMaxHeight: 30,
+    logoX: 15,
+    logoY: 12,
+    rightMargin: 15,
+    maxRightWidth: 85,
+    headerPadding: 6,
+    separatorPadding: 4,
+  };
+
+  // Helper to get image format
+  const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+    if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+    if (base64.includes('data:image/gif')) return 'GIF';
+    return 'PNG';
+  };
+
+  // Draw header and return the Y position where content should start
+  const drawHeader = (isFirstPage: boolean = true): number => {
+    const rightX = pageWidth - HEADER_CONFIG.rightMargin;
+    
     // Thin blue bar at very top
     doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    doc.rect(0, 0, pageWidth, 8, 'F');
+    doc.rect(0, 0, pageWidth, HEADER_CONFIG.topBarHeight, 'F');
 
-    if (isFirstPage) {
-      const rightX = pageWidth - 15;
-      
-      // LEFT SIDE: Larger Logo only
-      if (logoBase64) {
-        try {
-          const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
-            if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
-            if (base64.includes('data:image/gif')) return 'GIF';
-            return 'PNG';
-          };
-          // Increased logo size: 50x32 (was 30x18)
-          doc.addImage(logoBase64, getImageFormat(logoBase64), 15, 12, 50, 32);
-        } catch (e) {
-          console.error('Error adding logo:', e);
-        }
-      }
-
-      // RIGHT SIDE: Company & Branch details
-      const maxRightWidth = 85;
-      let rightY = 14;
-
-      // 1. Company Name (bold, prominent, uppercase)
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
-      const orgLines = doc.splitTextToSize(orgName.toUpperCase(), maxRightWidth);
-      doc.text(orgLines[0], rightX, rightY, { align: 'right' });
-      rightY += 5;
-      if (orgLines.length > 1) {
-        doc.setFontSize(10);
-        doc.text(orgLines[1], rightX, rightY, { align: 'right' });
-        rightY += 5;
-      }
-
-      // 2. Branch Name (normal, slightly smaller)
+    if (!isFirstPage) {
+      // Mini header for subsequent pages - show key info in blue bar
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
-      doc.text(branchName, rightX, rightY, { align: 'right' });
-      rightY += 5;
-
-      // 3. Address (normal, small, multi-line support)
-      doc.setFontSize(8);
-      if (orgSettings?.address) {
-        const addressLines = doc.splitTextToSize(orgSettings.address, maxRightWidth);
-        addressLines.slice(0, 2).forEach((line: string) => {
-          doc.text(line, rightX, rightY, { align: 'right' });
-          rightY += 4;
-        });
-        rightY += 1; // Extra spacing before contact details
-      }
-
-      // 4. Contact Details (with labels)
-      if (orgSettings?.email) {
-        doc.text(`Email: ${orgSettings.email}`, rightX, rightY, { align: 'right' });
-        rightY += 4;
-      }
-      if (orgSettings?.telephone) {
-        doc.text(`Tel: ${orgSettings.telephone}`, rightX, rightY, { align: 'right' });
-        rightY += 4;
-      }
-      if (orgSettings?.website) {
-        doc.text(`Web: ${orgSettings.website}`, rightX, rightY, { align: 'right' });
-      }
-
-      // Separator line
-      doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
-      doc.setLineWidth(0.5);
-      doc.line(15, 48, pageWidth - 15, 48);
-    } else {
-      // Mini header for subsequent pages
-      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
       doc.text(`CARER ROTA - ${carerName}`, 15, 5.5);
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.text(`${format(dateFrom, "dd MMM")} - ${format(dateTo, "dd MMM yyyy")}`, pageWidth - 15, 5.5, { align: 'right' });
+      doc.text(`${format(dateFrom, "dd MMM")} - ${format(dateTo, "dd MMM yyyy")}`, rightX, 5.5, { align: 'right' });
+      
+      return HEADER_CONFIG.topBarHeight + 6; // Content starts after blue bar with small padding
     }
+
+    // FIRST PAGE: Full header with logo and company details
+    let logoBottomY = HEADER_CONFIG.logoY;
+    let rightBlockBottomY = HEADER_CONFIG.logoY;
+
+    // LEFT SIDE: Logo with aspect ratio preservation
+    if (logoBase64) {
+      try {
+        // Get image properties to preserve aspect ratio
+        const imgProps = doc.getImageProperties(logoBase64);
+        const imgWidth = imgProps.width;
+        const imgHeight = imgProps.height;
+        
+        // Calculate scale to fit within max bounds while preserving aspect ratio
+        const scaleW = HEADER_CONFIG.logoMaxWidth / imgWidth;
+        const scaleH = HEADER_CONFIG.logoMaxHeight / imgHeight;
+        const scale = Math.min(scaleW, scaleH);
+        
+        const drawWidth = imgWidth * scale;
+        const drawHeight = imgHeight * scale;
+        
+        doc.addImage(
+          logoBase64, 
+          getImageFormat(logoBase64), 
+          HEADER_CONFIG.logoX, 
+          HEADER_CONFIG.logoY, 
+          drawWidth, 
+          drawHeight
+        );
+        
+        logoBottomY = HEADER_CONFIG.logoY + drawHeight;
+      } catch (e) {
+        console.error('Error adding logo:', e);
+      }
+    }
+
+    // RIGHT SIDE: Company & Branch details
+    let rightY = HEADER_CONFIG.logoY + 2; // Start slightly below top bar
+
+    // 1. Company Name (bold, largest text, uppercase)
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+    const orgLines = doc.splitTextToSize(orgName.toUpperCase(), HEADER_CONFIG.maxRightWidth);
+    orgLines.forEach((line: string, index: number) => {
+      if (index > 0) doc.setFontSize(11); // Slightly smaller for wrapped lines
+      doc.text(line, rightX, rightY, { align: 'right' });
+      rightY += index === 0 ? 5.5 : 5;
+    });
+    rightY += 1; // Extra space after company name
+
+    // 2. Branch Name (normal weight, medium size)
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
+    doc.text(branchName, rightX, rightY, { align: 'right' });
+    rightY += 5;
+
+    // 3. Address (small, multi-line support - up to 3 lines)
+    doc.setFontSize(8);
+    if (orgSettings?.address) {
+      const addressLines = doc.splitTextToSize(orgSettings.address, HEADER_CONFIG.maxRightWidth);
+      addressLines.slice(0, 3).forEach((line: string) => {
+        doc.text(line, rightX, rightY, { align: 'right' });
+        rightY += 3.5;
+      });
+      rightY += 1.5; // Extra spacing before contact details
+    }
+
+    // 4. Contact Details (with labels, consistent spacing)
+    if (orgSettings?.email) {
+      doc.text(`Email: ${orgSettings.email}`, rightX, rightY, { align: 'right' });
+      rightY += 4;
+    }
+    if (orgSettings?.telephone) {
+      doc.text(`Tel: ${orgSettings.telephone}`, rightX, rightY, { align: 'right' });
+      rightY += 4;
+    }
+    if (orgSettings?.website) {
+      doc.text(`Web: ${orgSettings.website}`, rightX, rightY, { align: 'right' });
+      rightY += 4;
+    }
+
+    rightBlockBottomY = rightY;
+
+    // Calculate separator line position based on tallest element
+    const contentBottomY = Math.max(logoBottomY, rightBlockBottomY);
+    const separatorY = contentBottomY + HEADER_CONFIG.separatorPadding;
+
+    // Separator line
+    doc.setDrawColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
+    doc.setLineWidth(0.5);
+    doc.line(15, separatorY, pageWidth - 15, separatorY);
+
+    return separatorY + HEADER_CONFIG.headerPadding;
   };
 
-  drawHeader(true);
+  const contentStartY = drawHeader(true);
 
   // =====================================================
   // TITLE SECTION - Below header with reduced sizing
   // =====================================================
-  let currentY = 55;
+  let currentY = contentStartY;
 
   // Title: "CARER ROTA" (centered, reduced from 20pt to 14pt)
   doc.setFontSize(14);
