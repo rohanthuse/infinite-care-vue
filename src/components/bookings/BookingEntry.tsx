@@ -59,7 +59,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     unassigned: "bg-yellow-100 dark:bg-yellow-900/40 border-yellow-400 dark:border-yellow-600 border-2 text-yellow-900 dark:text-yellow-200",
     done: "bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200",
     "in-progress": "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200",
-    cancelled: "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200",
+    cancelled: "bg-slate-100 dark:bg-slate-800/40 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200",
     departed: "bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200",
     suspended: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200",
     // Late/missed colors

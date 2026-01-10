@@ -25,8 +25,8 @@ export const BOOKING_STATUS_COLORS = {
     label: "In Progress"
   },
   cancelled: {
-    light: "bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300",
-    solid: "bg-red-500 border-red-600",
+    light: "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/50 dark:border-slate-600 dark:text-slate-300",
+    solid: "bg-slate-500 border-slate-600",
     label: "Cancelled"
   },
   departed: {
