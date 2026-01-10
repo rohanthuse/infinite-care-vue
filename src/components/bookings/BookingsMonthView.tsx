@@ -41,6 +41,10 @@ export interface Client {
   initials: string;
   bookingCount: number;
   bookings?: Booking[];
+  address?: string;
+  postcode?: string;
+  status?: string;
+  active_until?: string | null;
 }
 
 export interface Carer {
