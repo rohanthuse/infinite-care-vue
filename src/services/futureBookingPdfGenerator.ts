@@ -116,12 +116,12 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
         }
       }
 
-      // RIGHT SIDE: Organization details
-      const maxRightWidth = 80;
-      let rightY = 16;
+      // RIGHT SIDE: Company & Branch details
+      const maxRightWidth = 85;
+      let rightY = 14;
 
-      // Organization name (bold, prominent)
-      doc.setFontSize(12);
+      // 1. Company Name (bold, prominent, uppercase)
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
       const orgLines = doc.splitTextToSize(orgName.toUpperCase(), maxRightWidth);
@@ -133,28 +133,35 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
         rightY += 5;
       }
 
-      // Organization details (address, phone, email, website)
-      doc.setFontSize(8);
+      // 2. Branch Name (normal, slightly smaller)
+      doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(BRAND_COLORS.text[0], BRAND_COLORS.text[1], BRAND_COLORS.text[2]);
+      doc.text(branchName, rightX, rightY, { align: 'right' });
+      rightY += 5;
 
+      // 3. Address (normal, small, multi-line support)
+      doc.setFontSize(8);
       if (orgSettings?.address) {
         const addressLines = doc.splitTextToSize(orgSettings.address, maxRightWidth);
         addressLines.slice(0, 2).forEach((line: string) => {
           doc.text(line, rightX, rightY, { align: 'right' });
           rightY += 4;
         });
+        rightY += 1; // Extra spacing before contact details
+      }
+
+      // 4. Contact Details (with labels)
+      if (orgSettings?.email) {
+        doc.text(`Email: ${orgSettings.email}`, rightX, rightY, { align: 'right' });
+        rightY += 4;
       }
       if (orgSettings?.telephone) {
         doc.text(`Tel: ${orgSettings.telephone}`, rightX, rightY, { align: 'right' });
         rightY += 4;
       }
-      if (orgSettings?.email) {
-        doc.text(orgSettings.email, rightX, rightY, { align: 'right' });
-        rightY += 4;
-      }
       if (orgSettings?.website) {
-        doc.text(orgSettings.website, rightX, rightY, { align: 'right' });
+        doc.text(`Web: ${orgSettings.website}`, rightX, rightY, { align: 'right' });
       }
 
       // Separator line
