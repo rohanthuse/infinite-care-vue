@@ -1070,8 +1070,8 @@ export function StaffScheduleCalendar({
         />
         </ScrollArea>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
-        <div className="schedule-scroll border rounded-lg flex flex-col flex-1 min-h-0 max-w-full overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col" style={{ gap: 0 }}>
+        <div className="schedule-scroll border rounded-lg flex flex-col flex-1 min-h-0 max-w-full overflow-hidden" style={{ gap: 0 }}>
           <div className="text-xs text-muted-foreground py-2 px-3 bg-muted/30 border-b flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
@@ -1117,7 +1117,12 @@ export function StaffScheduleCalendar({
               <div 
                 key={staffMember.id} 
                 className="border-b last:border-b-0 flex"
-                style={{ width: TOTAL_WIDTH }}
+                style={{ 
+                  width: TOTAL_WIDTH,
+                  minHeight: '80px',
+                  margin: 0,
+                  padding: 0
+                }}
               >
                 {/* Staff info column */}
                 <div 

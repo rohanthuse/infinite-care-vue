@@ -526,12 +526,31 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: 0; /* Explicitly remove any gaps */
 }
 
-/* Ensure row elements take full width */
+/* Ensure row elements take full width with no gaps */
 .page-bookings .time-grid-inner > div {
   display: flex;
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fix schedule-scroll container to remove gaps */
+.page-bookings .schedule-scroll {
+  gap: 0 !important;
+}
+
+/* Ensure proper border collapse between rows */
+.page-bookings .time-grid-inner > div:not(:first-child) {
+  margin-top: -1px;
+}
+
+/* Ensure cells within rows have consistent sizing */
+.page-bookings .time-grid-inner > div > div {
+  box-sizing: border-box;
+  margin: 0;
 }
 
 /* Sticky header row within scrollable grid */

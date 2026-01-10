@@ -853,8 +853,8 @@ export function ClientScheduleCalendar({
             />
           </ScrollArea>
         ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
-        <div className="schedule-scroll border rounded-lg flex flex-col flex-1 min-h-0 max-w-full overflow-hidden">
+<div className="flex-1 min-h-0 flex flex-col" style={{ gap: 0 }}>
+        <div className="schedule-scroll border rounded-lg flex flex-col flex-1 min-h-0 max-w-full overflow-hidden" style={{ gap: 0 }}>
           <div className="text-xs text-muted-foreground py-2 px-3 bg-muted/30 border-b flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
@@ -897,7 +897,12 @@ export function ClientScheduleCalendar({
               <div 
                 key={client.id}
                 className="border-b last:border-b-0 flex hover:bg-muted/25 transition-colors"
-                style={{ width: TOTAL_WIDTH }}
+                style={{ 
+                  width: TOTAL_WIDTH,
+                  minHeight: '80px',
+                  margin: 0,
+                  padding: 0
+                }}
               >
                 {/* Client info column */}
                 <div 
@@ -1049,12 +1054,14 @@ export function ClientScheduleCalendar({
                         <div
                           key={slot}
                           className={`
-                            border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
+                            border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors box-border
                             ${status.type === 'available' ? 'bg-background border-border hover:bg-muted/50' : 'bg-transparent'}
                           `}
                           style={{ 
                             width: SLOT_WIDTH,
-                            height: '80px'
+                            height: '80px',
+                            margin: 0,
+                            padding: 0
                           }}
                           onClick={() => status.type === 'available' && handleCellClick(client.id, slot, status)}
                         />
