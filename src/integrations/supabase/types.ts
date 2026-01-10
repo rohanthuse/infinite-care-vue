@@ -8540,6 +8540,7 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           photo_url: string | null
+          postcode: string | null
           profile_completed: boolean | null
           punctuality_score: number | null
           qualifications: string[] | null
@@ -8587,6 +8588,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           photo_url?: string | null
+          postcode?: string | null
           profile_completed?: boolean | null
           punctuality_score?: number | null
           qualifications?: string[] | null
@@ -8634,6 +8636,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           photo_url?: string | null
+          postcode?: string | null
           profile_completed?: boolean | null
           punctuality_score?: number | null
           qualifications?: string[] | null
