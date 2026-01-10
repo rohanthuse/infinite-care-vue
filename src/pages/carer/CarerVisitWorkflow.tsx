@@ -387,7 +387,22 @@ const CarerVisitWorkflow = () => {
         .from('bookings')
         .select(`
           *,
-          clients(first_name, last_name, phone, address, branch_id),
+          clients(
+            first_name, 
+            last_name, 
+            phone, 
+            address, 
+            branch_id,
+            client_addresses(
+              address_line_1,
+              address_line_2,
+              city,
+              state_county,
+              postcode,
+              country,
+              is_default
+            )
+          ),
           services(title, description),
           branches(name)
         `)
@@ -2819,7 +2834,33 @@ const CarerVisitWorkflow = () => {
                     <div className="p-3 bg-muted rounded-lg space-y-1">
                       <p className="font-medium">{currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}</p>
                       <p className="text-sm text-muted-foreground">{currentAppointment.clients?.phone}</p>
-                      <p className="text-sm text-muted-foreground">{currentAppointment.clients?.address}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(() => {
+                          const client = currentAppointment.clients;
+                          if (!client) return 'No address available';
+                          
+                          // Check structured addresses first (priority)
+                          if (client.client_addresses && client.client_addresses.length > 0) {
+                            const defaultAddress = client.client_addresses.find((a: any) => a.is_default) 
+                              || client.client_addresses[0];
+                            
+                            if (defaultAddress) {
+                              const addressParts = [
+                                defaultAddress.address_line_1,
+                                defaultAddress.address_line_2,
+                                defaultAddress.city,
+                                defaultAddress.state_county,
+                                defaultAddress.postcode,
+                                defaultAddress.country
+                              ].filter(Boolean);
+                              return addressParts.join(', ') || 'No address available';
+                            }
+                          }
+                          
+                          // Fallback to legacy address
+                          return client.address || 'No address available';
+                        })()}
+                      </p>
                     </div>
                   </div>
                   
