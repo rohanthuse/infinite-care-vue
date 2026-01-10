@@ -620,7 +620,7 @@ export function ClientScheduleCalendar({
     }
   };
 
-  const renderTooltipContent = (status: ClientStatus, clientName: string) => {
+  const renderTooltipContent = (status: ClientStatus, clientName: string, onClickViewDetails?: () => void) => {
     if (status.type === 'available') {
       return (
         <div className="space-y-1">
@@ -671,9 +671,17 @@ export function ClientScheduleCalendar({
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
             )}
           </div>
-          <p className="text-xs text-muted-foreground pt-1 border-t border-muted mt-2">
-            💡 Click the booking card to view full details
-          </p>
+          {onClickViewDetails && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClickViewDetails();
+              }}
+              className="text-xs text-primary hover:underline cursor-pointer pt-1 border-t border-muted mt-2 w-full text-left"
+            >
+              Click to view details
+            </button>
+          )}
         </div>
       );
     }
