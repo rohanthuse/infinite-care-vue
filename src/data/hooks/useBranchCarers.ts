@@ -50,6 +50,7 @@ export interface CreateCarerData {
   email: string;
   phone: string;
   address?: string;
+  postcode?: string;
   // Address component fields (UI-only, concatenated before submission)
   house_no?: string;
   street?: string;

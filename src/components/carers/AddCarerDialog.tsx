@@ -65,6 +65,7 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
       await createCarerMutation.mutateAsync({
         ...formData,
         address: fullAddress,
+        postcode: formData.pin_code,
         branch_id: branchId
       });
       
