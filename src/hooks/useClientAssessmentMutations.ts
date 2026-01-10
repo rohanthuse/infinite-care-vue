@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeFormData } from '@/utils/sanitizeText';
 
 export interface CreateAssessmentData {
   client_id: string;
@@ -21,9 +22,12 @@ export const useCreateClientAssessment = () => {
 
   return useMutation({
     mutationFn: async (data: CreateAssessmentData) => {
+      // Sanitize all text fields to prevent Unicode escape errors
+      const sanitizedData = sanitizeFormData(data);
+      
       const { data: result, error } = await supabase
         .from('client_assessments')
-        .insert(data)
+        .insert(sanitizedData)
         .select()
         .single();
 
