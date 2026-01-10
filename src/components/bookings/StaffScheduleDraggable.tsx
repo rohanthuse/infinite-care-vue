@@ -48,6 +48,7 @@ export function StaffScheduleDraggable({
   selectedBookings = [],
   onBookingSelect
 }: StaffScheduleDraggableProps) {
+  const [openTooltipId, setOpenTooltipId] = React.useState<string | null>(null);
   return (
     <Droppable droppableId={`staff-${staffId}`} type="booking">
       {(provided, snapshot) => (
@@ -95,7 +96,11 @@ export function StaffScheduleDraggable({
                block.booking.unavailability_request.status === 'approved');
             
             return (
-              <Tooltip key={`staff-${block.booking.id}-${idx}`}>
+              <Tooltip 
+                key={`staff-${block.booking.id}-${idx}`}
+                open={openTooltipId === `staff-${block.booking.id}-${idx}`}
+                onOpenChange={(open) => setOpenTooltipId(open ? `staff-${block.booking.id}-${idx}` : null)}
+              >
                 <Draggable 
                   draggableId={`staff-${block.booking.id}-${idx}`} 
                   index={idx}
@@ -211,7 +216,10 @@ export function StaffScheduleDraggable({
                     {renderTooltipContent(
                       { type: block.status, booking: block.booking }, 
                       staffName,
-                      onViewBooking ? () => onViewBooking(block.booking) : undefined
+                      onViewBooking ? () => {
+                        setOpenTooltipId(null);
+                        onViewBooking(block.booking);
+                      } : undefined
                     )}
                   </div>
                   {block.booking.splitIndicator === 'continues-next-day' && (
