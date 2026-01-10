@@ -76,11 +76,23 @@ interface StaffScheduleRow {
   email?: string;
   specialization?: string;
   address?: string;
+  postcode?: string;
   schedule: Record<string, StaffStatus>;
   bookingBlocks: BookingBlock[];
   totalHours: number;
   contractedHours: number;
 }
+
+// Helper to extract UK postcode from address string
+const extractPostcodeFromAddress = (address: string | undefined): string => {
+  if (!address) return '';
+  
+  // UK postcode regex pattern (handles formats like: SW1A 1AA, M1 1AE, B33 8TH, etc.)
+  const postcodeRegex = /\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i;
+  const match = address.match(postcodeRegex);
+  
+  return match ? match[1].toUpperCase() : '';
+};
 
 export function StaffScheduleCalendar({ 
   date, 
@@ -306,6 +318,7 @@ export function StaffScheduleCalendar({
         email: member.email,
         specialization: member.specialization,
         address: member.address,
+        postcode: extractPostcodeFromAddress(member.address),
         weekBookings,
         weekLeave,
         weekHolidays,
@@ -695,6 +708,7 @@ export function StaffScheduleCalendar({
           email: member.email,
           specialization: member.specialization,
           address: member.address,
+          postcode: extractPostcodeFromAddress(member.address),
           schedule,
           bookingBlocks,
           totalHours,
@@ -1101,12 +1115,10 @@ export function StaffScheduleCalendar({
                   {staffMember.specialization && (
                     <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
                   )}
-                  {staffMember.address && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 truncate" title={staffMember.address}>
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{staffMember.address}</span>
-                    </div>
-                  )}
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 truncate" title={staffMember.address || 'No address'}>
+                    <MapPin className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{staffMember.postcode || 'Postcode not available'}</span>
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {viewType === 'weekly' ? (
                       <>
