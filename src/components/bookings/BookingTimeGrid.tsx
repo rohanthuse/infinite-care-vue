@@ -86,6 +86,7 @@ export interface Client {
   address?: string;
   postcode?: string;  // Client postcode for display
   status?: string;  // Client status (Active, Inactive, Former, etc.)
+  active_until?: string | null;  // Date when client becomes inactive
 }
 
 export interface Carer {
