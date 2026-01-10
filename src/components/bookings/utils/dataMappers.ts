@@ -14,12 +14,49 @@ export function safeInitials(first: any, last: any, fallback = "??") {
   return `${f}${l}`;
 }
 
-// Helper to extract just the postcode from structured addresses
-function getClientPostcode(structuredAddresses: any[] | null): string {
+// Helper to extract postcode from address string using common patterns
+function extractPostcodeFromAddress(address: string | undefined): string {
+  if (!address) return '';
+  
+  // UK postcode pattern (SW1A 1AA, M1 1AE, AL10 9HX, WD17 2AX)
+  const ukPostcodeRegex = /\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i;
+  const ukMatch = address.match(ukPostcodeRegex);
+  if (ukMatch) return ukMatch[1].toUpperCase();
+  
+  // Indian PIN code (6 digits)
+  const indianPinRegex = /\b(\d{6})\b/;
+  const indianMatch = address.match(indianPinRegex);
+  if (indianMatch) return indianMatch[1];
+  
+  // 5-digit codes (US ZIP)
+  const fiveDigitRegex = /\b(\d{5})\b/;
+  const fiveDigitMatch = address.match(fiveDigitRegex);
+  if (fiveDigitMatch) return fiveDigitMatch[1];
+  
+  return '';
+}
+
+// Helper to get client postcode with priority fallback:
+// 1) Structured addresses, 2) pin_code field, 3) Extract from legacy address
+function getClientPostcodeWithFallback(
+  structuredAddresses: any[] | null,
+  pinCode: string | null,
+  address: string | null
+): string {
+  // Priority 1: Structured addresses
   if (structuredAddresses && structuredAddresses.length > 0) {
     const defaultAddr = structuredAddresses.find((a: any) => a.is_default) || structuredAddresses[0];
-    return defaultAddr?.postcode || '';
+    if (defaultAddr?.postcode) return defaultAddr.postcode;
   }
+  
+  // Priority 2: Direct pin_code field from clients table
+  if (pinCode) return pinCode;
+  
+  // Priority 3: Extract from legacy address using regex
+  if (address) {
+    return extractPostcodeFromAddress(address);
+  }
+  
   return '';
 }
 
@@ -40,8 +77,12 @@ export function mapDBClientToClient(db: any): Client {
     db.client_addresses // Structured addresses from join
   );
   
-  // Extract just the postcode for display
-  const postcode = getClientPostcode(db.client_addresses);
+  // Extract postcode with priority fallback: structured addresses → pin_code → address extraction
+  const postcode = getClientPostcodeWithFallback(
+    db.client_addresses,
+    db.pin_code,
+    db.address
+  );
   
   const mappedClient = {
     id: db.id,
