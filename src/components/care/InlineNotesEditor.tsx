@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit, Save, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface InlineNotesEditorProps {
   notes?: string | null;
@@ -18,6 +18,13 @@ export const InlineNotesEditor = ({
 }: InlineNotesEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localNotes, setLocalNotes] = useState(notes || "");
+
+  // Sync localNotes when external notes prop changes (e.g., after refetch)
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalNotes(notes || "");
+    }
+  }, [notes, isEditing]);
 
   const handleStartEdit = () => {
     setLocalNotes(notes || "");
