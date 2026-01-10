@@ -27,7 +27,7 @@ interface StaffScheduleDraggableProps {
   onCellClick: (staffId: string, timeSlot: string, status: any) => void;
   getStatusColor: (status: any) => string;
   getStatusLabel: (status: any) => string;
-  renderTooltipContent: (status: any, staffName: string) => React.ReactNode;
+  renderTooltipContent: (status: any, staffName: string, onClickViewDetails?: () => void) => React.ReactNode;
   staffName: string;
   selectedBookings?: Booking[];
   onBookingSelect?: (booking: Booking, selected: boolean) => void;
@@ -208,7 +208,11 @@ export function StaffScheduleDraggable({
                       </div>
                     )}
                     
-                    {renderTooltipContent({ type: block.status, booking: block.booking }, staffName)}
+                    {renderTooltipContent(
+                      { type: block.status, booking: block.booking }, 
+                      staffName,
+                      onViewBooking ? () => onViewBooking(block.booking) : undefined
+                    )}
                   </div>
                   {block.booking.splitIndicator === 'continues-next-day' && (
                     <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">

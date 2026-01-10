@@ -27,7 +27,7 @@ interface ClientScheduleDraggableProps {
   onViewBooking?: (booking: any) => void;
   onCellClick: (clientId: string, timeSlot: string, status: any) => void;
   getStatusColor: (status: any) => string;
-  renderTooltipContent: (status: any, clientName: string) => React.ReactNode;
+  renderTooltipContent: (status: any, clientName: string, onClickViewDetails?: () => void) => React.ReactNode;
   selectedBookings?: Booking[];
   onBookingSelect?: (booking: Booking, selected: boolean) => void;
 }
@@ -199,7 +199,11 @@ export function ClientScheduleDraggable({
                         ⚠️ {requestColors.tooltip}
                       </div>
                     )}
-                    {renderTooltipContent({ type: block.status, booking: block.booking }, clientName)}
+                    {renderTooltipContent(
+                      { type: block.status, booking: block.booking }, 
+                      clientName,
+                      onViewBooking ? () => onViewBooking(block.booking) : undefined
+                    )}
                   </div>
                   {block.booking.splitIndicator === 'continues-next-day' && (
                     <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
