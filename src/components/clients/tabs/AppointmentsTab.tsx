@@ -1,10 +1,14 @@
 
-import React, { useState } from "react";
-import { format, parseISO } from "date-fns";
-import { Calendar, Clock, MapPin, Plus, User, Edit, Eye } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { Calendar, Clock, MapPin, Plus, User, Edit, Eye, Search, X, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { EditBookingDialog } from "@/components/bookings/dialogs/EditBookingDialog";
 import { ViewBookingDialog } from "@/components/bookings/dialogs/ViewBookingDialog";
@@ -19,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useTenant } from "@/contexts/TenantContext";
+import { cn } from "@/lib/utils";
 
 interface AppointmentsTabProps {
   clientId: string;
@@ -32,6 +37,11 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId, clie
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewBooking, setViewBooking] = useState<any>(null);
   
+  // Filter state
+  const [staffFilter, setStaffFilter] = useState<string>('all');
+  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>(undefined);
+  const [endDateFilter, setEndDateFilter] = useState<Date | undefined>(undefined);
+  
   const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
   const branchId = params.id || '';
@@ -43,6 +53,42 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId, clie
   // Get carers and services for the booking dialog
   const { data: carers = [] } = useBranchCarers(branchId);
   const { data: services = [] } = useBranchServices(branchId, organization?.id);
+  
+  // Filter bookings based on filter criteria
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(booking => {
+      // Staff filter
+      if (staffFilter !== 'all' && booking.staff_id !== staffFilter) {
+        return false;
+      }
+      
+      // Start date filter
+      if (startDateFilter) {
+        const bookingDate = parseISO(booking.start_time);
+        if (isBefore(bookingDate, startOfDay(startDateFilter))) {
+          return false;
+        }
+      }
+      
+      // End date filter
+      if (endDateFilter) {
+        const bookingDate = parseISO(booking.start_time);
+        if (isAfter(bookingDate, endOfDay(endDateFilter))) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [bookings, staffFilter, startDateFilter, endDateFilter]);
+  
+  const hasActiveFilters = staffFilter !== 'all' || startDateFilter || endDateFilter;
+  
+  const clearFilters = () => {
+    setStaffFilter('all');
+    setStartDateFilter(undefined);
+    setEndDateFilter(undefined);
+  };
   
   // Use batch booking creation mutation for consolidated notifications
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
@@ -301,6 +347,14 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId, clie
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Appointments</CardTitle>
+              <Badge variant="secondary">
+                {filteredBookings.length} {filteredBookings.length === 1 ? 'appointment' : 'appointments'}
+                {hasActiveFilters && bookings.length !== filteredBookings.length && (
+                  <span className="ml-1 text-muted-foreground">
+                    (of {bookings.length})
+                  </span>
+                )}
+              </Badge>
             </div>
             <Button size="sm" className="gap-1" onClick={handleScheduleAppointment}>
               <Plus className="h-4 w-4" />
@@ -309,15 +363,115 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId, clie
           </div>
           <CardDescription>Scheduled appointments{clientName ? ` for ${clientName}` : ''}</CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
-          {bookings.length === 0 ? (
+        <CardContent className="pt-4 space-y-4">
+          {/* Filter Controls */}
+          <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Filters:</span>
+            </div>
+            
+            {/* Staff Filter */}
+            <Select value={staffFilter} onValueChange={setStaffFilter}>
+              <SelectTrigger className="w-[180px] h-9 bg-background">
+                <SelectValue placeholder="All Staff" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Staff</SelectItem>
+                {carers.map((carer) => (
+                  <SelectItem key={carer.id} value={carer.id}>
+                    {carer.first_name} {carer.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Start Date Filter */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={cn(
+                    "h-9 justify-start text-left font-normal bg-background",
+                    !startDateFilter && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {startDateFilter ? format(startDateFilter, "dd MMM yyyy") : "Start Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={startDateFilter}
+                  onSelect={setStartDateFilter}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* End Date Filter */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={cn(
+                    "h-9 justify-start text-left font-normal bg-background",
+                    !endDateFilter && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {endDateFilter ? format(endDateFilter, "dd MMM yyyy") : "End Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={endDateFilter}
+                  onSelect={setEndDateFilter}
+                  disabled={(date) => startDateFilter ? isBefore(date, startDateFilter) : false}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="h-9 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
+          
+          {/* Appointments List */}
+          {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-sm">No appointments scheduled for this client</p>
+              <p className="text-sm">
+                {hasActiveFilters 
+                  ? "No appointments match your filters" 
+                  : "No appointments scheduled for this client"
+                }
+              </p>
+              {hasActiveFilters && (
+                <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
-              {bookings.map((booking) => {
+              {filteredBookings.map((booking) => {
                 const startDate = parseISO(booking.start_time);
                 const endDate = parseISO(booking.end_time);
                 const currentStatus = getAppointmentStatus(booking);
