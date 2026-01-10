@@ -82,7 +82,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
       scheduled: 'bg-blue-500',
       'in-progress': 'bg-green-500',
       completed: 'bg-gray-500',
-      cancelled: 'bg-slate-500'
+      cancelled: 'bg-rose-500'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-500';
   };

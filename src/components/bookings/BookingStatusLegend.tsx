@@ -23,7 +23,7 @@ const LEGEND_DOT_COLORS: Record<BookingStatusType, string> = {
   'in-progress': 'bg-purple-500',
   missed: 'bg-red-500',
   late: 'bg-orange-500',
-  cancelled: 'bg-slate-500',
+  cancelled: 'bg-rose-500',
   departed: 'bg-teal-500',
   suspended: 'bg-gray-500',
   training: 'bg-amber-500',
