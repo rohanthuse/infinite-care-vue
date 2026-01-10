@@ -24,6 +24,8 @@ import { PersonalInfoTab } from "@/components/clients/tabs/PersonalInfoTab";
 import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { ClientNews2Tab } from "@/components/clients/tabs/ClientNews2Tab";
 import { ClientAccountingTab } from "@/components/clients/tabs/ClientAccountingTab";
+import { AppointmentsTab } from "@/components/clients/tabs/AppointmentsTab";
+import { useClientBookings } from "@/hooks/useClientBookings";
 import { EntityDocumentsSection } from "@/components/documents/EntityDocumentsSection";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
@@ -131,6 +133,7 @@ export function AdminClientDetailsDialog({
   const { data: personalInfo, isLoading } = useClientPersonalInfo(client?.id || '');
   const { data: medicalInfo } = useClientMedicalInfo(client?.id || '');
   const { data: serviceRates = [] } = useServiceRates(client?.branch_id);
+  const { data: clientBookings = [] } = useClientBookings(client?.id || '');
   const updatePersonalInfo = useUpdateClientPersonalInfo();
   const updateClient = useUpdateClient();
   const { toast } = useToast();
@@ -396,6 +399,21 @@ export function AdminClientDetailsDialog({
                               <p className="text-sm font-medium">Active Rates</p>
                               <p className="text-lg font-semibold">
                                 {serviceRates.filter(rate => rate.status === 'active').length}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Total Appointments Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Total Appointments</p>
+                              <p className="text-lg font-semibold">
+                                {clientBookings.length}
                               </p>
                             </div>
                           </div>
@@ -1008,11 +1026,10 @@ export function AdminClientDetailsDialog({
                 </TabsContent>
 
                 <TabsContent value="appointments" className="mt-0 p-6">
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-muted-foreground">Appointments</h3>
-                    <p className="text-sm text-muted-foreground mt-2">Appointment scheduling coming soon...</p>
-                  </div>
+                  <AppointmentsTab 
+                    clientId={client.id} 
+                    clientName={`${client.first_name} ${client.last_name}`} 
+                  />
                 </TabsContent>
 
                 <TabsContent value="billing" className="mt-0 p-6">
