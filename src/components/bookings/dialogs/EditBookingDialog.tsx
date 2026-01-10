@@ -103,13 +103,15 @@ const editBookingSchema = z.object({
 // Available booking statuses for manual selection
 const BOOKING_STATUSES = [
   { value: 'assigned', label: 'Assigned', colorClass: 'bg-green-500' },
-  { value: 'unassigned', label: 'Unassigned', colorClass: 'bg-amber-500' },
+  { value: 'unassigned', label: 'Unassigned', colorClass: 'bg-yellow-500' },
   { value: 'in-progress', label: 'In Progress', colorClass: 'bg-purple-500' },
   { value: 'done', label: 'Done', colorClass: 'bg-blue-500' },
-  { value: 'missed', label: 'Missed', colorClass: 'bg-orange-500' },
-  { value: 'cancelled', label: 'Cancelled', colorClass: 'bg-red-500' },
+  { value: 'missed', label: 'Missed', colorClass: 'bg-red-500' },
+  { value: 'cancelled', label: 'Cancelled', colorClass: 'bg-rose-500' },
   { value: 'departed', label: 'Departed', colorClass: 'bg-teal-500' },
   { value: 'suspended', label: 'Suspended', colorClass: 'bg-gray-500' },
+  { value: 'late', label: 'Late Arrival', colorClass: 'bg-orange-500' },
+  { value: 'training', label: 'Training', colorClass: 'bg-amber-500' },
 ] as const;
 
 type EditBookingFormData = z.infer<typeof editBookingSchema>;
