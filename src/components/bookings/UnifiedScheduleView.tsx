@@ -430,14 +430,17 @@ export function UnifiedScheduleView({
         <div 
           className="fixed z-[9999] pointer-events-none"
           style={{
-            left: `${dragInfo.positionX + 15}px`,
-            top: `${dragInfo.positionY - 45}px`,
+            left: `${dragInfo.positionX + 20}px`,
+            top: `${dragInfo.positionY - 65}px`,
           }}
         >
-          <div className="bg-primary text-primary-foreground px-3 py-2 rounded-md shadow-lg text-sm font-medium whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{dragInfo.startTime} - {dragInfo.endTime}</span>
+          <div className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-xl text-sm font-medium whitespace-nowrap border border-primary-foreground/20">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>Drop booking here:</span>
+              </div>
+              <span className="font-bold text-base">{dragInfo.startTime} - {dragInfo.endTime}</span>
             </div>
           </div>
         </div>
