@@ -74,16 +74,21 @@ interface ClientScheduleRow {
 
 /**
  * Determine if a client should be visible in the schedule for a given date.
- * Inactive clients are only shown for past dates (before today).
+ * Inactive clients are only shown for past dates AND only if they have bookings on that date.
  * Active clients are always shown.
  */
 function shouldShowClientForDate(
   client: Client,
-  scheduleDate: Date
+  scheduleDate: Date,
+  clientBookings: Booking[] = []
 ): boolean {
   const today = startOfDay(new Date());
   const checkDate = startOfDay(scheduleDate);
   const isPastDate = isBefore(checkDate, today);
+  const dateStr = format(scheduleDate, 'yyyy-MM-dd');
+  
+  // Check if client has any bookings on this specific date
+  const hasBookingsOnDate = clientBookings.some(b => b.date === dateStr);
   
   // If no status or active_until, always show (assume active)
   if (!client.status && !client.active_until) {
@@ -96,19 +101,19 @@ function shouldShowClientForDate(
     
     // If active_until has passed, client is effectively inactive
     if (isBefore(activeUntilDate, today)) {
-      // Only show for past dates
-      return isPastDate;
+      // Only show for past dates AND only if they have bookings
+      return isPastDate && hasBookingsOnDate;
     }
   }
   
-  // Inactive client: only show for past dates (before today)
+  // Inactive client: only show for past dates AND only if they have bookings
   if (client.status === 'Inactive') {
-    return isPastDate;
+    return isPastDate && hasBookingsOnDate;
   }
   
   // For other non-active statuses, apply same logic as inactive
   if (client.status && client.status !== 'Active') {
-    return isPastDate;
+    return isPastDate && hasBookingsOnDate;
   }
   
   return true;
@@ -288,10 +293,13 @@ export function ClientScheduleCalendar({
           }
           
           // For weekly view, show client if they should be visible on ANY day of the week
-          // This allows historical viewing while hiding inactive clients from future weeks
+          // with actual bookings on that day (for inactive clients)
+          const clientBookings = bookings.filter(b => b.clientId === client.id);
           for (let i = 0; i < 7; i++) {
             const dayDate = addDays(weekStart, i);
-            if (shouldShowClientForDate(client, dayDate)) {
+            const dayStr = format(dayDate, 'yyyy-MM-dd');
+            const dayBookings = clientBookings.filter(b => b.date === dayStr);
+            if (shouldShowClientForDate(client, dayDate, dayBookings)) {
               return true;
             }
           }
@@ -390,8 +398,9 @@ export function ClientScheduleCalendar({
             return false;
           }
           
-          // Hide inactive clients for today and future dates
-          if (!shouldShowClientForDate(client, date)) {
+          // Hide inactive clients for today/future, or hide if no bookings on past dates
+          const clientBookings = bookings.filter(b => b.clientId === client.id);
+          if (!shouldShowClientForDate(client, date, clientBookings)) {
             return false;
           }
           
