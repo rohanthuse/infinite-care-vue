@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, DropResult, DragStart, DragUpdate } from "react-beautiful-dnd";
+import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
@@ -50,7 +51,16 @@ interface PendingBookingMove {
 declare global {
   interface Window {
     _dragDropPointerX?: number;
+    _dragDropPointerY?: number;
+    _draggedBookingDuration?: number;
   }
+}
+
+interface DragTimeInfo {
+  startTime: string;
+  endTime: string;
+  positionX: number;
+  positionY: number;
 }
 
 export function UnifiedScheduleView({
@@ -72,6 +82,7 @@ export function UnifiedScheduleView({
   const [dragDropKey, setDragDropKey] = useState(0);
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
   const [batchReassignOpen, setBatchReassignOpen] = useState(false);
+  const [dragInfo, setDragInfo] = useState<DragTimeInfo | null>(null);
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
   const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
 
@@ -88,15 +99,83 @@ export function UnifiedScheduleView({
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       window._dragDropPointerX = e.clientX;
+      window._dragDropPointerY = e.clientY;
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       delete window._dragDropPointerX;
+      delete window._dragDropPointerY;
     };
   }, []);
 
+  // Handler when drag starts - store duration of dragged booking
+  const handleDragStart = (start: DragStart) => {
+    const { draggableId } = start;
+    
+    // Extract actual booking ID from prefixed draggableId
+    const bookingIdMatch = draggableId.match(/^(?:client|staff)-(.+)-\d+$/);
+    const actualBookingId = bookingIdMatch ? bookingIdMatch[1] : draggableId;
+    
+    // Find the booking and store its duration
+    const booking = bookings.find(b => b.id === actualBookingId);
+    if (booking) {
+      window._draggedBookingDuration = calculateDuration(booking.startTime, booking.endTime);
+    }
+  };
+
+  // Handler for drag updates - calculate and show time tooltip
+  const handleDragUpdate = (update: DragUpdate) => {
+    if (!update.destination) {
+      setDragInfo(null);
+      return;
+    }
+
+    const droppableEl = document.querySelector(
+      `[data-rbd-droppable-id="${update.destination.droppableId}"]`
+    );
+    if (!droppableEl) {
+      setDragInfo(null);
+      return;
+    }
+
+    const rect = droppableEl.getBoundingClientRect();
+    const xPosition = (window._dragDropPointerX || rect.left) - rect.left;
+    
+    // Calculate slot index based on X position
+    const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
+    const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
+    
+    // Convert slot index to time
+    let newStartTime: string;
+    if (timeInterval === 60) {
+      const hours = Math.min(23, Math.max(0, slotIndex));
+      newStartTime = `${hours.toString().padStart(2, '0')}:00`;
+    } else {
+      const totalMinutes = slotIndex * 30;
+      const hours = Math.min(23, Math.floor(totalMinutes / 60));
+      const minutes = totalMinutes % 60;
+      newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Calculate end time using stored booking duration
+    const duration = window._draggedBookingDuration || 60;
+    const newEndTime = addMinutesToTime(newStartTime, duration);
+    
+    // Update tooltip position and content
+    setDragInfo({
+      startTime: newStartTime,
+      endTime: newEndTime,
+      positionX: window._dragDropPointerX || 0,
+      positionY: window._dragDropPointerY || 0
+    });
+  };
+
   const handleDragEnd = (result: DropResult) => {
+    // Clear drag tooltip immediately
+    setDragInfo(null);
+    delete window._draggedBookingDuration;
+
     if (!result.destination) return;
 
     const { draggableId, source, destination } = result;
@@ -274,7 +353,10 @@ export function UnifiedScheduleView({
   const handleCancelMove = () => {
     setDialogOpen(false);
     setPendingMove(null);
+    setDragInfo(null);
     delete window._dragDropPointerX;
+    delete window._dragDropPointerY;
+    delete window._draggedBookingDuration;
     
     // Force complete reset of drag-drop context
     setDragDropKey(prev => prev + 1);
@@ -337,7 +419,29 @@ export function UnifiedScheduleView({
     : null;
 
   return (
-    <DragDropContext key={dragDropKey} onDragEnd={handleDragEnd}>
+    <DragDropContext 
+      key={dragDropKey} 
+      onDragStart={handleDragStart}
+      onDragUpdate={handleDragUpdate}
+      onDragEnd={handleDragEnd}
+    >
+      {/* Drag Time Tooltip */}
+      {dragInfo && (
+        <div 
+          className="fixed z-[9999] pointer-events-none"
+          style={{
+            left: `${dragInfo.positionX + 15}px`,
+            top: `${dragInfo.positionY - 45}px`,
+          }}
+        >
+          <div className="bg-primary text-primary-foreground px-3 py-2 rounded-md shadow-lg text-sm font-medium whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{dragInfo.startTime} - {dragInfo.endTime}</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-4 w-full">
       {/* Left Panel - Client Schedule */}
       <div className="border-2 border-blue-500 dark:border-blue-600/70 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
