@@ -84,6 +84,7 @@ export interface Client {
   bookingCount: number;
   bookings?: Booking[];
   address?: string;
+  postcode?: string;  // Client postcode for display
   status?: string;  // Client status (Active, Inactive, Former, etc.)
 }
 
