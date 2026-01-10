@@ -64,6 +64,7 @@ interface ClientScheduleRow {
   name: string;
   status?: string;  // Client status for inactive indicator
   address?: string;
+  postcode?: string;
   carePackage?: string;
   schedule: Record<string, ClientStatus>;
   bookingBlocks: BookingBlock[];
@@ -309,6 +310,7 @@ export function ClientScheduleCalendar({
           name: client.name,
           status: client.status,
           address: client.address || 'Address not available',
+          postcode: client.postcode,
           weekBookings,
           totalWeekHours,
           contractedHours: 40
@@ -544,6 +546,7 @@ export function ClientScheduleCalendar({
           name: client.name,
           status: client.status,
           address: client.address || 'Address not available',
+          postcode: client.postcode,
           carePackage: 'Standard Care',
           schedule,
           bookingBlocks,
@@ -908,6 +911,12 @@ export function ClientScheduleCalendar({
                     <div className="text-xs text-muted-foreground truncate">
                       {client.address || 'No address'}
                     </div>
+                    {client.postcode && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {client.postcode}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-xs">
                       <Clock className="h-3 w-3" />
                       <span>

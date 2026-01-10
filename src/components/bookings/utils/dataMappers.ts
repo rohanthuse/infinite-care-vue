@@ -14,6 +14,15 @@ export function safeInitials(first: any, last: any, fallback = "??") {
   return `${f}${l}`;
 }
 
+// Helper to extract just the postcode from structured addresses
+function getClientPostcode(structuredAddresses: any[] | null): string {
+  if (structuredAddresses && structuredAddresses.length > 0) {
+    const defaultAddr = structuredAddresses.find((a: any) => a.is_default) || structuredAddresses[0];
+    return defaultAddr?.postcode || '';
+  }
+  return '';
+}
+
 export function mapDBClientToClient(db: any): Client {
   console.log("[mapDBClientToClient] Mapping client:", db);
   
@@ -31,6 +40,9 @@ export function mapDBClientToClient(db: any): Client {
     db.client_addresses // Structured addresses from join
   );
   
+  // Extract just the postcode for display
+  const postcode = getClientPostcode(db.client_addresses);
+  
   const mappedClient = {
     id: db.id,
     name,
@@ -38,6 +50,7 @@ export function mapDBClientToClient(db: any): Client {
     bookings: [],
     bookingCount: 0,
     address: address || undefined,
+    postcode: postcode || undefined,
     status: db.status,  // Preserve client status for UI indicators
   };
   

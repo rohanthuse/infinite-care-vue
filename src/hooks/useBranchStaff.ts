@@ -11,6 +11,7 @@ export interface BranchStaff {
   email?: string;
   status: string;
   specialization?: string;
+  address?: string;
 }
 
 const fetchBranchStaff = async (branchId: string, organizationId: string): Promise<BranchStaff[]> => {
@@ -22,7 +23,7 @@ const fetchBranchStaff = async (branchId: string, organizationId: string): Promi
 
   const { data, error } = await supabase
     .from('staff')
-    .select('id, first_name, last_name, email, status, specialization')
+    .select('id, first_name, last_name, email, status, specialization, address')
     .eq('branch_id', branchId)
     .eq('status', 'Active')
     .order('first_name');

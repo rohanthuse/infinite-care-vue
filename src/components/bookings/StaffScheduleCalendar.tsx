@@ -75,6 +75,7 @@ interface StaffScheduleRow {
   name: string;
   email?: string;
   specialization?: string;
+  address?: string;
   schedule: Record<string, StaffStatus>;
   bookingBlocks: BookingBlock[];
   totalHours: number;
@@ -304,6 +305,7 @@ export function StaffScheduleCalendar({
         name: `${member.first_name} ${member.last_name}`,
         email: member.email,
         specialization: member.specialization,
+        address: member.address,
         weekBookings,
         weekLeave,
         weekHolidays,
@@ -692,6 +694,7 @@ export function StaffScheduleCalendar({
           name: `${member.first_name} ${member.last_name}`,
           email: member.email,
           specialization: member.specialization,
+          address: member.address,
           schedule,
           bookingBlocks,
           totalHours,
@@ -1097,6 +1100,12 @@ export function StaffScheduleCalendar({
                   </div>
                   {staffMember.specialization && (
                     <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
+                  )}
+                  {staffMember.address && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 truncate" title={staffMember.address}>
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{staffMember.address}</span>
+                    </div>
                   )}
                   <div className="text-xs text-muted-foreground mt-1">
                     {viewType === 'weekly' ? (
