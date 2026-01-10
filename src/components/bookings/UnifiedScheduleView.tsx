@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { DragDropContext, DropResult, DragStart, DragUpdate } from "react-beautiful-dnd";
 import { Clock } from "lucide-react";
@@ -83,6 +83,9 @@ export function UnifiedScheduleView({
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
   const [batchReassignOpen, setBatchReassignOpen] = useState(false);
   const [dragInfo, setDragInfo] = useState<DragTimeInfo | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [currentDroppableId, setCurrentDroppableId] = useState<string | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
   const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
 
@@ -109,35 +112,14 @@ export function UnifiedScheduleView({
     };
   }, []);
 
-  // Handler when drag starts - store duration of dragged booking
-  const handleDragStart = (start: DragStart) => {
-    const { draggableId } = start;
+  // Function to calculate and update drag tooltip in real-time
+  const updateDragTooltip = useCallback(() => {
+    if (!currentDroppableId) return;
     
-    // Extract actual booking ID from prefixed draggableId
-    const bookingIdMatch = draggableId.match(/^(?:client|staff)-(.+)-\d+$/);
-    const actualBookingId = bookingIdMatch ? bookingIdMatch[1] : draggableId;
-    
-    // Find the booking and store its duration
-    const booking = bookings.find(b => b.id === actualBookingId);
-    if (booking) {
-      window._draggedBookingDuration = calculateDuration(booking.startTime, booking.endTime);
-    }
-  };
-
-  // Handler for drag updates - calculate and show time tooltip
-  const handleDragUpdate = (update: DragUpdate) => {
-    if (!update.destination) {
-      setDragInfo(null);
-      return;
-    }
-
     const droppableEl = document.querySelector(
-      `[data-rbd-droppable-id="${update.destination.droppableId}"]`
+      `[data-rbd-droppable-id="${currentDroppableId}"]`
     );
-    if (!droppableEl) {
-      setDragInfo(null);
-      return;
-    }
+    if (!droppableEl) return;
 
     const rect = droppableEl.getBoundingClientRect();
     const xPosition = (window._dragDropPointerX || rect.left) - rect.left;
@@ -169,12 +151,63 @@ export function UnifiedScheduleView({
       positionX: window._dragDropPointerX || 0,
       positionY: window._dragDropPointerY || 0
     });
+  }, [currentDroppableId, timeInterval]);
+
+  // Animation loop for real-time tooltip updates during drag
+  useEffect(() => {
+    const animate = () => {
+      if (isDragging) {
+        updateDragTooltip();
+        animationFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
+    
+    if (isDragging) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isDragging, updateDragTooltip]);
+
+  // Handler when drag starts - store duration and start animation loop
+  const handleDragStart = (start: DragStart) => {
+    setIsDragging(true);
+    setCurrentDroppableId(start.source.droppableId);
+    
+    const { draggableId } = start;
+    
+    // Extract actual booking ID from prefixed draggableId
+    const bookingIdMatch = draggableId.match(/^(?:client|staff)-(.+)-\d+$/);
+    const actualBookingId = bookingIdMatch ? bookingIdMatch[1] : draggableId;
+    
+    // Find the booking and store its duration
+    const booking = bookings.find(b => b.id === actualBookingId);
+    if (booking) {
+      window._draggedBookingDuration = calculateDuration(booking.startTime, booking.endTime);
+    }
+  };
+
+  // Handler for drag updates - track current droppable zone
+  const handleDragUpdate = (update: DragUpdate) => {
+    if (update.destination) {
+      setCurrentDroppableId(update.destination.droppableId);
+    }
   };
 
   const handleDragEnd = (result: DropResult) => {
-    // Clear drag tooltip immediately
+    // Stop the animation loop and clear drag state
+    setIsDragging(false);
+    setCurrentDroppableId(null);
     setDragInfo(null);
     delete window._draggedBookingDuration;
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
 
     if (!result.destination) return;
 
