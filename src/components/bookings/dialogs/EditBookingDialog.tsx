@@ -736,6 +736,10 @@ export function EditBookingDialog({
     try {
       const newStaffIds = data.staff_ids || [];
       
+      // Track which booking ID should receive service updates
+      // This is crucial because the original booking may be deleted during multi-carer/assign-later flows
+      let activeBookingIdForServices: string | null = booking.id;
+      
       // Calculate diff: which staff to add, remove, keep
       const staffToAdd = newStaffIds.filter(id => !originalStaffIds.includes(id));
       const staffToRemove = originalStaffIds.filter(id => !newStaffIds.includes(id));
@@ -864,8 +868,8 @@ export function EditBookingDialog({
           });
         }
         
-        // Create one unassigned booking
-        const { error } = await supabase.from('bookings').insert({
+        // Create one unassigned booking and capture its ID for services
+        const { data: newUnassignedBooking, error } = await supabase.from('bookings').insert({
           branch_id: booking.branch_id,
           client_id: booking.clientId || booking.client_id,
           staff_id: null,
@@ -875,9 +879,15 @@ export function EditBookingDialog({
           status: 'unassigned',
           notes: data.notes,
           location_address: data.location_address || null,
-        });
+        }).select('id').single();
         
         if (error) throw error;
+        
+        // Update the active booking ID for service junction table
+        if (newUnassignedBooking) {
+          activeBookingIdForServices = newUnassignedBooking.id;
+          console.log('[EditBookingDialog] Assign Later: using new booking for services:', activeBookingIdForServices);
+        }
       }
       
       // Success message
@@ -888,14 +898,27 @@ export function EditBookingDialog({
       
       toast.success(message);
       
-      // Update services in junction table (always call, even when empty to clear services)
+      // Update services in junction table using the ACTIVE booking ID (not original which may be deleted)
       try {
-        await updateBookingServices(booking.id, data.service_ids || []);
-        console.log('[EditBookingDialog] Services updated in junction table:', data.service_ids || []);
-        
-        // Invalidate booking-services queries to refresh UI immediately
-        queryClient.invalidateQueries({ queryKey: ["booking-services", booking.id] });
-        queryClient.invalidateQueries({ queryKey: ["booking-services-batch"] });
+        if (activeBookingIdForServices) {
+          // Verify the booking exists before updating services
+          const { data: bookingExists } = await supabase
+            .from('bookings')
+            .select('id')
+            .eq('id', activeBookingIdForServices)
+            .single();
+          
+          if (bookingExists) {
+            await updateBookingServices(activeBookingIdForServices, data.service_ids || []);
+            console.log('[EditBookingDialog] Services updated for booking:', activeBookingIdForServices);
+            
+            // Invalidate booking-services queries to refresh UI immediately
+            queryClient.invalidateQueries({ queryKey: ["booking-services", activeBookingIdForServices] });
+            queryClient.invalidateQueries({ queryKey: ["booking-services-batch"] });
+          } else {
+            console.warn('[EditBookingDialog] Booking no longer exists, skipping service update');
+          }
+        }
       } catch (serviceError) {
         console.error('[EditBookingDialog] Failed to update services:', serviceError);
       }
