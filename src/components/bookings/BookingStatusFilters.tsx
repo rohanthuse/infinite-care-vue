@@ -17,7 +17,7 @@ const statuses: BookingStatus[] = [
   { id: "in-progress", label: "In Progress", color: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200" },
   { id: "late", label: "Late Arrival", color: "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200" },
   { id: "missed", label: "Missed", color: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200" },
-  { id: "cancelled", label: "Cancelled", color: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200" },
+  { id: "cancelled", label: "Cancelled", color: "bg-slate-100 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200" },
   { id: "departed", label: "Departed", color: "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200" },
   { id: "suspended", label: "Suspended", color: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200" },
 ];
