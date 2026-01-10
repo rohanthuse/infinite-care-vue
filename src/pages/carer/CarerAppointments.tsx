@@ -232,16 +232,19 @@ const CarerAppointments: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
+      case 'done':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-700';
       case 'in-progress':
-        return 'bg-blue-600 text-white';
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-700';
       case 'assigned':
       case 'scheduled':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700';
       case 'cancelled':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300';
+        return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-700';
+      case 'missed':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-700';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300 border border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -816,10 +819,10 @@ const CarerAppointments: React.FC = () => {
               setShowDetailDialog(true);
             }}
           >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
@@ -835,18 +838,18 @@ const CarerAppointments: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
+                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium truncate">
                       {appointment.clients?.first_name} {appointment.clients?.last_name}
                     </span>
                   </div>
                   
                   <div className="text-sm text-muted-foreground mb-2">
                     <strong className="text-foreground">{appointment.service_names && appointment.service_names.length > 1 ? 'Services:' : 'Service:'}</strong>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1.5 mt-1">
                       {appointment.service_names && appointment.service_names.length > 0 ? (
                         appointment.service_names.map((name: string, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary whitespace-normal text-left">
                             {name}
                           </Badge>
                         ))
@@ -870,8 +873,8 @@ const CarerAppointments: React.FC = () => {
                     return (clientAddress || clientPostcode) ? (
                       <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
                         <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <div className="flex flex-col">
-                          {clientAddress && <span>{clientAddress}</span>}
+                        <div className="flex flex-col min-w-0">
+                          {clientAddress && <span className="break-words">{clientAddress}</span>}
                           {clientPostcode && (
                             <span className="font-medium text-foreground/80">
                               Postcode: {clientPostcode}
@@ -978,8 +981,8 @@ const CarerAppointments: React.FC = () => {
                   )}
                 </div>
                 
-                <div className="flex flex-col items-end gap-2">
-                  <Badge className={getStatusColor(appointment.status)}>
+                <div className="flex flex-row flex-wrap sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
+                  <Badge variant="custom" className={getStatusColor(appointment.status)}>
                     {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
                   </Badge>
                   {appointment.revenue && (
@@ -991,7 +994,7 @@ const CarerAppointments: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 text-xs"
+                    className="flex items-center justify-center gap-2 text-xs flex-1 sm:flex-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       const clientId = appointment.client_id || appointment.clients?.id;
@@ -1010,7 +1013,7 @@ const CarerAppointments: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex items-center gap-2 text-xs"
+                      className="flex items-center justify-center gap-2 text-xs flex-1 sm:flex-none"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedAppointmentForExpense(appointment);
