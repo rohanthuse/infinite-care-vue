@@ -119,13 +119,22 @@ export const AuthoritiesProvider: React.FC<{ children: ReactNode }> = ({ childre
     return null;
   };
 
-  // Fetch authorities from database
+  // Fetch authorities from database with organization scoping
   const { data: authorities = [], isLoading, refetch } = useQuery({
     queryKey: ['authorities'],
     queryFn: async () => {
+      // Get the user's organization ID for proper data isolation
+      const organizationId = await getOrganizationId();
+      
+      if (!organizationId) {
+        console.warn('No organization ID found for user - returning empty authorities list');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('authorities')
         .select('*')
+        .eq('organization_id', organizationId)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
