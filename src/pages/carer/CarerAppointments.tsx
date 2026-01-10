@@ -26,6 +26,7 @@ import { AddAppointmentExtraTimeDialog } from "@/components/carer/AddAppointment
 import PastAppointmentCard from "@/components/carer/PastAppointmentCard";
 import AppointmentExpensesList from "@/components/carer/AppointmentExpensesList";
 import { notifyAdminOfLateArrival } from "@/utils/notifyLateArrival";
+import { getClientPostcodeWithFallback, getClientDisplayAddress } from "@/utils/postcodeUtils";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,7 +90,7 @@ const CarerAppointments: React.FC = () => {
         .from('bookings')
         .select(`
           *,
-          clients(first_name, last_name, phone, address),
+          clients(id, first_name, last_name, phone, address, pin_code, client_addresses(*)),
           services(title, description),
           booking_services(
             service_id,
@@ -855,12 +856,31 @@ const CarerAppointments: React.FC = () => {
                     </div>
                   </div>
                   
-                  {appointment.clients?.address && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{appointment.clients.address}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const clientAddress = getClientDisplayAddress(
+                      appointment.clients?.client_addresses,
+                      appointment.clients?.address
+                    );
+                    const clientPostcode = getClientPostcodeWithFallback(
+                      appointment.clients?.client_addresses,
+                      appointment.clients?.pin_code,
+                      appointment.clients?.address
+                    );
+                    
+                    return (clientAddress || clientPostcode) ? (
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
+                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div className="flex flex-col">
+                          {clientAddress && <span>{clientAddress}</span>}
+                          {clientPostcode && (
+                            <span className="font-medium text-foreground/80">
+                              Postcode: {clientPostcode}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   
                   {getTimeInfo(appointment)}
                   

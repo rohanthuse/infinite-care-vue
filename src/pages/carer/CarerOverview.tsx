@@ -262,6 +262,15 @@ const CarerOverview: React.FC = () => {
                         <div className="text-sm text-muted-foreground truncate" title={appointment.service}>
                           {appointment.service}
                         </div>
+                        {(appointment.address || appointment.postcode) && (
+                          <div className="text-xs text-muted-foreground truncate mt-1" title={`${appointment.address || ''} ${appointment.postcode ? `(${appointment.postcode})` : ''}`}>
+                            {appointment.postcode ? (
+                              <span className="font-medium">{appointment.postcode}</span>
+                            ) : null}
+                            {appointment.address && appointment.postcode && ' • '}
+                            {appointment.address}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 flex-shrink-0">

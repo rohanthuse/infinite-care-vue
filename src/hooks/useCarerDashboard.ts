@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarerContext } from "./useCarerContext";
 import { format, startOfWeek, endOfWeek, isToday, isTomorrow, differenceInMinutes } from "date-fns";
+import { getClientPostcodeWithFallback, getClientDisplayAddress } from "@/utils/postcodeUtils";
 
 export const useCarerDashboard = () => {
   const { data: carerContext, isLoading: contextLoading } = useCarerContext();
@@ -18,7 +19,7 @@ export const useCarerDashboard = () => {
         .from('bookings')
         .select(`
           *,
-          clients(first_name, last_name, phone, address),
+          clients(id, first_name, last_name, phone, address, pin_code, client_addresses(*)),
           services(title, description)
         `)
         .eq('staff_id', carerContext.staffId)
@@ -47,7 +48,7 @@ export const useCarerDashboard = () => {
         .from('bookings')
         .select(`
           *,
-          clients(first_name, last_name),
+          clients(id, first_name, last_name, phone, address, pin_code, client_addresses(*)),
           services(title)
         `)
         .eq('staff_id', carerContext.staffId)
@@ -205,16 +206,30 @@ export const useCarerDashboard = () => {
   const readyToStartAppointments = todayAppointments.filter(canStartAppointment);
 
   // Transform appointments for display
-  const formattedAppointments = upcomingAppointments.map(appointment => ({
-    id: appointment.id,
-    time: format(new Date(appointment.start_time), 'HH:mm'),
-    client: `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim(),
-    service: appointment.services?.title || 'Service',
-    status: appointment.status || 'scheduled',
-    isToday: isToday(new Date(appointment.start_time)),
-    isTomorrow: isTomorrow(new Date(appointment.start_time)),
-    date: format(new Date(appointment.start_time), 'MMM dd'),
-  }));
+  const formattedAppointments = upcomingAppointments.map(appointment => {
+    const clientAddress = getClientDisplayAddress(
+      appointment.clients?.client_addresses,
+      appointment.clients?.address
+    );
+    const clientPostcode = getClientPostcodeWithFallback(
+      appointment.clients?.client_addresses,
+      appointment.clients?.pin_code,
+      appointment.clients?.address
+    );
+    
+    return {
+      id: appointment.id,
+      time: format(new Date(appointment.start_time), 'HH:mm'),
+      client: `${appointment.clients?.first_name || ''} ${appointment.clients?.last_name || ''}`.trim(),
+      service: appointment.services?.title || 'Service',
+      status: appointment.status || 'scheduled',
+      isToday: isToday(new Date(appointment.start_time)),
+      isTomorrow: isTomorrow(new Date(appointment.start_time)),
+      date: format(new Date(appointment.start_time), 'MMM dd'),
+      address: clientAddress,
+      postcode: clientPostcode,
+    };
+  });
 
   // Transform tasks for display
   const formattedTasks = tasks.map(task => ({
