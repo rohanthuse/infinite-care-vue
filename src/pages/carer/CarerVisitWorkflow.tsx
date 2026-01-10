@@ -802,6 +802,9 @@ const CarerVisitWorkflow = () => {
           progress: goal.progress || 0,
           notes: notes,
         });
+        // Invalidate queries to refetch fresh data
+        await queryClient.invalidateQueries({ queryKey: ['care-plan-goals', activeCareplan.id] });
+        await queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', activeCareplan.id] });
       } else {
         // Existing goal: Just update notes
         console.log('[handleGoalNotesUpdate] Updating existing goal notes:', goal.id);
@@ -809,6 +812,9 @@ const CarerVisitWorkflow = () => {
           goalId: goal.id,
           updates: { notes }
         });
+        // Invalidate queries to refetch fresh data
+        await queryClient.invalidateQueries({ queryKey: ['care-plan-goals', activeCareplan.id] });
+        await queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', activeCareplan.id] });
       }
 
       toast.success("Goal notes have been saved successfully");
