@@ -68,10 +68,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         
         const { data, error } = await supabase
           .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
+          .select('*')
           .eq('organization_id', organizationId)
           .ilike('status', 'active');
 
@@ -80,9 +77,26 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
+        // Fetch active client counts separately (status = Active AND active_until is null or >= today)
+        const branchIds = data?.map(b => b.id) || [];
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: activeClients } = await supabase
+          .from('clients')
+          .select('branch_id')
+          .in('branch_id', branchIds)
+          .eq('status', 'Active')
+          .or(`active_until.is.null,active_until.gte.${today}`);
+
+        // Count clients per branch
+        const countsByBranch = activeClients?.reduce((acc, client) => {
+          acc[client.branch_id] = (acc[client.branch_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+
         const transformedData = data?.map(branch => ({
           ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
+          client_count: countsByBranch[branch.id] || 0
         }));
 
         console.log('[TenantBranchNavigation] Organisation branches (all):', transformedData, 'for org member role:', orgMember.role);
@@ -113,10 +127,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
         const { data, error } = await supabase
           .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
+          .select('*')
           .eq('organization_id', organizationId)
           .ilike('status', 'active')
           .in('id', branchIds);
@@ -126,9 +137,24 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
+        // Fetch active client counts for these branches
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: activeClients } = await supabase
+          .from('clients')
+          .select('branch_id')
+          .in('branch_id', branchIds)
+          .eq('status', 'Active')
+          .or(`active_until.is.null,active_until.gte.${today}`);
+
+        const countsByBranch = activeClients?.reduce((acc, client) => {
+          acc[client.branch_id] = (acc[client.branch_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+
         const transformedData = data?.map(branch => ({
           ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
+          client_count: countsByBranch[branch.id] || 0
         }));
 
         console.log('[TenantBranchNavigation] Branch admin branches (filtered):', transformedData);
@@ -141,10 +167,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         
         const { data, error } = await supabase
           .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
+          .select('*')
           .eq('organization_id', organizationId)
           .ilike('status', 'active');
 
@@ -153,9 +176,25 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
+        // Fetch active client counts for super admin
+        const branchIds = data?.map(b => b.id) || [];
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: activeClients } = await supabase
+          .from('clients')
+          .select('branch_id')
+          .in('branch_id', branchIds)
+          .eq('status', 'Active')
+          .or(`active_until.is.null,active_until.gte.${today}`);
+
+        const countsByBranch = activeClients?.reduce((acc, client) => {
+          acc[client.branch_id] = (acc[client.branch_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+
         const transformedData = data?.map(branch => ({
           ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
+          client_count: countsByBranch[branch.id] || 0
         }));
 
         console.log('[TenantBranchNavigation] Organisation branches (super admin):', transformedData);
