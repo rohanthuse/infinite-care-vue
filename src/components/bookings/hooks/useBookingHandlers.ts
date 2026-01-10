@@ -621,12 +621,43 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       range: `${summary.dateRange.start} to ${summary.dateRange.end}`
     });
 
+    // Show progress toast for large recurring bookings
+    const isLargeBatch = result.bookings.length > 25;
+    let progressToastId: string | number | undefined;
+    
+    if (isLargeBatch) {
+      progressToastId = toast.loading(`Creating ${result.bookings.length} bookings...`, {
+        description: "Processing in batches to ensure reliability",
+        duration: Infinity
+      });
+    }
+
     createMultipleBookingsMutation.mutate(result.bookings, {
       onError: (error: any) => {
         console.error("[useBookingHandlers] Booking creation error:", error);
+        
+        // Dismiss progress toast
+        if (progressToastId) {
+          toast.dismiss(progressToastId);
+        }
+        
+        // Handle partial success
+        if (error.code === 'PARTIAL_SUCCESS' && error.partialData) {
+          toast.warning(`Partially completed: ${error.partialData.length} bookings created`, {
+            description: error.message,
+            duration: 8000
+          });
+          return;
+        }
+        
         if (error.message?.includes("row-level security")) {
           toast.error("Access denied. You may not be authorized for this branch.", {
             description: "Contact your administrator or create an admin user for this branch.",
+          });
+        } else if (error.message?.includes("statement timeout") || error.message?.includes("canceling statement")) {
+          toast.error("Database timeout - batch size may need adjustment", {
+            description: "The system is processing too many bookings at once. Please try a shorter date range.",
+            duration: 8000
           });
         } else {
           toast.error("Failed to create bookings", {
@@ -637,17 +668,23 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       onSuccess: async (data: any) => {
         console.log("[useBookingHandlers] ✅ Bookings created successfully:", data);
         
+        // Dismiss progress toast if it exists
+        if (progressToastId) {
+          toast.dismiss(progressToastId);
+        }
+        
         // Close dialog immediately
         setNewBookingDialogOpen(false);
         createMultipleBookingsMutation.reset();
         
         // Build comprehensive summary for SINGLE toast
-        const actualCount = data?.length || result.bookings.length;
+        const createdBookings = data?.bookings || data;
+        const actualCount = Array.isArray(createdBookings) ? createdBookings.length : result.bookings.length;
         
         // Get date range from created bookings
         let dateRangeText = '';
-        if (data && Array.isArray(data) && data.length > 0) {
-          const dates = data.map((b: any) => new Date(b.start_time)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+        if (Array.isArray(createdBookings) && createdBookings.length > 0) {
+          const dates = createdBookings.map((b: any) => new Date(b.start_time)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
           const startDate = format(dates[0], 'dd MMM yyyy');
           const endDate = format(dates[dates.length - 1], 'dd MMM yyyy');
           dateRangeText = startDate === endDate ? startDate : `${startDate} to ${endDate}`;
@@ -667,13 +704,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         });
         
         // Navigate to first booking date and verify (without additional toasts)
-        if (data && Array.isArray(data) && data.length > 0) {
-          const createdBookingIds = data.map((booking: any) => booking.id).filter(Boolean);
+        if (Array.isArray(createdBookings) && createdBookings.length > 0) {
+          const createdBookingIds = createdBookings.map((booking: any) => booking.id).filter(Boolean);
           if (createdBookingIds.length > 0) {
             console.log("[useBookingHandlers] Starting verification for booking IDs:", createdBookingIds);
             
             // Navigate to the first booking's date
-            const firstBooking = data[0];
+            const firstBooking = createdBookings[0];
             if (firstBooking?.start_time) {
               const bookingDate = new Date(firstBooking.start_time);
               const dateStr = bookingDate.toISOString().split('T')[0];
