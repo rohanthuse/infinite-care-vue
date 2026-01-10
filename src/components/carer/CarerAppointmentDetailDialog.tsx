@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity, AlertCircle, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { CarePlanPreviewSection } from "@/components/care/CarePlanPreviewSection";
+import { getClientPostcodeWithFallback, getClientDisplayAddress } from "@/utils/postcodeUtils";
 
 interface CarerAppointmentDetailDialogProps {
   appointment: any;
@@ -154,12 +155,31 @@ export const CarerAppointmentDetailDialog = ({
                   <span>{appointment.clients.phone}</span>
                 </div>
               )}
-              {appointment.address && (
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 mt-0.5" />
-                  <span>{appointment.address}</span>
-                </div>
-              )}
+              {(() => {
+                const clientAddress = getClientDisplayAddress(
+                  appointment.clients?.client_addresses,
+                  appointment.clients?.address || appointment.address
+                );
+                const clientPostcode = getClientPostcodeWithFallback(
+                  appointment.clients?.client_addresses,
+                  appointment.clients?.pin_code,
+                  appointment.clients?.address || appointment.address
+                );
+                
+                return (clientAddress || clientPostcode) ? (
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div className="flex flex-col">
+                      {clientAddress && <span>{clientAddress}</span>}
+                      {clientPostcode && (
+                        <span className="font-medium text-foreground/80">
+                          Postcode: {clientPostcode}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
 

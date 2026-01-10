@@ -11,6 +11,7 @@ import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useBookingAttendance } from "@/hooks/useBookingAttendance";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { toast } from "sonner";
+import { getClientPostcodeWithFallback, getClientDisplayAddress } from "@/utils/postcodeUtils";
 
 interface ReadyToStartAppointment {
   id: string;
@@ -25,6 +26,8 @@ interface ReadyToStartAppointment {
     last_name: string;
     phone?: string;
     address?: string;
+    pin_code?: string;
+    client_addresses?: any[];
   };
   services?: {
     title: string;
@@ -172,12 +175,31 @@ export const ReadyToStartSection: React.FC<ReadyToStartSectionProps> = ({
                     <strong>Service:</strong> {appointment.services?.title || 'N/A'}
                   </div>
                   
-                  {appointment.clients?.address && (
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
-                      <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                      <span className="break-words">{appointment.clients.address}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const clientAddress = getClientDisplayAddress(
+                      appointment.clients?.client_addresses,
+                      appointment.clients?.address
+                    );
+                    const clientPostcode = getClientPostcodeWithFallback(
+                      appointment.clients?.client_addresses,
+                      appointment.clients?.pin_code,
+                      appointment.clients?.address
+                    );
+                    
+                    return (clientAddress || clientPostcode) ? (
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
+                        <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <div className="flex flex-col">
+                          {clientAddress && <span className="break-words">{clientAddress}</span>}
+                          {clientPostcode && (
+                            <span className="font-medium text-foreground/80">
+                              Postcode: {clientPostcode}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   
                   {appointment.clients?.phone && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
