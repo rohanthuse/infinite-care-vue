@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Edit } from "lucide-react";
 import { useUpdateCarer, CarerDB } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
@@ -66,7 +66,11 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
     last_name: "",
     email: "",
     phone: "",
-    address: "",
+    house_no: "",
+    street: "",
+    city: "",
+    county: "",
+    pin_code: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     experience: "",
@@ -78,14 +82,33 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
 
   const updateCarerMutation = useUpdateCarer();
 
+  // Helper to parse existing address into structured components
+  const parseAddress = (address: string | undefined) => {
+    if (!address) return { house_no: '', street: '', city: '', county: '', pin_code: '' };
+    
+    const parts = address.split(',').map(p => p.trim());
+    return {
+      house_no: parts[0] || '',
+      street: parts[1] || '',
+      city: parts[2] || '',
+      county: parts[3] || '',
+      pin_code: parts[4] || ''
+    };
+  };
+
   useEffect(() => {
     if (carer) {
+      const addressParts = parseAddress(carer.address);
       setFormData({
         first_name: carer.first_name || "",
         last_name: carer.last_name || "",
         email: carer.email || "",
         phone: carer.phone || "",
-        address: carer.address || "",
+        house_no: addressParts.house_no,
+        street: addressParts.street,
+        city: addressParts.city,
+        county: addressParts.county,
+        pin_code: addressParts.pin_code,
         emergency_contact_name: carer.emergency_contact_name || "",
         emergency_contact_phone: carer.emergency_contact_phone || "",
         experience: carer.experience || "",
@@ -112,15 +135,35 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
       return;
     }
     
-    if (!formData.first_name.trim() || !formData.last_name.trim()) {
-      toast.error("First name and last name are required");
+    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()) {
+      toast.error("First name, last name, and email are required");
       return;
     }
 
     try {
+      // Concatenate address fields into single string (same as Add form)
+      const fullAddress = [
+        formData.house_no,
+        formData.street,
+        formData.city,
+        formData.county,
+        formData.pin_code
+      ].filter(part => part && part.trim()).join(', ');
+
       await updateCarerMutation.mutateAsync({
         id: carer.id,
-        ...formData
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        address: fullAddress,
+        emergency_contact_name: formData.emergency_contact_name,
+        emergency_contact_phone: formData.emergency_contact_phone,
+        experience: formData.experience,
+        specialization: formData.specialization,
+        availability: formData.availability,
+        date_of_birth: formData.date_of_birth,
+        status: formData.status
       });
       handleOpenChange(false);
     } catch (error) {
@@ -189,13 +232,14 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 disabled={isView}
+                required
               />
             </div>
             <div>
@@ -209,15 +253,67 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              disabled={isView}
-              rows={2}
-            />
+          {/* Address Information - structured fields matching Add form */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-foreground">Address Information</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="house_no">House No/Name</Label>
+                <Input 
+                  id="house_no" 
+                  value={formData.house_no} 
+                  onChange={(e) => handleInputChange("house_no", e.target.value)}
+                  placeholder="e.g., 123 or Apartment 4B"
+                  disabled={isView}
+                />
+              </div>
+              <div>
+                <Label htmlFor="street">Street</Label>
+                <Input 
+                  id="street" 
+                  value={formData.street} 
+                  onChange={(e) => handleInputChange("street", e.target.value)}
+                  placeholder="e.g., High Street"
+                  disabled={isView}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input 
+                  id="city" 
+                  value={formData.city} 
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  placeholder="e.g., London"
+                  disabled={isView}
+                />
+              </div>
+              <div>
+                <Label htmlFor="county">County</Label>
+                <Input 
+                  id="county" 
+                  value={formData.county} 
+                  onChange={(e) => handleInputChange("county", e.target.value)}
+                  placeholder="e.g., Greater London"
+                  disabled={isView}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pin_code">Postcode</Label>
+                <Input 
+                  id="pin_code" 
+                  value={formData.pin_code} 
+                  onChange={(e) => handleInputChange("pin_code", e.target.value)}
+                  placeholder="e.g., MK9 1AA"
+                  disabled={isView}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -307,34 +403,35 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
               />
             </div>
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => handleInputChange("status", value)}
+              <Label htmlFor="date_of_birth">Date of Birth</Label>
+              <Input
+                id="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) => handleInputChange("date_of_birth", e.target.value)}
                 disabled={isView}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                  <SelectItem value="On Leave">On Leave</SelectItem>
-                  <SelectItem value="Training">Training</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
 
+          {/* Status - Edit mode only field */}
           <div>
-            <Label htmlFor="date_of_birth">Date of Birth</Label>
-            <Input
-              id="date_of_birth"
-              type="date"
-              value={formData.date_of_birth}
-              onChange={(e) => handleInputChange("date_of_birth", e.target.value)}
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => handleInputChange("status", value)}
               disabled={isView}
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="On Leave">On Leave</SelectItem>
+                <SelectItem value="Training">Training</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
