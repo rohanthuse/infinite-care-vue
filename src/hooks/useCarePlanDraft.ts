@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useRef, useState } from "react";
 import { calculateCompletionPercentage, CompletionContext } from "@/utils/carePlanCompletionUtils";
-import { sanitizeFormData } from "@/utils/sanitizeText";
+import { sanitizeFormData, findProblematicPaths, getFieldTabName } from "@/utils/sanitizeText";
 interface DraftData {
   form_data: any;
   current_step: number;
@@ -235,6 +235,17 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string, forceNew
           errorDescription = "Permission denied. Please ensure you're logged in.";
         } else if (error?.code === '23505') {
           errorDescription = "A draft already exists. Refreshing...";
+        } else if (error?.message?.includes('Unicode') || error?.message?.includes('escape sequence')) {
+          // Special handling for Unicode escape errors - provide actionable guidance
+          const problematicPaths = findProblematicPaths(variables.formData);
+          if (problematicPaths.length > 0) {
+            // Map paths to user-friendly tab names
+            const uniqueTabs = [...new Set(problematicPaths.slice(0, 3).map(getFieldTabName))];
+            errorDescription = `Text contains hidden characters from copy/paste. Likely affected: ${uniqueTabs.join(', ')}. Try retyping or paste as plain text.`;
+            console.warn('[useCarePlanDraft] Problematic paths found:', problematicPaths);
+          } else {
+            errorDescription = "Text contains hidden characters from copy/paste. Try retyping or paste as plain text.";
+          }
         } else if (error?.message) {
           errorDescription = `Error: ${error.message.substring(0, 100)}`;
         }

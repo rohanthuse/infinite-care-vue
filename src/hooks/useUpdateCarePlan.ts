@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { syncCarePlanStaffAssignments, sendStaffAssignmentNotifications } from './useCarePlanStaffAssignments';
+import { sanitizeText } from '@/utils/sanitizeText';
 
 interface UpdateCarePlanAssignmentData {
   carePlanId: string;
@@ -22,12 +23,15 @@ const updateCarePlanAssignment = async ({ carePlanId, staffIds, providerName, st
   const effectiveStaffIds = staffIds && staffIds.length > 0 ? staffIds : (staffId ? [staffId] : []);
   const primaryStaffId = effectiveStaffIds[0] || null;
 
+  // Sanitize provider name to prevent Unicode escape errors
+  const sanitizedProviderName = sanitizeText(providerName);
+
   // Update the care plan with primary staff_id for backward compatibility
   const { data, error } = await supabase
     .from('client_care_plans')
     .update({
       staff_id: primaryStaffId,
-      provider_name: providerName,
+      provider_name: sanitizedProviderName,
       updated_at: new Date().toISOString()
     })
     .eq('id', carePlanId)
