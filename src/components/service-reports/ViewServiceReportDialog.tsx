@@ -560,66 +560,89 @@ export function ViewServiceReportDialog({
                     Visit Timing Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Scheduled Time Column */}
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Scheduled Time</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Start:</span>
-                          <span className="text-sm font-medium">
-                            {bookingData?.start_time ? formatSafeDate(bookingData.start_time, 'p') : 'N/A'}
-                          </span>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Scheduled Time Card */}
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-sm font-medium">Scheduled Time</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Start</p>
+                          <p className="text-sm font-semibold">
+                            {bookingData?.start_time ? formatSafeDate(bookingData.start_time, 'h:mm a') : 'N/A'}
+                          </p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">End:</span>
-                          <span className="text-sm font-medium">
-                            {bookingData?.end_time ? formatSafeDate(bookingData.end_time, 'p') : 'N/A'}
-                          </span>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">End</p>
+                          <p className="text-sm font-semibold">
+                            {bookingData?.end_time ? formatSafeDate(bookingData.end_time, 'h:mm a') : 'N/A'}
+                          </p>
                         </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                        <p className="text-sm font-semibold">
+                          {bookingData?.start_time && bookingData?.end_time
+                            ? (() => {
+                                const start = new Date(bookingData.start_time);
+                                const end = new Date(bookingData.end_time);
+                                const mins = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                                return `${mins} mins`;
+                              })()
+                            : 'N/A'}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Actual Time Column */}
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Actual Time</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Check-in:</span>
-                          <span className="text-sm font-medium">
-                            {visitRecord?.visit_start_time ? formatSafeDate(visitRecord.visit_start_time, 'p') : 'N/A'}
-                          </span>
+                    {/* Actual Time Card */}
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-medium">Actual Time</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Start</p>
+                          <p className="text-sm font-semibold">
+                            {visitRecord?.visit_start_time ? formatSafeDate(visitRecord.visit_start_time, 'h:mm a') : 'N/A'}
+                          </p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Check-out:</span>
-                          <span className="text-sm font-medium">
-                            {visitRecord?.visit_end_time ? formatSafeDate(visitRecord.visit_end_time, 'p') : 'N/A'}
-                          </span>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">End</p>
+                          <p className="text-sm font-semibold">
+                            {visitRecord?.visit_end_time ? formatSafeDate(visitRecord.visit_end_time, 'h:mm a') : 'N/A'}
+                          </p>
                         </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                        <p className="text-sm font-semibold">
+                          {visitRecord?.actual_duration_minutes 
+                            ? `${visitRecord.actual_duration_minutes} mins`
+                            : visitRecord?.visit_start_time && visitRecord?.visit_end_time
+                              ? (() => {
+                                  const start = new Date(visitRecord.visit_start_time);
+                                  const end = new Date(visitRecord.visit_end_time);
+                                  const mins = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                                  return `${mins} mins`;
+                                })()
+                              : 'N/A'}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Duration and Delay Summary */}
-                  {visitRecord && (visitRecord.actual_duration_minutes > 0 || visitRecord.arrival_delay_minutes !== 0) && (
-                    <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
-                      {visitRecord.actual_duration_minutes > 0 && (
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Actual Duration</p>
-                          <p className="font-medium">{visitRecord.actual_duration_minutes} minutes</p>
-                        </div>
-                      )}
-                      {visitRecord.arrival_delay_minutes !== 0 && (
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Arrival Delay</p>
-                          <p className={`font-medium ${visitRecord.arrival_delay_minutes > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                            {visitRecord.arrival_delay_minutes > 0 ? `+${visitRecord.arrival_delay_minutes}` : visitRecord.arrival_delay_minutes} min
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Service Date Row */}
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground mb-1">Service Date</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      {formatSafeDate(safeReport.service_date, 'MMMM do, yyyy')}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -645,40 +668,6 @@ export function ViewServiceReportDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                  <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Service Date</p>
-                    <p className="font-medium flex items-center gap-1 text-sm sm:text-base">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                      <span className="truncate">{formatSafeDate(safeReport.service_date, 'PP')}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
-                    <p className="font-medium flex items-center gap-1 text-sm sm:text-base">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                      {safeReport.service_duration_minutes || 0} min
-                    </p>
-                  </div>
-                  {visitRecord?.visit_start_time && formatSafeDate(visitRecord.visit_start_time, 'p') !== 'N/A' && (
-                    <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Start Time</p>
-                      <p className="font-medium text-sm sm:text-base">
-                        {formatSafeDate(visitRecord.visit_start_time, 'p')}
-                      </p>
-                    </div>
-                  )}
-                  {visitRecord?.visit_end_time && formatSafeDate(visitRecord.visit_end_time, 'p') !== 'N/A' && (
-                    <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">End Time</p>
-                      <p className="font-medium text-sm sm:text-base">
-                        {formatSafeDate(visitRecord.visit_end_time, 'p')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
 
                 {/* Services Provided */}
                 <div>
