@@ -111,7 +111,7 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
         <DashboardStat 
-          title="Total Clients" 
+          title="Active Clients"
           value={dashboardStats?.clientsCount?.toString() ?? "0"} 
           change={dashboardStats?.clientsChange ?? "0%"} 
           icon={<Users className="h-5 w-5 text-blue-600" />} 

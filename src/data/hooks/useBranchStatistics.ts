@@ -40,11 +40,12 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    const todayDate = new Date().toISOString().split('T')[0];
 
-    // Core queries that must succeed
+    // Core queries that must succeed - only count ACTIVE clients
     const coreQueries = [
         (supabase as any).from('staff').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
-        (supabase as any).from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+        (supabase as any).from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId).eq('status', 'Active').or(`active_until.is.null,active_until.gte.${todayDate}`),
         (supabase as any).from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
         (supabase as any).from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
         (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(5)

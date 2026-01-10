@@ -47,12 +47,17 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
     const startOfCurrentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
     const startOfPreviousMonth = new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 1).toISOString();
     const endOfPreviousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0, 23, 59, 59, 999).toISOString();
+    
+    // Today's date for active client filtering
+    const todayDate = new Date().toISOString().split('T')[0];
 
-    // Current period queries
+    // Current period queries - only count ACTIVE clients
     const clientsQuery = supabase
         .from('clients')
         .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId);
+        .eq('branch_id', branchId)
+        .eq('status', 'Active')
+        .or(`active_until.is.null,active_until.gte.${todayDate}`);
 
     const todaysBookingsQuery = supabase
         .from('bookings')
@@ -96,10 +101,13 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         .gte('start_time', startOfYesterday)
         .lte('start_time', endOfYesterday);
 
+    // Previous month active clients count (for comparison)
     const previousMonthClientsQuery = supabase
         .from('clients')
         .select('id', { count: 'exact', head: true })
         .eq('branch_id', branchId)
+        .eq('status', 'Active')
+        .or(`active_until.is.null,active_until.gte.${todayDate}`)
         .lt('created_at', startOfCurrentMonth);
 
     const previousMonthReviewsQuery = supabase
