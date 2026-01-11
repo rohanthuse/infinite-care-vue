@@ -19,6 +19,7 @@ import { useSendInvitationEmail } from "@/hooks/useSendInvitationEmail";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
 import { format } from "date-fns";
+import { extractPostcodeFromAddress } from "@/utils/postcodeUtils";
 
 import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { useDialogManager } from "@/hooks/useDialogManager";
@@ -58,36 +59,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-// Helper to extract postcode/PIN code from address string
-const extractPostcodeFromAddress = (address: string | undefined): string => {
-  if (!address) return '';
-  
-  // Try UK postcode pattern first (e.g., SW1A 1AA, M1 1AE, AL10 9HX)
-  const ukPostcodeRegex = /\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i;
-  const ukMatch = address.match(ukPostcodeRegex);
-  if (ukMatch) return ukMatch[1].toUpperCase();
-  
-  // Try Indian PIN code pattern (6 digits)
-  const indianPinRegex = /\b(\d{6})\b/;
-  const indianMatch = address.match(indianPinRegex);
-  if (indianMatch) return indianMatch[1];
-  
-  // Try 5-digit codes (US ZIP, other formats)
-  const fiveDigitRegex = /\b(\d{5})\b/;
-  const fiveDigitMatch = address.match(fiveDigitRegex);
-  if (fiveDigitMatch) return fiveDigitMatch[1];
-  
-  // Fallback: Try to extract last comma-separated part if it looks like a code
-  const parts = address.split(',').map(p => p.trim());
-  const lastPart = parts[parts.length - 1];
-  
-  // Check if last part is alphanumeric and reasonable length (3-10 chars)
-  if (lastPart && /^[A-Z0-9\s]{3,10}$/i.test(lastPart)) {
-    return lastPart.toUpperCase();
-  }
-  
-  return '';
-};
 
 interface TeamManagementSectionProps {
   branchId: string;
@@ -449,7 +420,7 @@ export function TeamManagementSection({ branchId, branchName, selectedStaffId }:
                 <TableCell className="hidden lg:table-cell">{carer.phone}</TableCell>
                 <TableCell className="hidden lg:table-cell">
                   <span className="text-sm text-muted-foreground">
-                    {extractPostcodeFromAddress(carer.address) || 'Postcode not available'}
+                    {carer.postcode || extractPostcodeFromAddress(carer.address) || 'Not provided'}
                   </span>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">{carer.specialization}</TableCell>
