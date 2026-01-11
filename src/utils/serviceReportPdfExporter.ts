@@ -1194,9 +1194,9 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
 
   // === SERVICE NOTES & OBSERVATIONS (Combined Text Block) ===
   currentY += 5;
-  // Check for page break before Notes section (requires ~50mm)
-  currentY = checkPageBreak(doc, currentY, 50, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
-  const hasNotes = report.carer_observations || report.client_mood || 
+  // Check for page break before Notes section (requires ~60mm for visit notes + other notes)
+  currentY = checkPageBreak(doc, currentY, 60, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
+  const hasNotes = visitRecord?.visit_notes || report.carer_observations || report.client_mood || 
                    report.client_feedback || report.next_visit_preparations;
   
   currentY = addCompactSectionHeader(doc, 'SERVICE NOTES & OBSERVATIONS', currentY, SECTION_BG.notes);
@@ -1204,28 +1204,63 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   if (hasNotes || observations?.length > 0) {
     doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
     
+    // === Carer Visit Notes (Primary - what carer wrote during visit) ===
+    if (visitRecord?.visit_notes) {
+      doc.setFontSize(7);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(PDF_COLORS.gray[800].r, PDF_COLORS.gray[800].g, PDF_COLORS.gray[800].b);
+      
+      // Wrap text to fit page width
+      const notesText = doc.splitTextToSize(visitRecord.visit_notes, pageWidth - (margin * 2) - 6);
+      const notesBoxHeight = Math.max(notesText.length * 4 + 10, 14);
+      
+      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), notesBoxHeight, 1, 1, 'F');
+      doc.text('Carer Visit Notes:', margin + 3, currentY + 4);
+      
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text(notesText, margin + 3, currentY + 9);
+      
+      currentY += notesBoxHeight + 3;
+      
+      // Check for page break after visit notes if they were long
+      currentY = checkPageBreak(doc, currentY, 20, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
+    }
+    
+    // === Other Notes (Client Mood, Observations, Feedback, etc.) ===
     doc.setFontSize(7);
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
     
     const noteItems: string[] = [];
     if (report.client_mood) noteItems.push(`Client Mood: ${report.client_mood}`);
-    if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations.substring(0, 80)}`);
-    if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback.substring(0, 60)}`);
-    if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations.substring(0, 50)}`);
+    if (report.carer_observations) noteItems.push(`Observations: ${report.carer_observations}`);
+    if (report.client_feedback) noteItems.push(`Feedback: ${report.client_feedback}`);
+    if (report.next_visit_preparations) noteItems.push(`Next Visit: ${report.next_visit_preparations}`);
     
     observations?.slice(0, 2).forEach(obs => {
-      noteItems.push(`Observation: ${(obs.event_description || '').substring(0, 60)}`);
+      noteItems.push(`Observation: ${obs.event_description || ''}`);
     });
     
     if (noteItems.length > 0) {
-      const boxHeight = noteItems.length * 5 + 4;
-      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
-      
-      noteItems.forEach((note, i) => {
-        doc.text(`• ${note}`, margin + 3, currentY + 4 + (i * 5));
+      // Calculate box height based on wrapped text
+      let totalHeight = 4;
+      const wrappedNotes: string[][] = [];
+      noteItems.forEach(note => {
+        const wrapped = doc.splitTextToSize(`• ${note}`, pageWidth - (margin * 2) - 6);
+        wrappedNotes.push(wrapped);
+        totalHeight += wrapped.length * 4;
       });
-      currentY += boxHeight + 3;
-    } else {
+      
+      doc.setFillColor(SECTION_BG.notes.r, SECTION_BG.notes.g, SECTION_BG.notes.b);
+      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), totalHeight, 1, 1, 'F');
+      
+      let noteY = currentY + 4;
+      wrappedNotes.forEach(wrapped => {
+        doc.text(wrapped, margin + 3, noteY);
+        noteY += wrapped.length * 4;
+      });
+      currentY += totalHeight + 3;
+    } else if (!visitRecord?.visit_notes) {
       doc.setFont(undefined, 'italic');
       doc.text('No data available', margin + 2, currentY + 3);
       currentY += 8;
