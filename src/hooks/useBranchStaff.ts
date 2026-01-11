@@ -49,5 +49,8 @@ export const useBranchStaff = (branchId: string) => {
       return fetchBranchStaff(branchId, organization.id);
     },
     enabled: Boolean(branchId) && Boolean(organization?.id),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 };
