@@ -1122,7 +1122,7 @@ export function StaffScheduleCalendar({
                   )}
                   <div className="text-xs text-muted-foreground flex items-center gap-1 truncate" title={staffMember.address || 'No address'}>
                     <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{staffMember.postcode || 'Not provided'}</span>
+                    <span className="truncate">{staffMember.postcode || extractPostcodeFromAddress(staffMember.address) || 'Not provided'}</span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {viewType === 'weekly' ? (
