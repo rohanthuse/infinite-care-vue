@@ -409,6 +409,12 @@ export function useUpdateCarer() {
       // Also invalidate any auth-related queries that might cache profile data
       queryClient.invalidateQueries({ queryKey: ["carer-branch"] });
       
+      // Invalidate Staff Schedule queries to ensure postcode updates appear there too
+      queryClient.invalidateQueries({ 
+        queryKey: ["branch-staff"],
+        refetchType: 'all'
+      });
+      
       toast.success("Carer updated successfully");
     },
     onError: (error: any) => {
