@@ -9,6 +9,54 @@ import {
   type OrganizationSettings
 } from '@/lib/pdfExportHelpers';
 
+interface FluidIntakeRecord {
+  time: string;
+  fluid_type: string;
+  amount_ml: number;
+  method?: string;
+  comments?: string;
+}
+
+interface FluidOutputRecord {
+  time: string;
+  output_type: string;
+  amount_ml?: number;
+  amount_estimate?: string;
+  appearance?: string;
+  comments?: string;
+}
+
+interface UrinaryOutputRecord {
+  time: string;
+  collection_method: string;
+  amount_ml?: number;
+  amount_estimate?: string;
+  colour?: string;
+  odour?: string;
+  discomfort_observations?: string;
+}
+
+interface FluidBalanceTarget {
+  daily_intake_target_ml?: number;
+  daily_output_target_ml?: number;
+  alert_threshold_percentage?: number;
+  notes?: string;
+}
+
+interface DietaryRequirements {
+  dietary_restrictions?: string[];
+  food_allergies?: string[];
+  food_preferences?: string[];
+  nutritional_needs?: string;
+  supplements?: string[];
+  feeding_assistance_required?: boolean;
+  texture_modifications?: string;
+  fluid_restrictions?: string;
+  hydration_needs?: string;
+  meal_preparation_needs?: string;
+  eating_assistance?: string;
+}
+
 interface ServiceReportPdfData {
   report: any;
   visitRecord: any;
@@ -23,6 +71,15 @@ interface ServiceReportPdfData {
   carePlanGoals?: any[];
   activities?: any[];
   branchId?: string;
+  // NEW: Fluid Balance Records
+  fluidIntakeRecords?: FluidIntakeRecord[];
+  fluidOutputRecords?: FluidOutputRecord[];
+  urinaryOutputRecords?: UrinaryOutputRecord[];
+  fluidBalanceTarget?: FluidBalanceTarget;
+  // NEW: Dietary Requirements
+  dietaryRequirements?: DietaryRequirements;
+  // NEW: Visit Photos
+  visitPhotos?: string[];
 }
 
 // Compact section colors
@@ -36,6 +93,9 @@ const SECTION_BG = {
   signatures: { r: 240, g: 249, b: 255 }, // Light blue
   goals: { r: 236, g: 253, b: 245 },      // Light teal
   activities: { r: 255, g: 247, b: 237 }, // Light orange
+  fluid: { r: 219, g: 234, b: 254 },      // Light blue for fluid balance
+  dietary: { r: 254, g: 243, b: 199 },    // Light yellow for dietary
+  photos: { r: 237, g: 233, b: 254 },     // Light purple for photos
 };
 
 // Safe color accessor with fallback
@@ -337,7 +397,7 @@ const addProfessionalFooter = (
 };
 
 export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) => {
-  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations, carePlanGoals, activities, branchId } = data;
+  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations, carePlanGoals, activities, branchId, fluidIntakeRecords, fluidOutputRecords, urinaryOutputRecords, fluidBalanceTarget, dietaryRequirements, visitPhotos } = data;
   
   let orgSettings: OrganizationSettings | null = null;
   let logoBase64: string | null = null;
@@ -721,6 +781,361 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   // Move currentY past the tallest column
   currentY = goalsContentY + Math.max(leftColumnHeight, rightColumnHeight) + 3;
 
+  // === FLUID BALANCE SECTION (NEW) ===
+  const hasFluidData = (fluidIntakeRecords && fluidIntakeRecords.length > 0) || 
+                       (fluidOutputRecords && fluidOutputRecords.length > 0) || 
+                       (urinaryOutputRecords && urinaryOutputRecords.length > 0);
+  
+  if (hasFluidData || fluidBalanceTarget) {
+    currentY += 5;
+    // Check for page break before Fluid Balance section (requires ~80mm)
+    currentY = checkPageBreak(doc, currentY, 80, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
+    currentY = addCompactSectionHeader(doc, 'FLUID BALANCE MONITORING', currentY, SECTION_BG.fluid);
+    
+    // Fluid Balance Summary Box - 4 columns
+    const totalIntake = fluidIntakeRecords?.reduce((sum, r) => sum + (r.amount_ml || 0), 0) || 0;
+    const totalOutput = (fluidOutputRecords?.reduce((sum, r) => sum + (r.amount_ml || 0), 0) || 0) +
+                        (urinaryOutputRecords?.reduce((sum, r) => sum + (r.amount_ml || 0), 0) || 0);
+    const balance = totalIntake - totalOutput;
+    const dailyTarget = fluidBalanceTarget?.daily_intake_target_ml || 0;
+    
+    // Summary boxes
+    const summaryBoxWidth = (pageWidth - (margin * 2) - 9) / 4;
+    const summaryBoxHeight = 14;
+    
+    // Box 1: Total Intake
+    doc.setFillColor(219, 234, 254);
+    doc.roundedRect(margin, currentY, summaryBoxWidth, summaryBoxHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(59, 130, 246);
+    doc.text('Total Intake', margin + 3, currentY + 5);
+    doc.setFontSize(9);
+    doc.text(`${totalIntake} ml`, margin + 3, currentY + 11);
+    
+    // Box 2: Total Output
+    doc.setFillColor(254, 243, 199);
+    doc.roundedRect(margin + summaryBoxWidth + 3, currentY, summaryBoxWidth, summaryBoxHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setTextColor(217, 119, 6);
+    doc.text('Total Output', margin + summaryBoxWidth + 6, currentY + 5);
+    doc.setFontSize(9);
+    doc.text(`${totalOutput} ml`, margin + summaryBoxWidth + 6, currentY + 11);
+    
+    // Box 3: Balance
+    const balanceColor = balance >= 0 ? { r: 34, g: 197, b: 94 } : { r: 239, g: 68, b: 68 };
+    doc.setFillColor(balance >= 0 ? 220 : 254, balance >= 0 ? 252 : 226, balance >= 0 ? 231 : 226);
+    doc.roundedRect(margin + (summaryBoxWidth + 3) * 2, currentY, summaryBoxWidth, summaryBoxHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setTextColor(balanceColor.r, balanceColor.g, balanceColor.b);
+    doc.text('Balance', margin + (summaryBoxWidth + 3) * 2 + 3, currentY + 5);
+    doc.setFontSize(9);
+    doc.text(`${balance >= 0 ? '+' : ''}${balance} ml`, margin + (summaryBoxWidth + 3) * 2 + 3, currentY + 11);
+    
+    // Box 4: Daily Target
+    doc.setFillColor(237, 233, 254);
+    doc.roundedRect(margin + (summaryBoxWidth + 3) * 3, currentY, summaryBoxWidth, summaryBoxHeight, 1, 1, 'F');
+    doc.setFontSize(6);
+    doc.setTextColor(139, 92, 246);
+    doc.text('Daily Target', margin + (summaryBoxWidth + 3) * 3 + 3, currentY + 5);
+    doc.setFontSize(9);
+    doc.text(dailyTarget ? `${dailyTarget} ml` : 'Not set', margin + (summaryBoxWidth + 3) * 3 + 3, currentY + 11);
+    
+    currentY += summaryBoxHeight + 5;
+    
+    // Fluid Intake Table
+    if (fluidIntakeRecords && fluidIntakeRecords.length > 0) {
+      const intakeData = fluidIntakeRecords.map(r => [
+        r.time || '-',
+        r.fluid_type || '-',
+        `${r.amount_ml || 0} ml`,
+        r.method || '-',
+        (r.comments || '-').substring(0, 25)
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Time', 'Fluid Type', 'Amount', 'Method', 'Comments']],
+        body: intakeData,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: [59, 130, 246], 
+          fontSize: 6, 
+          fontStyle: 'bold', 
+          textColor: [255, 255, 255],
+          cellPadding: 1
+        },
+        styles: { fontSize: 5, cellPadding: 1 },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 'auto' }
+        },
+        margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+        alternateRowStyles: { fillColor: [219, 234, 254] },
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) {
+            addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+          }
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 3;
+    }
+    
+    // Fluid Output Table
+    if (fluidOutputRecords && fluidOutputRecords.length > 0) {
+      const outputData = fluidOutputRecords.map(r => [
+        r.time || '-',
+        r.output_type || '-',
+        r.amount_ml ? `${r.amount_ml} ml` : (r.amount_estimate || '-'),
+        r.appearance || '-',
+        (r.comments || '-').substring(0, 25)
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Time', 'Output Type', 'Amount', 'Appearance', 'Comments']],
+        body: outputData,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: [217, 119, 6], 
+          fontSize: 6, 
+          fontStyle: 'bold', 
+          textColor: [255, 255, 255],
+          cellPadding: 1
+        },
+        styles: { fontSize: 5, cellPadding: 1 },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 'auto' }
+        },
+        margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+        alternateRowStyles: { fillColor: [254, 243, 199] },
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) {
+            addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+          }
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 3;
+    }
+    
+    // Urinary Output Table
+    if (urinaryOutputRecords && urinaryOutputRecords.length > 0) {
+      const urinaryData = urinaryOutputRecords.map(r => [
+        r.time || '-',
+        r.collection_method || '-',
+        r.amount_ml ? `${r.amount_ml} ml` : (r.amount_estimate || '-'),
+        r.colour || '-',
+        r.odour || '-',
+        (r.discomfort_observations || '-').substring(0, 20)
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Time', 'Method', 'Amount', 'Colour', 'Odour', 'Observations']],
+        body: urinaryData,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: [139, 92, 246], 
+          fontSize: 6, 
+          fontStyle: 'bold', 
+          textColor: [255, 255, 255],
+          cellPadding: 1
+        },
+        styles: { fontSize: 5, cellPadding: 1 },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 'auto' }
+        },
+        margin: { left: margin, right: margin, bottom: FOOTER_HEIGHT + 5, top: 45 },
+        alternateRowStyles: { fillColor: [237, 233, 254] },
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) {
+            addFullPageHeader(doc, orgSettings, logoBase64, branchName, clientName, visitDate, reportId);
+          }
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 3;
+    }
+  }
+
+  // === DIETARY REQUIREMENTS SECTION (NEW) ===
+  if (dietaryRequirements) {
+    const hasDietaryData = dietaryRequirements.food_allergies?.length || 
+                           dietaryRequirements.dietary_restrictions?.length ||
+                           dietaryRequirements.texture_modifications ||
+                           dietaryRequirements.feeding_assistance_required ||
+                           dietaryRequirements.hydration_needs;
+    
+    if (hasDietaryData) {
+      currentY += 5;
+      // Check for page break before Dietary section (requires ~40mm)
+      currentY = checkPageBreak(doc, currentY, 40, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
+      currentY = addCompactSectionHeader(doc, 'DIETARY REQUIREMENTS', currentY, SECTION_BG.dietary);
+      
+      const dietaryItems: { label: string; value: string; isAlert?: boolean }[] = [];
+      
+      // Food Allergies (highlighted as alerts)
+      if (dietaryRequirements.food_allergies?.length) {
+        dietaryItems.push({ 
+          label: '⚠️ Food Allergies', 
+          value: dietaryRequirements.food_allergies.join(', '),
+          isAlert: true
+        });
+      }
+      
+      // Dietary Restrictions
+      if (dietaryRequirements.dietary_restrictions?.length) {
+        dietaryItems.push({ 
+          label: 'Dietary Restrictions', 
+          value: dietaryRequirements.dietary_restrictions.join(', ')
+        });
+      }
+      
+      // Texture Modifications
+      if (dietaryRequirements.texture_modifications) {
+        dietaryItems.push({ 
+          label: 'Texture Modifications', 
+          value: dietaryRequirements.texture_modifications
+        });
+      }
+      
+      // Fluid Restrictions
+      if (dietaryRequirements.fluid_restrictions) {
+        dietaryItems.push({ 
+          label: 'Fluid Restrictions', 
+          value: dietaryRequirements.fluid_restrictions
+        });
+      }
+      
+      // Feeding Assistance
+      if (dietaryRequirements.feeding_assistance_required) {
+        dietaryItems.push({ 
+          label: 'Feeding Assistance', 
+          value: dietaryRequirements.eating_assistance || 'Required'
+        });
+      }
+      
+      // Hydration Needs
+      if (dietaryRequirements.hydration_needs) {
+        dietaryItems.push({ 
+          label: 'Hydration Needs', 
+          value: dietaryRequirements.hydration_needs
+        });
+      }
+      
+      // Supplements
+      if (dietaryRequirements.supplements?.length) {
+        dietaryItems.push({ 
+          label: 'Supplements', 
+          value: dietaryRequirements.supplements.join(', ')
+        });
+      }
+      
+      // Render dietary info in a two-column box
+      const boxHeight = Math.ceil(dietaryItems.length / 2) * 8 + 6;
+      doc.setFillColor(SECTION_BG.dietary.r, SECTION_BG.dietary.g, SECTION_BG.dietary.b);
+      doc.roundedRect(margin, currentY, pageWidth - (margin * 2), boxHeight, 1, 1, 'F');
+      
+      const col1X = margin + 3;
+      const col2X = pageWidth / 2 + 3;
+      
+      dietaryItems.forEach((item, idx) => {
+        const isLeftCol = idx % 2 === 0;
+        const rowIdx = Math.floor(idx / 2);
+        const x = isLeftCol ? col1X : col2X;
+        const y = currentY + 6 + (rowIdx * 8);
+        
+        doc.setFontSize(6);
+        doc.setFont(undefined, 'bold');
+        
+        if (item.isAlert) {
+          doc.setTextColor(220, 38, 38);
+        } else {
+          doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+        }
+        doc.text(`${item.label}:`, x, y);
+        
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
+        const valueText = item.value.length > 35 ? item.value.substring(0, 35) + '...' : item.value;
+        doc.text(valueText, x + 35, y);
+      });
+      
+      currentY += boxHeight + 3;
+    }
+  }
+
+  // === VISIT PHOTOS SECTION (NEW) ===
+  const photoUrls = visitPhotos || visitRecord?.visit_photos || [];
+  if (photoUrls && photoUrls.length > 0) {
+    currentY += 5;
+    // Check for page break before Photos section (requires ~50mm)
+    currentY = checkPageBreak(doc, currentY, 50, orgSettings, branchName, logoBase64, clientName, visitDate, reportId);
+    currentY = addCompactSectionHeader(doc, 'VISIT PHOTOS', currentY, SECTION_BG.photos);
+    
+    doc.setFillColor(SECTION_BG.photos.r, SECTION_BG.photos.g, SECTION_BG.photos.b);
+    
+    const photoWidth = 40;
+    const photoHeight = 30;
+    const photosPerRow = 4;
+    const photoSpacing = (pageWidth - (margin * 2) - (photosPerRow * photoWidth)) / (photosPerRow - 1);
+    
+    // Simple placeholder boxes for photos (actual image loading would require async)
+    const numRows = Math.ceil(photoUrls.length / photosPerRow);
+    const photosBoxHeight = numRows * (photoHeight + 8) + 6;
+    
+    doc.roundedRect(margin, currentY, pageWidth - (margin * 2), photosBoxHeight, 1, 1, 'F');
+    
+    photoUrls.slice(0, 8).forEach((photoUrl: string, idx: number) => {
+      const row = Math.floor(idx / photosPerRow);
+      const col = idx % photosPerRow;
+      const x = margin + 5 + col * (photoWidth + photoSpacing);
+      const y = currentY + 4 + row * (photoHeight + 8);
+      
+      // Draw photo placeholder with border
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(200, 200, 200);
+      doc.roundedRect(x, y, photoWidth, photoHeight, 1, 1, 'FD');
+      
+      // Try to add the actual image
+      try {
+        // Note: For base64 images stored in visit_photos
+        if (typeof photoUrl === 'string' && photoUrl.startsWith('data:image')) {
+          const format = photoUrl.includes('data:image/png') ? 'PNG' : 'JPEG';
+          doc.addImage(photoUrl, format, x + 1, y + 1, photoWidth - 2, photoHeight - 2);
+        } else {
+          // For URL-based photos, show placeholder text
+          doc.setFontSize(5);
+          doc.setTextColor(150, 150, 150);
+          doc.text('Photo', x + photoWidth / 2, y + photoHeight / 2, { align: 'center' });
+        }
+      } catch (e) {
+        // If image fails, show placeholder
+        doc.setFontSize(5);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Photo', x + photoWidth / 2, y + photoHeight / 2, { align: 'center' });
+      }
+      
+      // Photo number label
+      doc.setFontSize(5);
+      doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      doc.text(`Photo ${idx + 1}`, x + photoWidth / 2, y + photoHeight + 4, { align: 'center' });
+    });
+    
+    currentY += photosBoxHeight + 3;
+  }
+
   // === EVENTS & INCIDENTS (Enhanced with Action Taken) ===
   currentY += 5;
   // Check for page break before Events section (requires ~40mm)
@@ -1002,6 +1417,17 @@ export const generatePDFForServiceReport = async (
   // We no longer fetch client_activities separately to avoid duplication
   // The tasks table already contains activities when a service report is created
 
+  // Fetch dietary requirements
+  let dietaryRequirements: any = null;
+  if (safeReport.client_id) {
+    const { data: dietaryData } = await supabase
+      .from('client_dietary_requirements')
+      .select('*')
+      .eq('client_id', safeReport.client_id)
+      .maybeSingle();
+    dietaryRequirements = dietaryData;
+  }
+
   // If no visit record found, generate simplified PDF with report data only
   if (!visitRecordId) {
     await exportSingleServiceReportPDF({
@@ -1018,6 +1444,12 @@ export const generatePDFForServiceReport = async (
       carePlanGoals: carePlanGoals,
       activities: [], // Activities are now in tasks with category='Activity'
       branchId: branchId || safeReport.branch_id,
+      fluidIntakeRecords: [],
+      fluidOutputRecords: [],
+      urinaryOutputRecords: [],
+      fluidBalanceTarget: null,
+      dietaryRequirements: dietaryRequirements,
+      visitPhotos: [],
     });
     return;
   }
@@ -1046,6 +1478,12 @@ export const generatePDFForServiceReport = async (
       carePlanGoals: carePlanGoals,
       activities: [], // Activities are now in tasks with category='Activity'
       branchId: branchId || safeReport.branch_id,
+      fluidIntakeRecords: [],
+      fluidOutputRecords: [],
+      urinaryOutputRecords: [],
+      fluidBalanceTarget: null,
+      dietaryRequirements: dietaryRequirements,
+      visitPhotos: [],
     });
     return;
   }
@@ -1095,6 +1533,51 @@ export const generatePDFForServiceReport = async (
   const accidents = allEvents?.filter(e => e.event_type === 'accident') || [];
   const observations = allEvents?.filter(e => e.event_type === 'observation') || [];
 
+  // Fetch fluid intake records for the service date
+  const { data: fluidIntakeRecords } = await supabase
+    .from('fluid_intake_records')
+    .select('time, fluid_type, amount_ml, method, comments')
+    .eq('client_id', safeReport.client_id)
+    .eq('record_date', safeReport.service_date)
+    .order('time', { ascending: true });
+
+  // Fetch fluid output records for the service date
+  const { data: fluidOutputRecords } = await supabase
+    .from('fluid_output_records')
+    .select('time, output_type, amount_ml, amount_estimate, appearance, comments')
+    .eq('client_id', safeReport.client_id)
+    .eq('record_date', safeReport.service_date)
+    .order('time', { ascending: true });
+
+  // Fetch urinary output records for the service date
+  const { data: urinaryOutputRecords } = await supabase
+    .from('urinary_output_records')
+    .select('time, collection_method, amount_ml, amount_estimate, colour, odour, discomfort_observations')
+    .eq('client_id', safeReport.client_id)
+    .eq('record_date', safeReport.service_date)
+    .order('time', { ascending: true });
+
+  // Fetch fluid balance target
+  const { data: fluidBalanceTarget } = await supabase
+    .from('fluid_balance_targets')
+    .select('daily_intake_target_ml, daily_output_target_ml, alert_threshold_percentage, notes')
+    .eq('client_id', safeReport.client_id)
+    .maybeSingle();
+
+  // Parse visit photos (handle JSON array)
+  let visitPhotosArray: string[] = [];
+  if (visitRecord?.visit_photos) {
+    if (Array.isArray(visitRecord.visit_photos)) {
+      visitPhotosArray = visitRecord.visit_photos as string[];
+    } else if (typeof visitRecord.visit_photos === 'string') {
+      try {
+        visitPhotosArray = JSON.parse(visitRecord.visit_photos);
+      } catch {
+        visitPhotosArray = [];
+      }
+    }
+  }
+
   // Generate PDF with all data
   await exportSingleServiceReportPDF({
     report: safeReport,
@@ -1110,6 +1593,12 @@ export const generatePDFForServiceReport = async (
     carePlanGoals: carePlanGoals,
     activities: [], // Activities are now in tasks with category='Activity'
     branchId: branchId || safeReport.branch_id,
+    fluidIntakeRecords: (fluidIntakeRecords as any[]) || [],
+    fluidOutputRecords: (fluidOutputRecords as any[]) || [],
+    urinaryOutputRecords: (urinaryOutputRecords as any[]) || [],
+    fluidBalanceTarget: fluidBalanceTarget || undefined,
+    dietaryRequirements: dietaryRequirements || undefined,
+    visitPhotos: visitPhotosArray,
   });
   } catch (error) {
     console.error('[PDF Generation Error]:', error);
