@@ -3,6 +3,7 @@ import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { safeParseDateValue } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -135,41 +136,44 @@ export function WizardStep5Goals({ form }: WizardStep5GoalsProps) {
                 <FormField
                   control={form.control}
                   name={`goals.${index}.target_date`}
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Target Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a target date</span>
-                              )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const parsedDate = safeParseDateValue(field.value);
+                    return (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Target Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !parsedDate && "text-muted-foreground"
+                                )}
+                              >
+                                {parsedDate ? (
+                                  format(parsedDate, "PPP")
+                                ) : (
+                                  <span>Pick a target date</span>
+                                )}
+                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={parsedDate}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
 

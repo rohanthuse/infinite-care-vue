@@ -3,6 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle, Eye, Download } from "lucide-react";
 import { useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
 import { format } from "date-fns";
+import { safeParseDateValue } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -397,40 +398,43 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                 <FormField
                   control={form.control}
                   name={`documents.${index}.upload_date`}
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Upload Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick date</span>
-                              )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const parsedDate = safeParseDateValue(field.value);
+                    return (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Upload Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !parsedDate && "text-muted-foreground"
+                                )}
+                              >
+                                {parsedDate ? (
+                                  format(parsedDate, "PPP")
+                                ) : (
+                                  <span>Pick date</span>
+                                )}
+                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={parsedDate}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
 
