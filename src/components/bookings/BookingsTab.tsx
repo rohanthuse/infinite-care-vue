@@ -40,7 +40,7 @@ import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
 import { useTenant } from "@/contexts/TenantContext";
 import { BookingValidationAlert } from "./BookingValidationAlert";
 import { useSearchParams } from "react-router-dom";
-import { parseISO, isValid, format } from "date-fns";
+import { isValid, format } from "date-fns";
 import { useBookingDebug } from "./hooks/useBookingDebug";
 import { useQuery } from "@tanstack/react-query";
 import { BookingStatusLegend } from "./BookingStatusLegend";
@@ -50,6 +50,32 @@ import { FutureBookingPlanDialog } from "./dialogs/FutureBookingPlanDialog";
 
 interface BookingsTabProps {
   branchId?: string;
+}
+
+/**
+ * Parse a date-only string (yyyy-MM-dd) into a LOCAL Date without timezone shifts.
+ * This prevents issues where parseISO("2026-01-18") might become Jan 17th in some timezones.
+ */
+function parseDateOnlyLocal(dateStr: string): Date | null {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  
+  // Validate format: yyyy-MM-dd
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10) - 1; // JS months are 0-indexed
+  const day = parseInt(dayStr, 10);
+  
+  // Create local midnight date
+  const date = new Date(year, month, day);
+  
+  // Validate the date is correct (guards against invalid dates like 2026-02-31)
+  if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+    return null;
+  }
+  
+  return date;
 }
 
 export function BookingsTab({ branchId }: BookingsTabProps) {
@@ -62,11 +88,11 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const clientParam = searchParams.get('client');
   const focusBookingId = searchParams.get('focusBookingId');
   
-  // Parse date parameter or default to today
+  // Parse date parameter or default to today (timezone-safe)
   const initialDate = useMemo(() => {
     if (dateParam) {
-      const parsedDate = parseISO(dateParam);
-      if (isValid(parsedDate)) {
+      const parsedDate = parseDateOnlyLocal(dateParam);
+      if (parsedDate && isValid(parsedDate)) {
         return parsedDate;
       }
     }
@@ -86,15 +112,17 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
   const [showFuturePlanDialog, setShowFuturePlanDialog] = useState(false);
 
+  // Stabilize searchParams dependency by using primitive string
+  const searchParamsString = searchParams.toString();
+  
   // Update URL parameters when filters change
   useEffect(() => {
     // IMPORTANT: Preserve existing search params to avoid wiping out routing state
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParamsString);
     
     // Update date param with consistent formatting
-    if (selectedDate) {
-      params.set('date', format(selectedDate, 'yyyy-MM-dd'));
-    }
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+    params.set('date', selectedDateStr);
     
     // Update client/carer filters
     if (selectedClientIds.length > 0) {
@@ -110,13 +138,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     }
     
     // Compare with current to avoid unnecessary updates that cause loops
-    const currentParamsStr = searchParams.toString();
     const newParamsStr = params.toString();
     
-    if (currentParamsStr !== newParamsStr) {
+    if (searchParamsString !== newParamsStr) {
+      console.log('[BookingsTab] URL update: date =', selectedDateStr, 'changed:', searchParamsString !== newParamsStr);
       setSearchParams(params, { replace: true });
     }
-  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams, searchParams]);
+  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams, searchParamsString]);
 
   const { data: services = [], isLoading: isLoadingServices } = useServices(organization?.id);
   const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId);
@@ -149,24 +177,26 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
   const pendingRequestCount = pendingRequestsData?.count || 0;
 
+  // Extract URL date param as primitive string for stable dependency
+  const urlDateParam = searchParams.get('date');
+  
   // Sync selectedDate with URL date param changes (for navigateToBookingDate)
   useEffect(() => {
-    const urlDateParam = searchParams.get('date');
     if (urlDateParam) {
-      const parsedDate = parseISO(urlDateParam);
-      if (isValid(parsedDate)) {
+      const parsedDate = parseDateOnlyLocal(urlDateParam);
+      if (parsedDate && isValid(parsedDate)) {
         // Use functional update to avoid stale closure issues
         setSelectedDate(currentDate => {
           const currentDateStr = format(currentDate, 'yyyy-MM-dd');
           if (urlDateParam !== currentDateStr) {
-            console.log('[BookingsTab] URL date changed, syncing selectedDate:', urlDateParam);
+            console.log('[BookingsTab] URL date sync: URL =', urlDateParam, 'current =', currentDateStr);
             return parsedDate;
           }
           return currentDate; // No change, return same reference
         });
       }
     }
-  }, [searchParams]);
+  }, [urlDateParam]); // Depend on primitive string, not searchParams object
 
   // Handle auto-focusing booking from search (supports both 'selected' and 'focusBookingId')
   useEffect(() => {
@@ -178,9 +208,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         setHighlightedBookingId(selectedBookingId);
         console.log('[BookingsTab] Auto-focusing booking:', selectedBookingId);
         
-        // Change the calendar date to show that booking
-        const bookingDate = parseISO(booking.date);
-        if (isValid(bookingDate)) {
+        // Change the calendar date to show that booking (timezone-safe)
+        const bookingDate = parseDateOnlyLocal(booking.date);
+        if (bookingDate && isValid(bookingDate)) {
           setSelectedDate(bookingDate);
         }
         

@@ -19,13 +19,10 @@ export function useBookingDateNavigation() {
       params.set('focusBookingId', bookingId);
     }
     
+    // Only use setSearchParams - no redundant history manipulation
     setSearchParams(params, { replace: true });
     
-    // Also update the current URL immediately
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newUrl);
-    
-    return newUrl;
+    return `${window.location.pathname}?${params.toString()}`;
   };
 
   const getCurrentDateFromUrl = () => {
