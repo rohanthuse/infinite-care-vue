@@ -394,6 +394,52 @@ export const useDeleteAnnualLeave = () => {
   });
 };
 
+// Hook to delete multiple annual leave entries (for grouped weekly recurring)
+export const useDeleteBulkAnnualLeave = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('annual_leave_calendar')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      console.log('✅ Bulk leave deletion successful');
+      
+      await queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      // Invalidate stats
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      console.log('✅ Calendar refetched after bulk leave deletion');
+      
+      toast.success('Holiday entries deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting annual leave entries:', error);
+      toast.error('Failed to delete holiday entries');
+    }
+  });
+};
+
 // Hook to update annual leave
 export const useUpdateAnnualLeave = () => {
   const queryClient = useQueryClient();
