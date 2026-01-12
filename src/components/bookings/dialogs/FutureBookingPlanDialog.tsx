@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,27 @@ interface FutureBookingPlanDialogProps {
 
 type DateRangePreset = "this-week" | "next-week" | "this-month" | "next-month" | "custom";
 
+// Force cleanup of any lingering modal/dropdown states
+const forceUICleanup = () => {
+  requestAnimationFrame(() => {
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('pointer-events');
+    document.body.removeAttribute('data-scroll-locked');
+    
+    const root = document.getElementById('root');
+    if (root) {
+      root.removeAttribute('inert');
+      root.removeAttribute('aria-hidden');
+    }
+    
+    // Remove any stale closed dropdown portals
+    const closedDropdowns = document.querySelectorAll(
+      '[data-radix-dropdown-menu-content][data-state="closed"]'
+    );
+    closedDropdowns.forEach(el => el.remove());
+  });
+};
+
 export function FutureBookingPlanDialog({
   open,
   onOpenChange,
@@ -60,6 +81,34 @@ export function FutureBookingPlanDialog({
   const [customEndDate, setCustomEndDate] = useState<Date>(addDays(new Date(), 30));
 
   const today = new Date();
+
+  // Clean up any lingering dropdown states when dialog opens
+  useEffect(() => {
+    if (open) {
+      forceUICleanup();
+    }
+  }, [open]);
+
+  // Enhanced onOpenChange handler with cleanup on close
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {
+      // Force cleanup of any lingering modal states when closing
+      forceUICleanup();
+    }
+    onOpenChange(newOpen);
+  }, [onOpenChange]);
+
+  // Handle close auto focus to prevent focus issues
+  const handleCloseAutoFocus = useCallback((e: Event) => {
+    e.preventDefault();
+    // Force focus back to main content
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      (mainContent as HTMLElement).focus();
+    }
+    // Extra cleanup after focus handling
+    forceUICleanup();
+  }, []);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -174,8 +223,11 @@ export function FutureBookingPlanDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={handleCloseAutoFocus}
+      >
         <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
@@ -338,7 +390,7 @@ export function FutureBookingPlanDialog({
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
             <Button

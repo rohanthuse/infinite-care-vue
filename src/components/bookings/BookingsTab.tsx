@@ -458,7 +458,14 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Booking Reports
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowFuturePlanDialog(true)}>
+              <DropdownMenuItem 
+                onClick={() => {
+                  // Delay dialog open to allow dropdown to close first
+                  setTimeout(() => {
+                    setShowFuturePlanDialog(true);
+                  }, 50);
+                }}
+              >
                 <CalendarDays className="h-4 w-4 mr-2" />
                 Future Booking Plan
               </DropdownMenuItem>
