@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { DragDropContext, DropResult, DragStart, DragUpdate } from "react-beautiful-dnd";
-import { Clock } from "lucide-react";
+import { Clock, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
@@ -88,9 +90,37 @@ export function UnifiedScheduleView({
   const [dragInfo, setDragInfo] = useState<DragTimeInfo | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [currentDroppableId, setCurrentDroppableId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
+  const queryClient = useQueryClient();
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
   const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
+
+  // Force refresh all booking-related caches
+  const handleForceRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    console.log('[UnifiedScheduleView] 🔄 Force refreshing all booking caches...');
+    
+    try {
+      // Clear all booking-related caches
+      await queryClient.invalidateQueries({ queryKey: ["branch-bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+      await queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
+      
+      // Force immediate refetch of active queries
+      await queryClient.refetchQueries({ queryKey: ["branch-bookings"], type: 'active' });
+      await queryClient.refetchQueries({ queryKey: ["organization-calendar"], type: 'active' });
+      await queryClient.refetchQueries({ queryKey: ["organization-bookings"], type: 'active' });
+      
+      console.log('[UnifiedScheduleView] ✅ Cache refresh complete');
+      toast.success('Data refreshed successfully');
+    } catch (error) {
+      console.error('[UnifiedScheduleView] ❌ Refresh failed:', error);
+      toast.error('Failed to refresh data');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient]);
 
   // Build client active_until map for drag-drop validation
   const clientActiveMap = useMemo(() => {
@@ -473,6 +503,20 @@ export function UnifiedScheduleView({
         </div>
       )}
       <div className="flex flex-col gap-4 w-full">
+      {/* Force Refresh Button */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleForceRefresh}
+          disabled={isRefreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+        </Button>
+      </div>
+      
       {/* Left Panel - Client Schedule */}
       <div className="border-2 border-blue-500 dark:border-blue-600/70 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
