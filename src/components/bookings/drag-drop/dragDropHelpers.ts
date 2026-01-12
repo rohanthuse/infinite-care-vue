@@ -12,7 +12,7 @@
 export function calculateTimeFromPosition(
   yPosition: number,
   hourHeight: number = 60,
-  timeInterval: number = 30
+  timeInterval: number = 5
 ): string {
   const SLOT_HEIGHT = hourHeight / (60 / timeInterval);
   
