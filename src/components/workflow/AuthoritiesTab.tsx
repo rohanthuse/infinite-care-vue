@@ -135,6 +135,7 @@ export const AuthoritiesTab = () => {
         <div>
           <h2 className="text-xl font-bold text-foreground tracking-tight">Authorities</h2>
           <p className="text-sm text-muted-foreground mt-1">Manage authority organizations and their configurations</p>
+          <p className="text-xs text-muted-foreground/70 mt-0.5">Authorities added here are specific to your organisation. Each organisation maintains their own authority configurations.</p>
         </div>
         <Button onClick={handleAddNew} className="gap-2">
           <Plus className="h-4 w-4" />
