@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format, parse } from "date-fns";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
-import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle, CalendarOff, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown, Circle, CalendarOff, MapPin, Search } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getBookingStatusColor, getBookingStatusLabel, BOOKING_STATUS_COLORS, BookingStatusType } from "../utils/bookingColors";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { useStaffLeaveAvailability, validateCarersLeaveConflict } from "@/hooks/useStaffLeaveAvailability";
@@ -234,6 +235,9 @@ export function EditBookingDialog({
   // Multi-carer delete dialog state
   const [showMultiCarerDeleteDialog, setShowMultiCarerDeleteDialog] = useState(false);
   
+  // Search input for carers dropdown
+  const [carerSearchInput, setCarerSearchInput] = useState('');
+  
   // Track all related booking records for this appointment
   const [relatedBookingRecords, setRelatedBookingRecords] = React.useState<Array<{
     id: string;
@@ -249,6 +253,15 @@ export function EditBookingDialog({
 
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
+
+  // Filtered carers based on search input
+  const filteredCarers = useMemo(() => {
+    if (!carerSearchInput.trim()) return carers;
+    const searchLower = carerSearchInput.toLowerCase();
+    return carers.filter(carer => 
+      carer.name?.toLowerCase().includes(searchLower)
+    );
+  }, [carers, carerSearchInput]);
 
   // Calculate predicted status based on manual selection or staff_ids
   const predictedStatus = useMemo(() => {
@@ -1035,7 +1048,7 @@ export function EditBookingDialog({
                       <FormControl>
                         <div className="space-y-2">
                           {/* Multi-select dropdown */}
-                          <Popover>
+                          <Popover onOpenChange={(open) => { if (!open) setCarerSearchInput(''); }}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
@@ -1058,15 +1071,28 @@ export function EditBookingDialog({
                                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[320px] p-0" align="start">
+                            <PopoverContent className="w-[320px] p-0 bg-popover" align="start">
+                              {/* Search Input */}
+                              <div className="p-2 border-b">
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    placeholder="Search carers..."
+                                    value={carerSearchInput}
+                                    onChange={(e) => setCarerSearchInput(e.target.value)}
+                                    className="pl-8 h-9"
+                                  />
+                                </div>
+                              </div>
+                              {/* Select All / Clear All */}
                               <div className="p-2 border-b flex items-center justify-between">
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    const allIds = carers.map(c => c.id);
-                                    field.onChange(allIds);
+                                    const allIds = filteredCarers.map(c => c.id);
+                                    field.onChange([...new Set([...(field.value || []), ...allIds])]);
                                   }}
                                   className="h-6 px-2 text-xs"
                                 >
@@ -1082,14 +1108,15 @@ export function EditBookingDialog({
                                   Clear All
                                 </Button>
                               </div>
-                              <div className="max-h-60 overflow-y-auto pointer-events-auto">
-                                {carers.length === 0 ? (
+                              {/* Scrollable Carers List */}
+                              <ScrollArea className="max-h-[200px]">
+                                {filteredCarers.length === 0 ? (
                                   <div className="p-4 text-center text-sm text-muted-foreground">
-                                    No carers available
+                                    {carerSearchInput ? 'No carers match your search' : 'No carers available'}
                                   </div>
                                 ) : (
                                   <div className="p-1">
-                                    {carers.map((carer) => {
+                                    {filteredCarers.map((carer) => {
                                       const isSelected = field.value?.includes(carer.id);
                                       const isActive = carer.status === 'Active';
                                       const statusColor = isActive 
@@ -1129,7 +1156,15 @@ export function EditBookingDialog({
                                     })}
                                   </div>
                                 )}
-                              </div>
+                              </ScrollArea>
+                              {/* Selected count footer */}
+                              {field.value?.length > 0 && (
+                                <div className="p-2 border-t bg-muted/50">
+                                  <div className="text-xs text-muted-foreground">
+                                    {field.value.length} carer{field.value.length !== 1 ? 's' : ''} selected
+                                  </div>
+                                </div>
+                              )}
                             </PopoverContent>
                           </Popover>
                           
