@@ -241,6 +241,21 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const handleViewBooking = async (booking: Booking) => {
     console.log("[BookingsTab] View booking from list/calendar:", booking.id);
     
+    // Early return for training/meeting entries - these don't have booking details
+    if ((booking as any).status === 'training') {
+      toast.info('Training Session', {
+        description: 'This carer is currently in training. No appointment details available.'
+      });
+      return;
+    }
+    
+    if ((booking as any).status === 'meeting') {
+      toast.info('External Meeting', {
+        description: 'This carer is in an external meeting. No appointment details available.'
+      });
+      return;
+    }
+    
     // Fetch full booking data from database
     console.log('[BookingsTab] Fetching full booking data from database...');
     
