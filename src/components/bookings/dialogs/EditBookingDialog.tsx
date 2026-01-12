@@ -968,38 +968,40 @@ export function EditBookingDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Status Change Preview */}
-            {statusWillChange && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 text-sm">
-                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    Status will be updated
-                  </p>
-                  <p className="text-blue-700 dark:text-blue-300">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                      {currentStatus}
-                    </span>
-                    <span className="mx-2">→</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      {predictedStatus}
-                    </span>
-                  </p>
-                </div>
+          {statusWillChange && (
+            <div className="flex-shrink-0 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 text-sm">
+                <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  Status will be updated
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                    {currentStatus}
+                  </span>
+                  <span className="mx-2">→</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {predictedStatus}
+                  </span>
+                </p>
               </div>
-            )}
-            
-            {/* Validation Alert */}
+            </div>
+          )}
+          
+          {/* Validation Alert */}
+          <div className="flex-shrink-0">
             <BookingValidationAlert
               isValidating={isValidating}
               validationError={validationResult?.error}
               isValid={validationResult?.isValid}
               conflictCount={validationResult?.conflictingBookings?.length}
             />
-            
-            {/* Scrollable Content Area */}
-            <div className="overflow-y-auto flex-1 px-1 -mx-1">
+          </div>
+          
+          {/* Scrollable Content Area */}
+          <div className="overflow-y-auto flex-1 min-h-0 px-1 -mx-1">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -1454,8 +1456,8 @@ export function EditBookingDialog({
 
                 </form>
               </Form>
-            </div>
-          </>
+          </div>
+        </div>
 
         {/* Overlap Alert Dialog */}
         <BookingOverlapAlert
