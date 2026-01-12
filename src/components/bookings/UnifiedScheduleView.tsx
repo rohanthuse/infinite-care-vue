@@ -99,16 +99,29 @@ export function UnifiedScheduleView({
   // Force refresh all booking-related caches
   const handleForceRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    console.log('[UnifiedScheduleView] 🔄 Force refreshing all booking caches...');
+    console.log('[UnifiedScheduleView] 🔄 Force refreshing all booking caches for branchId:', branchId);
     
     try {
-      // Clear all booking-related caches
-      await queryClient.invalidateQueries({ queryKey: ["branch-bookings"] });
+      // Invalidate with correct query key including branchId
+      if (branchId) {
+        await queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+        await queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId], type: 'active' });
+        console.log('[UnifiedScheduleView] ✅ Invalidated branch-bookings for branchId:', branchId);
+      } else {
+        // Fallback: invalidate all branch-bookings queries using predicate
+        await queryClient.invalidateQueries({ 
+          predicate: (query) => query.queryKey[0] === "branch-bookings" 
+        });
+        await queryClient.refetchQueries({ 
+          predicate: (query) => query.queryKey[0] === "branch-bookings",
+          type: 'active'
+        });
+        console.log('[UnifiedScheduleView] ✅ Invalidated all branch-bookings queries');
+      }
+      
+      // Also invalidate organization-level queries
       await queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
       await queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
-      
-      // Force immediate refetch of active queries
-      await queryClient.refetchQueries({ queryKey: ["branch-bookings"], type: 'active' });
       await queryClient.refetchQueries({ queryKey: ["organization-calendar"], type: 'active' });
       await queryClient.refetchQueries({ queryKey: ["organization-bookings"], type: 'active' });
       
@@ -120,7 +133,7 @@ export function UnifiedScheduleView({
     } finally {
       setIsRefreshing(false);
     }
-  }, [queryClient]);
+  }, [queryClient, branchId]);
 
   // Build client active_until map for drag-drop validation
   const clientActiveMap = useMemo(() => {
