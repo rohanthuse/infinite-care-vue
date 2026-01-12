@@ -2,22 +2,8 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Stethoscope, Phone, Mail, MapPin, Building } from "lucide-react";
-import { format, parseISO, isValid } from "date-fns";
-
-// Helper to safely parse date values that may be strings or Date objects
-const safeParseDateValue = (value: any): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date && isValid(value)) return value;
-  if (typeof value === 'string') {
-    try {
-      const parsed = parseISO(value);
-      return isValid(parsed) ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-  return undefined;
-};
+import { format } from "date-fns";
+import { safeParseDateValue } from "@/utils/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
 import { StaffMultiSelect } from "@/components/ui/staff-multi-select";
