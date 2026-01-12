@@ -3,18 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Plus, Trash2, CalendarDays, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, CalendarDays, Clock, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
+import { EnhancedStaffSelector } from "@/components/ui/enhanced-staff-selector";
+import { EnhancedStaff } from "@/hooks/useSearchableStaff";
 
 interface AnnualLeaveManagerProps {
   branchId: string;
@@ -26,6 +27,9 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
   const [isFullDay, setIsFullDay] = useState(true);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [selectedCarerId, setSelectedCarerId] = useState<string>('');
+  const [selectedCarerData, setSelectedCarerData] = useState<EnhancedStaff | null>(null);
+  const [isWeeklyRecurring, setIsWeeklyRecurring] = useState(false);
 
   const { data: annualLeave = [], isLoading } = useAnnualLeave(branchId);
   const createAnnualLeave = useCreateAnnualLeave();
@@ -33,6 +37,11 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedCarerId) {
+      toast.error("Please select a carer");
+      return;
+    }
     
     if (!selectedDate) {
       toast.error("Please select a date");
@@ -58,10 +67,12 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
 
     const leaveData = {
       branch_id: branchId,
+      staff_id: selectedCarerId,
       leave_date: format(selectedDate, 'yyyy-MM-dd'),
       leave_name: leaveName.trim(),
       is_company_wide: false,
       is_recurring: false,
+      is_weekly_recurring: isWeeklyRecurring,
       start_time: isFullDay ? null : startTime,
       end_time: isFullDay ? null : endTime
     };
@@ -73,6 +84,9 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
         setIsFullDay(true);
         setStartTime("09:00");
         setEndTime("17:00");
+        setSelectedCarerId('');
+        setSelectedCarerData(null);
+        setIsWeeklyRecurring(false);
       }
     });
   };
@@ -109,10 +123,26 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
               <Plus className="h-5 w-5 text-green-600" />
               Add Holiday / Annual Leave Date
             </h3>
-            <p className="text-gray-500 mt-1">Add holiday or leave dates for this branch</p>
+            <p className="text-gray-500 mt-1">Add holiday for carer</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Carer Selection */}
+            <div>
+              <Label>Select Carer *</Label>
+              <div className="mt-1">
+                <EnhancedStaffSelector
+                  branchId={branchId}
+                  selectedStaffId={selectedCarerId}
+                  onStaffSelect={(id, data) => {
+                    setSelectedCarerId(id);
+                    setSelectedCarerData(data);
+                  }}
+                  placeholder="Search and select a carer..."
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="leaveName">Holiday Name *</Label>
@@ -189,6 +219,26 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   />
                 </div>
               )}
+
+              {/* Weekly Recurring Option */}
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Repeat className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="weeklyRecurring" className="font-medium cursor-pointer">
+                      Repeat Every Week
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      This holiday will repeat on the same day every week for one year (52 weeks)
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="weeklyRecurring"
+                  checked={isWeeklyRecurring}
+                  onCheckedChange={setIsWeeklyRecurring}
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-3">
@@ -201,13 +251,16 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   setIsFullDay(true);
                   setStartTime("09:00");
                   setEndTime("17:00");
+                  setSelectedCarerId('');
+                  setSelectedCarerData(null);
+                  setIsWeeklyRecurring(false);
                 }}
               >
                 Clear Form
               </Button>
               <Button
                 type="submit"
-                disabled={createAnnualLeave.isPending || !selectedDate || !leaveName.trim()}
+                disabled={createAnnualLeave.isPending || !selectedDate || !leaveName.trim() || !selectedCarerId}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -238,8 +291,10 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Holiday Name</TableHead>
+                    <TableHead>Carer</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -248,6 +303,11 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   {sortedLeave.map((holiday) => (
                     <TableRow key={holiday.id}>
                       <TableCell className="font-medium">{holiday.leave_name}</TableCell>
+                      <TableCell>
+                        {holiday.staff_name || (
+                          <span className="text-muted-foreground italic">N/A</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -263,6 +323,18 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                         ) : (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             All Day
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {holiday.is_weekly_recurring ? (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            <Repeat className="h-3 w-3 mr-1" />
+                            Weekly
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                            One-time
                           </Badge>
                         )}
                       </TableCell>
