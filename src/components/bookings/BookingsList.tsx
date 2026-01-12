@@ -465,8 +465,10 @@ export const BookingsList: React.FC<BookingsListProps> = ({
             <p className="text-muted-foreground text-sm mt-1">
               {hasActiveFilters ? (
                 <>Showing {filteredBookings.length} of {bookings.length} appointments</>
+              ) : totalCount && totalCount > bookings.length ? (
+                <>Showing {bookings.length} of {totalCount.toLocaleString()} total appointments</>
               ) : (
-                <>View and manage all booked appointments</>
+                <>Total: {bookings.length.toLocaleString()} appointments</>
               )}
             </p>
           </div>
