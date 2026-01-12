@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, Calendar, Clock, Heart, Info, TrendingUp, Thermometer, Wind, Droplets, HelpCircle } from "lucide-react";
-import { useClientNews2Data, useClientNews2History } from "@/hooks/useClientNews2Data";
+import { useClientNews2Data, useClientNews2History, ClientNews2Observation } from "@/hooks/useClientNews2Data";
+import { useClientVisitVitals, DisplayVitalRecord } from "@/hooks/useClientVisitVitals";
 import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { format } from "date-fns";
 import { ClientNews2History } from "./ClientNews2History";
@@ -23,7 +24,61 @@ export const ClientNews2Dashboard = ({
   // Pass clientId to hooks - they will use it if provided, otherwise fall back to authenticated client
   const { data: news2Data, isLoading, error } = useClientNews2Data(clientId);
   const { data: observations } = useClientNews2History(clientId);
+  const { data: visitVitals, isLoading: isLoadingVisitVitals } = useClientVisitVitals(clientId);
   const { navigateToClientPage } = useClientNavigation();
+
+  // Merge visit vitals with news2 observations for complete history
+  // Visit vitals are the carer recordings during visits
+  const mergedObservations = React.useMemo(() => {
+    const visitVitalRecords: ClientNews2Observation[] = (visitVitals || []).map((vv: DisplayVitalRecord) => ({
+      id: vv.id,
+      news2_patient_id: '',
+      total_score: vv.total_score,
+      risk_level: vv.risk_level,
+      recorded_at: vv.recorded_at,
+      respiratory_rate: vv.respiratory_rate,
+      respiratory_rate_score: 0,
+      oxygen_saturation: vv.oxygen_saturation,
+      oxygen_saturation_score: 0,
+      supplemental_oxygen: vv.supplemental_oxygen,
+      supplemental_oxygen_score: 0,
+      systolic_bp: vv.systolic_bp,
+      systolic_bp_score: 0,
+      diastolic_bp: vv.diastolic_bp,
+      diastolic_bp_score: 0,
+      pulse_rate: vv.pulse_rate,
+      pulse_rate_score: 0,
+      consciousness_level: vv.consciousness_level,
+      consciousness_level_score: 0,
+      temperature: vv.temperature,
+      temperature_score: 0,
+      notes: vv.notes,
+      recorded_by: vv.carer_first_name && vv.carer_last_name ? {
+        first_name: vv.carer_first_name,
+        last_name: vv.carer_last_name,
+      } : undefined,
+      // Extended visit context
+      visit_context: {
+        booking_id: vv.booking_id,
+        booking_reference: vv.booking_reference,
+        visit_date: vv.visit_date,
+        carer_name: vv.carer_name,
+      },
+    }));
+    
+    // Combine with news2 observations, removing duplicates by ID
+    const existingIds = new Set(visitVitalRecords.map(v => v.id));
+    const filteredObservations = (observations || []).filter(o => !existingIds.has(o.id));
+    
+    // Merge and sort by date
+    const combined = [...visitVitalRecords, ...filteredObservations];
+    combined.sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+    
+    return combined;
+  }, [visitVitals, observations]);
+
+  // Get latest observation from merged data
+  const latestFromVisitVitals = visitVitals && visitVitals.length > 0 ? visitVitals[0] : null;
 
   if (isLoading) {
     return (
@@ -136,9 +191,25 @@ export const ClientNews2Dashboard = ({
     return 'bg-green-500 text-white';
   };
 
-  const latestObservation = news2Data.latest_observation;
+  // Use latest from visit_vitals if available, otherwise fall back to news2_observations
+  const latestObservation = latestFromVisitVitals ? {
+    id: latestFromVisitVitals.id,
+    total_score: latestFromVisitVitals.total_score,
+    risk_level: latestFromVisitVitals.risk_level as 'low' | 'medium' | 'high',
+    recorded_at: latestFromVisitVitals.recorded_at,
+    respiratory_rate: latestFromVisitVitals.respiratory_rate,
+    oxygen_saturation: latestFromVisitVitals.oxygen_saturation,
+    supplemental_oxygen: latestFromVisitVitals.supplemental_oxygen,
+    systolic_bp: latestFromVisitVitals.systolic_bp,
+    diastolic_bp: latestFromVisitVitals.diastolic_bp,
+    pulse_rate: latestFromVisitVitals.pulse_rate,
+    consciousness_level: latestFromVisitVitals.consciousness_level,
+    temperature: latestFromVisitVitals.temperature,
+    ai_recommendations: undefined,
+  } : news2Data?.latest_observation;
+  
   const currentScore = latestObservation?.total_score || 0;
-  const currentRisk = latestObservation?.risk_level || news2Data.risk_category;
+  const currentRisk = latestObservation?.risk_level || news2Data?.risk_category;
 
   return (
     <div className="space-y-6">
@@ -277,8 +348,8 @@ export const ClientNews2Dashboard = ({
         </Card>
       )}
 
-      {/* History Section */}
-      <ClientNews2History observations={observations || []} />
+      {/* History Section - Pass merged observations with visit context */}
+      <ClientNews2History observations={mergedObservations} />
 
       {/* Educational Information */}
       <Card>
