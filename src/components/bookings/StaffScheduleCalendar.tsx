@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { formatHoursToReadable } from "@/lib/utils";
 import { format, isToday, startOfDay, addHours, isSameHour, startOfWeek, addDays } from "date-fns";
 import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, Target, XCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -1411,12 +1412,12 @@ export function StaffScheduleCalendar({
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="font-medium">
-                    {staffSchedule.reduce((acc: number, staff: any) => {
+                    {formatHoursToReadable(staffSchedule.reduce((acc: number, staff: any) => {
                       if (viewType === 'weekly') {
                         return acc + (staff.totalWeekHours || 0);
                       }
                       return acc + (staff.totalHours || 0);
-                    }, 0).toFixed(1)} Hours
+                    }, 0))}
                   </p>
                   <p className="text-xs text-muted-foreground">Scheduled</p>
                 </div>

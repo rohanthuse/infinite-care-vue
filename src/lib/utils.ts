@@ -48,3 +48,13 @@ export function formatDurationHoursMinutes(totalMinutes: number): string {
   
   return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ${mins} ${mins === 1 ? 'min' : 'mins'}`;
 }
+
+/**
+ * Formats decimal hours to a human-readable hours & minutes string
+ * Examples: 0.5 → "30 mins", 1.5 → "1 hr 30 mins", 2 → "2 hrs"
+ */
+export function formatHoursToReadable(hours: number): string {
+  if (!hours || hours <= 0) return '0 mins';
+  const totalMinutes = Math.round(hours * 60);
+  return formatDurationHoursMinutes(totalMinutes);
+}
