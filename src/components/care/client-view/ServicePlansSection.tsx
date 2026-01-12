@@ -107,7 +107,7 @@ export function ServicePlansSection({ servicePlans }: ServicePlansSectionProps) 
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="service-view-button pointer-events-auto gap-1"
+                          className="service-view-button !pointer-events-auto gap-1"
                           onClick={() => handleView(plan)}
                           title="View Details"
                         >
