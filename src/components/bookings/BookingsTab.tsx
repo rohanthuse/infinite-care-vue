@@ -139,14 +139,31 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
   const pendingRequestCount = pendingRequestsData?.count || 0;
 
-  // Handle auto-focusing booking from search
+  // Sync selectedDate with URL date param changes (for navigateToBookingDate)
   useEffect(() => {
-    const selectedBookingId = searchParams.get('selected');
+    const urlDateParam = searchParams.get('date');
+    if (urlDateParam) {
+      const parsedDate = parseISO(urlDateParam);
+      if (isValid(parsedDate)) {
+        // Only update if different from current selectedDate to avoid loops
+        const currentDateStr = format(selectedDate, 'yyyy-MM-dd');
+        if (urlDateParam !== currentDateStr) {
+          console.log('[BookingsTab] URL date changed, syncing selectedDate:', urlDateParam);
+          setSelectedDate(parsedDate);
+        }
+      }
+    }
+  }, [searchParams]); // Only watch searchParams, not selectedDate
+
+  // Handle auto-focusing booking from search (supports both 'selected' and 'focusBookingId')
+  useEffect(() => {
+    const selectedBookingId = searchParams.get('selected') || searchParams.get('focusBookingId');
     if (selectedBookingId && bookings.length > 0) {
       const booking = bookings.find(b => b.id === selectedBookingId);
       if (booking) {
         // Set focus booking ID to highlight it
         setHighlightedBookingId(selectedBookingId);
+        console.log('[BookingsTab] Auto-focusing booking:', selectedBookingId);
         
         // Change the calendar date to show that booking
         const bookingDate = parseISO(booking.date);
@@ -157,8 +174,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         // Clean up query parameter after 3 seconds
         setTimeout(() => {
           setHighlightedBookingId(null);
-          searchParams.delete('selected');
-          setSearchParams(searchParams, { replace: true });
+          const params = new URLSearchParams(searchParams);
+          params.delete('selected');
+          params.delete('focusBookingId');
+          setSearchParams(params, { replace: true });
         }, 3000);
       }
     }
