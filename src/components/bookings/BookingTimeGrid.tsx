@@ -176,7 +176,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   // Only define these ONCE!
   // Height per hour - must match CSS values for each view type
   const hourHeight = viewType === "weekly" ? 50 : 60; // weekly=50px, daily=60px (matches CSS)
-  const timeInterval = 30; // time interval in minutes (30 = half hour intervals)
+  const timeInterval = 30; // Visual grid interval (30 = half hour visual slots)
+  const dragSnapInterval = 5; // Drag-and-drop snapping precision (5 minutes)
   const timeSlots = Array.from({ length: 24 }, (_, i) =>
     i.toString().padStart(2, '0') + ":00"
   );
@@ -400,8 +401,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     let hours = Math.floor(totalMinutes / 60);
     let minutes = totalMinutes % 60;
     
-    // Round minutes to nearest interval (typically 30 minutes)
-    const roundedMinutes = Math.round(minutes / timeInterval) * timeInterval;
+    // Round minutes to nearest 5-minute interval for precise drag-and-drop
+    const roundedMinutes = Math.round(minutes / dragSnapInterval) * dragSnapInterval;
     
     // Handle overflow when minutes are rounded up
     if (roundedMinutes === 60) {
@@ -468,11 +469,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const timeSlotsPerDay = 24 * (60 / timeInterval);
 
   const getBookingPositionFromDrop = (y: number) => {
-    // Snap Y to nearest 30-min grid
-    const slotHeight = hourHeight / (60 / timeInterval); // 30min = 30px if 60px = 1hr
-    let slotIdx = Math.round(y / slotHeight);
-    let hours = Math.floor(slotIdx * timeInterval / 60);
-    let mins = (slotIdx * timeInterval) % 60;
+    // Snap Y to nearest 5-min grid for precise drag-and-drop
+    const dragSlotHeight = hourHeight / (60 / dragSnapInterval); // 5min = 5px if 60px = 1hr
+    let slotIdx = Math.round(y / dragSlotHeight);
+    let hours = Math.floor(slotIdx * dragSnapInterval / 60);
+    let mins = (slotIdx * dragSnapInterval) % 60;
     // Clamp to valid times
     hours = Math.max(6, Math.min(21, hours)) // booking window 06:00-21:59
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;

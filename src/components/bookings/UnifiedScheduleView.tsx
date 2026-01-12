@@ -63,6 +63,9 @@ interface DragTimeInfo {
   positionY: number;
 }
 
+// 5-minute precision for drag-and-drop snapping
+const DRAG_SNAP_INTERVAL = 5;
+
 export function UnifiedScheduleView({
   date,
   bookings,
@@ -124,21 +127,17 @@ export function UnifiedScheduleView({
     const rect = droppableEl.getBoundingClientRect();
     const xPosition = (window._dragDropPointerX || rect.left) - rect.left;
     
-    // Calculate slot index based on X position
-    const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
-    const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
+    // Calculate 5-minute slots within the hour for precise snapping
+    // Total width per hour depends on timeInterval display (64px for hourly, 64px for 30-min)
+    const PIXELS_PER_HOUR = timeInterval === 60 ? 64 : 64;
+    const DRAG_SLOT_WIDTH = PIXELS_PER_HOUR / 12; // 12 slots of 5 minutes per hour
+    const slotIndex = Math.floor(xPosition / DRAG_SLOT_WIDTH);
     
-    // Convert slot index to time
-    let newStartTime: string;
-    if (timeInterval === 60) {
-      const hours = Math.min(23, Math.max(0, slotIndex));
-      newStartTime = `${hours.toString().padStart(2, '0')}:00`;
-    } else {
-      const totalMinutes = slotIndex * 30;
-      const hours = Math.min(23, Math.floor(totalMinutes / 60));
-      const minutes = totalMinutes % 60;
-      newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    }
+    // Convert slot index to time with 5-minute precision
+    const totalMinutes = slotIndex * DRAG_SNAP_INTERVAL;
+    const hours = Math.min(23, Math.max(0, Math.floor(totalMinutes / 60)));
+    const minutes = totalMinutes % 60;
+    const newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     
     // Calculate end time using stored booking duration
     const duration = window._draggedBookingDuration || 60;
@@ -247,21 +246,16 @@ export function UnifiedScheduleView({
     const rect = droppableEl.getBoundingClientRect();
     const xPosition = (window._dragDropPointerX || rect.left) - rect.left;
     
-    // Calculate which slot was dropped on based on horizontal position
-    const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
-    const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
+    // Calculate 5-minute slots for precise drop positioning
+    const PIXELS_PER_HOUR = timeInterval === 60 ? 64 : 64;
+    const DRAG_SLOT_WIDTH = PIXELS_PER_HOUR / 12; // 12 slots of 5 minutes per hour
+    const slotIndex = Math.floor(xPosition / DRAG_SLOT_WIDTH);
     
-    // Convert slot index to time
-    let newStartTime: string;
-    if (timeInterval === 60) {
-      const hours = Math.min(23, Math.max(0, slotIndex));
-      newStartTime = `${hours.toString().padStart(2, '0')}:00`;
-    } else {
-      const totalMinutes = slotIndex * 30;
-      const hours = Math.min(23, Math.floor(totalMinutes / 60));
-      const minutes = totalMinutes % 60;
-      newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    }
+    // Convert slot index to time with 5-minute precision
+    const totalMinutes = slotIndex * DRAG_SNAP_INTERVAL;
+    const hours = Math.min(23, Math.max(0, Math.floor(totalMinutes / 60)));
+    const minutes = totalMinutes % 60;
+    const newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     
     // Calculate duration and new end time
     const duration = calculateDuration(booking.startTime, booking.endTime);
