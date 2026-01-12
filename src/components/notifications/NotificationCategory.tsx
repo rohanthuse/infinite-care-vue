@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, 
@@ -204,8 +203,12 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
     notifications: allNotifications, 
     isLoading: notificationsLoading, 
     markAsRead,
+    markAllAsRead,
     archiveNotification 
   } = useNotifications(effectiveBranchId);
+  
+  // Filter state
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'high' | 'today'>('all');
   
   // State for medication details dialog
   const [selectedMedication, setSelectedMedication] = useState<any>(null);
@@ -226,7 +229,7 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   };
   
   // Filter notifications by category type
-  const notifications = useMemo(() => {
+  const categoryNotifications = useMemo(() => {
     if (!allNotifications) return [];
     
     const categoryTypes = CATEGORY_TYPE_MAPPING[categoryId] || [];
@@ -234,6 +237,25 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
       categoryTypes.includes(notification.type)
     );
   }, [allNotifications, categoryId]);
+  
+  // Apply active filter to category notifications
+  const notifications = useMemo(() => {
+    switch (activeFilter) {
+      case 'unread':
+        return categoryNotifications.filter(n => !n.read_at);
+      case 'high':
+        return categoryNotifications.filter(n => n.priority === 'high' || n.priority === 'urgent');
+      case 'today':
+        return categoryNotifications.filter(n => {
+          const createdAt = new Date(n.created_at);
+          const today = new Date();
+          return createdAt.toDateString() === today.toDateString();
+        });
+      case 'all':
+      default:
+        return categoryNotifications;
+    }
+  }, [categoryNotifications, activeFilter]);
   
   if (!config) {
     return (
@@ -335,23 +357,40 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   };
 
   const handleMarkAllAsRead = () => {
-    toast({
-      title: "All notifications marked as read",
-      description: `All ${config.title.toLowerCase()} have been marked as read`,
-      duration: 3000,
-    });
+    const unreadCount = categoryNotifications.filter(n => !n.read_at).length;
+    
+    if (unreadCount === 0) {
+      toast({
+        title: "No unread notifications",
+        description: "All notifications are already marked as read",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    markAllAsRead();
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">High</Badge>;
+      case "urgent":
+        return <Badge variant="custom" className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700">High</Badge>;
       case "medium":
-        return <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">Medium</Badge>;
+        return <Badge variant="custom" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700">Medium</Badge>;
       case "low":
-        return <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Low</Badge>;
+        return <Badge variant="custom" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">Low</Badge>;
       default:
         return <Badge variant="outline">Normal</Badge>;
+    }
+  };
+  
+  const getFilterLabel = () => {
+    switch (activeFilter) {
+      case 'unread': return 'Unread';
+      case 'high': return 'High Priority';
+      case 'today': return 'Today';
+      default: return 'Filter';
     }
   };
 
@@ -388,15 +427,27 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
-                Filter
+                {getFilterLabel()}
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>All</DropdownMenuItem>
-              <DropdownMenuItem>Unread</DropdownMenuItem>
-              <DropdownMenuItem>High Priority</DropdownMenuItem>
-              <DropdownMenuItem>Today</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+              <DropdownMenuItem onClick={() => setActiveFilter('all')}>
+                {activeFilter === 'all' && <CheckCircle className="h-4 w-4 mr-2 text-primary" />}
+                All
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveFilter('unread')}>
+                {activeFilter === 'unread' && <CheckCircle className="h-4 w-4 mr-2 text-primary" />}
+                Unread
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveFilter('high')}>
+                {activeFilter === 'high' && <CheckCircle className="h-4 w-4 mr-2 text-primary" />}
+                High Priority
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveFilter('today')}>
+                {activeFilter === 'today' && <CheckCircle className="h-4 w-4 mr-2 text-primary" />}
+                Today
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
