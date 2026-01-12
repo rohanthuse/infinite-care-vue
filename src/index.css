@@ -510,21 +510,41 @@ html {
   background: hsl(var(--foreground) / 0.5) !important;
 }
 
-/* Touch device specific overrides for iPad and mobile */
+/* Touch device specific overrides for iPad and mobile - VISIBLE scrollbars */
 @media (hover: none) and (pointer: coarse) {
   [data-radix-popper-content-wrapper] [cmdk-list],
   [role="dialog"] [cmdk-list],
-  .command-dropdown [cmdk-list] {
+  .command-dropdown [cmdk-list],
+  .dialog-scrollable {
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    overflow-y: scroll !important;
-    scrollbar-width: none !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent !important;
   }
   
+  /* Visible thin scrollbar for touch devices */
   [data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar,
   [role="dialog"] [cmdk-list]::-webkit-scrollbar,
-  .command-dropdown [cmdk-list]::-webkit-scrollbar {
-    display: none !important;
+  .command-dropdown [cmdk-list]::-webkit-scrollbar,
+  .dialog-scrollable::-webkit-scrollbar {
+    display: block !important;
+    width: 6px !important;
+  }
+  
+  [data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar-track,
+  [role="dialog"] [cmdk-list]::-webkit-scrollbar-track,
+  .command-dropdown [cmdk-list]::-webkit-scrollbar-track,
+  .dialog-scrollable::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  
+  [data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar-thumb,
+  [role="dialog"] [cmdk-list]::-webkit-scrollbar-thumb,
+  .command-dropdown [cmdk-list]::-webkit-scrollbar-thumb,
+  .dialog-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 3px !important;
   }
 }
 

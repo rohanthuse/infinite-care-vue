@@ -783,7 +783,7 @@ export function NewBookingDialog({
               </div>
             )}
           </DialogHeader>
-          <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 py-2">
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 py-2 dialog-scrollable">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Booking Mode Selection */}
@@ -877,7 +877,7 @@ export function NewBookingDialog({
                                 className="h-8"
                               />
                             </div>
-                            <div className="max-h-60 overflow-y-auto pointer-events-auto">
+                            <div className="max-h-60 overflow-y-auto pointer-events-auto dialog-scrollable">
                               {isLoadingClients ? (
                                 <div className="p-4 text-center text-sm text-muted-foreground">
                                   Loading clients...

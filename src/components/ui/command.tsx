@@ -60,12 +60,17 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[50vh] overflow-y-auto overflow-x-hidden pointer-events-auto", 
-      "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600", 
-      className)}
+    className={cn(
+      "max-h-[50vh] overflow-y-auto overflow-x-hidden pointer-events-auto dialog-scrollable",
+      "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:block",
+      "[&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-track]:rounded",
+      "[&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:min-h-[40px]",
+      "dark:[&::-webkit-scrollbar-track]:bg-muted dark:[&::-webkit-scrollbar-thumb]:bg-border",
+      className
+    )}
     style={{ 
       scrollbarWidth: 'thin', 
-      scrollbarColor: 'rgb(156 163 175) transparent',
+      scrollbarColor: 'hsl(var(--border)) transparent',
       WebkitOverflowScrolling: 'touch'
     }}
     {...props}

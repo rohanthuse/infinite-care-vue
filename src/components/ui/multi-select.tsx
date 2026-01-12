@@ -200,7 +200,7 @@ export function MultiSelect({
               </button>
             </div>
           )}
-          <CommandList className="max-h-[200px] overflow-y-auto">
+          <CommandList className="max-h-[200px] overflow-y-auto dialog-scrollable">
             <CommandEmpty>
               {showAddOption ? null : emptyText}
             </CommandEmpty>
