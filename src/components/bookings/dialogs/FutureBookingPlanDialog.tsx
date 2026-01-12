@@ -22,16 +22,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar, Download, Clock, Users, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Calendar, Download, Clock, Users, Loader2, Mail, AlertCircle } from "lucide-react";
 import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isAfter, parseISO } from "date-fns";
-import { generateFutureBookingPlanPDF, FutureBookingData } from "@/services/futureBookingPdfGenerator";
+import { generateFutureBookingPlanPDF, generateFutureBookingPlanPDFAsBase64, FutureBookingData } from "@/services/futureBookingPdfGenerator";
 import { Booking } from "../BookingTimeGrid";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Carer {
   id: string;
   name: string;
+  email?: string;
 }
 
 interface FutureBookingPlanDialogProps {
@@ -75,6 +83,7 @@ export function FutureBookingPlanDialog({
   branchId,
 }: FutureBookingPlanDialogProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>("this-week");
   const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
@@ -186,31 +195,32 @@ export function FutureBookingPlanDialog({
 
   const selectedCarer = carers.find((c) => c.id === selectedCarerId);
 
+  // Prepare booking data for PDF generation
+  const prepareBookingData = (): FutureBookingData[] => {
+    return filteredBookings.map((booking) => ({
+      id: booking.id,
+      date: booking.date,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      clientName: booking.clientName || "Unknown Client",
+      clientAddress: booking.location_address || booking.clientAddress || "Address not provided",
+      serviceName: "General Care",
+      status: booking.status || "scheduled",
+    }));
+  };
+
   const handleDownloadPDF = async () => {
     if (!selectedCarer || filteredBookings.length === 0) return;
 
     setIsGenerating(true);
     try {
-      const bookingData: FutureBookingData[] = filteredBookings.map((booking) => {
-        return {
-          id: booking.id,
-          date: booking.date,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          clientName: booking.clientName || "Unknown Client",
-          clientAddress: booking.location_address || booking.clientAddress || "Address not provided",
-          serviceName: "General Care",
-          status: booking.status || "scheduled",
-        };
-      });
-
       await generateFutureBookingPlanPDF({
         carerName: selectedCarer.name,
         branchName,
         branchId,
         dateFrom: dateRange.from,
         dateTo: dateRange.to,
-        bookings: bookingData,
+        bookings: prepareBookingData(),
       });
 
       toast.success("Carer Rota PDF downloaded successfully");
@@ -221,6 +231,74 @@ export function FutureBookingPlanDialog({
       setIsGenerating(false);
     }
   };
+
+  const handleSendEmail = async () => {
+    if (!selectedCarer || filteredBookings.length === 0) return;
+
+    // Check if carer has email
+    if (!selectedCarer.email) {
+      toast.error("This carer doesn't have a registered email address");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      // Generate PDF as base64
+      const { base64, fileName } = await generateFutureBookingPlanPDFAsBase64({
+        carerName: selectedCarer.name,
+        branchName,
+        branchId,
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        bookings: prepareBookingData(),
+      });
+
+      // Get sender name from current user
+      const { data: { user } } = await supabase.auth.getUser();
+      let senderName = "Administrator";
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (profile) {
+          senderName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || "Administrator";
+        }
+      }
+
+      // Call edge function to send email
+      const { data, error } = await supabase.functions.invoke('send-carer-rota-email', {
+        body: {
+          carerName: selectedCarer.name,
+          carerEmail: selectedCarer.email,
+          branchName,
+          dateRange: {
+            startDate: format(dateRange.from, 'yyyy-MM-dd'),
+            endDate: format(dateRange.to, 'yyyy-MM-dd'),
+          },
+          bookingsCount: filteredBookings.length,
+          totalHours: totalHours.toFixed(1),
+          pdfBase64: base64,
+          pdfFileName: fileName,
+          senderName,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Rota sent successfully to ${selectedCarer.email}`);
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      toast.error(error.message || "Failed to send rota email");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const canSendEmail = selectedCarer && selectedCarer.email && filteredBookings.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -247,7 +325,12 @@ export function FutureBookingPlanDialog({
                 <SelectContent>
                   {carers.map((carer) => (
                     <SelectItem key={carer.id} value={carer.id}>
-                      {carer.name}
+                      <span className="flex items-center gap-2">
+                        {carer.name}
+                        {!carer.email && (
+                          <span className="text-xs text-muted-foreground">(no email)</span>
+                        )}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -388,11 +471,46 @@ export function FutureBookingPlanDialog({
             </div>
           )}
 
+          {/* Email Warning for missing email */}
+          {selectedCarer && !selectedCarer.email && (
+            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>Email unavailable - this carer has no registered email address</span>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      onClick={handleSendEmail}
+                      disabled={!canSendEmail || isSendingEmail}
+                    >
+                      {isSendingEmail ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Mail className="h-4 w-4 mr-2" />
+                      )}
+                      {isSendingEmail ? "Sending..." : "Send via Email"}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {selectedCarer && !selectedCarer.email && (
+                  <TooltipContent>
+                    <p>This carer has no registered email address</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
             <Button
               onClick={handleDownloadPDF}
               disabled={!selectedCarerId || filteredBookings.length === 0 || isGenerating}

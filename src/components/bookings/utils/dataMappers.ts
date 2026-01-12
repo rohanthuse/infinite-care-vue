@@ -114,6 +114,7 @@ export function mapDBCarerToCarer(db: any): Carer {
     status: db.status,
     bookings: [],
     bookingCount: 0,
+    email: db.email || undefined,  // Include email for communication features
   };
   
   console.log("[mapDBCarerToCarer] Mapped to:", mappedCarer);
