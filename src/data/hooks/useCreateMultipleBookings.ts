@@ -163,6 +163,11 @@ export function useCreateMultipleBookings(branchId?: string) {
         await queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
         console.log('[useCreateMultipleBookings] ✅ Branch bookings cache invalidated');
         
+        // Organization calendar cache invalidation - CRITICAL for unified schedule view
+        await queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+        await queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
+        console.log('[useCreateMultipleBookings] ✅ Organization calendar cache invalidated');
+        
         // Secondary cache invalidations
         if (data && Array.isArray(data)) {
           const uniqueClientIds = [...new Set(data.map((b: any) => b.client_id).filter(Boolean))];
@@ -200,10 +205,12 @@ export function useCreateMultipleBookings(branchId?: string) {
           }
         }
         
-        // Force immediate refetch of branch bookings
+        // Force immediate refetch of branch bookings and organization calendar
         setTimeout(() => {
           console.log('[useCreateMultipleBookings] Forcing immediate refetch...');
           queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+          queryClient.refetchQueries({ queryKey: ["organization-calendar"], type: 'active' });
+          queryClient.refetchQueries({ queryKey: ["organization-bookings"], type: 'active' });
         }, 100);
         
       } catch (error) {
