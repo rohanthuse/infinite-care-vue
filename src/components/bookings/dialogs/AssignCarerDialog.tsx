@@ -220,7 +220,7 @@ export function AssignCarerDialog({
                         <SelectValue placeholder="Choose a carer to assign..." />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="max-h-[200px]">
+                    <SelectContent className="max-h-[200px] dialog-scrollable">
                       {filteredCarers.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                           {searchQuery ? "No carers found matching your search" : "No carers available"}
