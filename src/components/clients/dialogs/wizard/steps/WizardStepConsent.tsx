@@ -29,9 +29,9 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
       <CardContent className="space-y-6">
         <Tabs defaultValue="having-capacity" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="having-capacity">Having Capacity</TabsTrigger>
-            <TabsTrigger value="lacking-capacity">Lacking Capacity</TabsTrigger>
-            <TabsTrigger value="third-party">Third Party Consent</TabsTrigger>
+            <TabsTrigger value="having-capacity" className="consent-tab-button">Having Capacity</TabsTrigger>
+            <TabsTrigger value="lacking-capacity" className="consent-tab-button">Lacking Capacity</TabsTrigger>
+            <TabsTrigger value="third-party" className="consent-tab-button">Third Party Consent</TabsTrigger>
           </TabsList>
           
           <TabsContent value="having-capacity" className="space-y-4 mt-6">
