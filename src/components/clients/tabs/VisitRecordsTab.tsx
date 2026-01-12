@@ -163,6 +163,205 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
     enabled: !!selectedVisit,
   });
 
+  // Fetch vitals for selected visit
+  const { data: visitVitals = [] } = useQuery({
+    queryKey: ['visit-vitals-details', selectedVisit?.id],
+    queryFn: async () => {
+      if (!selectedVisit) return [];
+      
+      const { data, error } = await supabase
+        .from('visit_vitals')
+        .select('*')
+        .eq('visit_record_id', selectedVisit.id)
+        .order('reading_time', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching visit vitals:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!selectedVisit,
+  });
+
+  // Fetch fluid intake records for selected visit
+  const { data: fluidIntake = [] } = useQuery({
+    queryKey: ['fluid-intake-visit', selectedVisit?.id],
+    queryFn: async () => {
+      if (!selectedVisit) return [];
+      
+      const { data, error } = await supabase
+        .from('fluid_intake_records')
+        .select('*')
+        .eq('visit_record_id', selectedVisit.id)
+        .order('time', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching fluid intake:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!selectedVisit,
+  });
+
+  // Fetch fluid output records for selected visit
+  const { data: fluidOutput = [] } = useQuery({
+    queryKey: ['fluid-output-visit', selectedVisit?.id],
+    queryFn: async () => {
+      if (!selectedVisit) return [];
+      
+      const { data, error } = await supabase
+        .from('fluid_output_records')
+        .select('*')
+        .eq('visit_record_id', selectedVisit.id)
+        .order('time', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching fluid output:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!selectedVisit,
+  });
+
+  // Fetch urinary output records for selected visit
+  const { data: urinaryOutput = [] } = useQuery({
+    queryKey: ['urinary-output-visit', selectedVisit?.id],
+    queryFn: async () => {
+      if (!selectedVisit) return [];
+      
+      const { data, error } = await supabase
+        .from('urinary_output_records')
+        .select('*')
+        .eq('visit_record_id', selectedVisit.id)
+        .order('time', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching urinary output:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!selectedVisit,
+  });
+
+  // Fetch service report for mood/engagement
+  const { data: serviceReport } = useQuery({
+    queryKey: ['service-report-for-visit', selectedVisit?.booking_id],
+    queryFn: async () => {
+      if (!selectedVisit?.booking_id) return null;
+      
+      const { data, error } = await supabase
+        .from('client_service_reports')
+        .select('client_mood, client_engagement, carer_observations')
+        .eq('booking_id', selectedVisit.booking_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching service report:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!selectedVisit?.booking_id,
+  });
+
+  // Fetch booking details for scheduled times
+  const { data: bookingDetails } = useQuery({
+    queryKey: ['booking-details-visit', selectedVisit?.booking_id],
+    queryFn: async () => {
+      if (!selectedVisit?.booking_id) return null;
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('start_time, end_time')
+        .eq('id', selectedVisit.booking_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching booking details:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!selectedVisit?.booking_id,
+  });
+
+  // Fetch care plan for activities/goals
+  const { data: carePlan } = useQuery({
+    queryKey: ['client-care-plan-visit', selectedVisit?.client_id],
+    queryFn: async () => {
+      if (!selectedVisit?.client_id) return null;
+      
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id')
+        .eq('client_id', selectedVisit.client_id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching care plan:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!selectedVisit?.client_id,
+  });
+
+  // Fetch activities from care plan
+  const { data: activities = [] } = useQuery({
+    queryKey: ['activities-visit', carePlan?.id],
+    queryFn: async () => {
+      if (!carePlan?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('client_activities')
+        .select('*')
+        .eq('care_plan_id', carePlan.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching activities:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!carePlan?.id,
+  });
+
+  // Fetch goals from care plan
+  const { data: goals = [] } = useQuery({
+    queryKey: ['goals-visit', carePlan?.id],
+    queryFn: async () => {
+      if (!carePlan?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('client_care_plan_goals')
+        .select('*')
+        .eq('care_plan_id', carePlan.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[VisitRecordsTab] Error fetching goals:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!carePlan?.id,
+  });
+
   const getCompletionBadge = (percentage: number) => {
     if (percentage >= 100) {
       return <Badge variant="custom" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Complete</Badge>;
@@ -364,6 +563,14 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
         visitTasks={visitTasks}
         visitMedications={visitMedications}
         visitEvents={visitEvents}
+        visitVitals={visitVitals}
+        fluidIntake={fluidIntake}
+        fluidOutput={fluidOutput}
+        urinaryOutput={urinaryOutput}
+        serviceReport={serviceReport}
+        bookingDetails={bookingDetails}
+        activities={activities}
+        goals={goals}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
