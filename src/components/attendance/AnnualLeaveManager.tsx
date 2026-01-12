@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,21 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, Plus, Trash2, CalendarDays, Clock, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
+import { useAnnualLeave, useCreateAnnualLeave, useDeleteBulkAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
 import { TimePickerField } from "@/components/care/forms/TimePickerField";
 import { EnhancedStaffSelector } from "@/components/ui/enhanced-staff-selector";
 import { EnhancedStaff } from "@/hooks/useSearchableStaff";
 
 interface AnnualLeaveManagerProps {
   branchId: string;
+}
+
+interface GroupedHoliday {
+  firstEntry: AnnualLeave;
+  count: number;
+  firstDate: string;
+  lastDate: string;
+  allIds: string[];
 }
 
 export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
@@ -33,7 +41,53 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
 
   const { data: annualLeave = [], isLoading } = useAnnualLeave(branchId);
   const createAnnualLeave = useCreateAnnualLeave();
-  const deleteAnnualLeave = useDeleteAnnualLeave();
+  const deleteBulkAnnualLeave = useDeleteBulkAnnualLeave();
+
+  // Group weekly recurring holidays by staff + leave_name + created_at (same batch)
+  const groupedLeave = useMemo(() => {
+    const sortedLeave = [...annualLeave].sort((a, b) =>
+      new Date(a.leave_date).getTime() - new Date(b.leave_date).getTime()
+    );
+
+    const groups: Map<string, GroupedHoliday> = new Map();
+    
+    sortedLeave.forEach(holiday => {
+      if (holiday.is_weekly_recurring) {
+        // Group key: staff_id + leave_name + created_at (same batch)
+        // Use created_at truncated to minute to group entries created together
+        const createdAtMinute = holiday.created_at.substring(0, 16);
+        const key = `${holiday.staff_id || 'no-staff'}-${holiday.leave_name}-${createdAtMinute}`;
+        
+        if (!groups.has(key)) {
+          groups.set(key, {
+            firstEntry: holiday,
+            count: 1,
+            firstDate: holiday.leave_date,
+            lastDate: holiday.leave_date,
+            allIds: [holiday.id]
+          });
+        } else {
+          const group = groups.get(key)!;
+          group.count++;
+          group.allIds.push(holiday.id);
+          // Track date range
+          if (holiday.leave_date < group.firstDate) group.firstDate = holiday.leave_date;
+          if (holiday.leave_date > group.lastDate) group.lastDate = holiday.leave_date;
+        }
+      } else {
+        // One-time holidays stay as individual entries
+        groups.set(holiday.id, {
+          firstEntry: holiday,
+          count: 1,
+          firstDate: holiday.leave_date,
+          lastDate: holiday.leave_date,
+          allIds: [holiday.id]
+        });
+      }
+    });
+    
+    return Array.from(groups.values());
+  }, [annualLeave]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,15 +145,15 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
     });
   };
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteAnnualLeave.mutate(id);
+  const handleBulkDelete = (ids: string[], name: string, count: number) => {
+    const message = count > 1 
+      ? `Are you sure you want to delete "${name}" and all ${count} weekly occurrences?`
+      : `Are you sure you want to delete "${name}"?`;
+      
+    if (confirm(message)) {
+      deleteBulkAnnualLeave.mutate(ids);
     }
   };
-
-  const sortedLeave = annualLeave.sort((a, b) =>
-    new Date(a.leave_date).getTime() - new Date(b.leave_date).getTime()
-  );
 
   if (isLoading) {
     return (
@@ -276,10 +330,10 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-6">
             <CalendarDays className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold">Annual Leave Calendar ({sortedLeave.length})</h3>
+            <h3 className="text-lg font-semibold">Annual Leave Calendar ({groupedLeave.length} entries)</h3>
           </div>
 
-          {sortedLeave.length === 0 ? (
+          {groupedLeave.length === 0 ? (
             <div className="text-center py-8">
               <CalendarDays className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No holidays or annual leave dates scheduled</p>
@@ -292,33 +346,46 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                   <TableRow>
                     <TableHead>Holiday Name</TableHead>
                     <TableHead>Carer</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Schedule</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedLeave.map((holiday) => (
-                    <TableRow key={holiday.id}>
-                      <TableCell className="font-medium">{holiday.leave_name}</TableCell>
+                  {groupedLeave.map((group) => (
+                    <TableRow key={group.firstEntry.id}>
+                      <TableCell className="font-medium">{group.firstEntry.leave_name}</TableCell>
                       <TableCell>
-                        {holiday.staff_name || (
+                        {group.firstEntry.staff_name || (
                           <span className="text-muted-foreground italic">N/A</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                          {format(new Date(holiday.leave_date), 'EEEE, MMM dd, yyyy')}
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          {group.firstEntry.is_weekly_recurring ? (
+                            <div>
+                              <div className="font-medium">
+                                Every {format(new Date(group.firstDate), 'EEEE')}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {format(new Date(group.firstDate), 'MMM dd, yyyy')} - {format(new Date(group.lastDate), 'MMM dd, yyyy')}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ({group.count} occurrences)
+                              </div>
+                            </div>
+                          ) : (
+                            <span>{format(new Date(group.firstDate), 'EEEE, MMM dd, yyyy')}</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {holiday.start_time && holiday.end_time ? (
+                        {group.firstEntry.start_time && group.firstEntry.end_time ? (
                           <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                             <Clock className="h-3 w-3 mr-1" />
-                            {holiday.start_time.slice(0, 5)} - {holiday.end_time.slice(0, 5)}
+                            {group.firstEntry.start_time.slice(0, 5)} - {group.firstEntry.end_time.slice(0, 5)}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -327,7 +394,7 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        {holiday.is_weekly_recurring ? (
+                        {group.firstEntry.is_weekly_recurring ? (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                             <Repeat className="h-3 w-3 mr-1" />
                             Weekly
@@ -338,15 +405,12 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        {format(new Date(holiday.created_at), 'MMM dd, yyyy')}
-                      </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDelete(holiday.id, holiday.leave_name)}
-                          disabled={deleteAnnualLeave.isPending}
+                          onClick={() => handleBulkDelete(group.allIds, group.firstEntry.leave_name, group.count)}
+                          disabled={deleteBulkAnnualLeave.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
