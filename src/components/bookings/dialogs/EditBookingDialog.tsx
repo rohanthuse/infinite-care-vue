@@ -1001,7 +1001,7 @@ export function EditBookingDialog({
           </div>
           
           {/* Scrollable Content Area */}
-          <div className="overflow-y-auto flex-1 min-h-0 px-1 -mx-1">
+          <div className="dialog-scrollable flex-1 min-h-0 px-1 -mx-1">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField

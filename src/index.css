@@ -428,6 +428,47 @@ html {
   display: none;
 }
 
+/* Force visible scrollbars for dialog content (fixes macOS overlay scrollbars) */
+.dialog-scrollable {
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) - always show scrollbar */
+.dialog-scrollable::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.dialog-scrollable::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.dialog-scrollable::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+  min-height: 40px; /* Ensure thumb is always grabbable */
+}
+
+.dialog-scrollable::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.4);
+}
+
+/* Dark mode adjustments */
+.dark .dialog-scrollable::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+.dark .dialog-scrollable::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+}
+
+.dark .dialog-scrollable::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.5);
+}
+
 /* Force scrollbar visibility in command dropdowns */
 [data-radix-popper-content-wrapper] [cmdk-list],
 [role="dialog"] [cmdk-list],
