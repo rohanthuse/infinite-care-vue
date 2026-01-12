@@ -6,7 +6,7 @@ import { DayBookingsDialog } from "./DayBookingsDialog";
 import { AnnualLeave } from "@/hooks/useLeaveManagement";
 import { AlertTriangle } from "lucide-react";
 import { requiresReassignment, getReassignmentBadgeText, getBookingStatusColor, getEffectiveBookingStatus } from "./utils/bookingColors";
-import { isHolidayOnDate } from "@/utils/holidayHelpers";
+import { isHolidayOnDate, getHolidaysForDate } from "@/utils/holidayHelpers";
 
 export interface Booking {
   id: string;
@@ -129,11 +129,11 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
       }));
   };
 
-  // Get holiday for a specific day (with recurring support)
-  const getHolidayForDay = (day: Date): AnnualLeave | null => {
-    if (!holidays) return null;
-    
-    return holidays.find(holiday => isHolidayOnDate(holiday, day)) || null;
+  // Get all holidays for a specific day (with recurring support)
+  // This returns ALL holidays (both carer-specific and branch-wide) for display
+  const getHolidaysForDay = (day: Date): AnnualLeave[] => {
+    if (!holidays) return [];
+    return getHolidaysForDate(holidays, day);
   };
 
   // Get status color for booking (using effective status for late/missed)
@@ -227,39 +227,40 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   >
                   {format(day, "d")}
                 </span>
-                {(dayBookings.length > 0 || dayLeave.length > 0 || getHolidayForDay(day)) && (
+                {(dayBookings.length > 0 || dayLeave.length > 0 || getHolidaysForDay(day).length > 0) && (
                   <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                    {dayBookings.length + dayLeave.length + (getHolidayForDay(day) ? 1 : 0)}
+                    {dayBookings.length + dayLeave.length + getHolidaysForDay(day).length}
                   </span>
                 )}
               </div>
 
               {/* Bookings, Holidays, and Leave list */}
               <div className="space-y-1">
-                {/* Holiday indicator (FIRST) */}
-                {(() => {
-                  const dayHoliday = getHolidayForDay(day);
-                  if (dayHoliday) {
-                    return (
-                      <div
-                        className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm border-l-2 bg-teal-400 border-teal-600 text-white"
-                        title={`${dayHoliday.leave_name}${dayHoliday.is_recurring ? ' (Recurring Annual Holiday)' : ''}${dayHoliday.is_company_wide ? '\nCompany-wide' : ''}\n${format(day, 'MMMM d, yyyy')}`}
-                      >
-                        <div className="font-semibold truncate flex items-center gap-1">
-                          <span className="bg-white text-teal-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                            H
-                          </span>
-                          <span className="truncate">{dayHoliday.leave_name}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] opacity-90 ml-5">
-                          {dayHoliday.is_recurring && <span>🔁 Recurring</span>}
-                          {dayHoliday.is_company_wide && <span>🏢 Company-wide</span>}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                {/* Holiday indicators (FIRST) - shows all holidays including carer-specific with names */}
+                {getHolidaysForDay(day).map((dayHoliday) => (
+                  <div
+                    key={dayHoliday.id}
+                    className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm border-l-2 bg-teal-400 border-teal-600 text-white"
+                    title={`${dayHoliday.leave_name}${dayHoliday.staff_name ? ` - ${dayHoliday.staff_name}` : ''}${dayHoliday.is_recurring ? ' (Recurring Annual Holiday)' : ''}${dayHoliday.is_company_wide ? '\nCompany-wide' : dayHoliday.staff_id ? '\nCarer-specific' : ''}\n${format(day, 'MMMM d, yyyy')}`}
+                  >
+                    <div className="font-semibold truncate flex items-center gap-1">
+                      <span className="bg-white text-teal-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                        H
+                      </span>
+                      <span className="truncate">
+                        {dayHoliday.leave_name}
+                        {dayHoliday.staff_name && (
+                          <span className="opacity-75"> ({dayHoliday.staff_name})</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] opacity-90 ml-5">
+                      {dayHoliday.is_recurring && <span>🔁 Recurring</span>}
+                      {dayHoliday.is_company_wide && <span>🏢 Company-wide</span>}
+                      {dayHoliday.staff_id && !dayHoliday.is_company_wide && <span>👤 Carer</span>}
+                    </div>
+                  </div>
+                ))}
                 
                 {/* Leave indicators (SECOND) */}
                 {dayLeave.map((leave) => (
@@ -335,7 +336,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   )}
 
                 {/* Empty state - add booking button */}
-                {dayBookings.length === 0 && dayLeave.length === 0 && !getHolidayForDay(day) && isCurrentMonth && (
+                {dayBookings.length === 0 && dayLeave.length === 0 && getHolidaysForDay(day).length === 0 && isCurrentMonth && (
                   <button
                     onClick={() => onCreateBooking?.(day, "08:00", undefined, undefined)}
                     className="w-full text-[10px] text-muted-foreground hover:text-primary px-1.5 py-1 rounded border border-dashed border-border hover:border-primary transition-colors opacity-0 hover:opacity-100"

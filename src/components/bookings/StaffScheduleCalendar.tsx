@@ -16,7 +16,7 @@ import { useStaffScheduleEvents, StaffTrainingEvent, StaffAppointmentEvent } fro
 import { useStaffWorkingHours } from "@/hooks/useStaffWorkingHours";
 import { StaffWorkingHoursDialog } from "@/components/staff/StaffWorkingHoursDialog";
 import { useTenant } from "@/contexts/TenantContext";
-import { isHolidayOnDate } from "@/utils/holidayHelpers";
+import { isHolidayOnDate, getHolidayForStaff } from "@/utils/holidayHelpers";
 import { extractPostcodeFromAddress } from "@/utils/postcodeUtils";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
@@ -268,9 +268,10 @@ export function StaffScheduleCalendar({
           );
           weekLeave[dayDate] = dayLeave || null;
           
-          // Check for holidays on this day (with recurring support)
+          // Check for holidays on this day that apply to THIS staff member
+          // (either their own carer-specific holiday OR a branch-wide holiday)
           const dayOfWeek = addDays(weekStart, i);
-          const dayHoliday = holidays.find(holiday => isHolidayOnDate(holiday, dayOfWeek));
+          const dayHoliday = getHolidayForStaff(holidays, dayOfWeek, member.id);
           weekHolidays[dayDate] = dayHoliday || null;
         }
         
