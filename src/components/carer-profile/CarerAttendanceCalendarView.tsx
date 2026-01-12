@@ -13,10 +13,9 @@ import {
   isSameMonth,
   isSameDay,
   isToday,
-  getDay,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,10 +26,13 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  LogIn,
+  LogOut,
+  FileText,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AttendanceDayDetailPopover } from "./AttendanceDayDetailPopover";
+import { AttendanceDayDetailCard } from "./AttendanceDayDetailPopover";
 import { cn } from "@/lib/utils";
 
 interface CarerAttendanceCalendarViewProps {
@@ -98,6 +100,7 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<ViewType>("weekly");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Calculate date range based on view type
   const dateRange = useMemo(() => {
@@ -141,6 +144,12 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
     return map;
   }, [attendanceRecords]);
 
+  // Get selected day's record
+  const selectedRecord = useMemo(() => {
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    return recordsByDate.get(dateStr) || null;
+  }, [selectedDate, recordsByDate]);
+
   // Calculate summary stats
   const summary = useMemo(() => {
     if (!attendanceRecords) return { present: 0, late: 0, absent: 0, totalHours: 0 };
@@ -177,6 +186,7 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
 
   const handleToday = () => {
     setCurrentDate(new Date());
+    setSelectedDate(new Date());
   };
 
   // Get days to display
@@ -200,17 +210,22 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
         const dateStr = format(day, "yyyy-MM-dd");
         const record = recordsByDate.get(dateStr);
         const statusColor = record ? getStatusColor(record.status) : null;
+        const isSelected = isSameDay(day, selectedDate);
 
         return (
-          <AttendanceDayDetailPopover key={dateStr} date={day} record={record || null}>
-            <Card
-              className={cn(
-                "cursor-pointer transition-all hover:shadow-md border",
-                isToday(day) && "ring-2 ring-primary",
-                record ? statusColor?.bg : "bg-muted/30"
-              )}
-            >
-              <CardContent className="p-3 text-center">
+          <Card
+            key={dateStr}
+            onClick={() => setSelectedDate(day)}
+            className={cn(
+              "cursor-pointer transition-all hover:shadow-md border",
+              isSelected && "ring-2 ring-primary shadow-md",
+              isToday(day) && !isSelected && "ring-1 ring-primary/50",
+              record ? statusColor?.bg : "bg-muted/30"
+            )}
+          >
+            <CardContent className="p-3">
+              {/* Date Header */}
+              <div className="text-center mb-2">
                 <p className="text-xs font-medium text-muted-foreground">
                   {format(day, "EEE")}
                 </p>
@@ -220,35 +235,62 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
                 )}>
                   {format(day, "d")}
                 </p>
-                <p className="text-xs text-muted-foreground mb-2">
+                <p className="text-xs text-muted-foreground">
                   {format(day, "MMM")}
                 </p>
-                
-                {record ? (
-                  <div className="space-y-1">
-                    <Badge
-                      variant="custom"
-                      className={cn("text-xs", statusColor?.bg, statusColor?.text)}
-                    >
-                      {record.status}
-                    </Badge>
-                    {record.check_in_time && (
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(`2000-01-01T${record.check_in_time}`), "HH:mm")}
-                      </p>
-                    )}
-                    {record.hours_worked != null && (
-                      <p className="text-xs font-medium text-foreground">
-                        {record.hours_worked.toFixed(1)}h
-                      </p>
-                    )}
+              </div>
+              
+              {/* Inline Attendance Details */}
+              {record ? (
+                <div className="space-y-1.5 pt-2 border-t border-border/50">
+                  <Badge
+                    variant="custom"
+                    className={cn("text-xs w-full justify-center", statusColor?.bg, statusColor?.text)}
+                  >
+                    {record.status}
+                  </Badge>
+                  
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <LogIn className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    <span>
+                      {record.check_in_time
+                        ? format(new Date(`2000-01-01T${record.check_in_time}`), "HH:mm")
+                        : "-"}
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">-</p>
-                )}
-              </CardContent>
-            </Card>
-          </AttendanceDayDetailPopover>
+                  
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <LogOut className="h-3 w-3 text-red-600 dark:text-red-400" />
+                    <span>
+                      {record.check_out_time
+                        ? format(new Date(`2000-01-01T${record.check_out_time}`), "HH:mm")
+                        : "-"}
+                    </span>
+                  </div>
+                  
+                  {record.hours_worked != null && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span className="font-medium text-foreground">
+                        {record.hours_worked.toFixed(1)}h
+                      </span>
+                    </div>
+                  )}
+                  
+                  {record.notes && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <FileText className="h-3 w-3" />
+                      <span className="truncate" title={record.notes}>Note</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground text-center">No record</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
       })}
     </div>
@@ -276,34 +318,66 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
           const record = recordsByDate.get(dateStr);
           const statusColor = record ? getStatusColor(record.status) : null;
           const isCurrentMonth = isSameMonth(day, currentDate);
+          const isSelected = isSameDay(day, selectedDate);
 
           return (
-            <AttendanceDayDetailPopover key={dateStr} date={day} record={record || null}>
-              <div
-                className={cn(
-                  "aspect-square p-1 rounded-lg cursor-pointer transition-all hover:shadow-md border",
-                  isToday(day) && "ring-2 ring-primary",
-                  !isCurrentMonth && "opacity-40",
-                  record ? statusColor?.bg : "bg-card hover:bg-muted/50"
-                )}
-              >
-                <div className="h-full flex flex-col items-center justify-center">
-                  <span
-                    className={cn(
-                      "text-sm font-medium",
-                      isToday(day) ? "text-primary" : "text-foreground"
-                    )}
-                  >
-                    {format(day, "d")}
-                  </span>
-                  {record && (
-                    <span className={cn("text-lg", statusColor?.text)}>
-                      {statusColor?.icon}
-                    </span>
+            <div
+              key={dateStr}
+              onClick={() => setSelectedDate(day)}
+              className={cn(
+                "min-h-[100px] p-2 rounded-lg cursor-pointer transition-all hover:shadow-md border",
+                isSelected && "ring-2 ring-primary shadow-md",
+                isToday(day) && !isSelected && "ring-1 ring-primary/50",
+                !isCurrentMonth && "opacity-40",
+                record ? statusColor?.bg : "bg-card hover:bg-muted/50"
+              )}
+            >
+              <div className="flex flex-col h-full">
+                {/* Day Number */}
+                <span
+                  className={cn(
+                    "text-sm font-medium mb-1",
+                    isToday(day) ? "text-primary" : "text-foreground"
                   )}
-                </div>
+                >
+                  {format(day, "d")}
+                </span>
+                
+                {/* Inline Details */}
+                {record && (
+                  <div className="flex-1 space-y-1">
+                    <Badge
+                      variant="custom"
+                      className={cn("text-xs", statusColor?.bg, statusColor?.text)}
+                    >
+                      {statusColor?.icon} {record.status}
+                    </Badge>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      {record.check_in_time && record.check_out_time ? (
+                        <span>
+                          {format(new Date(`2000-01-01T${record.check_in_time}`), "HH:mm")}
+                          {" - "}
+                          {format(new Date(`2000-01-01T${record.check_out_time}`), "HH:mm")}
+                        </span>
+                      ) : record.check_in_time ? (
+                        <span>In: {format(new Date(`2000-01-01T${record.check_in_time}`), "HH:mm")}</span>
+                      ) : null}
+                    </div>
+                    
+                    {record.hours_worked != null && (
+                      <div className="text-xs font-medium text-foreground">
+                        {record.hours_worked.toFixed(1)}h
+                      </div>
+                    )}
+                    
+                    {record.notes && (
+                      <FileText className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                )}
               </div>
-            </AttendanceDayDetailPopover>
+            </div>
           );
         })}
       </div>
@@ -418,12 +492,22 @@ export const CarerAttendanceCalendarView: React.FC<CarerAttendanceCalendarViewPr
         </div>
       </div>
 
-      {/* Calendar View */}
-      <Card>
-        <CardContent className="p-4">
-          {viewType === "weekly" ? renderWeeklyView() : renderMonthlyView()}
-        </CardContent>
-      </Card>
+      {/* Calendar View with Details Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Calendar Grid - Takes 3 columns on large screens */}
+        <div className="lg:col-span-3">
+          <Card>
+            <CardContent className="p-4">
+              {viewType === "weekly" ? renderWeeklyView() : renderMonthlyView()}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Selected Day Details Panel - Takes 1 column on large screens */}
+        <div className="lg:col-span-1">
+          <AttendanceDayDetailCard date={selectedDate} record={selectedRecord} />
+        </div>
+      </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-sm">
