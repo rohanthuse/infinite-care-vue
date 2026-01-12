@@ -7486,6 +7486,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          archived_at: string | null
           branch_id: string | null
           category: string
           created_at: string
@@ -7503,6 +7504,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           branch_id?: string | null
           category: string
           created_at?: string
@@ -7520,6 +7522,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           branch_id?: string | null
           category?: string
           created_at?: string

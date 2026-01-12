@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMemo } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, 
   Users, User, Calendar, Pill, FileText, AlertCircle,
   RefreshCw, Filter, ChevronDown, Eye, MoreHorizontal,
-  MessageSquare, ClipboardList
+  MessageSquare, ClipboardList, Archive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { useTenant } from "@/contexts/TenantContext";
+import { MedicationDetailsDialog } from "@/components/care/medication/MedicationDetailsDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationCategoryProps {
   categoryId: string;
@@ -198,7 +200,16 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   const effectiveBranchName = branchName || params.branchName;
   
   // Get notifications and filter by category type - pass branchId for branch-specific filtering
-  const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications(effectiveBranchId);
+  const { 
+    notifications: allNotifications, 
+    isLoading: notificationsLoading, 
+    markAsRead,
+    archiveNotification 
+  } = useNotifications(effectiveBranchId);
+  
+  // State for medication details dialog
+  const [selectedMedication, setSelectedMedication] = useState<any>(null);
+  const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
   
   const config = categoryConfig[categoryId as keyof typeof categoryConfig];
   
@@ -257,6 +268,68 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
     toast({
       title: "Marked as read",
       description: "Notification has been marked as read",
+      duration: 2000,
+    });
+  };
+
+  const handleViewDetails = async (notification: Notification) => {
+    // For medication notifications, fetch full medication data using the medication_id from notification.data
+    if (categoryId === 'medication' && notification.data?.medication_id) {
+      try {
+        const { data: medication, error } = await supabase
+          .from('client_medications')
+          .select('*')
+          .eq('id', notification.data.medication_id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching medication:', error);
+          toast({ 
+            title: "Error", 
+            description: "Failed to load medication details", 
+            variant: "destructive" 
+          });
+          return;
+        }
+        
+        if (medication) {
+          setSelectedMedication(medication);
+          setIsMedicationDialogOpen(true);
+        } else {
+          toast({ 
+            title: "Not Found", 
+            description: "Medication details not found", 
+            variant: "destructive" 
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching medication details:', error);
+        toast({ 
+          title: "Error", 
+          description: "Failed to load medication details", 
+          variant: "destructive" 
+        });
+      }
+    } else {
+      // For other notification types, show a generic toast for now
+      toast({
+        title: "View Details",
+        description: `Viewing details for: ${notification.title}`,
+        duration: 2000,
+      });
+    }
+    
+    // Mark notification as read when viewing details
+    if (!notification.read_at) {
+      markAsRead(notification.id);
+    }
+  };
+
+  const handleArchive = (notificationId: string) => {
+    archiveNotification(notificationId);
+    toast({
+      title: "Archived",
+      description: "Notification has been archived",
       duration: 2000,
     });
   };
@@ -457,9 +530,23 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Mark as Read</DropdownMenuItem>
-                          <DropdownMenuItem>Archive</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewDetails(notification)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          {!notification.read_at && (
+                            <DropdownMenuItem onClick={() => handleMarkAsRead(notification.id)}>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark as Read
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem 
+                            onClick={() => handleArchive(notification.id)}
+                            className="text-destructive"
+                          >
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -476,6 +563,13 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Medication Details Dialog */}
+      <MedicationDetailsDialog
+        isOpen={isMedicationDialogOpen}
+        onClose={() => setIsMedicationDialogOpen(false)}
+        medication={selectedMedication}
+      />
     </div>
   );
 };

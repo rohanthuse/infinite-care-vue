@@ -16,6 +16,7 @@ export interface Notification {
   message: string;
   data?: any;
   read_at?: string;
+  archived_at?: string;
   created_at: string;
   updated_at: string;
   expires_at?: string;
@@ -56,6 +57,7 @@ export const useNotifications = (branchId?: string, organizationId?: string) => 
           .from('notifications')
           .select('*')
           .eq('user_id', user.id) // Filter by current user
+          .is('archived_at', null) // Exclude archived notifications
           .order('created_at', { ascending: false })
           .limit(50);
 
@@ -260,6 +262,62 @@ export const useNotifications = (branchId?: string, organizationId?: string) => 
     },
   });
 
+  // Archive notification with optimistic updates
+  const archiveNotificationMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error archiving notification:', error);
+        throw error;
+      }
+    },
+    onMutate: async (notificationId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['notifications', branchId] });
+      await queryClient.cancelQueries({ queryKey: ['notification-stats', branchId] });
+
+      const previousNotifications = queryClient.getQueryData<Notification[]>(['notifications', branchId]);
+      const previousStats = queryClient.getQueryData<NotificationStats>(['notification-stats', branchId]);
+
+      // Optimistically remove the notification from the list
+      queryClient.setQueryData<Notification[]>(['notifications', branchId], (old) =>
+        old?.filter(n => n.id !== notificationId) || []
+      );
+
+      // Optimistically update stats
+      const notification = previousNotifications?.find(n => n.id === notificationId);
+      const wasUnread = notification && !notification.read_at;
+      
+      queryClient.setQueryData<NotificationStats>(['notification-stats', branchId], (old) => ({
+        total_count: Math.max(0, (old?.total_count || 0) - 1),
+        unread_count: wasUnread ? Math.max(0, (old?.unread_count || 0) - 1) : (old?.unread_count || 0),
+        high_priority_count: old?.high_priority_count || 0,
+        by_type: old?.by_type || {}
+      }));
+
+      return { previousNotifications, previousStats };
+    },
+    onError: (error, notificationId, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['notifications', branchId], context.previousNotifications);
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(['notification-stats', branchId], context.previousStats);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to archive notification",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      debouncedInvalidateQueries();
+    },
+  });
+
   // Mark all as read with error handling
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
@@ -418,8 +476,10 @@ export const useNotifications = (branchId?: string, organizationId?: string) => 
     error,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
+    archiveNotification: archiveNotificationMutation.mutate,
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
+    isArchiving: archiveNotificationMutation.isPending,
   };
 };
 
