@@ -52,9 +52,10 @@ interface StaffScheduleCalendarProps {
 }
 
 interface StaffStatus {
-  type: 'assigned' | 'in-progress' | 'done' | 'leave' | 'unavailable' | 'available';
+  type: 'assigned' | 'in-progress' | 'done' | 'leave' | 'unavailable' | 'available' | 'holiday';
   booking?: Booking;
   leaveType?: string;
+  holidayName?: string;
 }
 
 interface BookingBlock {
@@ -580,6 +581,21 @@ export function StaffScheduleCalendar({
           });
         }
 
+        // Check for holidays on this day that apply to THIS staff member
+        // Holidays are informational - staff can still be booked (with override)
+        const todayHoliday = getHolidayForStaff(holidays, date, member.id);
+        if (todayHoliday) {
+          timeSlots.forEach(slot => {
+            // Only mark as holiday if slot is currently available (not leave, not booked)
+            if (schedule[slot].type === 'available') {
+              schedule[slot] = {
+                type: 'holiday',
+                holidayName: todayHoliday.leave_name
+              };
+            }
+          });
+        }
+
         // Add training events
         staffEvents
           .filter(event => event.type === 'training' && event.staff_id === member.id)
@@ -751,6 +767,8 @@ export function StaffScheduleCalendar({
         return 'bg-blue-100 border-blue-300 text-blue-800';
       case 'leave':
         return 'bg-red-100 border-red-300 text-red-800';
+      case 'holiday':
+        return 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100';
       case 'unavailable':
         return 'bg-gray-100 border-gray-300 text-gray-800';
       default:
@@ -766,6 +784,8 @@ export function StaffScheduleCalendar({
         return getInitials(status.booking?.clientName);
       case 'leave':
         return status.leaveType?.charAt(0).toUpperCase() || 'L';
+      case 'holiday':
+        return 'H';
       case 'unavailable':
         return 'N/A';
       default:
@@ -779,6 +799,11 @@ export function StaffScheduleCalendar({
       onViewBooking(status.booking);
     } else if (status.type === 'available' && onCreateBooking) {
       onCreateBooking(staffId, timeSlot);
+    } else if (status.type === 'holiday' && onCreateBooking) {
+      // Allow override of holiday with confirmation
+      if (window.confirm(`This carer has a holiday (${status.holidayName}) on this date. Do you still want to create a booking?`)) {
+        onCreateBooking(staffId, timeSlot);
+      }
     }
   };
 
@@ -797,6 +822,16 @@ export function StaffScheduleCalendar({
         <div className="space-y-1">
           <p className="font-medium">{staffName}</p>
           <p className="text-sm text-muted-foreground">Available - Click to create booking</p>
+        </div>
+      );
+    }
+
+    if (status.type === 'holiday') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium">{staffName}</p>
+          <p className="text-sm text-purple-600">🎄 Holiday: {status.holidayName}</p>
+          <p className="text-xs text-muted-foreground">Click to create booking (override holiday)</p>
         </div>
       );
     }
@@ -1251,11 +1286,33 @@ export function StaffScheduleCalendar({
                         );
                       })}
                       
-                       {/* Show "Available" only if no bookings, no leave, AND no holiday */}
+                       {/* Show "Available" if no bookings and no leave (holiday days show override option) */}
                       {(staffMember.weekBookings[header.dateString] || []).length === 0 && 
-                       (!staffMember.weekLeave || !staffMember.weekLeave[header.dateString]) &&
-                       (!staffMember.weekHolidays || !staffMember.weekHolidays[header.dateString]) && (
-                        <div className="text-xs text-muted-foreground text-center pt-4">Available</div>
+                       (!staffMember.weekLeave || !staffMember.weekLeave[header.dateString]) && (
+                        <>
+                          {staffMember.weekHolidays?.[header.dateString] ? (
+                            <div 
+                              className="text-xs text-purple-600 text-center pt-2 cursor-pointer hover:underline"
+                              onClick={() => {
+                                if (onCreateBooking) {
+                                  const holidayName = staffMember.weekHolidays[header.dateString]?.leave_name || 'Holiday';
+                                  if (window.confirm(`${staffMember.name} has a holiday (${holidayName}) on this date. Do you still want to create a booking?`)) {
+                                    onCreateBooking(staffMember.id, '09:00');
+                                  }
+                                }
+                              }}
+                            >
+                              + Add Booking
+                            </div>
+                          ) : (
+                            <div 
+                              className="text-xs text-muted-foreground text-center pt-4 cursor-pointer hover:text-primary"
+                              onClick={() => onCreateBooking?.(staffMember.id, '09:00')}
+                            >
+                              Available
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ))
@@ -1286,17 +1343,24 @@ export function StaffScheduleCalendar({
                           key={slot}
                           className={`
                             border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
-                            ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
+                            ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : 
+                              status.type === 'leave' ? getStatusColor(status) : 
+                              status.type === 'holiday' ? getStatusColor(status) : 'bg-transparent'}
                           `}
                           style={{ 
                             width: SLOT_WIDTH,
                             height: '64px'
                           }}
-                          onClick={() => (status.type === 'available' || status.type === 'leave') && handleCellClick(staffMember.id, slot, status)}
+                          onClick={() => (status.type === 'available' || status.type === 'leave' || status.type === 'holiday') && handleCellClick(staffMember.id, slot, status)}
                         >
                           {status.type === 'leave' && (
                             <div className="flex items-center justify-center h-full text-xs font-medium">
                               {getStatusLabel(status)}
+                            </div>
+                          )}
+                          {status.type === 'holiday' && (
+                            <div className="flex items-center justify-center h-full text-xs font-medium text-purple-700">
+                              H
                             </div>
                           )}
                         </div>
