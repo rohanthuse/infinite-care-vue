@@ -24,10 +24,13 @@ export interface LeaveRequest {
 export interface AnnualLeave {
   id: string;
   branch_id?: string;
+  staff_id?: string;
+  staff_name?: string;
   leave_date: string;
   leave_name: string;
   is_company_wide: boolean;
   is_recurring: boolean;
+  is_weekly_recurring?: boolean;
   created_by: string;
   created_at: string;
   start_time?: string;
@@ -45,10 +48,12 @@ export interface CreateLeaveRequest {
 
 export interface CreateAnnualLeave {
   branch_id?: string;
+  staff_id?: string;
   leave_date: string;
   leave_name: string;
   is_company_wide?: boolean;
   is_recurring?: boolean;
+  is_weekly_recurring?: boolean;
   start_time?: string | null;
   end_time?: string | null;
 }
@@ -98,17 +103,29 @@ export const useAnnualLeave = (branchId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from('annual_leave_calendar')
-        .select('*')
+        .select(`
+          *,
+          staff:staff_id (
+            id,
+            first_name,
+            last_name
+          )
+        `)
         .order('leave_date', { ascending: true });
 
       if (branchId) {
-        // Show both branch-specific holidays AND company-wide holidays
-        query = query.or(`branch_id.eq.${branchId},is_company_wide.eq.true`);
+        // Show branch-specific holidays for this branch
+        query = query.eq('branch_id', branchId);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as AnnualLeave[];
+      
+      // Map staff name to a flat field
+      return data?.map(item => ({
+        ...item,
+        staff_name: item.staff ? `${item.staff.first_name} ${item.staff.last_name}` : undefined
+      })) as AnnualLeave[];
     }
   });
 };
@@ -247,6 +264,40 @@ export const useCreateAnnualLeave = () => {
   return useMutation({
     mutationFn: async (leave: CreateAnnualLeave) => {
       const { data: userData } = await supabase.auth.getUser();
+      
+      // If weekly recurring, create multiple entries for the next 52 weeks
+      if (leave.is_weekly_recurring && leave.leave_date) {
+        const baseDate = new Date(leave.leave_date);
+        const entries = [];
+        
+        for (let week = 0; week < 52; week++) {
+          const weekDate = new Date(baseDate);
+          weekDate.setDate(baseDate.getDate() + (week * 7));
+          
+          entries.push({
+            branch_id: leave.branch_id,
+            staff_id: leave.staff_id,
+            leave_date: weekDate.toISOString().split('T')[0],
+            leave_name: leave.leave_name,
+            is_company_wide: leave.is_company_wide || false,
+            is_recurring: leave.is_recurring || false,
+            is_weekly_recurring: true,
+            start_time: leave.start_time,
+            end_time: leave.end_time,
+            created_by: userData.user?.id || ''
+          });
+        }
+        
+        const { data, error } = await supabase
+          .from('annual_leave_calendar')
+          .insert(entries)
+          .select();
+          
+        if (error) throw error;
+        return data[0]; // Return first entry for success message
+      }
+      
+      // Single entry (non-recurring)
       const { data, error } = await supabase
         .from('annual_leave_calendar')
         .insert([{

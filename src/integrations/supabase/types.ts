@@ -646,8 +646,10 @@ export type Database = {
           id: string
           is_company_wide: boolean
           is_recurring: boolean
+          is_weekly_recurring: boolean | null
           leave_date: string
           leave_name: string
+          staff_id: string | null
           start_time: string | null
           updated_at: string
         }
@@ -659,8 +661,10 @@ export type Database = {
           id?: string
           is_company_wide?: boolean
           is_recurring?: boolean
+          is_weekly_recurring?: boolean | null
           leave_date: string
           leave_name: string
+          staff_id?: string | null
           start_time?: string | null
           updated_at?: string
         }
@@ -672,8 +676,10 @@ export type Database = {
           id?: string
           is_company_wide?: boolean
           is_recurring?: boolean
+          is_weekly_recurring?: boolean | null
           leave_date?: string
           leave_name?: string
+          staff_id?: string | null
           start_time?: string | null
           updated_at?: string
         }
@@ -683,6 +689,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_calendar_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
