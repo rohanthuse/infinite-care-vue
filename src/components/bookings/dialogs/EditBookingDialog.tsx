@@ -1109,7 +1109,7 @@ export function EditBookingDialog({
                                 </Button>
                               </div>
                               {/* Scrollable Carers List */}
-                              <ScrollArea className="max-h-[200px]">
+                              <div className="max-h-[200px] overflow-y-auto">
                                 {filteredCarers.length === 0 ? (
                                   <div className="p-4 text-center text-sm text-muted-foreground">
                                     {carerSearchInput ? 'No carers match your search' : 'No carers available'}
@@ -1156,7 +1156,7 @@ export function EditBookingDialog({
                                     })}
                                   </div>
                                 )}
-                              </ScrollArea>
+                              </div>
                               {/* Selected count footer */}
                               {field.value?.length > 0 && (
                                 <div className="p-2 border-t bg-muted/50">
