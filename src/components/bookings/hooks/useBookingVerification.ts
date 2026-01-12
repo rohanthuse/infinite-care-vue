@@ -159,11 +159,58 @@ export function useBookingVerification({ branchId }: BookingVerificationProps) {
     }
   };
 
+  // Add a function to verify database count matches cache count
+  const verifyBookingCountIntegrity = async () => {
+    if (!branchId) return true;
+    
+    try {
+      console.log('[useBookingVerification] Verifying booking count integrity...');
+      
+      // Get database count
+      const { count: dbCount, error } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('branch_id', branchId);
+      
+      if (error) {
+        console.error('[useBookingVerification] Count query failed:', error);
+        return true; // Don't block on error
+      }
+      
+      // Get cache count
+      const cachedData = queryClient.getQueryData<any>(["branch-bookings", branchId]);
+      const cacheCount = cachedData?.bookings?.length || 0;
+      
+      console.log('[useBookingVerification] Count comparison - DB:', dbCount, 'Cache:', cacheCount);
+      
+      // If significant mismatch (more than 10% difference or more than 5 bookings difference)
+      if (dbCount && Math.abs(dbCount - cacheCount) > Math.max(5, dbCount * 0.1)) {
+        console.warn('[useBookingVerification] ⚠️ Significant count mismatch detected - forcing refresh');
+        
+        // Remove and refetch
+        queryClient.removeQueries({ queryKey: ["branch-bookings", branchId] });
+        await queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+        
+        toast.info('Calendar data refreshed', {
+          description: 'Booking display has been synchronized'
+        });
+        
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[useBookingVerification] Count verification error:', error);
+      return true; // Don't block on error
+    }
+  };
+
   return {
     isVerifying,
     verificationAttempts,
     lastCreatedBookings,
     verifyBookingsAppear,
-    forceRefresh
+    forceRefresh,
+    verifyBookingCountIntegrity
   };
 }

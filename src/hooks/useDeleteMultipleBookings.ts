@@ -69,6 +69,15 @@ export function useDeleteMultipleBookings(branchId?: string) {
     onSuccess: async (result, variables) => {
       console.log('[useDeleteMultipleBookings] Bulk delete completed:', result);
       
+      // CRITICAL: First invalidate ALL booking-related caches to prevent stale data
+      console.log('[useDeleteMultipleBookings] Invalidating all booking caches...');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["branch-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["client-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["carer-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["carer-appointments-full"] }),
+      ]);
+      
       // Collect unique client and staff IDs from successfully deleted bookings
       const uniqueClientIds = new Set<string>();
       const uniqueStaffIds = new Set<string>();
@@ -80,7 +89,7 @@ export function useDeleteMultipleBookings(branchId?: string) {
           if (booking.staffId) uniqueStaffIds.add(booking.staffId);
         });
       
-      // Refetch all affected queries
+      // Force refetch active queries to ensure UI is updated
       await Promise.all([
         queryClient.refetchQueries({ 
           queryKey: ["branch-bookings", branchId],
@@ -104,7 +113,7 @@ export function useDeleteMultipleBookings(branchId?: string) {
         ])
       ]);
       
-      console.log('[useDeleteMultipleBookings] All refetches completed');
+      console.log('[useDeleteMultipleBookings] All cache invalidations and refetches completed');
       
       // Show appropriate toast messages
       if (result.failed.length === 0) {

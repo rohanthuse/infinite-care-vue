@@ -97,7 +97,16 @@ export function useForceDeleteBooking(branchId?: string) {
     onSuccess: async (result, variables) => {
       console.log('[useForceDeleteBooking] Force delete completed:', result);
       
-      // Refetch all affected queries
+      // CRITICAL: First invalidate ALL booking-related caches to prevent stale data
+      console.log('[useForceDeleteBooking] Invalidating all booking caches...');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["branch-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["client-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["carer-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["carer-appointments-full"] }),
+      ]);
+      
+      // Force refetch active queries to ensure UI is updated
       await Promise.all([
         queryClient.refetchQueries({ 
           queryKey: ["branch-bookings", branchId],
@@ -116,6 +125,8 @@ export function useForceDeleteBooking(branchId?: string) {
           type: 'active'
         })
       ].filter(Boolean));
+      
+      console.log('[useForceDeleteBooking] All cache invalidations and refetches completed');
       
       const totalDeleted = 
         result.deletedRecords.bookingServices + 
