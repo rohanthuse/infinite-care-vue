@@ -88,25 +88,35 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
   // Update URL parameters when filters change
   useEffect(() => {
-    const params = new URLSearchParams();
+    // IMPORTANT: Preserve existing search params to avoid wiping out routing state
+    const params = new URLSearchParams(searchParams);
     
+    // Update date param with consistent formatting
     if (selectedDate) {
-      params.set('date', selectedDate.toISOString().split('T')[0]);
+      params.set('date', format(selectedDate, 'yyyy-MM-dd'));
     }
     
+    // Update client/carer filters
     if (selectedClientIds.length > 0) {
       params.set('clients', selectedClientIds.join(','));
+    } else {
+      params.delete('clients');
     }
     
     if (selectedCarerIds.length > 0) {
       params.set('carers', selectedCarerIds.join(','));
+    } else {
+      params.delete('carers');
     }
     
-    // Only update URL if there are meaningful parameters to avoid cluttering
-    if (params.toString()) {
+    // Compare with current to avoid unnecessary updates that cause loops
+    const currentParamsStr = searchParams.toString();
+    const newParamsStr = params.toString();
+    
+    if (currentParamsStr !== newParamsStr) {
       setSearchParams(params, { replace: true });
     }
-  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams]);
+  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams, searchParams]);
 
   const { data: services = [], isLoading: isLoadingServices } = useServices(organization?.id);
   const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId);
@@ -145,15 +155,18 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     if (urlDateParam) {
       const parsedDate = parseISO(urlDateParam);
       if (isValid(parsedDate)) {
-        // Only update if different from current selectedDate to avoid loops
-        const currentDateStr = format(selectedDate, 'yyyy-MM-dd');
-        if (urlDateParam !== currentDateStr) {
-          console.log('[BookingsTab] URL date changed, syncing selectedDate:', urlDateParam);
-          setSelectedDate(parsedDate);
-        }
+        // Use functional update to avoid stale closure issues
+        setSelectedDate(currentDate => {
+          const currentDateStr = format(currentDate, 'yyyy-MM-dd');
+          if (urlDateParam !== currentDateStr) {
+            console.log('[BookingsTab] URL date changed, syncing selectedDate:', urlDateParam);
+            return parsedDate;
+          }
+          return currentDate; // No change, return same reference
+        });
       }
     }
-  }, [searchParams]); // Only watch searchParams, not selectedDate
+  }, [searchParams]);
 
   // Handle auto-focusing booking from search (supports both 'selected' and 'focusBookingId')
   useEffect(() => {
