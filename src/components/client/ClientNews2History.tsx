@@ -4,20 +4,33 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Calendar, TrendingUp, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, TrendingUp, User, ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import { ClientNews2Observation } from "@/hooks/useClientNews2Data";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+// Extended observation type that includes visit context
+interface ObservationWithContext extends ClientNews2Observation {
+  visit_context?: {
+    booking_id?: string;
+    booking_reference?: string;
+    visit_date?: string;
+    carer_name?: string;
+  };
+}
+
 interface ClientNews2HistoryProps {
-  observations: ClientNews2Observation[];
+  observations: ObservationWithContext[];
 }
 
 export const ClientNews2History = ({ observations }: ClientNews2HistoryProps) => {
   const [showChart, setShowChart] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
 
-  if (observations.length === 0) {
+  // Cast observations to extended type
+  const extendedObservations = observations as ObservationWithContext[];
+
+  if (extendedObservations.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -28,10 +41,10 @@ export const ClientNews2History = ({ observations }: ClientNews2HistoryProps) =>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No observation history available yet.</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Your monitoring data will appear here once your care team starts tracking your vital signs.
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No observation history available yet.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Your monitoring data will appear here once your care team starts tracking your vital signs during visits.
             </p>
           </div>
         </CardContent>
@@ -40,7 +53,7 @@ export const ClientNews2History = ({ observations }: ClientNews2HistoryProps) =>
   }
 
   // Prepare chart data (reverse to show chronological order)
-  const chartData = observations
+  const chartData = extendedObservations
     .slice()
     .reverse()
     .slice(-14) // Last 14 observations for better visualization
@@ -49,7 +62,8 @@ export const ClientNews2History = ({ observations }: ClientNews2HistoryProps) =>
       fullDate: obs.recorded_at,
       score: obs.total_score,
       risk: obs.risk_level,
-      index: index
+      index: index,
+      hasVisitContext: !!obs.visit_context?.booking_id,
     }));
 
   const getRiskBadge = (riskLevel: string) => {
@@ -175,48 +189,81 @@ export const ClientNews2History = ({ observations }: ClientNews2HistoryProps) =>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {observations.slice(0, showDetails ? observations.length : 5).map((observation) => (
-              <div key={observation.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                    observation.total_score >= 7 ? 'bg-red-500' :
-                    observation.total_score >= 5 ? 'bg-orange-500' : 'bg-green-500'
-                  }`}>
-                    {observation.total_score}
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {format(new Date(observation.recorded_at), 'MMM d, yyyy')}
+            {extendedObservations.slice(0, showDetails ? extendedObservations.length : 5).map((observation) => (
+              <div key={observation.id} className="p-4 bg-muted/50 dark:bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                      observation.total_score >= 7 ? 'bg-red-500' :
+                      observation.total_score >= 5 ? 'bg-orange-500' : 'bg-green-500'
+                    }`}>
+                      {observation.total_score}
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {format(new Date(observation.recorded_at), 'HH:mm')}
-                      {observation.recorded_by && (
-                        <span className="ml-2">
-                          by {observation.recorded_by.first_name} {observation.recorded_by.last_name}
+                    <div>
+                      <div className="font-medium text-foreground">
+                        {format(new Date(observation.recorded_at), 'MMM d, yyyy')}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {format(new Date(observation.recorded_at), 'HH:mm')}
+                        {observation.recorded_by && (
+                          <span className="ml-2">
+                            by {observation.recorded_by.first_name} {observation.recorded_by.last_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {getRiskBadge(observation.risk_level)}
+                    {observation.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
+                        {observation.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Visit Context - Shows booking/visit details when available */}
+                {observation.visit_context?.booking_id && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <ClipboardList className="h-3.5 w-3.5" />
+                        <span>Visit Ref:</span>
+                        <span className="font-mono text-foreground">
+                          #{observation.visit_context.booking_reference || observation.visit_context.booking_id.slice(0, 8).toUpperCase()}
                         </span>
+                      </div>
+                      {observation.visit_context.carer_name && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <User className="h-3.5 w-3.5" />
+                          <span>Carer:</span>
+                          <span className="text-foreground">{observation.visit_context.carer_name}</span>
+                        </div>
+                      )}
+                      {observation.visit_context.visit_date && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5" />
+                          <span>Visit:</span>
+                          <span className="text-foreground">
+                            {format(new Date(observation.visit_context.visit_date), 'MMM d, HH:mm')}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  {getRiskBadge(observation.risk_level)}
-                  {observation.notes && (
-                    <p className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                      {observation.notes}
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
             ))}
           </div>
           
-          {observations.length > 5 && !showDetails && (
+          {extendedObservations.length > 5 && !showDetails && (
             <div className="text-center mt-4">
               <Button
                 variant="outline"
                 onClick={() => setShowDetails(true)}
               >
-                View All {observations.length} Observations
+                View All {extendedObservations.length} Observations
               </Button>
             </div>
           )}

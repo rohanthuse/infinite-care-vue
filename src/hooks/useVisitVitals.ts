@@ -67,6 +67,10 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['visit-vitals', visitRecordId] });
+      // Invalidate client visit vitals for Health Monitoring tab to update
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['client-visit-vitals', clientId] });
+      }
       
       // Alert for high risk NEWS2 scores
       if (data.vital_type === 'news2' && data.news2_risk_level === 'high') {
@@ -135,6 +139,10 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['visit-vitals', visitRecordId] });
+      // Invalidate client visit vitals for Health Monitoring tab to update
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['client-visit-vitals', clientId] });
+      }
       
       // Alert for high risk NEWS2 scores
       if (data.vital_type === 'news2' && data.news2_risk_level === 'high') {
