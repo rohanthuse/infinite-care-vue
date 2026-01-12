@@ -62,6 +62,10 @@ export function useRealTimeBookingSync(branchId?: string) {
             // Invalidate and refetch booking data - keeps calendar in sync
             queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
             
+            // Also invalidate organization calendar for unified schedule view
+            queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+            queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
+            
             // Note: Toast notifications removed to prevent spam during bulk operations
             // The booking creation handlers already show appropriate success messages
           }
@@ -78,7 +82,10 @@ export function useRealTimeBookingSync(branchId?: string) {
             if (!wasConnected) {
               console.log("[useRealTimeBookingSync] 🔄 Reconnected - forcing full cache refresh");
               queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+              queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+              queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
               queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+              queryClient.refetchQueries({ queryKey: ["organization-calendar"], type: 'active' });
             }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error("[useRealTimeBookingSync] ❌ Real-time connection failed:", status);
