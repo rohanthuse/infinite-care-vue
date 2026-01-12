@@ -1145,17 +1145,13 @@ export function StaffScheduleCalendar({
                     <MapPin className="h-3 w-3 flex-shrink-0" />
                     <span className="truncate">{staffMember.postcode || extractPostcodeFromAddress(staffMember.address) || 'Not provided'}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {viewType === 'weekly' ? (
-                      <>
-                        {staffMember.totalWeekHours?.toFixed(1) || '0.0'}h
-                      </>
-                    ) : (
-                      <>
-                        {staffMember.totalHours?.toFixed(1) || '0.0'}h
-                      </>
-                    )}
-                  </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {formatHoursToReadable(
+                              viewType === 'weekly' 
+                                ? (staffMember.totalWeekHours || 0)
+                                : (staffMember.totalHours || 0)
+                            )}
+                          </div>
                 </div>
 
                 {/* Render based on view type */}
