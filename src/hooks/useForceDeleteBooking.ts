@@ -97,34 +97,37 @@ export function useForceDeleteBooking(branchId?: string) {
     onSuccess: async (result, variables) => {
       console.log('[useForceDeleteBooking] Force delete completed:', result);
       
-      // CRITICAL: First invalidate ALL booking-related caches to prevent stale data
-      console.log('[useForceDeleteBooking] Invalidating all booking caches...');
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["branch-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["client-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["carer-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["carer-appointments-full"] }),
-      ]);
+      // CRITICAL: Use predicate-based invalidation to catch ALL booking-related queries including range-based
+      console.log('[useForceDeleteBooking] Invalidating all booking caches with predicate...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings"
+          );
+        }
+      });
       
-      // Force refetch active queries to ensure UI is updated
-      await Promise.all([
-        queryClient.refetchQueries({ 
-          queryKey: ["branch-bookings", branchId],
-          type: 'active' 
-        }),
-        variables.clientId && queryClient.refetchQueries({ 
-          queryKey: ["client-bookings", variables.clientId],
-          type: 'active'
-        }),
-        variables.staffId && queryClient.refetchQueries({ 
-          queryKey: ["carer-bookings", variables.staffId],
-          type: 'active'
-        }),
-        variables.staffId && queryClient.refetchQueries({ 
-          queryKey: ["carer-appointments-full", variables.staffId],
-          type: 'active'
-        })
-      ].filter(Boolean));
+      // Force refetch active queries using predicate to ensure UI is updated
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
       
       console.log('[useForceDeleteBooking] All cache invalidations and refetches completed');
       

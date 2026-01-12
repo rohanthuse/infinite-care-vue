@@ -69,49 +69,37 @@ export function useDeleteMultipleBookings(branchId?: string) {
     onSuccess: async (result, variables) => {
       console.log('[useDeleteMultipleBookings] Bulk delete completed:', result);
       
-      // CRITICAL: First invalidate ALL booking-related caches to prevent stale data
-      console.log('[useDeleteMultipleBookings] Invalidating all booking caches...');
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["branch-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["client-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["carer-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["carer-appointments-full"] }),
-      ]);
+      // CRITICAL: Use predicate-based invalidation to catch ALL booking-related queries including range-based
+      console.log('[useDeleteMultipleBookings] Invalidating all booking caches with predicate...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings"
+          );
+        }
+      });
       
-      // Collect unique client and staff IDs from successfully deleted bookings
-      const uniqueClientIds = new Set<string>();
-      const uniqueStaffIds = new Set<string>();
-      
-      variables.bookings
-        .filter(b => result.successful.includes(b.id))
-        .forEach(booking => {
-          if (booking.clientId) uniqueClientIds.add(booking.clientId);
-          if (booking.staffId) uniqueStaffIds.add(booking.staffId);
-        });
-      
-      // Force refetch active queries to ensure UI is updated
-      await Promise.all([
-        queryClient.refetchQueries({ 
-          queryKey: ["branch-bookings", branchId],
-          type: 'active' 
-        }),
-        ...Array.from(uniqueClientIds).map(clientId =>
-          queryClient.refetchQueries({ 
-            queryKey: ["client-bookings", clientId],
-            type: 'active'
-          })
-        ),
-        ...Array.from(uniqueStaffIds).flatMap(staffId => [
-          queryClient.refetchQueries({ 
-            queryKey: ["carer-bookings", staffId],
-            type: 'active'
-          }),
-          queryClient.refetchQueries({ 
-            queryKey: ["carer-appointments-full", staffId],
-            type: 'active'
-          })
-        ])
-      ]);
+      // Force refetch active queries using predicate to ensure UI is updated
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
       
       console.log('[useDeleteMultipleBookings] All cache invalidations and refetches completed');
       

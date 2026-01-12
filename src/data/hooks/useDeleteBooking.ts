@@ -47,27 +47,37 @@ export function useDeleteBooking(branchId?: string) {
         });
       }
       
-      // Await all refetch operations to complete before mutation is marked as done
-      await Promise.all([
-        queryClient.refetchQueries({ 
-          queryKey: ["branch-bookings", branchId],
-          type: 'active' 
-        }),
-        variables.clientId ? queryClient.refetchQueries({ 
-          queryKey: ["client-bookings", variables.clientId],
-          type: 'active'
-        }) : Promise.resolve(),
-        variables.staffId ? Promise.all([
-          queryClient.refetchQueries({ 
-            queryKey: ["carer-bookings", variables.staffId],
-            type: 'active'
-          }),
-          queryClient.refetchQueries({ 
-            queryKey: ["carer-appointments-full", variables.staffId],
-            type: 'active'
-          })
-        ]) : Promise.resolve()
-      ]);
+      // CRITICAL: Use predicate-based invalidation to catch ALL booking-related queries including range-based
+      console.log('[useDeleteBooking] Invalidating all booking caches with predicate...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings"
+          );
+        }
+      });
+      
+      // Force refetch active queries using predicate to ensure UI is updated
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
       
       console.log('[useDeleteBooking] All refetches completed');
       toast.success("Booking deleted successfully!");
