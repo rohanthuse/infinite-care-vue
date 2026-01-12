@@ -15,13 +15,13 @@ interface CategoryCounts {
 // Map category IDs to notification types in the database
 // These types match the actual values stored in the notifications table
 const CATEGORY_TYPE_MAPPING: Record<string, string[]> = {
-  staff: ['booking', 'task', 'staff', 'leave_request', 'training'],
-  client: ['client', 'client_request', 'appointment'],
-  system: ['system', 'system_alert', 'error', 'demo_request'],
+  staff: ['booking', 'task', 'staff', 'leave_request', 'training', 'unassigned_booking', 'booking_unavailability'],
+  client: ['client', 'client_request', 'appointment', 'pending_agreement'],
+  system: ['system', 'system_alert', 'error', 'demo_request', 'info'],
   medication: ['medication', 'medication_reminder', 'medication_alert'],
   rota: ['rota', 'rota_change', 'schedule_conflict'],
   document: ['document', 'document_update', 'document_expiry'],
-  reports: ['care_plan', 'report_ready', 'report_error'],
+  reports: ['care_plan', 'report_ready', 'report_error', 'service_report', 'service_report_status'],
   message: ['message'],
 };
 
