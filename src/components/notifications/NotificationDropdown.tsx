@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar, MessageCircle, FileText } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
@@ -308,7 +308,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           
-          <ScrollArea className="max-h-[60vh]">
+          <div className="max-h-[400px] overflow-y-auto dialog-scrollable">
             {recentNotifications.length === 0 ? (
               <>
                 <div className="p-4 text-center text-muted-foreground text-sm">
@@ -363,7 +363,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 </DropdownMenuItem>
               </>
             )}
-          </ScrollArea>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </ErrorBoundary>

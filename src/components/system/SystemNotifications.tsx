@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { useSystemNotifications, SystemNotification } from "@/hooks/useSystemNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -96,7 +96,7 @@ export const SystemNotifications: React.FC = () => {
             <p className="text-sm">No notifications</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] -mx-1 px-1">
+          <div className="max-h-[400px] overflow-y-auto dialog-scrollable -mx-1 px-1">
             <div className="space-y-2">
               {notifications.map((notification) => (
                 <div
@@ -141,7 +141,7 @@ export const SystemNotifications: React.FC = () => {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         )}
         
         <div className="border-t mt-4 pt-4">
