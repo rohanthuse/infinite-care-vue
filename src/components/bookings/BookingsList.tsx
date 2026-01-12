@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, AlertTriangle
+  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, AlertTriangle, X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,6 +50,8 @@ export const BookingsList: React.FC<BookingsListProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteBookingId, setDeleteBookingId] = useState<string | null>(null);
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
@@ -111,7 +113,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     return a.startTime.localeCompare(b.startTime);
   });
 
-  // Filter bookings based on search and status
+  // Check if date range is valid
+  const isDateRangeValid = !dateFrom || !dateTo || dateFrom <= dateTo;
+
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery || dateFrom || dateTo || statusFilter !== "all";
+
+  // Filter bookings based on search, status, and date range
   const filteredBookings = sortedBookings.filter(booking => {
     const matchesSearch = 
       booking.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -130,7 +138,16 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       matchesStatus = booking.status === statusFilter;
     }
     
-    return matchesSearch && matchesStatus;
+    // Date range filter
+    let matchesDateRange = true;
+    if (dateFrom && isDateRangeValid) {
+      matchesDateRange = matchesDateRange && booking.date >= dateFrom;
+    }
+    if (dateTo && isDateRangeValid) {
+      matchesDateRange = matchesDateRange && booking.date <= dateTo;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDateRange;
   });
 
   // Paginate bookings
@@ -446,7 +463,11 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           <div>
             <h2 className="text-xl font-bold text-foreground">Bookings List</h2>
             <p className="text-muted-foreground text-sm mt-1">
-              View and manage all booked appointments
+              {hasActiveFilters ? (
+                <>Showing {filteredBookings.length} of {bookings.length} appointments</>
+              ) : (
+                <>View and manage all booked appointments</>
+              )}
             </p>
           </div>
           <Button 
@@ -459,22 +480,69 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           </Button>
         </div>
         
+        {/* Date range validation warning */}
+        {!isDateRangeValid && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              "From Date" cannot be after "To Date". Please adjust your date range.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[240px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search client, carer or booking ID" 
-              className="pl-10 pr-4 py-2 rounded-md bg-background border-border"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+          {/* Search input */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search client, carer or booking ID" 
+                className="pl-10 pr-4 py-2 rounded-md bg-background border-border"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* Date From */}
+          <div className="w-[160px]">
+            <Input
+              type="date"
+              placeholder="From Date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="py-2 rounded-md bg-background border-border"
             />
           </div>
+          
+          {/* Date To */}
+          <div className="w-[160px]">
+            <Input
+              type="date"
+              placeholder="To Date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="py-2 rounded-md bg-background border-border"
+            />
           </div>
+          
+          {/* Status filter */}
           <div className="w-[200px]">
             <Select 
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setCurrentPage(1);
+              }}
             >
               <SelectTrigger className="w-full rounded-md border-border">
                 <SelectValue placeholder="All Status" />
@@ -500,6 +568,25 @@ export const BookingsList: React.FC<BookingsListProps> = ({
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setDateFrom("");
+                setDateTo("");
+                setStatusFilter("all");
+                setCurrentPage(1);
+              }}
+              className="h-10"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          )}
         </div>
       </div>
       
