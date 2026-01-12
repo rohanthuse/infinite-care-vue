@@ -696,7 +696,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         open={showFuturePlanDialog}
         onOpenChange={setShowFuturePlanDialog}
         bookings={bookings}
-        carers={carers.map(c => ({ id: c.id, name: c.name }))}
+        carers={carers.map(c => ({ id: c.id, name: c.name, email: c.email }))}
         branchName={organization?.name || "Branch"}
         branchId={branchId}
       />
