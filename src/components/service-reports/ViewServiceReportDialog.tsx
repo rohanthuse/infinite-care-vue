@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -208,8 +208,8 @@ export function ViewServiceReportDialog({
   const isAwaitingApproval = safeReport?.status === 'pending' && !hasMissingFields;
 
   // ALL HOOKS MUST BE CALLED HERE - before any early returns
-  // Fetch visit record data
-  const { data: visitRecord, isLoading: visitRecordLoading } = useQuery({
+  // Primary: Fetch visit record by visit_record_id
+  const { data: visitRecordById, isLoading: visitRecordByIdLoading } = useQuery({
     queryKey: ['visit-record', safeReport?.visit_record_id],
     queryFn: async () => {
       if (!safeReport?.visit_record_id) return null;
@@ -225,6 +225,49 @@ export function ViewServiceReportDialog({
     },
     enabled: !!safeReport?.visit_record_id && open && !!report,
   });
+
+  // Fallback: Fetch visit record by booking_id when visit_record_id is missing
+  const { data: visitRecordByBooking, isLoading: visitRecordByBookingLoading } = useQuery({
+    queryKey: ['visit-record-by-booking', safeReport?.booking_id],
+    queryFn: async () => {
+      if (!safeReport?.booking_id || safeReport?.visit_record_id) return null;
+      
+      const { data, error } = await supabase
+        .from('visit_records')
+        .select('*')
+        .eq('booking_id', safeReport.booking_id)
+        .eq('status', 'completed')
+        .order('visit_end_time', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!safeReport?.booking_id && !safeReport?.visit_record_id && open && !!report,
+  });
+
+  // Use whichever visit record is available (primary or fallback)
+  const visitRecord = visitRecordById || visitRecordByBooking;
+  const visitRecordLoading = visitRecordByIdLoading || visitRecordByBookingLoading;
+
+  // Auto-link visit record to service report if found via fallback (background fix)
+  useEffect(() => {
+    const linkVisitRecord = async () => {
+      if (visitRecordByBooking && safeReport?.id && !safeReport?.visit_record_id) {
+        console.log('[ViewServiceReportDialog] Auto-linking visit record:', visitRecordByBooking.id, 'to report:', safeReport.id);
+        const { error } = await supabase
+          .from('client_service_reports')
+          .update({ visit_record_id: visitRecordByBooking.id })
+          .eq('id', safeReport.id);
+        
+        if (error) {
+          console.error('[ViewServiceReportDialog] Failed to auto-link visit record:', error);
+        }
+      }
+    };
+    linkVisitRecord();
+  }, [visitRecordByBooking?.id, safeReport?.id, safeReport?.visit_record_id]);
 
   // Fetch booking data for scheduled times
   const { data: bookingData } = useQuery({
@@ -685,12 +728,12 @@ export function ViewServiceReportDialog({
                   </div>
                 </div>
 
-                {/* Carer Visit Notes (Primary - what carer actually wrote) */}
-                {visitRecord?.visit_notes && (
+                {/* Carer Visit Notes (Primary from visit_records, fallback to carer_observations) */}
+                {(visitRecord?.visit_notes || safeReport.carer_observations) && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Carer Visit Notes</p>
                     <p className="text-sm bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
-                      {visitRecord.visit_notes}
+                      {visitRecord?.visit_notes || safeReport.carer_observations}
                     </p>
                   </div>
                 )}
