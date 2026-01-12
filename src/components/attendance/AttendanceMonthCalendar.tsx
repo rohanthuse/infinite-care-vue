@@ -189,12 +189,6 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
                       </span>
                       <span className="truncate">{dayHoliday.leave_name}</span>
                     </div>
-                    {(dayHoliday.is_recurring || dayHoliday.is_company_wide) && (
-                      <div className="text-[10px] opacity-90 ml-5 flex items-center gap-1">
-                        {dayHoliday.is_recurring && <span>🔁</span>}
-                        {dayHoliday.is_company_wide && <span>🏢</span>}
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -280,16 +274,6 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
                         <div className="text-sm text-muted-foreground mt-1">
                           📅 {format(day, "MMMM d, yyyy")}
                         </div>
-                        {dayHoliday.is_recurring && (
-                          <div className="text-sm text-muted-foreground">
-                            🔁 Recurring Annual Holiday
-                          </div>
-                        )}
-                        {dayHoliday.is_company_wide && (
-                          <div className="text-sm text-muted-foreground">
-                            🏢 Company-wide
-                          </div>
-                        )}
                       </div>
                     )}
                     {hasAttendance && <AttendanceDayTooltip records={dayRecords} date={day} />}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Users, Settings } from "lucide-react";
+import { Calendar, Users } from "lucide-react";
 import { useParams } from "react-router-dom";
 import LeaveRequestsList from "@/components/leave/LeaveRequestsList";
 import AnnualLeaveManager from "@/components/leave/AnnualLeaveManager";
@@ -29,7 +29,7 @@ const LeaveManagement: React.FC = () => {
       </div>
 
       <Tabs defaultValue="requests" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Leave Requests
@@ -44,12 +44,6 @@ const LeaveManagement: React.FC = () => {
             <TabsTrigger value="annual-leave" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Annual Leave
-            </TabsTrigger>
-          )}
-          {isSuperAdmin && (
-            <TabsTrigger value="company-wide" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Company-wide
             </TabsTrigger>
           )}
         </TabsList>
@@ -91,19 +85,6 @@ const LeaveManagement: React.FC = () => {
           </TabsContent>
         )}
 
-        {isSuperAdmin && (
-          <TabsContent value="company-wide" className="space-y-6">
-            <div className="grid gap-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Company-wide Holidays</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Manage holidays that apply to all branches across the company.
-                </p>
-                <AnnualLeaveManager isCompanyWide={true} />
-              </div>
-            </div>
-          </TabsContent>
-        )}
       </Tabs>
 
       {/* Quick Stats */}
