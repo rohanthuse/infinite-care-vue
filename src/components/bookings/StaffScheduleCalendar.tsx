@@ -816,9 +816,16 @@ export function StaffScheduleCalendar({
               {statusLabel}
             </Badge>
           </div>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Client:</span> {status.booking.clientName}</p>
-            <p><span className="font-medium">Time:</span> {status.booking.startTime} - {status.booking.endTime}</p>
+      <div className="space-y-1 text-sm">
+        {/* Use appropriate label based on entry type */}
+        {bookingStatus === 'training' ? (
+          <p><span className="font-medium">Training:</span> {status.booking.clientName}</p>
+        ) : bookingStatus === 'meeting' ? (
+          <p><span className="font-medium">Meeting:</span> {status.booking.clientName}</p>
+        ) : (
+          <p><span className="font-medium">Client:</span> {status.booking.clientName}</p>
+        )}
+        <p><span className="font-medium">Time:</span> {status.booking.startTime} - {status.booking.endTime}</p>
             {status.booking.notes && (
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
             )}
