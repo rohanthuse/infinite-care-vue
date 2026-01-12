@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, Trash2, Building, Globe } from "lucide-react";
+import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
@@ -29,27 +29,15 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [leaveName, setLeaveName] = useState('');
-  const [isCompanyWideLeave, setIsCompanyWideLeave] = useState(isCompanyWide);
-  const [isRecurring, setIsRecurring] = useState(false);
   const [isAllDay, setIsAllDay] = useState(true);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   
   // Filter states
-  const [scopeFilter, setScopeFilter] = useState<"all" | "branch" | "company">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "one-time" | "recurring">("all");
   const [searchFilter, setSearchFilter] = useState("");
 
   // Filter holidays based on current filter settings
   const annualLeave = allAnnualLeave?.filter(holiday => {
-    // Scope filter
-    if (scopeFilter === "branch" && holiday.is_company_wide) return false;
-    if (scopeFilter === "company" && !holiday.is_company_wide) return false;
-    
-    // Type filter
-    if (typeFilter === "one-time" && holiday.is_recurring) return false;
-    if (typeFilter === "recurring" && !holiday.is_recurring) return false;
-    
     // Search filter
     if (searchFilter && !holiday.leave_name.toLowerCase().includes(searchFilter.toLowerCase())) return false;
     
@@ -60,11 +48,11 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
     if (!selectedDate || !leaveName.trim()) return;
 
     await createAnnualLeave.mutateAsync({
-      branch_id: isCompanyWideLeave ? undefined : branchId,
+      branch_id: branchId,
       leave_date: selectedDate.toISOString().split('T')[0],
       leave_name: leaveName.trim(),
-      is_company_wide: isCompanyWideLeave,
-      is_recurring: isRecurring,
+      is_company_wide: false,
+      is_recurring: false,
       start_time: isAllDay ? null : startTime,
       end_time: isAllDay ? null : endTime
     });
@@ -72,8 +60,6 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
     // Reset form
     setSelectedDate(undefined);
     setLeaveName('');
-    setIsCompanyWideLeave(isCompanyWide);
-    setIsRecurring(false);
     setIsAllDay(true);
     setStartTime('09:00');
     setEndTime('17:00');
@@ -94,8 +80,6 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   const filteredCount = annualLeave.length;
 
   const resetFilters = () => {
-    setScopeFilter("all");
-    setTypeFilter("all");
     setSearchFilter("");
   };
 
@@ -209,27 +193,6 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="company-wide"
-                      checked={isCompanyWideLeave}
-                      onCheckedChange={(checked) => setIsCompanyWideLeave(checked as boolean)}
-                    />
-                    <label htmlFor="company-wide" className="text-sm font-medium">
-                      Company-wide holiday
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="recurring"
-                      checked={isRecurring}
-                      onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
-                    />
-                    <label htmlFor="recurring" className="text-sm font-medium">
-                      Recurring annually
-                    </label>
-                  </div>
                 </div>
 
                 <Button
@@ -247,34 +210,6 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
         {/* Filter Controls */}
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Scope:</label>
-              <Select value={scopeFilter} onValueChange={(value: "all" | "branch" | "company") => setScopeFilter(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Holidays</SelectItem>
-                  <SelectItem value="branch">Branch Only</SelectItem>
-                  <SelectItem value="company">Company-wide</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Type:</label>
-              <Select value={typeFilter} onValueChange={(value: "all" | "one-time" | "recurring") => setTypeFilter(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="one-time">One-time</SelectItem>
-                  <SelectItem value="recurring">Recurring</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <label className="text-sm font-medium">Search:</label>
               <Input
@@ -285,7 +220,7 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
               />
             </div>
             
-            {(scopeFilter !== "all" || typeFilter !== "all" || searchFilter) && (
+            {searchFilter && (
               <Button variant="outline" size="sm" onClick={resetFilters}>
                 Clear Filters
               </Button>
@@ -294,7 +229,7 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
           
           <div className="text-sm text-muted-foreground">
             Showing {filteredCount} of {totalHolidays} holidays
-            {(scopeFilter !== "all" || typeFilter !== "all" || searchFilter) && " (filtered)"}
+            {searchFilter && " (filtered)"}
           </div>
         </div>
       </CardHeader>
@@ -314,28 +249,6 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <h4 className="font-medium">{leave.leave_name}</h4>
-                      <div className="flex gap-2">
-                        {leave.is_company_wide ? (
-                          <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
-                            <Globe className="h-3 w-3 mr-1" />
-                            Company-wide
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">
-                            <Building className="h-3 w-3 mr-1" />
-                            Branch Only
-                          </Badge>
-                        )}
-                        {leave.is_recurring ? (
-                          <Badge variant="outline" className="text-xs border-blue-200 text-blue-700 bg-blue-50">
-                            Recurring
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs border-gray-200 text-gray-700">
-                            One-time
-                          </Badge>
-                        )}
-                      </div>
                     </div>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(leave.leave_date), 'EEEE, MMMM dd, yyyy')}

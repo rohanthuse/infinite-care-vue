@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Plus, Trash2, CalendarDays, Building2, Globe, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, CalendarDays, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
@@ -23,8 +23,6 @@ interface AnnualLeaveManagerProps {
 export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [leaveName, setLeaveName] = useState("");
-  const [isCompanyWide, setIsCompanyWide] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
   const [isFullDay, setIsFullDay] = useState(true);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -59,11 +57,11 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
     }
 
     const leaveData = {
-      branch_id: isCompanyWide ? undefined : branchId,
+      branch_id: branchId,
       leave_date: format(selectedDate, 'yyyy-MM-dd'),
       leave_name: leaveName.trim(),
-      is_company_wide: isCompanyWide,
-      is_recurring: isRecurring,
+      is_company_wide: false,
+      is_recurring: false,
       start_time: isFullDay ? null : startTime,
       end_time: isFullDay ? null : endTime
     };
@@ -72,8 +70,6 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
       onSuccess: () => {
         setSelectedDate(undefined);
         setLeaveName("");
-        setIsCompanyWide(false);
-        setIsRecurring(false);
         setIsFullDay(true);
         setStartTime("09:00");
         setEndTime("17:00");
@@ -87,21 +83,7 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
     }
   };
 
-  const renderScope = (isCompanyWide: boolean) => {
-    return isCompanyWide ? (
-      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-        <Globe className="h-3 w-3 mr-1" />
-        Company Wide
-      </Badge>
-    ) : (
-      <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-        <Building2 className="h-3 w-3 mr-1" />
-        Branch Only
-      </Badge>
-    );
-  };
-
-  const sortedLeave = annualLeave.sort((a, b) => 
+  const sortedLeave = annualLeave.sort((a, b) =>
     new Date(a.leave_date).getTime() - new Date(b.leave_date).getTime()
   );
 
@@ -127,7 +109,7 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
               <Plus className="h-5 w-5 text-green-600" />
               Add Holiday / Annual Leave Date
             </h3>
-            <p className="text-gray-500 mt-1">Add company-wide holidays or branch-specific leave dates</p>
+            <p className="text-gray-500 mt-1">Add holiday or leave dates for this branch</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -209,30 +191,6 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
               )}
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="companyWide"
-                  checked={isCompanyWide}
-                  onCheckedChange={(checked) => setIsCompanyWide(checked === true)}
-                />
-                <Label htmlFor="companyWide" className="cursor-pointer">
-                  Company-wide holiday (applies to all branches)
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="recurring"
-                  checked={isRecurring}
-                  onCheckedChange={(checked) => setIsRecurring(checked === true)}
-                />
-                <Label htmlFor="recurring" className="cursor-pointer">
-                  Recurring annual holiday (repeats every year)
-                </Label>
-              </div>
-            </div>
-
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
@@ -240,8 +198,6 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                 onClick={() => {
                   setSelectedDate(undefined);
                   setLeaveName("");
-                  setIsCompanyWide(false);
-                  setIsRecurring(false);
                   setIsFullDay(true);
                   setStartTime("09:00");
                   setEndTime("17:00");
@@ -284,8 +240,6 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                     <TableHead>Holiday Name</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
-                    <TableHead>Scope</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -311,15 +265,6 @@ export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
                             All Day
                           </Badge>
                         )}
-                      </TableCell>
-                      <TableCell>{renderScope(holiday.is_company_wide)}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={holiday.is_recurring ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}
-                        >
-                          {holiday.is_recurring ? 'Recurring' : 'One-time'}
-                        </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">
                         {format(new Date(holiday.created_at), 'MMM dd, yyyy')}

@@ -164,16 +164,6 @@ export function AttendanceLeaveManagement({ branchId }: AttendanceLeaveManagemen
                       {format(new Date(holiday.leave_date), 'EEEE, MMM dd, yyyy')}
                     </p>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={
-                      holiday.is_company_wide 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                        : 'bg-purple-50 text-purple-700 border-purple-200'
-                    }
-                  >
-                    {holiday.is_company_wide ? 'Company Wide' : 'Branch Only'}
-                  </Badge>
                 </div>
               ))}
               {annualLeave.length === 0 && (
