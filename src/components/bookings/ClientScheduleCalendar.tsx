@@ -999,15 +999,16 @@ export function ClientScheduleCalendar({
                       <MapPin className="h-3 w-3" />
                       {client.postcode || 'Postcode not available'}
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {viewType === 'weekly' 
-                          ? `${client.totalWeekHours?.toFixed(1) || '0.0'}h`
-                          : `${client.totalCareHours?.toFixed(1) || '0.0'}h`
-                        }
-                      </span>
-                    </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {formatHoursToReadable(
+                                viewType === 'weekly' 
+                                  ? (client.totalWeekHours || 0)
+                                  : (client.totalCareHours || 0)
+                              )}
+                            </span>
+                          </div>
                   </div>
                 </div>
 
