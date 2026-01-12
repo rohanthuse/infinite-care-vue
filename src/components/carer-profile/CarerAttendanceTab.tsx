@@ -2,6 +2,7 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CarerViewAttendanceTab } from "./CarerViewAttendanceTab";
 import { CarerLeaveManagementTab } from "./CarerLeaveManagementTab";
+import { CarerAttendanceCalendarView } from "./CarerAttendanceCalendarView";
 
 interface CarerAttendanceTabProps {
   carerId: string;
@@ -10,13 +11,18 @@ interface CarerAttendanceTabProps {
 export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId }) => {
   return (
     <div className="w-full">
-      <Tabs defaultValue="view-attendance" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="view-attendance">View Attendance</TabsTrigger>
+      <Tabs defaultValue="calendar-view" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="calendar-view">Calendar View</TabsTrigger>
+          <TabsTrigger value="list-view">List View</TabsTrigger>
           <TabsTrigger value="leave-management">Leave Management</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="view-attendance" className="mt-6">
+        <TabsContent value="calendar-view" className="mt-6">
+          <CarerAttendanceCalendarView carerId={carerId} />
+        </TabsContent>
+        
+        <TabsContent value="list-view" className="mt-6">
           <CarerViewAttendanceTab carerId={carerId} />
         </TabsContent>
         
