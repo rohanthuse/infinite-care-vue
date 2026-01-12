@@ -42,6 +42,7 @@ export const useNotifications = (branchId?: string, organizationId?: string) => 
     data: notifications = [],
     isLoading,
     error,
+    refetch: refetchNotifications,
   } = useQuery({
     queryKey: ['notifications', branchId, organizationId],
     queryFn: async () => {
@@ -480,6 +481,7 @@ export const useNotifications = (branchId?: string, organizationId?: string) => 
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
     isArchiving: archiveNotificationMutation.isPending,
+    refetch: refetchNotifications,
   };
 };
 

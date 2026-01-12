@@ -204,7 +204,8 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
     isLoading: notificationsLoading, 
     markAsRead,
     markAllAsRead,
-    archiveNotification 
+    archiveNotification,
+    refetch
   } = useNotifications(effectiveBranchId);
   
   // Filter state
@@ -218,13 +219,13 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   
   // Map category to notification types - must match useNotificationCategoryCounts.ts
   const CATEGORY_TYPE_MAPPING: Record<string, string[]> = {
-    staff: ['booking', 'task', 'staff', 'leave_request', 'training'],
-    client: ['client', 'client_request', 'appointment'],
-    system: ['system', 'system_alert', 'error', 'demo_request'],
+    staff: ['booking', 'task', 'staff', 'leave_request', 'training', 'unassigned_booking', 'booking_unavailability'],
+    client: ['client', 'client_request', 'appointment', 'pending_agreement'],
+    system: ['system', 'system_alert', 'error', 'demo_request', 'info'],
     medication: ['medication', 'medication_reminder', 'medication_alert'],
     rota: ['rota', 'rota_change', 'schedule_conflict'],
     document: ['document', 'document_update', 'document_expiry'],
-    reports: ['care_plan', 'report_ready', 'report_error'],
+    reports: ['care_plan', 'report_ready', 'report_error', 'service_report', 'service_report_status'],
     message: ['message'],
   };
   
@@ -295,55 +296,147 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   };
 
   const handleViewDetails = async (notification: Notification) => {
-    // For medication notifications, fetch full medication data using the medication_id from notification.data
-    if (categoryId === 'medication' && notification.data?.medication_id) {
-      try {
-        const { data: medication, error } = await supabase
-          .from('client_medications')
-          .select('*')
-          .eq('id', notification.data.medication_id)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('Error fetching medication:', error);
-          toast({ 
-            title: "Error", 
-            description: "Failed to load medication details", 
-            variant: "destructive" 
-          });
-          return;
-        }
-        
-        if (medication) {
-          setSelectedMedication(medication);
-          setIsMedicationDialogOpen(true);
-        } else {
-          toast({ 
-            title: "Not Found", 
-            description: "Medication details not found", 
-            variant: "destructive" 
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching medication details:', error);
-        toast({ 
-          title: "Error", 
-          description: "Failed to load medication details", 
-          variant: "destructive" 
-        });
-      }
-    } else {
-      // For other notification types, show a generic toast for now
-      toast({
-        title: "View Details",
-        description: `Viewing details for: ${notification.title}`,
-        duration: 2000,
-      });
-    }
-    
     // Mark notification as read when viewing details
     if (!notification.read_at) {
       markAsRead(notification.id);
+    }
+    
+    const data = notification.data || {};
+    
+    switch (categoryId) {
+      case 'medication':
+        // For medication notifications, fetch full medication data
+        if (data.medication_id) {
+          try {
+            const { data: medication, error } = await supabase
+              .from('client_medications')
+              .select('*')
+              .eq('id', data.medication_id)
+              .maybeSingle();
+            
+            if (error) {
+              console.error('Error fetching medication:', error);
+              toast({ 
+                title: "Error", 
+                description: "Failed to load medication details", 
+                variant: "destructive" 
+              });
+              return;
+            }
+            
+            if (medication) {
+              setSelectedMedication(medication);
+              setIsMedicationDialogOpen(true);
+            } else {
+              toast({ 
+                title: "Not Found", 
+                description: "Medication details not found", 
+                variant: "destructive" 
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching medication details:', error);
+            toast({ 
+              title: "Error", 
+              description: "Failed to load medication details", 
+              variant: "destructive" 
+            });
+          }
+        } else {
+          toast({
+            title: notification.title,
+            description: notification.message,
+            duration: 4000,
+          });
+        }
+        break;
+
+      case 'staff':
+        // Navigate to booking or staff detail
+        if (data.booking_id) {
+          const path = tenantSlug 
+            ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/bookings`
+            : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/bookings`;
+          navigate(path);
+        } else if (data.carer_id || data.staff_id) {
+          const staffId = data.carer_id || data.staff_id;
+          const path = tenantSlug
+            ? `/${tenantSlug}/carer-profile/${staffId}`
+            : `/carer-profile/${staffId}`;
+          navigate(path);
+        } else {
+          toast({
+            title: notification.title,
+            description: notification.message,
+            duration: 4000,
+          });
+        }
+        break;
+
+      case 'client':
+        // Navigate to client profile
+        if (data.client_id) {
+          const path = tenantSlug
+            ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/clients/${data.client_id}`
+            : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/clients/${data.client_id}`;
+          navigate(path);
+        } else {
+          toast({
+            title: notification.title,
+            description: notification.message,
+            duration: 4000,
+          });
+        }
+        break;
+
+      case 'rota':
+        // Navigate to rota/calendar
+        const rotaPath = tenantSlug
+          ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/rotas-shifts`
+          : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/rotas-shifts`;
+        navigate(rotaPath);
+        break;
+
+      case 'document':
+        // Navigate to documents
+        const docPath = tenantSlug
+          ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/documents`
+          : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/documents`;
+        navigate(docPath);
+        break;
+
+      case 'reports':
+        // Navigate to care plans or service reports
+        if (data.care_plan_id) {
+          const carePlanPath = tenantSlug
+            ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/care-plans`
+            : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/care-plans`;
+          navigate(carePlanPath);
+        } else {
+          const reportsPath = tenantSlug
+            ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/service-reports`
+            : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/service-reports`;
+          navigate(reportsPath);
+        }
+        break;
+
+      case 'message':
+        // Navigate to messages
+        const msgPath = tenantSlug
+          ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/messages`
+          : `/branch-dashboard/${effectiveBranchId}/${encodeURIComponent(effectiveBranchName || '')}/messages`;
+        navigate(msgPath);
+        break;
+
+      case 'system':
+      default:
+        // Show info toast for system alerts
+        toast({
+          title: notification.title,
+          description: notification.message,
+          duration: 4000,
+        });
+        break;
     }
   };
 
@@ -456,7 +549,7 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
             Mark All Read
           </Button>
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
