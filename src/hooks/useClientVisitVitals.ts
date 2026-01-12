@@ -29,8 +29,8 @@ export interface ClientVisitVitalRecord {
   visit_record?: {
     id: string;
     booking_id: string | null;
-    check_in_time: string | null;
-    check_out_time: string | null;
+    visit_start_time: string | null;
+    visit_end_time: string | null;
     booking?: {
       id: string;
       start_time: string;
@@ -124,8 +124,8 @@ export const useClientVisitVitals = (overrideClientId?: string | null) => {
           visit_records!inner (
             id,
             booking_id,
-            check_in_time,
-            check_out_time,
+            visit_start_time,
+            visit_end_time,
             bookings (
               id,
               start_time,
