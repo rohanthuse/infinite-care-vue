@@ -84,22 +84,22 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial values from URL parameters
-  const dateParam = searchParams.get('date');
   const clientParam = searchParams.get('client');
   const focusBookingId = searchParams.get('focusBookingId');
   
   // Parse date parameter or default to today (timezone-safe)
-  const initialDate = useMemo(() => {
-    if (dateParam) {
-      const parsedDate = parseDateOnlyLocal(dateParam);
+  // URL is the SINGLE SOURCE OF TRUTH for the date
+  const urlDateParam = searchParams.get('date');
+  const selectedDate = useMemo(() => {
+    if (urlDateParam) {
+      const parsedDate = parseDateOnlyLocal(urlDateParam);
       if (parsedDate && isValid(parsedDate)) {
         return parsedDate;
       }
     }
     return new Date();
-  }, [dateParam]);
+  }, [urlDateParam]);
   
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [viewType, setViewType] = useState<"daily" | "weekly" | "monthly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>(clientParam ? [clientParam] : []);
@@ -112,42 +112,24 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
   const [showFuturePlanDialog, setShowFuturePlanDialog] = useState(false);
 
-  // Stabilize searchParams dependency by using primitive string
-  const searchParamsString = searchParams.toString();
-  
-  // Update URL parameters when filters change
-  useEffect(() => {
-    // IMPORTANT: Preserve existing search params to avoid wiping out routing state
-    const params = new URLSearchParams(searchParamsString);
+  // Single handler for date changes - updates URL (single source of truth)
+  const handleDateChange = (newDate: Date) => {
+    const newDateStr = format(newDate, 'yyyy-MM-dd');
+    const currentDateStr = urlDateParam || '';
     
-    // Update date param with consistent formatting
-    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-    params.set('date', selectedDateStr);
-    
-    // Update client/carer filters
-    if (selectedClientIds.length > 0) {
-      params.set('clients', selectedClientIds.join(','));
-    } else {
-      params.delete('clients');
-    }
-    
-    if (selectedCarerIds.length > 0) {
-      params.set('carers', selectedCarerIds.join(','));
-    } else {
-      params.delete('carers');
-    }
-    
-    // Compare with current to avoid unnecessary updates that cause loops
-    const newParamsStr = params.toString();
-    
-    if (searchParamsString !== newParamsStr) {
-      console.log('[BookingsTab] URL update: date =', selectedDateStr, 'changed:', searchParamsString !== newParamsStr);
+    // Only update if date actually changed
+    if (newDateStr !== currentDateStr) {
+      console.log('[BookingsTab] handleDateChange:', { from: currentDateStr, to: newDateStr });
+      const params = new URLSearchParams(searchParams);
+      params.set('date', newDateStr);
       setSearchParams(params, { replace: true });
     }
-  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams, searchParamsString]);
+  };
 
   const { data: services = [], isLoading: isLoadingServices } = useServices(organization?.id);
-  const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId);
+  
+  // Pass selectedDate and viewType to useBookingData for range-based fetching
+  const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId, selectedDate, viewType);
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
@@ -172,31 +154,55 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       return { count: count || 0 };
     },
     enabled: !!branchId,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   const pendingRequestCount = pendingRequestsData?.count || 0;
 
-  // Extract URL date param as primitive string for stable dependency
-  const urlDateParam = searchParams.get('date');
-  
-  // Sync selectedDate with URL date param changes (for navigateToBookingDate)
+  // Initialize URL with today's date if not present (only once on mount)
   useEffect(() => {
-    if (urlDateParam) {
-      const parsedDate = parseDateOnlyLocal(urlDateParam);
-      if (parsedDate && isValid(parsedDate)) {
-        // Use functional update to avoid stale closure issues
-        setSelectedDate(currentDate => {
-          const currentDateStr = format(currentDate, 'yyyy-MM-dd');
-          if (urlDateParam !== currentDateStr) {
-            console.log('[BookingsTab] URL date sync: URL =', urlDateParam, 'current =', currentDateStr);
-            return parsedDate;
-          }
-          return currentDate; // No change, return same reference
-        });
-      }
+    if (!urlDateParam) {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      console.log('[BookingsTab] Initializing URL with today:', todayStr);
+      const params = new URLSearchParams(searchParams);
+      params.set('date', todayStr);
+      setSearchParams(params, { replace: true });
     }
-  }, [urlDateParam]); // Depend on primitive string, not searchParams object
+  }, []); // Empty deps - only run once on mount
+
+  // Update URL when client/carer filters change (NOT date - that's handled by handleDateChange)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    let changed = false;
+    
+    // Update client filter
+    if (selectedClientIds.length > 0) {
+      const newClients = selectedClientIds.join(',');
+      if (params.get('clients') !== newClients) {
+        params.set('clients', newClients);
+        changed = true;
+      }
+    } else if (params.has('clients')) {
+      params.delete('clients');
+      changed = true;
+    }
+    
+    // Update carer filter
+    if (selectedCarerIds.length > 0) {
+      const newCarers = selectedCarerIds.join(',');
+      if (params.get('carers') !== newCarers) {
+        params.set('carers', newCarers);
+        changed = true;
+      }
+    } else if (params.has('carers')) {
+      params.delete('carers');
+      changed = true;
+    }
+    
+    if (changed) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [selectedClientIds, selectedCarerIds, searchParams, setSearchParams]);
 
   // Handle auto-focusing booking from search (supports both 'selected' and 'focusBookingId')
   useEffect(() => {
@@ -208,10 +214,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         setHighlightedBookingId(selectedBookingId);
         console.log('[BookingsTab] Auto-focusing booking:', selectedBookingId);
         
-        // Change the calendar date to show that booking (timezone-safe)
+        // Change the calendar date to show that booking (via URL)
         const bookingDate = parseDateOnlyLocal(booking.date);
         if (bookingDate && isValid(bookingDate)) {
-          setSelectedDate(bookingDate);
+          handleDateChange(bookingDate);
         }
         
         // Clean up query parameter after 3 seconds
@@ -224,7 +230,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         }, 3000);
       }
     }
-  }, [searchParams, bookings, setSearchParams]);
+  }, [searchParams, bookings, setSearchParams, handleDateChange]);
 
   const {
     newBookingDialogOpen,
@@ -593,7 +599,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           
           <DateNavigation 
             currentDate={selectedDate} 
-            onDateChange={setSelectedDate}
+            onDateChange={handleDateChange}
             viewType={viewType}
             onViewTypeChange={setViewType}
           />
@@ -639,7 +645,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           
           <DateNavigation 
             currentDate={selectedDate} 
-            onDateChange={setSelectedDate}
+            onDateChange={handleDateChange}
             viewType={viewType}
             onViewTypeChange={setViewType}
           />
