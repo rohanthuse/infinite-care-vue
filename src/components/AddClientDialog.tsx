@@ -701,13 +701,12 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="active_until">Active Until <span className="text-red-500">*</span></Label>
+                <Label htmlFor="active_until">Active Until</Label>
                 <Input 
                   id="active_until" 
                   type="date" 
                   value={formData.active_until} 
                   onChange={e => handleInputChange("active_until", e.target.value)}
-                  required
                 />
               </div>
             </div>
