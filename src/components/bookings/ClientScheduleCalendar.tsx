@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { formatHoursToReadable } from "@/lib/utils";
 import { format, startOfWeek, addDays, isBefore, parseISO, startOfDay } from "date-fns";
 import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, StickyNote, XCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -1267,12 +1268,12 @@ export function ClientScheduleCalendar({
               Showing {clientSchedule.length} of {clients.length} clients
             </div>
             <div className="font-medium">
-              Total scheduled hours: {clientSchedule.reduce((sum: number, client: any) => {
+              Total scheduled: {formatHoursToReadable(clientSchedule.reduce((sum: number, client: any) => {
                 if (viewType === 'weekly') {
                   return sum + (client.totalWeekHours || 0);
                 }
                 return sum + (client.totalCareHours || 0);
-              }, 0).toFixed(1)}
+              }, 0))}
             </div>
           </div>
         </div>

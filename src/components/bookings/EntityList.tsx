@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Clock } from "lucide-react";
 import { Client, Carer, Booking } from "./BookingTimeGrid";
+import { formatHoursToReadable } from "@/lib/utils";
 
 interface EntityListProps {
   type: "client" | "carer";
@@ -93,7 +94,7 @@ export const EntityList: React.FC<EntityListProps> = ({
   };
   
   const formatHourText = (hours: number) => {
-    return hours === 1 ? "1 hour" : `${hours} hours`;
+    return formatHoursToReadable(hours);
   };
   
   const getBookingsByStatus = (bookings?: Booking[]) => {
@@ -219,7 +220,7 @@ export const EntityList: React.FC<EntityListProps> = ({
                           <HoverCardContent className="w-60 p-4">
                             <div className="space-y-2">
                               <h4 className="text-sm font-semibold text-foreground">{entity.name}</h4>
-                              <div className="text-xs text-muted-foreground">Total Hours: {totalHours}</div>
+                              <div className="text-xs text-muted-foreground">Total: {formatHoursToReadable(totalHours)}</div>
                               
                               {Object.entries(bookingsByStatus).length > 0 && (
                                 <div className="space-y-1 pt-2">
@@ -227,7 +228,7 @@ export const EntityList: React.FC<EntityListProps> = ({
                                   {Object.entries(bookingsByStatus).map(([status, data]) => (
                                     <div key={status} className="flex justify-between text-xs text-muted-foreground">
                                       <span className="capitalize">{status}:</span>
-                                      <span>{Math.round(data.hours * 10) / 10} hours ({data.count})</span>
+                                      <span>{formatHoursToReadable(data.hours)} ({data.count})</span>
                                     </div>
                                   ))}
                                 </div>
