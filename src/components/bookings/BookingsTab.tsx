@@ -31,6 +31,7 @@ import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import AppointmentApprovalList from "./AppointmentApprovalList";
 import { useBookingData } from "./hooks/useBookingData";
+import { useBranchBookingsAll } from "@/data/hooks/useBranchBookingsAll";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
 import { useServices } from "@/data/hooks/useServices";
@@ -130,6 +131,16 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   
   // Pass selectedDate and viewType to useBookingData for range-based fetching
   const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId, selectedDate, viewType);
+  
+  // Fetch ALL bookings for list view (independent of date navigation)
+  const { 
+    bookings: allBookingsRaw, 
+    totalCount: allBookingsTotalCount, 
+    isLoading: isLoadingAllBookings 
+  } = useBranchBookingsAll(branchId, {
+    enabled: activeView === 'list', // Only fetch when list tab is active
+    pageSize: 1000, // Fetch up to 1000 bookings
+  });
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
@@ -298,6 +309,81 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       }
     });
   }, [bookings, statusFilter, selectedClientIds, selectedCarerIds]);
+  
+  // Process ALL bookings for list view (convert from DB format to Booking format)
+  const processedAllBookings = useMemo((): Booking[] => {
+    if (!allBookingsRaw || allBookingsRaw.length === 0) return [];
+    
+    const clientsMap = Object.fromEntries(clients.map((cl) => [cl.id, cl]));
+    const carersMap = Object.fromEntries(carers.map((ca) => [ca.id, ca]));
+    
+    return allBookingsRaw.map((bk: any) => {
+      let client = clientsMap[bk.client_id];
+      
+      // Use embedded client data if available
+      if (!client && bk.client_id && bk.clients) {
+        const embeddedClient = bk.clients;
+        client = {
+          id: embeddedClient.id || bk.client_id,
+          name: `${embeddedClient.first_name || ''} ${embeddedClient.last_name || ''}`.trim() || '(Unknown)',
+          initials: `${(embeddedClient.first_name || '?')[0]}${(embeddedClient.last_name || '?')[0]}`.toUpperCase(),
+          bookingCount: 0,
+          bookings: [],
+        };
+      }
+      
+      let carer = bk.staff_id ? carersMap[bk.staff_id] : null;
+      
+      // Extract date and time from ISO strings
+      const extractDateSafe = (isoString: string) => {
+        if (!isoString) return "";
+        try {
+          const date = new Date(isoString);
+          return date.toISOString().split('T')[0];
+        } catch {
+          return "";
+        }
+      };
+      
+      const extractTimeSafe = (isoString: string, defaultTime = "07:00") => {
+        if (!isoString) return defaultTime;
+        try {
+          const date = new Date(isoString);
+          return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        } catch {
+          return defaultTime;
+        }
+      };
+      
+      return {
+        id: bk.id,
+        clientId: bk.client_id,
+        clientName: client?.name || "(Unknown Client)",
+        clientInitials: client?.initials || "??",
+        carerId: bk.staff_id,
+        carerName: carer?.name || "(Unknown Carer)",
+        carerInitials: carer?.initials || "??",
+        startTime: extractTimeSafe(bk.start_time),
+        endTime: extractTimeSafe(bk.end_time, "08:00"),
+        date: extractDateSafe(bk.start_time),
+        status: bk.status || "assigned",
+        notes: bk.notes || "",
+        start_time: bk.start_time,
+        end_time: bk.end_time,
+        service_id: bk.service_id,
+        service_ids: bk.service_ids || (bk.service_id ? [bk.service_id] : []),
+        branch_id: bk.branch_id,
+        client_id: bk.client_id,
+        cancellation_request_status: bk.cancellation_request_status,
+        reschedule_request_status: bk.reschedule_request_status,
+        visit_records: bk.visit_records || [],
+        location_address: bk.location_address,
+        is_late_start: bk.is_late_start || false,
+        is_missed: bk.is_missed || false,
+        late_start_minutes: bk.late_start_minutes || 0,
+      };
+    });
+  }, [allBookingsRaw, clients, carers]);
   
   // Handler to view late arrivals or missed bookings in list view
   const handleViewLateBookings = (type: 'late' | 'missed') => {
@@ -681,13 +767,22 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         </TabsContent>
         
         <TabsContent value="list">
-          <BookingsList 
-            bookings={filteredBookings} 
-            totalCount={totalBookingsCount}
-            onEditBooking={handleEditBooking}
-            onViewBooking={handleViewBooking}
-            branchId={branchId}
-          />
+          {isLoadingAllBookings ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-muted-foreground">Loading all bookings...</p>
+              </div>
+            </div>
+          ) : (
+            <BookingsList 
+              bookings={processedAllBookings.length > 0 ? processedAllBookings : filteredBookings} 
+              totalCount={processedAllBookings.length > 0 ? allBookingsTotalCount : totalBookingsCount}
+              onEditBooking={handleEditBooking}
+              onViewBooking={handleViewBooking}
+              branchId={branchId}
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="reports">
