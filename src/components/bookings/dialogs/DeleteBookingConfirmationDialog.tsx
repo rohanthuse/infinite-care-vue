@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getBookingStatusColor, getBookingStatusLabel } from "../utils/bookingColors";
@@ -460,7 +460,7 @@ export function DeleteBookingConfirmationDialog({
               </CardHeader>
               {clientBookings.length > 0 && (
                 <CardContent className="pt-0">
-                  <ScrollArea className="max-h-[200px]">
+                  <div className="max-h-[200px] dialog-scrollable">
                     <div className="space-y-2">
                       {/* Select All checkbox */}
                       <div className="flex items-center gap-2 pb-2 border-b">
@@ -505,7 +505,7 @@ export function DeleteBookingConfirmationDialog({
                         </div>
                       ))}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </CardContent>
               )}
             </Card>
