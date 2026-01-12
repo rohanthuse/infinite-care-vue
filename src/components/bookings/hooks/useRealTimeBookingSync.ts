@@ -66,12 +66,20 @@ export function useRealTimeBookingSync(branchId?: string) {
             // The booking creation handlers already show appropriate success messages
           }
         )
-        .subscribe((status) => {
-          console.log("[useRealTimeBookingSync] Subscription status:", status);
+        .subscribe((status, err) => {
+          console.log("[useRealTimeBookingSync] Subscription status:", status, err);
+          const wasConnected = isConnected;
           setIsConnected(status === 'SUBSCRIBED');
           
           if (status === 'SUBSCRIBED') {
             console.log("[useRealTimeBookingSync] ✅ Real-time booking sync connected");
+            
+            // If we're reconnecting after a disconnect, force a full refresh
+            if (!wasConnected) {
+              console.log("[useRealTimeBookingSync] 🔄 Reconnected - forcing full cache refresh");
+              queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+              queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error("[useRealTimeBookingSync] ❌ Real-time connection failed:", status);
             toast.error("Real-time sync disconnected", {
