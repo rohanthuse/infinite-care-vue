@@ -804,6 +804,10 @@ export function StaffScheduleCalendar({
       const statusLabel = getBookingStatusLabel(effectiveStatus);
       const statusColor = getBookingStatusColor(effectiveStatus, 'light');
       
+      // Special handling for training/meeting entries - no "Click to view details"
+      const bookingStatus = (status.booking as any).status;
+      const isTrainingOrMeeting = bookingStatus === 'training' || bookingStatus === 'meeting';
+      
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -819,7 +823,8 @@ export function StaffScheduleCalendar({
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
             )}
           </div>
-          {onClickViewDetails && (
+          {/* Only show "Click to view details" for regular appointments */}
+          {onClickViewDetails && !isTrainingOrMeeting && (
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -829,6 +834,14 @@ export function StaffScheduleCalendar({
             >
               Click to view details
             </button>
+          )}
+          {/* Show informational text for training/meeting entries */}
+          {isTrainingOrMeeting && (
+            <p className="text-xs text-muted-foreground pt-1 border-t border-muted mt-2">
+              {bookingStatus === 'training' 
+                ? 'Training period - no appointment details' 
+                : 'External meeting - no appointment details'}
+            </p>
           )}
         </div>
       );

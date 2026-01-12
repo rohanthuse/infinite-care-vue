@@ -5,7 +5,7 @@ import { StickyNote, GraduationCap, CalendarCheck, AlertTriangle } from "lucide-
 import { Checkbox } from "@/components/ui/checkbox";
 import { getBookingStatusColor } from "./utils/bookingColors";
 import { Booking } from "./BookingTimeGrid";
-
+import { toast } from "sonner";
 interface BookingBlock {
   booking: any;
   startMinutes: number;
@@ -134,8 +134,24 @@ export function StaffScheduleDraggable({
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!snapshot.isDragging && onViewBooking) {
-                            onViewBooking(block.booking);
+                          if (!snapshot.isDragging) {
+                            // Handle training entries - show info toast instead of trying to load booking details
+                            if (block.booking.status === 'training') {
+                              toast.info('Training Session', {
+                                description: `${block.booking.carerName || 'This carer'} is currently in training. No appointment details available.`
+                              });
+                              return;
+                            }
+                            // Handle meeting entries similarly
+                            if (block.booking.status === 'meeting') {
+                              toast.info('External Meeting', {
+                                description: `${block.booking.carerName || 'This carer'} is in an external meeting. No appointment details available.`
+                              });
+                              return;
+                            }
+                            if (onViewBooking) {
+                              onViewBooking(block.booking);
+                            }
                           }
                         }}
                       >
@@ -216,10 +232,15 @@ export function StaffScheduleDraggable({
                     {renderTooltipContent(
                       { type: block.status, booking: block.booking }, 
                       staffName,
-                      onViewBooking ? () => {
-                        setOpenTooltipId(null);
-                        onViewBooking(block.booking);
-                      } : undefined
+                      // Don't show "Click to view details" for training/meeting entries
+                      (block.booking.status === 'training' || block.booking.status === 'meeting') 
+                        ? undefined 
+                        : onViewBooking 
+                          ? () => {
+                              setOpenTooltipId(null);
+                              onViewBooking(block.booking);
+                            } 
+                          : undefined
                     )}
                   </div>
                   {block.booking.splitIndicator === 'continues-next-day' && (
