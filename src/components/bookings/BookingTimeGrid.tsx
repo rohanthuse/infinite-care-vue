@@ -96,6 +96,7 @@ export interface Carer {
   status?: string;
   bookingCount: number;
   bookings?: Booking[];
+  email?: string;  // Carer email for communication features
 }
 
 interface BookingTimeGridProps {

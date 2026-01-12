@@ -71,7 +71,10 @@ const calculateDuration = (start: string, end: string): { text: string; minutes:
 /**
  * Generate a Carer Rota PDF report
  */
-export const generateFutureBookingPlanPDF = async (options: FutureBookingReportOptions): Promise<void> => {
+/**
+ * Internal function to generate the PDF document (shared logic)
+ */
+const createFutureBookingPlanDoc = async (options: FutureBookingReportOptions): Promise<{ doc: jsPDF; fileName: string }> => {
   const { carerName, branchName, dateFrom, dateTo, bookings, branchId } = options;
   
   const doc = new jsPDF();
@@ -388,8 +391,33 @@ export const generateFutureBookingPlanPDF = async (options: FutureBookingReportO
     doc.text(orgName, pageWidth - 15, pageHeight - 12, { align: 'right' });
   }
 
-  // Save the PDF
+  // Generate filename
   const dateStr = format(new Date(), "yyyy-MM-dd");
   const safeCarerName = carerName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-  doc.save(`Carer_Rota_${safeCarerName}_${dateStr}.pdf`);
+  const fileName = `Carer_Rota_${safeCarerName}_${dateStr}.pdf`;
+
+  return { doc, fileName };
+};
+
+/**
+ * Generate a Carer Rota PDF report and download it
+ */
+export const generateFutureBookingPlanPDF = async (options: FutureBookingReportOptions): Promise<void> => {
+  const { doc, fileName } = await createFutureBookingPlanDoc(options);
+  doc.save(fileName);
+};
+
+/**
+ * Generate a Carer Rota PDF report and return as base64 string (for email attachments)
+ */
+export const generateFutureBookingPlanPDFAsBase64 = async (
+  options: FutureBookingReportOptions
+): Promise<{ base64: string; fileName: string }> => {
+  const { doc, fileName } = await createFutureBookingPlanDoc(options);
+  
+  // Get base64 string from PDF (remove the data URI prefix)
+  const pdfDataUri = doc.output('datauristring');
+  const base64 = pdfDataUri.split(',')[1];
+  
+  return { base64, fileName };
 };
