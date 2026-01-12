@@ -96,28 +96,27 @@ export function UnifiedScheduleView({
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
   const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
 
-  // Force refresh all booking-related caches
+  // Force refresh all booking-related caches (including new range-based queries)
   const handleForceRefresh = useCallback(async () => {
     setIsRefreshing(true);
     console.log('[UnifiedScheduleView] 🔄 Force refreshing all booking caches for branchId:', branchId);
     
     try {
-      // Invalidate with correct query key including branchId
-      if (branchId) {
-        await queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
-        await queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId], type: 'active' });
-        console.log('[UnifiedScheduleView] ✅ Invalidated branch-bookings for branchId:', branchId);
-      } else {
-        // Fallback: invalidate all branch-bookings queries using predicate
-        await queryClient.invalidateQueries({ 
-          predicate: (query) => query.queryKey[0] === "branch-bookings" 
-        });
-        await queryClient.refetchQueries({ 
-          predicate: (query) => query.queryKey[0] === "branch-bookings",
-          type: 'active'
-        });
-        console.log('[UnifiedScheduleView] ✅ Invalidated all branch-bookings queries');
-      }
+      // Invalidate ALL booking-related queries using predicate (covers both old and new query keys)
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return key === "branch-bookings" || key === "branch-bookings-range";
+        }
+      });
+      await queryClient.refetchQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return key === "branch-bookings" || key === "branch-bookings-range";
+        },
+        type: 'active'
+      });
+      console.log('[UnifiedScheduleView] ✅ Invalidated all branch-bookings queries');
       
       // Also invalidate organization-level queries
       await queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });

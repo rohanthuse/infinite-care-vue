@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { Client, Carer, Booking } from "../BookingTimeGrid";
-import { useBranchBookings } from "@/data/hooks/useBranchBookings";
+import { useBranchBookingsInRange } from "@/data/hooks/useBranchBookingsInRange";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
@@ -18,8 +18,20 @@ import { formatInUserTimezone, getUserTimezone } from '@/utils/timezoneUtils';
 import { toZonedTime } from 'date-fns-tz';
 import { format } from 'date-fns';
 import { getClientDisplayAddress } from '@/utils/addressUtils';
-export function useBookingData(branchId?: string) {
+
+/**
+ * Hook to fetch booking data for a specific date range.
+ * Uses range-based fetching to ensure we get bookings for the selected date.
+ */
+export function useBookingData(
+  branchId?: string,
+  selectedDate?: Date,
+  viewType: "daily" | "weekly" | "monthly" = "daily"
+) {
   const { user, loading: authLoading, error: authError } = useAuthSafe();
+  
+  // Use current date as fallback if no selectedDate provided
+  const effectiveDate = selectedDate || new Date();
   
   // Debug authentication state for booking data fetch
   console.log("[useBookingData] Auth Debug:", {
@@ -28,10 +40,12 @@ export function useBookingData(branchId?: string) {
     authLoading,
     authError,
     branchId,
+    selectedDate: effectiveDate.toISOString(),
+    viewType,
     timestamp: new Date().toISOString()
   });
   
-  // Only fetch data if user is authenticated OR if branchId is provided (allow demo/unauthenticated access)
+  // Only fetch data if branchId is provided
   const shouldFetchData = !!branchId;
   
   console.log("[useBookingData] Fetch Decision:", {
@@ -42,9 +56,18 @@ export function useBookingData(branchId?: string) {
     reason: shouldFetchData ? "branchId provided" : "no branchId"
   });
   
-  const { data: bookingsDB = [], totalCount: totalBookingsCount, isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(
-    shouldFetchData ? branchId : undefined
+  // Use range-based booking fetch instead of fetching all bookings
+  const { 
+    data: bookingsDB = [], 
+    totalCount: totalBookingsCount, 
+    isLoading: isLoadingBookings, 
+    error: bookingsError 
+  } = useBranchBookingsInRange(
+    shouldFetchData ? branchId : undefined,
+    effectiveDate,
+    viewType
   );
+  
   const {
     data: clientsResponse,
     isLoading: isLoadingClients,
@@ -53,10 +76,9 @@ export function useBookingData(branchId?: string) {
     branchId: shouldFetchData ? branchId : undefined,
     searchTerm: "",
     // Use 'all' to include inactive clients for historical booking display
-    // This prevents "(Unknown Client)" for past bookings of deactivated clients
     statusFilter: 'all',
     page: 1,
-    itemsPerPage: 500  // Increased to ensure all clients are included for proper name mapping
+    itemsPerPage: 500
   });
   
   const { data: carersData = [], isLoading: isLoadingCarers, error: carersError } = useBranchCarers(
@@ -100,6 +122,8 @@ export function useBookingData(branchId?: string) {
     console.log("- carersData:", carersData);
     console.log("- bookingsDB count:", bookingsDB?.length || 0);
     console.log("- branchId:", branchId);
+    console.log("- selectedDate:", effectiveDate.toISOString());
+    console.log("- viewType:", viewType);
     
     // Log first few bookings for debugging
     if (bookingsDB?.length > 0) {
@@ -111,13 +135,13 @@ export function useBookingData(branchId?: string) {
       })));
     }
 
-    // Extract clients from the response - the hook returns { clients: [], count: number }
+    // Extract clients from the response
     let clientsRaw = [];
     if (clientsResponse && Array.isArray(clientsResponse.clients)) {
       clientsRaw = clientsResponse.clients;
     }
 
-    // Extract carers - should be a direct array
+    // Extract carers
     const carersRaw = Array.isArray(carersData) ? carersData : [];
     
     console.log("[useBookingData] Extracted raw data:");
@@ -154,7 +178,7 @@ export function useBookingData(branchId?: string) {
         try {
           let client = clientsMap[bk.client_id];
           
-          // If not in clientsMap (e.g., deactivated client), use embedded client data from booking
+          // If not in clientsMap, use embedded client data from booking
           if (!client && bk.client_id && bk.clients) {
             const embeddedClient = bk.clients;
             client = {
@@ -177,7 +201,6 @@ export function useBookingData(branchId?: string) {
           }
           
           let carer = bk.staff_id ? carersMap[bk.staff_id] : null;
-          // Handle unassigned bookings (staff_id is null) - show "Not Assigned"
           if (!carer) {
             carer = getOrCreatePlaceholderCarer(bk.staff_id);
           }
@@ -189,7 +212,6 @@ export function useBookingData(branchId?: string) {
               return "";
             }
             try {
-              // Convert UTC timestamp to local timezone, then extract date
               const utcDate = new Date(isoString);
               const localDate = toZonedTime(utcDate, getUserTimezone());
               const datePart = format(localDate, 'yyyy-MM-dd');
@@ -212,19 +234,12 @@ export function useBookingData(branchId?: string) {
               return defaultTime;
             }
             try {
-              // Convert UTC timestamp to local timezone using our utility
               const localTime = formatInUserTimezone(isoString, 'HH:mm');
               
               if (!localTime || !/^\d{2}:\d{2}$/.test(localTime)) {
                 console.warn(`[useBookingData] Invalid time format for booking ${bk.id}:`, isoString);
                 return defaultTime;
               }
-              
-              console.log(`[useBookingData] Converted time for booking ${bk.id}:`, {
-                utcTimestamp: isoString,
-                localTime: localTime,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-              });
               
               return localTime;
             } catch (error) {
@@ -257,7 +272,6 @@ export function useBookingData(branchId?: string) {
             date: startDate,
             status: bk.status || "assigned",
             notes: bk.notes || "",
-            // Raw database fields for EditBookingDialog compatibility
             start_time: bk.start_time,
             end_time: bk.end_time,
             service_id: bk.service_id,
@@ -268,31 +282,20 @@ export function useBookingData(branchId?: string) {
             cancellation_request_status: bk.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
             reschedule_request_status: bk.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,
             visit_records: bk.visit_records || [],
-            // Address fields
             location_address: bk.location_address,
             clientAddress: getClientDisplayAddress(
               bk.location_address,
               bk.clients?.address,
               bk.clients?.client_addresses
             ),
-            // Late/missed booking fields
             is_late_start: bk.is_late_start || false,
             is_missed: bk.is_missed || false,
             late_start_minutes: bk.late_start_minutes || 0,
           };
 
-          // Debug logging for request statuses
-          if (bk.cancellation_request_status || bk.reschedule_request_status) {
-            console.log('[useBookingData] Booking with request:', {
-              id: bk.id,
-              cancellation: bk.cancellation_request_status,
-              reschedule: bk.reschedule_request_status
-            });
-          }
-
           processedBookings.push(processedBooking);
 
-          // Log every 10th booking for debugging
+          // Log sample bookings for debugging
           if ((index + 1) % 10 === 0 || index < 3) {
             console.log(`[useBookingData] Processed booking ${index + 1}/${bookingsDB.length}:`, {
               id: processedBooking.id,
@@ -363,7 +366,7 @@ export function useBookingData(branchId?: string) {
       carers: carersWithBookings,
       bookings
     };
-  }, [bookingsDB, clientsResponse, carersData, branchId]);
+  }, [bookingsDB, clientsResponse, carersData, branchId, effectiveDate, viewType]);
 
   return {
     clients,
