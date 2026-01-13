@@ -52,8 +52,9 @@ export function CarerReportsTab() {
         clearCarerContextCache(carerContext.staffProfile.auth_user_id);
       }
       
-      // Invalidate all related queries for fresh data
+      // Invalidate all related queries for fresh data (including carer-appointments-full for sync)
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-context'] });
     }
@@ -66,8 +67,9 @@ export function CarerReportsTab() {
     // Clear all caches
     clearCarerContextCache();
     
-    // Invalidate all queries
+    // Invalidate all queries (including carer-appointments-full for sync with Appointments tab)
     queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
     queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
     queryClient.invalidateQueries({ queryKey: ['carer-context'] });
     
@@ -682,8 +684,8 @@ export function CarerReportsTab() {
             </div>
           </Card>
 
-          {/* Section 1: Visits Needing Reports */}
-          {filteredActionRequiredData.filteredVisits.length > 0 && (
+          {/* Section 1: Visits Needing Reports - Always show section with empty state if needed */}
+          {(filteredActionRequiredData.filteredVisits.length > 0 || (pastAppointmentsWithReportStatus.length === 0 && !allBookingsLoading)) && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -695,70 +697,83 @@ export function CarerReportsTab() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Mobile Card Layout */}
-                <div className="block sm:hidden space-y-3">
-                  {filteredActionRequiredData.filteredVisits
-                    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
-                    .map(booking => {
-                      const startTime = new Date(booking.start_time);
-                      return (
-                        <Card key={booking.id} className="p-4">
-                          <div className="space-y-3">
-                            {/* Client Name & Status */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2 font-medium min-w-0 flex-1">
-                                <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="truncate">{booking.client_first_name} {booking.client_last_name}</span>
+                {filteredActionRequiredData.filteredVisits.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">No visits requiring reports</p>
+                    <p className="text-sm mt-1">
+                      All past appointments have submitted reports.
+                    </p>
+                    <p className="text-xs mt-2 text-muted-foreground/70">
+                      Total past appointments: {pastAppointmentsWithReportStatus.length}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Mobile Card Layout */}
+                    <div className="block sm:hidden space-y-3">
+                      {filteredActionRequiredData.filteredVisits
+                        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+                        .map(booking => {
+                          const startTime = new Date(booking.start_time);
+                          return (
+                            <Card key={booking.id} className="p-4">
+                              <div className="space-y-3">
+                                {/* Client Name & Status */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2 font-medium min-w-0 flex-1">
+                                    <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span className="truncate">{booking.client_first_name} {booking.client_last_name}</span>
+                                  </div>
+                                  <Badge 
+                                    variant="outline"
+                                    className={cn(
+                                      "text-xs shrink-0",
+                                      booking.status === 'done' && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700",
+                                      booking.status === 'missed' && "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700",
+                                      booking.status === 'in_progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+                                      booking.status === 'in-progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+                                      !['done', 'missed', 'in_progress', 'in-progress'].includes(booking.status || '') && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                                    )}
+                                  >
+                                    {getBookingStatusLabel(booking.status || 'unknown')}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Date & Time */}
+                                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(startTime, 'MMM dd, yyyy')}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {format(startTime, 'HH:mm')}
+                                  </span>
+                                </div>
+                                
+                                {/* Service */}
+                                <Badge variant="outline" className="text-xs">
+                                  {booking.service_name || 'General Service'}
+                                </Badge>
+                                
+                                {/* Action Button */}
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setSelectedBookingForReport(booking);
+                                    setBookingReportDialogOpen(true);
+                                  }} 
+                                  className="w-full"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Report
+                                </Button>
                               </div>
-                              <Badge 
-                                variant="outline"
-                                className={cn(
-                                  "text-xs shrink-0",
-                                  booking.status === 'done' && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700",
-                                  booking.status === 'missed' && "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700",
-                                  booking.status === 'in_progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
-                                  booking.status === 'in-progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
-                                  !['done', 'missed', 'in_progress', 'in-progress'].includes(booking.status || '') && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
-                                )}
-                              >
-                                {getBookingStatusLabel(booking.status || 'unknown')}
-                              </Badge>
-                            </div>
-                            
-                            {/* Date & Time */}
-                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {format(startTime, 'MMM dd, yyyy')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(startTime, 'HH:mm')}
-                              </span>
-                            </div>
-                            
-                            {/* Service */}
-                            <Badge variant="outline" className="text-xs">
-                              {booking.service_name || 'General Service'}
-                            </Badge>
-                            
-                            {/* Action Button */}
-                            <Button 
-                              size="sm" 
-                              onClick={() => {
-                                setSelectedBookingForReport(booking);
-                                setBookingReportDialogOpen(true);
-                              }} 
-                              className="w-full"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Report
-                            </Button>
-                          </div>
-                        </Card>
-                      );
-                    })}
-                </div>
+                            </Card>
+                          );
+                        })}
+                    </div>
 
                 {/* Desktop Table Layout */}
                 <div className="hidden sm:block rounded-md border">
@@ -843,7 +858,9 @@ export function CarerReportsTab() {
                         })}
                     </TableBody>
                   </Table>
-                </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
