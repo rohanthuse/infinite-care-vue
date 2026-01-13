@@ -195,7 +195,8 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
     form.setValue("equipment.equipment_blocks", current.filter((_, i) => i !== index));
   };
 
-  const equipment = form.watch("equipment.equipment_blocks") || [];
+  const rawEquipment = form.watch("equipment.equipment_blocks");
+  const equipment = Array.isArray(rawEquipment) ? rawEquipment : [];
 
   return (
     <div className="space-y-6">

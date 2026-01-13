@@ -67,7 +67,8 @@ export function WizardStep12ServiceActions({ form }: WizardStep12ServiceActionsP
     // Skip if currently showing the add/edit form (don't interrupt user)
     if (showForm) return;
     
-    const formActions = watchedServiceActions || [];
+    const rawFormActions = watchedServiceActions;
+    const formActions = Array.isArray(rawFormActions) ? rawFormActions : [];
     
     // Skip if we already have local data and form is empty (prevent erasing)
     if (savedActions.length > 0 && formActions.length === 0 && hasInitializedRef.current) {

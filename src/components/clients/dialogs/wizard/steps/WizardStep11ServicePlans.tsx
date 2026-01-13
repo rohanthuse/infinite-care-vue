@@ -51,7 +51,8 @@ export function WizardStep11ServicePlans({ form, clientId }: WizardStep11Service
     // Skip if currently showing the add/edit form (don't interrupt user)
     if (showForm) return;
     
-    const formPlans = watchedServicePlans || [];
+    const rawFormPlans = watchedServicePlans;
+    const formPlans = Array.isArray(rawFormPlans) ? rawFormPlans : [];
     
     // Skip if we already have local data and form is empty (prevent erasing)
     if (savedPlans.length > 0 && formPlans.length === 0 && hasInitializedRef.current) {

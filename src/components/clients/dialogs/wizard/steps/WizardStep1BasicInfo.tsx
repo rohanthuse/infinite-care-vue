@@ -2,8 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Stethoscope, Phone, Mail, MapPin, Building } from "lucide-react";
-import { format } from "date-fns";
-import { safeParseDateValue } from "@/utils/dateUtils";
+import { safeParseDateValue, safeFormatDate } from "@/utils/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
 import { StaffMultiSelect } from "@/components/ui/staff-multi-select";
@@ -243,11 +242,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                             !parsedDate && "text-muted-foreground"
                           )}
                         >
-                          {parsedDate ? (
-                            format(parsedDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {safeFormatDate(parsedDate, "PPP", "Pick a date")}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -286,11 +281,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                             !parsedDate && "text-muted-foreground"
                           )}
                         >
-                          {parsedDate ? (
-                            format(parsedDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {safeFormatDate(parsedDate, "PPP", "Pick a date")}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -330,11 +321,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                             !parsedDate && "text-muted-foreground"
                           )}
                         >
-                          {parsedDate ? (
-                            format(parsedDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {safeFormatDate(parsedDate, "PPP", "Pick a date")}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
