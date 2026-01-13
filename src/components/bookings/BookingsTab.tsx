@@ -167,7 +167,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     isLoading: isLoadingAllBookings 
   } = useBranchBookingsAll(branchId, {
     enabled: activeView === 'list', // Only fetch when list tab is active
-    pageSize: 1000, // Fetch up to 1000 bookings
+    pageSize: 3000, // Fetch more bookings to ensure date range coverage
   });
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
