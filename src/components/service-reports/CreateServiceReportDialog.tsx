@@ -1063,9 +1063,10 @@ export function CreateServiceReportDialog({
         id: existingReport.id,
         updates: {
           ...reportData,
-          status: 'pending',
-          visible_to_client: false,
+          status: 'approved',
+          visible_to_client: true,
           submitted_at: new Date().toISOString(),
+          reviewed_at: new Date().toISOString(),
         }
       }, {
         onSuccess: async () => {
@@ -1098,20 +1099,21 @@ export function CreateServiceReportDialog({
           
           onOpenChange(false);
           form.reset();
-          toast.success('Service report updated and submitted for review');
+          toast.success('Service report completed successfully');
         },
       });
     } else {
       createServiceReport.mutate({
         ...reportData,
-        status: 'pending',
-        visible_to_client: false,
+        status: 'approved',
+        visible_to_client: true,
         submitted_at: new Date().toISOString(),
+        reviewed_at: new Date().toISOString(),
       }, {
         onSuccess: () => {
           onOpenChange(false);
           form.reset();
-          toast.success('Service report submitted for admin review');
+          toast.success('Service report completed successfully');
         },
       });
     }
