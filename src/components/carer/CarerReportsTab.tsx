@@ -243,8 +243,21 @@ export function CarerReportsTab() {
       }, {} as Record<string, number>)
     });
 
+    // Track missed appointments breakdown for debugging
+    const missedInPast = pastAppointments.filter(b => b.status === 'missed');
+    console.log('[CarerReportsTab] Missed appointments breakdown:', {
+      totalMissed: missedInPast.length,
+      missedWithSubmittedReports: missedInPast.filter(b => 
+        reports.some(r => r.booking_id === b.id && ['pending', 'approved', 'rejected'].includes(r.status))
+      ).length,
+      missedNeedingReports: missedInPast.filter(b => 
+        !reports.some(r => r.booking_id === b.id && ['pending', 'approved', 'rejected'].includes(r.status))
+      ).length
+    });
+
     // Cross-reference with reports to get full report status
-    // Always pick the LATEST report for each booking (by created_at desc)
+    // CRITICAL: Only count submitted/approved/rejected reports as "complete" for Action Required
+    // Draft reports should NOT hide appointments from Action Required
     return pastAppointments.map(booking => {
       const bookingReports = reports
         .filter(r => r.booking_id === booking.id)
@@ -252,18 +265,36 @@ export function CarerReportsTab() {
       
       const latestReport = bookingReports[0] || null;
       
+      // Only consider submitted+ reports as "complete" for Action Required filtering
+      const completedStatuses = ['pending', 'approved', 'rejected'];
+      const hasCompletedReport = latestReport && completedStatuses.includes(latestReport.status);
+      
       return {
         ...booking,
-        has_report: !!latestReport,
-        report: latestReport
+        has_report: hasCompletedReport, // Only true for submitted+ reports
+        has_any_report: !!latestReport, // Track if any report exists (for display)
+        report: latestReport,
+        report_status: latestReport?.status || null
       };
     });
   }, [allBookings, reports, carerContext?.staffProfile?.id, carerContext?.staffProfile?.auth_user_id]);
 
   // Derived state: Filtered action required data
+  // Includes appointments that need reports (has_report: false) - including missed appointments
   const filteredActionRequiredData = useMemo(() => {
     let filteredVisits = pastAppointmentsWithReportStatus.filter(b => !b.has_report);
     let filteredRevisions = [...revisionReports];
+
+    // Log Action Required filtering for debugging
+    console.log('[CarerReportsTab] Action Required filtered:', {
+      totalPastAppointments: pastAppointmentsWithReportStatus.length,
+      needingReports: filteredVisits.length,
+      missedNeedingReports: filteredVisits.filter(b => b.status === 'missed').length,
+      byStatus: filteredVisits.reduce((acc, b) => {
+        acc[b.status || 'unknown'] = (acc[b.status || 'unknown'] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
 
     if (actionSearchQuery.trim()) {
       const query = actionSearchQuery.toLowerCase().trim();
