@@ -19,6 +19,7 @@ interface FluidBalanceRecordDialogProps {
   clientName: string;
   visitRecordId?: string;
   validateSession?: () => Promise<boolean>;
+  defaultDate?: string; // Pass service date in 'yyyy-MM-dd' format
 }
 
 export function FluidBalanceRecordDialog({
@@ -28,8 +29,11 @@ export function FluidBalanceRecordDialog({
   clientName,
   visitRecordId,
   validateSession,
+  defaultDate,
 }: FluidBalanceRecordDialogProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    defaultDate ? new Date(defaultDate + 'T00:00:00') : new Date()
+  );
   const dateString = format(selectedDate, 'yyyy-MM-dd');
 
   return (

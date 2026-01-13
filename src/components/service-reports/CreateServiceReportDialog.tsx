@@ -1718,13 +1718,28 @@ export function CreateServiceReportDialog({
       </DialogContent>
       
       {/* Fluid Balance Recording Dialog */}
-      {showFluidBalanceDialog && preSelectedClient?.id && (
+      {showFluidBalanceDialog && preSelectedClient?.id && serviceDate && (
         <FluidBalanceRecordDialog
           open={showFluidBalanceDialog}
-          onOpenChange={setShowFluidBalanceDialog}
+          onOpenChange={(open) => {
+            setShowFluidBalanceDialog(open);
+            // When dialog closes, refresh fluid balance data
+            if (!open) {
+              queryClient.invalidateQueries({ 
+                queryKey: ['fluid-intake-records', preSelectedClient.id, serviceDate] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: ['fluid-output-records', preSelectedClient.id, serviceDate] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: ['urinary-output-records', preSelectedClient.id, serviceDate] 
+              });
+            }
+          }}
           clientId={preSelectedClient.id}
           clientName={preSelectedClient.name || clientName}
           visitRecordId={effectiveVisitRecordId}
+          defaultDate={serviceDate}
         />
       )}
     </Dialog>
