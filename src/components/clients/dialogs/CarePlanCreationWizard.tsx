@@ -159,17 +159,40 @@ const wizardSteps = [
   { id: 22, name: "Review", description: "Review and finalize care plan" },
 ];
 
-// Safe array initialization helper
+// Safe array initialization helper - handles corrupted/malformed data
 const initializeArrayField = (value: any): any[] => {
   if (Array.isArray(value)) return value;
-  if (value === null || value === undefined) return [];
-  // If it's an object, convert to empty array to prevent errors
+  if (value === null || value === undefined || value === 'null' || value === 'undefined') return [];
+  // Handle stringified arrays
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Not valid JSON, return empty array
+    }
+    return [];
+  }
+  // If it's an object or any other type, convert to empty array to prevent errors
+  console.warn('[initializeArrayField] Unexpected value type, returning empty array:', typeof value, value);
   return [];
 };
 
-// Safe object initialization helper
+// Safe object initialization helper - handles corrupted/malformed data
 const initializeObjectField = (value: any): any => {
   if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  if (value === null || value === undefined || value === 'null' || value === 'undefined') return {};
+  // Handle stringified objects
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // Not valid JSON, return empty object
+    }
+    return {};
+  }
+  console.warn('[initializeObjectField] Unexpected value type, returning empty object:', typeof value, value);
   return {};
 };
 

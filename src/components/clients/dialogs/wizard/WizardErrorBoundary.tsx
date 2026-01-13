@@ -32,7 +32,15 @@ export class WizardErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('WizardErrorBoundary caught an error:', error, errorInfo);
+    // Always log detailed error info for debugging
+    console.error('[WizardErrorBoundary] Error caught:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      stepNumber: this.props.stepNumber
+    });
+    
     this.setState({
       hasError: true,
       error,
@@ -57,9 +65,12 @@ export class WizardErrorBoundary extends React.Component<
           </h3>
           <p className="text-red-600 text-center mb-4 max-w-md">
             {this.props.stepNumber 
-              ? `There was an error loading step ${this.props.stepNumber}. This might be due to corrupted form data or a temporary issue.`
-              : "There was an error loading this section of the care plan wizard."
+              ? `There was an error loading step ${this.props.stepNumber}. This may be caused by corrupted draft data (e.g., invalid dates or missing fields).`
+              : "There was an error loading this section. The draft data may contain invalid or corrupted values."
             }
+          </p>
+          <p className="text-red-500 text-sm text-center mb-4 max-w-md">
+            Try clicking "Try Again" or refresh the page. If the issue persists, you may need to clear the draft and start fresh.
           </p>
           <div className="space-x-2">
             <Button onClick={this.handleRetry} variant="outline">

@@ -2,8 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { safeParseDateValue } from "@/utils/dateUtils";
+import { safeParseDateValue, safeFormatDate } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -50,7 +49,8 @@ export function WizardStep5Goals({ form }: WizardStep5GoalsProps) {
     form.setValue("goals", current.filter((_, i) => i !== index));
   };
 
-  const goals = form.watch("goals") || [];
+  const rawGoals = form.watch("goals");
+  const goals = Array.isArray(rawGoals) ? rawGoals : [];
 
   return (
     <div className="space-y-6">
@@ -151,11 +151,7 @@ export function WizardStep5Goals({ form }: WizardStep5GoalsProps) {
                                   !parsedDate && "text-muted-foreground"
                                 )}
                               >
-                                {parsedDate ? (
-                                  format(parsedDate, "PPP")
-                                ) : (
-                                  <span>Pick a target date</span>
-                                )}
+                              {safeFormatDate(parsedDate, "PPP", "Pick a target date")}
                                 <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
