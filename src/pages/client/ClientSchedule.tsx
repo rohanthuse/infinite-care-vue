@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar, Heart, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useClientNavigation } from '@/hooks/useClientNavigation';
 import { useSimpleClientAuth } from '@/hooks/useSimpleClientAuth';
 import { useClientAllAppointments } from '@/hooks/useClientAppointments';
@@ -16,14 +16,42 @@ import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, sta
 
 const ClientSchedule: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { createClientPath } = useClientNavigation();
   const { data: authData } = useSimpleClientAuth();
   
+  // Parse view parameter or default to week - URL is SINGLE SOURCE OF TRUTH
+  const viewParam = searchParams.get('view');
+  const initialView = useMemo(() => {
+    const validViews = ['day', 'week', 'month'];
+    if (viewParam && validViews.includes(viewParam)) {
+      return viewParam as 'day' | 'week' | 'month';
+    }
+    return 'week';
+  }, [viewParam]);
+  
   // Calendar state
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'day' | 'week' | 'month'>('week');
+  const [view, setView] = useState<'day' | 'week' | 'month'>(initialView);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  // Sync view state when URL parameter changes
+  useEffect(() => {
+    if (initialView !== view) {
+      setView(initialView);
+    }
+  }, [initialView]);
+  
+  // Handler for view changes - updates URL (single source of truth)
+  const handleViewChange = (newView: 'day' | 'week' | 'month') => {
+    if (newView !== view) {
+      const params = new URLSearchParams(searchParams);
+      params.set('view', newView);
+      setSearchParams(params, { replace: true });
+      setView(newView);
+    }
+  };
   
   const clientId = authData?.client?.id;
   
@@ -146,21 +174,21 @@ const ClientSchedule: React.FC = () => {
               <Button 
                 variant={view === 'day' ? 'default' : 'outline'} 
                 size="sm"
-                onClick={() => setView('day')}
+                onClick={() => handleViewChange('day')}
               >
                 Day
               </Button>
               <Button 
                 variant={view === 'week' ? 'default' : 'outline'} 
                 size="sm"
-                onClick={() => setView('week')}
+                onClick={() => handleViewChange('week')}
               >
                 Week
               </Button>
               <Button 
                 variant={view === 'month' ? 'default' : 'outline'} 
                 size="sm"
-                onClick={() => setView('month')}
+                onClick={() => handleViewChange('month')}
               >
                 Month
               </Button>

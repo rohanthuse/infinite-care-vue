@@ -87,6 +87,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   // Get initial values from URL parameters
   const clientParam = searchParams.get('client');
   const focusBookingId = searchParams.get('focusBookingId');
+  const viewParam = searchParams.get('view');
   
   // Parse date parameter or default to today (timezone-safe)
   // URL is the SINGLE SOURCE OF TRUTH for the date
@@ -101,7 +102,23 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     return new Date();
   }, [urlDateParam]);
   
-  const [viewType, setViewType] = useState<"daily" | "weekly" | "monthly">("daily");
+  // Parse view parameter or default to daily - URL is SINGLE SOURCE OF TRUTH
+  const initialViewType = useMemo(() => {
+    const validViews = ['daily', 'weekly', 'monthly'];
+    if (viewParam && validViews.includes(viewParam)) {
+      return viewParam as "daily" | "weekly" | "monthly";
+    }
+    return "daily";
+  }, [viewParam]);
+  
+  const [viewType, setViewType] = useState<"daily" | "weekly" | "monthly">(initialViewType);
+  
+  // Sync viewType state when URL parameter changes
+  useEffect(() => {
+    if (initialViewType !== viewType) {
+      setViewType(initialViewType);
+    }
+  }, [initialViewType]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>(clientParam ? [clientParam] : []);
   const [selectedCarerIds, setSelectedCarerIds] = useState<string[]>([]);
@@ -124,6 +141,17 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       const params = new URLSearchParams(searchParams);
       params.set('date', newDateStr);
       setSearchParams(params, { replace: true });
+    }
+  };
+
+  // Handler for view type changes - updates URL (single source of truth)
+  const handleViewTypeChange = (newViewType: "daily" | "weekly" | "monthly") => {
+    if (newViewType !== viewType) {
+      console.log('[BookingsTab] handleViewTypeChange:', { from: viewType, to: newViewType });
+      const params = new URLSearchParams(searchParams);
+      params.set('view', newViewType);
+      setSearchParams(params, { replace: true });
+      setViewType(newViewType);
     }
   };
 
@@ -691,7 +719,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             currentDate={selectedDate} 
             onDateChange={handleDateChange}
             viewType={viewType}
-            onViewTypeChange={setViewType}
+            onViewTypeChange={handleViewTypeChange}
           />
           
             <BookingFilters
@@ -737,7 +765,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             currentDate={selectedDate} 
             onDateChange={handleDateChange}
             viewType={viewType}
-            onViewTypeChange={setViewType}
+            onViewTypeChange={handleViewTypeChange}
           />
           
           <BookingFilters
@@ -764,7 +792,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onUpdateBooking={handleUpdateBooking}
             onViewBooking={handleViewBooking}
             onEditBooking={handleEditBooking}
-            onRequestViewTypeChange={setViewType}
+            onRequestViewTypeChange={handleViewTypeChange}
             isCheckingOverlap={isCheckingOverlap}
             highlightedBookingId={highlightedBookingId}
           />
