@@ -5,7 +5,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { cn } from "@/lib/utils";
 import { Clock, AlertCircle } from "lucide-react";
 import { useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
-import { isHolidayOnDate } from "@/utils/holidayHelpers";
+import { isHolidayOnDate, getHolidayForStaff } from "@/utils/holidayHelpers";
 
 interface AttendanceRecord {
   date: string;
@@ -21,12 +21,14 @@ interface AttendanceMonthCalendarProps {
   currentMonth: Date;
   attendanceData: AttendanceRecord[];
   branchId?: string;
+  selectedStaffId?: string | null;
 }
 
 export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = ({
   currentMonth,
   attendanceData,
   branchId,
+  selectedStaffId,
 }) => {
   // Fetch holidays for the branch
   const { data: holidays = [] } = useAnnualLeave(branchId);
@@ -43,6 +45,13 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
   };
 
   const getHolidayForDay = (day: Date): AnnualLeave | null => {
+    // If a staff member is selected, only show holidays that apply to them
+    // This includes: their personal holidays + branch-wide holidays
+    // If no staff selected, show all holidays (admin overview)
+    if (selectedStaffId) {
+      return getHolidayForStaff(holidays, day, selectedStaffId);
+    }
+    // No staff selected - show all holidays (admin overview)
     return holidays.find(holiday => isHolidayOnDate(holiday, day)) || null;
   };
 
