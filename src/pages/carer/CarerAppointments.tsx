@@ -1186,11 +1186,13 @@ const CarerAppointments: React.FC = () => {
                       <SelectTrigger className="md:w-32">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="done">Completed</SelectItem>
-                        <SelectItem value="completed">Done</SelectItem>
-                      </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="done">Completed</SelectItem>
+                            <SelectItem value="completed">Done</SelectItem>
+                            <SelectItem value="missed">Missed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
                     </Select>
                   </div>
                   
