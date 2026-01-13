@@ -936,11 +936,39 @@ export function EditBookingDialog({
         console.error('[EditBookingDialog] Failed to update services:', serviceError);
       }
       
-      // Invalidate other queries to refresh UI
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
-      queryClient.invalidateQueries({ queryKey: ["client-bookings"] });
-      queryClient.invalidateQueries({ queryKey: ["carer-bookings"] });
-      queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+      // CRITICAL: Use predicate-based invalidation for ALL booking-related queries including range-based
+      console.log('[EditBookingDialog] Invalidating all booking caches with predicate...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings"
+          );
+        }
+      });
+
+      // Force refetch active queries to ensure UI updates immediately
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
+
+      console.log('[EditBookingDialog] All refetches completed');
       
       if (onSuccess) {
         onSuccess(booking.id);
