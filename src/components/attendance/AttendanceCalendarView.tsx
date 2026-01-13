@@ -234,6 +234,7 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
               currentMonth={currentMonth}
               attendanceData={calendarData}
               branchId={branchId}
+              selectedStaffId={selectedStaffId}
             />
           </div>
         </div>
