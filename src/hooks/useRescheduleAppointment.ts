@@ -90,13 +90,45 @@ export const useRescheduleAppointment = () => {
   
   return useMutation({
     mutationFn: rescheduleAppointment,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('[useRescheduleAppointment] Reschedule successful:', data);
-      toast.success('Appointment rescheduled successfully!');
       
-      // Invalidate and refetch appointments
-      queryClient.invalidateQueries({ queryKey: ['client-appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['completed-appointments'] });
+      // CRITICAL: Use predicate-based invalidation for all booking-related queries
+      console.log('[useRescheduleAppointment] Invalidating all booking caches...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings" ||
+            key === "client-appointments" ||
+            key === "completed-appointments"
+          );
+        }
+      });
+
+      // Force refetch active queries
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
+
+      console.log('[useRescheduleAppointment] All refetches completed');
+      toast.success('Appointment rescheduled successfully!');
     },
     onError: (error: any) => {
       console.error('[useRescheduleAppointment] Reschedule failed:', error);

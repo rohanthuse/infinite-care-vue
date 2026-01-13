@@ -121,18 +121,45 @@ export function useUpdateBooking(branchId?: string) {
         });
       }
       
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
-      queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
-      queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
-      queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", data.staff_id] });
-      queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
-      
+      // CRITICAL: Use predicate-based invalidation to catch ALL booking-related queries including range-based
+      console.log('[useUpdateBooking] Invalidating all booking caches with predicate...');
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full" ||
+            key === "organization-calendar" ||
+            key === "organization-bookings"
+          );
+        }
+      });
+
+      // Force refetch active queries to ensure UI updates immediately
+      await queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            key === "branch-bookings" ||
+            key === "branch-bookings-range" ||
+            key === "client-bookings" ||
+            key === "carer-bookings" ||
+            key === "carer-appointments-full"
+          );
+        },
+        type: 'active'
+      });
+
+      // Keep additional invalidations for billing/invoicing (non-schedule related)
       queryClient.invalidateQueries({ queryKey: ["branch-invoices"] });
       queryClient.invalidateQueries({ queryKey: ["client-billing", data.client_id] });
       queryClient.invalidateQueries({ queryKey: ["booking-change-requests"] });
       queryClient.invalidateQueries({ queryKey: ["pending-booking-requests"] });
-      
+
+      console.log('[useUpdateBooking] All refetches completed');
       toast.success("Booking updated successfully!");
     },
     onError: (error: any) => {
