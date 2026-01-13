@@ -64,6 +64,22 @@ export const useCarerContext = () => {
       const staffProfile = data[0];
       console.log('[useCarerContext] Staff profile loaded:', staffProfile);
 
+      // Validate cached data matches fresh data - clear stale cache if mismatch
+      const existingCache = localStorage.getItem(cachedKey);
+      if (existingCache) {
+        try {
+          const cachedData = JSON.parse(existingCache);
+          if (cachedData.staffId !== staffProfile.id) {
+            console.warn('[useCarerContext] Cache mismatch detected! Clearing stale cache.');
+            console.warn('Cached staffId:', cachedData.staffId, 'Fresh staffId:', staffProfile.id);
+            localStorage.removeItem(cachedKey);
+          }
+        } catch (e) {
+          console.warn('[useCarerContext] Invalid cache data, clearing:', e);
+          localStorage.removeItem(cachedKey);
+        }
+      }
+
       // Get branch info with organization name - use maybeSingle to avoid errors
       const { data: branchData, error: branchError } = await supabase
         .from('branches')
@@ -98,9 +114,14 @@ export const useCarerContext = () => {
         } : null
       };
 
-      // Cache the result for instant paint next time
+      // Cache the result with version for future migrations
       try {
-        localStorage.setItem(`carerContext-${user.id}`, JSON.stringify(result));
+        const cachePayload = {
+          ...result,
+          _cacheVersion: 2,
+          _cachedAt: new Date().toISOString()
+        };
+        localStorage.setItem(cachedKey, JSON.stringify(cachePayload));
       } catch (e) {
         console.warn('[useCarerContext] Failed to cache context:', e);
       }
