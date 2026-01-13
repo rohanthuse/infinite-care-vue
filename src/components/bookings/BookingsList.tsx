@@ -37,52 +37,73 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface BookingsListProps {
   bookings: Booking[];
   totalCount?: number;
+  // Server-side pagination props (controlled by parent)
+  currentPage: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  // Server-side filter props (controlled by parent)
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  dateFrom: string;
+  dateTo: string;
+  onDateFromChange: (date: string) => void;
+  onDateToChange: (date: string) => void;
+  statusFilter: string;
+  onStatusFilterChange: (status: string) => void;
+  // Other props
   onEditBooking?: (booking: Booking) => void;
   onViewBooking?: (booking: Booking) => void;
   branchId?: string;
+  isLoading?: boolean;
+  isFetching?: boolean;
 }
 
 export const BookingsList: React.FC<BookingsListProps> = ({ 
   bookings, 
-  totalCount,
+  totalCount = 0,
+  currentPage,
+  pageSize,
+  onPageChange,
+  searchQuery,
+  onSearchChange,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
+  statusFilter,
+  onStatusFilterChange,
   onEditBooking,
   onViewBooking,
-  branchId
+  branchId,
+  isLoading = false,
+  isFetching = false
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [deleteBookingId, setDeleteBookingId] = useState<string | null>(null);
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
   const [relatedRecordsInfo, setRelatedRecordsInfo] = useState<BookingRelatedRecords | null>(null);
-  const itemsPerPage = 10;
   
   // Convert string dates to Date objects for the enhanced picker
   const dateFromObj = dateFrom ? new Date(dateFrom + 'T00:00:00') : undefined;
   const dateToObj = dateTo ? new Date(dateTo + 'T00:00:00') : undefined;
 
-  // Handlers for date changes
+  // Handlers for date changes - call parent callbacks
   const handleDateFromChange = (date: Date | undefined) => {
     if (date) {
-      setDateFrom(format(date, 'yyyy-MM-dd'));
+      onDateFromChange(format(date, 'yyyy-MM-dd'));
     } else {
-      setDateFrom("");
+      onDateFromChange("");
     }
-    setCurrentPage(1);
   };
 
   const handleDateToChange = (date: Date | undefined) => {
     if (date) {
-      setDateTo(format(date, 'yyyy-MM-dd'));
+      onDateToChange(format(date, 'yyyy-MM-dd'));
     } else {
-      setDateTo("");
+      onDateToChange("");
     }
-    setCurrentPage(1);
   };
   
   const deleteBooking = useDeleteBooking(branchId);
@@ -130,61 +151,42 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     return counts;
   }, [bookings]);
 
-  // Sort bookings by date and time
-  const sortedBookings = [...bookings].sort((a, b) => {
-    const dateCompare = a.date.localeCompare(b.date);
-    if (dateCompare !== 0) return dateCompare;
-    return a.startTime.localeCompare(b.startTime);
-  });
-
   // Check if date range is valid
   const isDateRangeValid = !dateFrom || !dateTo || dateFrom <= dateTo;
 
   // Check if any filters are active
   const hasActiveFilters = searchQuery || dateFrom || dateTo || statusFilter !== "all";
 
-  // Filter bookings based on search, status, and date range
-  const filteredBookings = sortedBookings.filter(booking => {
-    const matchesSearch = 
+  // Client-side filtering for name search (server handles date/status)
+  // Only filter client-side if search query contains letters (name search)
+  const displayBookings = useMemo(() => {
+    if (!searchQuery) return bookings;
+    
+    // If searchQuery looks like a name (contains letters), filter client-side
+    const isNameSearch = /[a-zA-Z]/.test(searchQuery);
+    if (!isNameSearch) return bookings; // Server may have filtered by ID
+    
+    return bookings.filter(booking => 
       booking.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.carerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.id?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Handle special late/missed status filters
-    let matchesStatus = false;
-    if (statusFilter === "all") {
-      matchesStatus = true;
-    } else if (statusFilter === "late") {
-      matchesStatus = booking.is_late_start === true && !booking.is_missed;
-    } else if (statusFilter === "missed") {
-      matchesStatus = booking.is_missed === true;
-    } else {
-      matchesStatus = booking.status === statusFilter;
-    }
-    
-    // Date range filter
-    let matchesDateRange = true;
-    if (dateFrom && isDateRangeValid) {
-      matchesDateRange = matchesDateRange && booking.date >= dateFrom;
-    }
-    if (dateTo && isDateRangeValid) {
-      matchesDateRange = matchesDateRange && booking.date <= dateTo;
-    }
-    
-    return matchesSearch && matchesStatus && matchesDateRange;
+      booking.id?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [bookings, searchQuery]);
+
+  // Sort bookings by date and time
+  const sortedBookings = [...displayBookings].sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return dateCompare;
+    return a.startTime.localeCompare(b.startTime);
   });
 
-  // Paginate bookings
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
-  const paginatedBookings = filteredBookings.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Calculate total pages based on server total count
+  const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Multi-select computed values
+  // Multi-select computed values (use sortedBookings for display)
   const currentPageBookingIds = useMemo(
-    () => paginatedBookings.map(b => b.id),
-    [paginatedBookings]
+    () => sortedBookings.map(b => b.id),
+    [sortedBookings]
   );
 
   const allCurrentPageSelected = currentPageBookingIds.length > 0 && 
@@ -194,13 +196,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      onPageChange(currentPage - 1);
     }
   };
   
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+      onPageChange(currentPage + 1);
     }
   };
 
@@ -415,14 +417,14 @@ export const BookingsList: React.FC<BookingsListProps> = ({
 
   // Handle export schedule click
   const handleExportSchedule = () => {
-    if (filteredBookings.length === 0) {
+    if (sortedBookings.length === 0) {
       toast.error("No bookings to export");
       return;
     }
 
     try {
       // Format bookings data for export
-      const exportData = filteredBookings.map(booking => {
+      const exportData = sortedBookings.map(booking => {
         // Calculate duration (handle overnight bookings)
         const startParts = booking.startTime.split(':').map(Number);
         const endParts = booking.endTime.split(':').map(Number);
@@ -473,7 +475,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         fileName: `bookings-schedule-${format(new Date(), 'yyyy-MM-dd')}.csv`
       });
 
-      toast.success(`Successfully exported ${filteredBookings.length} bookings`);
+      toast.success(`Successfully exported ${sortedBookings.length} bookings`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error("Failed to export schedule");
@@ -482,24 +484,34 @@ export const BookingsList: React.FC<BookingsListProps> = ({
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      {/* Loading overlay */}
+      {(isLoading || isFetching) && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? "Loading bookings..." : "Updating..."}
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="p-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-foreground">Bookings List</h2>
             <p className="text-muted-foreground text-sm mt-1">
               {hasActiveFilters ? (
-                <>Showing {filteredBookings.length} of {bookings.length} appointments</>
-              ) : totalCount && totalCount > bookings.length ? (
-                <>Showing {bookings.length} of {totalCount.toLocaleString()} total appointments</>
+                <>Showing {sortedBookings.length} of {totalCount.toLocaleString()} filtered appointments</>
               ) : (
-                <>Total: {bookings.length.toLocaleString()} appointments</>
+                <>Total: {totalCount.toLocaleString()} appointments (Page {currentPage} of {totalPages || 1})</>
               )}
             </p>
           </div>
           <Button 
             className="bg-primary hover:bg-primary/90 rounded-md w-full md:w-auto"
             onClick={handleExportSchedule}
-            disabled={filteredBookings.length === 0}
+            disabled={sortedBookings.length === 0}
           >
             <Calendar className="h-4 w-4 mr-2" />
             Export Schedule
@@ -518,7 +530,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         )}
         
         {/* No results message */}
-        {filteredBookings.length === 0 && hasActiveFilters && isDateRangeValid && (
+        {sortedBookings.length === 0 && hasActiveFilters && isDateRangeValid && !isLoading && (
           <Alert className="mb-4">
             <AlertDescription>
               No bookings found matching your filters. Try adjusting the date range or search criteria.
@@ -536,8 +548,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                 className="pl-10 pr-4 py-2 rounded-md bg-background border-border"
                 value={searchQuery}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
+                  onSearchChange(e.target.value);
                 }}
               />
             </div>
@@ -569,8 +580,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
             <Select 
               value={statusFilter}
               onValueChange={(value) => {
-                setStatusFilter(value);
-                setCurrentPage(1);
+                onStatusFilterChange(value);
               }}
             >
               <SelectTrigger className="w-full rounded-md border-border">
@@ -604,11 +614,10 @@ export const BookingsList: React.FC<BookingsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => {
-                setSearchQuery("");
-                setDateFrom("");
-                setDateTo("");
-                setStatusFilter("all");
-                setCurrentPage(1);
+                onSearchChange("");
+                onDateFromChange("");
+                onDateToChange("");
+                onStatusFilterChange("all");
               }}
               className="h-10"
             >
@@ -645,8 +654,8 @@ export const BookingsList: React.FC<BookingsListProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedBookings.length > 0 ? (
-              paginatedBookings.map((booking) => {
+            {sortedBookings.length > 0 ? (
+              sortedBookings.map((booking) => {
                 // Calculate duration in minutes (handle overnight bookings)
                 const startParts = booking.startTime.split(':').map(Number);
                 const endParts = booking.endTime.split(':').map(Number);
@@ -810,27 +819,30 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         </Table>
       </div>
       
-      {paginatedBookings.length > 0 && (
+      {sortedBookings.length > 0 && (
         <div className="flex items-center justify-between p-4 border-t border-border">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBookings.length)} of {statusFilter === 'all' && !searchQuery && totalCount ? totalCount.toLocaleString() : filteredBookings.length.toLocaleString()} bookings
+            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount.toLocaleString()} bookings
           </div>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handlePreviousPage}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isFetching}
               className="h-8"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
             </Button>
+            <span className="text-sm text-muted-foreground px-2">
+              Page {currentPage} of {totalPages || 1}
+            </span>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={currentPage >= totalPages || isFetching}
               className="h-8"
             >
               Next

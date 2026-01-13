@@ -65,21 +65,28 @@ export interface BranchBookingsAllResult {
   totalCount: number;
 }
 
+export interface BookingFilters {
+  dateFrom?: string;     // yyyy-MM-dd format
+  dateTo?: string;       // yyyy-MM-dd format
+  statusFilter?: string; // 'all', 'late', 'missed', 'assigned', etc.
+}
+
 /**
- * Fetch ALL bookings for a branch without date filtering.
- * Uses pagination to handle large datasets efficiently.
+ * Fetch bookings for a branch with server-side pagination and filtering.
+ * Supports date range and status filters applied at the database level.
  */
 export async function fetchBranchBookingsAll(
   branchId: string,
   page: number = 1,
-  pageSize: number = 500
+  pageSize: number = 100,
+  filters?: BookingFilters
 ): Promise<BranchBookingsAllResult> {
-  console.log("[fetchBranchBookingsAll] Fetching all bookings for branch:", branchId, "page:", page);
+  console.log("[fetchBranchBookingsAll] Fetching bookings:", { branchId, page, pageSize, filters });
   
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("bookings")
     .select(`
       id, client_id, staff_id, branch_id, start_time, end_time, 
@@ -129,9 +136,38 @@ export async function fetchBranchBookingsAll(
         status
       )
     `, { count: 'exact' })
-    .eq("branch_id", branchId)
-    .order("start_time", { ascending: true }) // Oldest first - ensures date filters work for historical data
+    .eq("branch_id", branchId);
+  
+  // Apply date range filters (server-side)
+  if (filters?.dateFrom) {
+    // Filter bookings where start_time >= dateFrom at midnight
+    query = query.gte("start_time", `${filters.dateFrom}T00:00:00`);
+  }
+  if (filters?.dateTo) {
+    // Filter bookings where start_time <= dateTo at end of day
+    query = query.lte("start_time", `${filters.dateTo}T23:59:59`);
+  }
+  
+  // Apply status filter (server-side)
+  if (filters?.statusFilter && filters.statusFilter !== 'all') {
+    if (filters.statusFilter === 'late') {
+      // Late arrivals: is_late_start = true AND not missed
+      query = query.eq("is_late_start", true).eq("is_missed", false);
+    } else if (filters.statusFilter === 'missed') {
+      // Missed bookings
+      query = query.eq("is_missed", true);
+    } else {
+      // Standard status filter (assigned, done, cancelled, etc.)
+      query = query.eq("status", filters.statusFilter);
+    }
+  }
+  
+  // Apply ordering and pagination
+  query = query
+    .order("start_time", { ascending: true }) // Oldest first for chronological viewing
     .range(from, to);
+
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("[fetchBranchBookingsAll] Error:", error);
@@ -150,14 +186,15 @@ export async function fetchBranchBookingsAll(
     fetchedCount: mappedData.length,
     totalCount: count,
     page,
-    pageSize
+    pageSize,
+    filters
   });
   
   return { bookings: mappedData, totalCount: count || 0 };
 }
 
 /**
- * Hook to fetch ALL bookings for a branch without date filtering.
+ * Hook to fetch bookings for a branch with server-side pagination and filtering.
  * Ideal for the List view where users want to search/filter across all bookings.
  */
 export function useBranchBookingsAll(
@@ -166,17 +203,29 @@ export function useBranchBookingsAll(
     enabled?: boolean;
     page?: number;
     pageSize?: number;
+    // Server-side filters
+    dateFrom?: string;
+    dateTo?: string;
+    statusFilter?: string;
   }
 ) {
   const page = options?.page || 1;
-  const pageSize = options?.pageSize || 2000; // Increased to handle larger date ranges
+  const pageSize = options?.pageSize || 100; // Default to 100 per page for server-side pagination
   const enabled = options?.enabled !== false && !!branchId;
   
+  // Build filters object
+  const filters: BookingFilters = {
+    dateFrom: options?.dateFrom,
+    dateTo: options?.dateTo,
+    statusFilter: options?.statusFilter,
+  };
+  
+  // Include filters in query key for proper cache invalidation
   const result = useQuery({
-    queryKey: ["branch-bookings-all", branchId, page, pageSize],
-    queryFn: () => fetchBranchBookingsAll(branchId!, page, pageSize),
+    queryKey: ["branch-bookings-all", branchId, page, pageSize, filters.dateFrom, filters.dateTo, filters.statusFilter],
+    queryFn: () => fetchBranchBookingsAll(branchId!, page, pageSize, filters),
     enabled,
-    staleTime: 1000 * 60, // 1 minute - slightly longer than range queries
+    staleTime: 1000 * 30, // 30 seconds - shorter for paginated data
   });
 
   // Log query results
@@ -185,7 +234,8 @@ export function useBranchBookingsAll(
       bookingsCount: result.data?.bookings?.length || 0,
       totalCount: result.data?.totalCount,
       branchId,
-      page
+      page,
+      filters
     });
   }
   if (result.error) {

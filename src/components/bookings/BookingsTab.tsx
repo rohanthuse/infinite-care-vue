@@ -129,6 +129,14 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [showBulkUpdateDialog, setShowBulkUpdateDialog] = useState(false);
   const [replicateDialogOpen, setReplicateDialogOpen] = useState(false);
   const [showFuturePlanDialog, setShowFuturePlanDialog] = useState(false);
+  
+  // State for List view server-side pagination and filters
+  const [listPage, setListPage] = useState(1);
+  const [listSearchQuery, setListSearchQuery] = useState("");
+  const [listDateFrom, setListDateFrom] = useState("");
+  const [listDateTo, setListDateTo] = useState("");
+  const [listStatusFilter, setListStatusFilter] = useState("all");
+  const LIST_PAGE_SIZE = 100; // Fetch 100 per server page
 
   // Single handler for date changes - updates URL (single source of truth)
   const handleDateChange = (newDate: Date) => {
@@ -160,14 +168,19 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   // Pass selectedDate and viewType to useBookingData for range-based fetching
   const { clients, carers, bookings, totalBookingsCount, isLoading } = useBookingData(branchId, selectedDate, viewType);
   
-  // Fetch ALL bookings for list view (independent of date navigation)
+  // Fetch bookings for list view with server-side pagination and filtering
   const { 
     bookings: allBookingsRaw, 
     totalCount: allBookingsTotalCount, 
-    isLoading: isLoadingAllBookings 
+    isLoading: isLoadingAllBookings,
+    isFetching: isFetchingAllBookings
   } = useBranchBookingsAll(branchId, {
     enabled: activeView === 'list', // Only fetch when list tab is active
-    pageSize: 3000, // Fetch more bookings to ensure date range coverage
+    page: listPage,
+    pageSize: LIST_PAGE_SIZE,
+    dateFrom: listDateFrom || undefined,
+    dateTo: listDateTo || undefined,
+    statusFilter: listStatusFilter,
   });
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
@@ -799,22 +812,26 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         </TabsContent>
         
         <TabsContent value="list">
-          {isLoadingAllBookings ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-muted-foreground">Loading all bookings...</p>
-              </div>
-            </div>
-          ) : (
-            <BookingsList 
-              bookings={processedAllBookings.length > 0 ? processedAllBookings : filteredBookings} 
-              totalCount={processedAllBookings.length > 0 ? allBookingsTotalCount : totalBookingsCount}
-              onEditBooking={handleEditBooking}
-              onViewBooking={handleViewBooking}
-              branchId={branchId}
-            />
-          )}
+          <BookingsList 
+            bookings={processedAllBookings.length > 0 ? processedAllBookings : filteredBookings} 
+            totalCount={allBookingsTotalCount}
+            currentPage={listPage}
+            pageSize={LIST_PAGE_SIZE}
+            onPageChange={setListPage}
+            searchQuery={listSearchQuery}
+            onSearchChange={(q) => { setListSearchQuery(q); setListPage(1); }}
+            dateFrom={listDateFrom}
+            dateTo={listDateTo}
+            onDateFromChange={(d) => { setListDateFrom(d); setListPage(1); }}
+            onDateToChange={(d) => { setListDateTo(d); setListPage(1); }}
+            statusFilter={listStatusFilter}
+            onStatusFilterChange={(s) => { setListStatusFilter(s); setListPage(1); }}
+            onEditBooking={handleEditBooking}
+            onViewBooking={handleViewBooking}
+            branchId={branchId}
+            isLoading={isLoadingAllBookings}
+            isFetching={isFetchingAllBookings}
+          />
         </TabsContent>
         
         <TabsContent value="reports">
