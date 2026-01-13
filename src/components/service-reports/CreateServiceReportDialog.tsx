@@ -16,8 +16,10 @@ import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServi
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarePlanJsonData } from '@/hooks/useCarePlanJsonData';
 import { format, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Activity, Target, Droplets } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, FileText, ClipboardList, Pill, AlertTriangle, Loader2, User, PenTool, Smile, Heart, Timer, Activity, Target, Droplets, Plus } from 'lucide-react';
 import { FluidBalanceDisplay } from './view-report/FluidBalanceDisplay';
+import { FluidBalanceRecordDialog } from '@/components/fluid-balance/FluidBalanceRecordDialog';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -165,6 +167,9 @@ export function CreateServiceReportDialog({
   // State for Activity and Goal changes
   const [pendingActivityChanges, setPendingActivityChanges] = useState<Map<string, { performed: boolean; duration_minutes: number; notes: string }>>(new Map());
   const [pendingGoalChanges, setPendingGoalChanges] = useState<Map<string, { status: string; progress: number; notes: string }>>(new Map());
+  
+  // State for Fluid Balance Dialog
+  const [showFluidBalanceDialog, setShowFluidBalanceDialog] = useState(false);
 
   // Reset all pending states when dialog opens to prevent stale data
   useEffect(() => {
@@ -1319,17 +1324,20 @@ export function CreateServiceReportDialog({
                           )}
                         </div>
                       </div>
-                      {visitRecord?.visit_notes && (
-                        <>
-                          <Separator />
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">Carer Visit Notes</p>
-                            <p className="text-sm bg-muted/50 p-3 rounded-md">
-                              {visitRecord.visit_notes}
-                            </p>
-                          </div>
-                        </>
-                      )}
+                      
+                      {/* Editable Carer Visit Notes - available in create mode */}
+                      <Separator />
+                      <div className="space-y-2">
+                        <Label htmlFor="create_visit_notes">Carer Visit Notes</Label>
+                        <Textarea
+                          id="create_visit_notes"
+                          value={pendingVisitNotes ?? visitRecord?.visit_notes ?? ''}
+                          onChange={(e) => setPendingVisitNotes(e.target.value)}
+                          placeholder="Enter your visit notes, key observations, and important information..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+                      
                       {visitRecord?.visit_summary && (
                         <>
                           <Separator />
@@ -1435,11 +1443,33 @@ export function CreateServiceReportDialog({
 
               {/* Fluid Balance Section */}
               {preSelectedClient?.id && serviceDate && (
-                <FluidBalanceDisplay 
-                  clientId={preSelectedClient.id}
-                  serviceDate={serviceDate}
-                  visitRecordId={effectiveVisitRecordId}
-                />
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Droplets className="h-5 w-5 text-blue-500" />
+                        Fluid Balance (Visit Data)
+                      </CardTitle>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowFluidBalanceDialog(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Records
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <FluidBalanceDisplay 
+                      clientId={preSelectedClient.id}
+                      serviceDate={serviceDate}
+                      visitRecordId={effectiveVisitRecordId}
+                      showHeader={false}
+                    />
+                  </CardContent>
+                </Card>
               )}
 
               {/* Events & Incidents Card */}
@@ -1686,6 +1716,17 @@ export function CreateServiceReportDialog({
           </Button>
         </div>
       </DialogContent>
+      
+      {/* Fluid Balance Recording Dialog */}
+      {showFluidBalanceDialog && preSelectedClient?.id && (
+        <FluidBalanceRecordDialog
+          open={showFluidBalanceDialog}
+          onOpenChange={setShowFluidBalanceDialog}
+          clientId={preSelectedClient.id}
+          clientName={preSelectedClient.name || clientName}
+          visitRecordId={effectiveVisitRecordId}
+        />
+      )}
     </Dialog>
   );
 }
