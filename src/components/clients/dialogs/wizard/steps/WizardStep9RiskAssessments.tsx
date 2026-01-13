@@ -2,8 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { safeParseDateValue } from "@/utils/dateUtils";
+import { safeParseDateValue, safeFormatDate } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -91,7 +90,8 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
     form.setValue(`risk_assessments.${assessmentIndex}.mitigation_strategies`, current.filter((_, i) => i !== strategyIndex));
   };
 
-  const riskAssessments = form.watch("risk_assessments") || [];
+  const rawRiskAssessments = form.watch("risk_assessments");
+  const riskAssessments = Array.isArray(rawRiskAssessments) ? rawRiskAssessments : [];
 
   return (
     <div className="space-y-6">
@@ -204,11 +204,7 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                                   !parsedDate && "text-muted-foreground"
                                 )}
                               >
-                                {parsedDate ? (
-                                  format(parsedDate, "PPP")
-                                ) : (
-                                  <span>Pick review date</span>
-                                )}
+                              {safeFormatDate(parsedDate, "PPP", "Pick review date")}
                                 <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>

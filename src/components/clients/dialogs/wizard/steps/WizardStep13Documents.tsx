@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle, Eye, Download } from "lucide-react";
 import { useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
-import { format } from "date-fns";
-import { safeParseDateValue } from "@/utils/dateUtils";
+import { safeParseDateValue, safeFormatDate } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -259,7 +258,8 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
     return "other";
   };
 
-  const documents = form.watch("documents") || [];
+  const rawDocuments = form.watch("documents");
+  const documents = Array.isArray(rawDocuments) ? rawDocuments : [];
 
   console.log('[WizardStep13Documents] Current documents in form:', documents);
 
@@ -413,11 +413,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                                   !parsedDate && "text-muted-foreground"
                                 )}
                               >
-                                {parsedDate ? (
-                                  format(parsedDate, "PPP")
-                                ) : (
-                                  <span>Pick date</span>
-                                )}
+                              {safeFormatDate(parsedDate, "PPP", "Pick date")}
                                 <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>

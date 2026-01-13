@@ -7,7 +7,7 @@ import {
   Pill, Syringe, ClipboardCheck, Heart, ListChecks, AlertTriangle, 
   GraduationCap, ShieldAlert, HeartPulse, Users, ArrowRight 
 } from "lucide-react";
-import { format } from "date-fns";
+import { safeFormatDate } from "@/utils/dateUtils";
 import {
   Form,
   FormControl,
@@ -539,7 +539,7 @@ export function WizardStep14Review({ form, clientId, isChild = false, effectiveC
               {formData.start_date && (
                 <div>
                   <div className="text-sm font-medium text-gray-600">Start Date</div>
-                  <div className="text-lg">{format(new Date(formData.start_date), "PPP")}</div>
+                  <div className="text-lg">{safeFormatDate(formData.start_date, "PPP", "Not set")}</div>
                 </div>
               )}
               
