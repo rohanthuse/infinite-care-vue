@@ -105,16 +105,19 @@ serve(async (req) => {
       enable_missed_booking_alerts: true,
     };
 
-    // Batch fetch visit records
+    // Batch fetch visit records - check for completed visits to avoid re-marking as missed
     const bookingIds = lateBookings.map(b => b.id);
     const { data: visitRecords } = await supabase
       .from('visit_records')
-      .select('booking_id, visit_start_time')
+      .select('booking_id, visit_start_time, visit_end_time, status')
       .in('booking_id', bookingIds);
 
     const visitStartedMap = new Map<string, boolean>();
+    const visitCompletedMap = new Map<string, boolean>();
     visitRecords?.forEach(vr => {
       visitStartedMap.set(vr.booking_id, vr.visit_start_time !== null);
+      // Mark as completed if status is 'completed' OR has both start and end times
+      visitCompletedMap.set(vr.booking_id, vr.status === 'completed' || (vr.visit_start_time !== null && vr.visit_end_time !== null));
     });
 
     // Batch fetch admins (super admins + branch admins)
@@ -153,7 +156,9 @@ serve(async (req) => {
       const isPastEndTime = now > endTime;
       const visitWasStarted = visitStartedMap.get(booking.id) || false;
 
-      if (visitWasStarted) continue;
+      // Skip if visit was started OR already completed (prevents re-marking completed visits as missed)
+      const visitWasCompleted = visitCompletedMap.get(booking.id) || false;
+      if (visitWasStarted || visitWasCompleted) continue;
 
       const clientName = booking.client ? `${booking.client.first_name} ${booking.client.last_name}` : 'Unknown Client';
       const carerName = booking.staff ? `${booking.staff.first_name} ${booking.staff.last_name}` : 'Unassigned';

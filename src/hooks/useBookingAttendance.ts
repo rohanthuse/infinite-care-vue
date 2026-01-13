@@ -73,10 +73,17 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
           status: newStatus
         };
         
-        if (data.action === 'start_visit' && isLateStart) {
-          bookingUpdate.is_late_start = true;
-          bookingUpdate.late_start_minutes = lateStartMinutes;
-          bookingUpdate.is_missed = false; // Clear missed flag since visit is now starting
+        if (data.action === 'start_visit') {
+          if (isLateStart) {
+            bookingUpdate.is_late_start = true;
+            bookingUpdate.late_start_minutes = lateStartMinutes;
+          }
+          bookingUpdate.is_missed = false; // Always clear missed flag when starting visit
+        }
+        
+        // Phase 3: Always clear is_missed when ending visit (completing)
+        if (data.action === 'end_visit') {
+          bookingUpdate.is_missed = false;
         }
         
         const { error: bookingError } = await supabase
