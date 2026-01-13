@@ -465,7 +465,7 @@ export function CarerReportsTab() {
     // Use setTimeout to ensure React has processed the state update
     setTimeout(() => setEditDialogOpen(true), 0);
   };
-  return <div className="space-y-6">
+  return <div className="space-y-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -522,19 +522,19 @@ export function CarerReportsTab() {
       </div>
 
       <Tabs defaultValue="action-required" className="w-full">
-        <div className="overflow-x-auto -mx-1 px-1">
+        <div className="overflow-x-auto -mx-1 px-1 touch-pan-x">
           <TabsList className="inline-flex w-max min-w-full gap-1 p-1">
-            <TabsTrigger value="action-required" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+            <TabsTrigger value="action-required" className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 min-w-[60px]">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Action Required</span>
               <span className="text-xs">({pastAppointmentsWithReportStatus.filter(b => !b.has_report).length + revisionReports.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="submitted" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+            <TabsTrigger value="submitted" className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 min-w-[60px]">
               <Clock className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Submitted</span>
               <span className="text-xs">({pendingReports.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 min-w-[44px]">
+            <TabsTrigger value="completed" className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 min-w-[60px]">
               <CheckCircle className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Completed</span>
               <span className="text-xs">({completedReports.length})</span>
@@ -545,8 +545,8 @@ export function CarerReportsTab() {
         {/* Action Required Tab - Visits needing reports + Reports needing revision */}
         <TabsContent value="action-required" className="space-y-4">
           {/* Search and Filter Controls */}
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -563,28 +563,32 @@ export function CarerReportsTab() {
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input type="date" value={actionDateFrom}
-                  onChange={(e) => setActionDateFrom(e.target.value)}
-                  className="w-[140px]" />
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+                  <Input type="date" value={actionDateFrom}
+                    onChange={(e) => setActionDateFrom(e.target.value)}
+                    placeholder="From date"
+                    className="w-full sm:w-[140px] text-sm" />
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-muted-foreground text-sm hidden sm:inline">to</span>
+                  <Input type="date" value={actionDateTo}
+                    onChange={(e) => setActionDateTo(e.target.value)}
+                    placeholder="To date"
+                    className="w-full sm:w-[140px] text-sm" />
+                </div>
+                {(actionSearchQuery || actionDateFrom || actionDateTo) && (
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto"
+                    onClick={() => {
+                      setActionSearchQuery('');
+                      setActionDateFrom('');
+                      setActionDateTo('');
+                    }}>
+                    <X className="h-4 w-4 mr-1" /> Clear
+                  </Button>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">to</span>
-                <Input type="date" value={actionDateTo}
-                  onChange={(e) => setActionDateTo(e.target.value)}
-                  className="w-[140px]" />
-              </div>
-              {(actionSearchQuery || actionDateFrom || actionDateTo) && (
-                <Button variant="outline" size="sm"
-                  onClick={() => {
-                    setActionSearchQuery('');
-                    setActionDateFrom('');
-                    setActionDateTo('');
-                  }}>
-                  <X className="h-4 w-4 mr-1" /> Clear
-                </Button>
-              )}
             </div>
           </Card>
 
@@ -601,7 +605,73 @@ export function CarerReportsTab() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
+                {/* Mobile Card Layout */}
+                <div className="block sm:hidden space-y-3">
+                  {filteredActionRequiredData.filteredVisits
+                    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+                    .map(booking => {
+                      const startTime = new Date(booking.start_time);
+                      return (
+                        <Card key={booking.id} className="p-4">
+                          <div className="space-y-3">
+                            {/* Client Name & Status */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 font-medium min-w-0 flex-1">
+                                <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="truncate">{booking.client_first_name} {booking.client_last_name}</span>
+                              </div>
+                              <Badge 
+                                variant="outline"
+                                className={cn(
+                                  "text-xs shrink-0",
+                                  booking.status === 'done' && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700",
+                                  booking.status === 'missed' && "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700",
+                                  booking.status === 'in_progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+                                  booking.status === 'in-progress' && "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+                                  !['done', 'missed', 'in_progress', 'in-progress'].includes(booking.status || '') && "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                                )}
+                              >
+                                {getBookingStatusLabel(booking.status || 'unknown')}
+                              </Badge>
+                            </div>
+                            
+                            {/* Date & Time */}
+                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(startTime, 'MMM dd, yyyy')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {format(startTime, 'HH:mm')}
+                              </span>
+                            </div>
+                            
+                            {/* Service */}
+                            <Badge variant="outline" className="text-xs">
+                              {booking.service_name || 'General Service'}
+                            </Badge>
+                            
+                            {/* Action Button */}
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedBookingForReport(booking);
+                                setBookingReportDialogOpen(true);
+                              }} 
+                              className="w-full"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Report
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                </div>
+
+                {/* Desktop Table Layout */}
+                <div className="hidden sm:block rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -746,8 +816,8 @@ export function CarerReportsTab() {
         {/* Submitted Tab - Pending admin review */}
         <TabsContent value="submitted" className="space-y-4">
           {/* Search and Filter Controls */}
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -764,28 +834,32 @@ export function CarerReportsTab() {
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input type="date" value={submittedDateFrom}
-                  onChange={(e) => setSubmittedDateFrom(e.target.value)}
-                  className="w-[140px]" />
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+                  <Input type="date" value={submittedDateFrom}
+                    onChange={(e) => setSubmittedDateFrom(e.target.value)}
+                    placeholder="From date"
+                    className="w-full sm:w-[140px] text-sm" />
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-muted-foreground text-sm hidden sm:inline">to</span>
+                  <Input type="date" value={submittedDateTo}
+                    onChange={(e) => setSubmittedDateTo(e.target.value)}
+                    placeholder="To date"
+                    className="w-full sm:w-[140px] text-sm" />
+                </div>
+                {(submittedSearchQuery || submittedDateFrom || submittedDateTo) && (
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto"
+                    onClick={() => {
+                      setSubmittedSearchQuery('');
+                      setSubmittedDateFrom('');
+                      setSubmittedDateTo('');
+                    }}>
+                    <X className="h-4 w-4 mr-1" /> Clear
+                  </Button>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">to</span>
-                <Input type="date" value={submittedDateTo}
-                  onChange={(e) => setSubmittedDateTo(e.target.value)}
-                  className="w-[140px]" />
-              </div>
-              {(submittedSearchQuery || submittedDateFrom || submittedDateTo) && (
-                <Button variant="outline" size="sm"
-                  onClick={() => {
-                    setSubmittedSearchQuery('');
-                    setSubmittedDateFrom('');
-                    setSubmittedDateTo('');
-                  }}>
-                  <X className="h-4 w-4 mr-1" /> Clear
-                </Button>
-              )}
             </div>
           </Card>
 
@@ -825,8 +899,8 @@ export function CarerReportsTab() {
         {/* Completed Tab - Approved + Rejected */}
         <TabsContent value="completed" className="space-y-4">
           {/* Search and Filter Controls */}
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col gap-3">
               {/* Search by Client Name */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -848,43 +922,48 @@ export function CarerReportsTab() {
                 )}
               </div>
               
-              {/* Date From */}
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input
-                  type="date"
-                  value={completedDateFrom}
-                  onChange={(e) => setCompletedDateFrom(e.target.value)}
-                  className="w-[140px]"
-                />
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {/* Date From */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+                  <Input
+                    type="date"
+                    value={completedDateFrom}
+                    onChange={(e) => setCompletedDateFrom(e.target.value)}
+                    placeholder="From date"
+                    className="w-full sm:w-[140px] text-sm"
+                  />
+                </div>
+                
+                {/* Date To */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-muted-foreground text-sm hidden sm:inline">to</span>
+                  <Input
+                    type="date"
+                    value={completedDateTo}
+                    onChange={(e) => setCompletedDateTo(e.target.value)}
+                    placeholder="To date"
+                    className="w-full sm:w-[140px] text-sm"
+                  />
+                </div>
+                
+                {/* Clear Filters */}
+                {(completedSearchQuery || completedDateFrom || completedDateTo) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      setCompletedSearchQuery('');
+                      setCompletedDateFrom('');
+                      setCompletedDateTo('');
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
               </div>
-              
-              {/* Date To */}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">to</span>
-                <Input
-                  type="date"
-                  value={completedDateTo}
-                  onChange={(e) => setCompletedDateTo(e.target.value)}
-                  className="w-[140px]"
-                />
-              </div>
-              
-              {/* Clear Filters */}
-              {(completedSearchQuery || completedDateFrom || completedDateTo) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCompletedSearchQuery('');
-                    setCompletedDateFrom('');
-                    setCompletedDateTo('');
-                  }}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
-              )}
             </div>
           </Card>
 
@@ -1001,24 +1080,24 @@ function ReportCard({
   };
   return <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(report.service_date), 'EEEE, MMMM d, yyyy')}
-              <Badge variant="custom" className={getStatusColor(report.status)}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="space-y-2 min-w-0 flex-1">
+            <CardTitle className="text-sm sm:text-base flex flex-wrap items-center gap-2">
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className="break-words">{format(new Date(report.service_date), 'EEE, MMM d, yyyy')}</span>
+              <Badge variant="custom" className={cn(getStatusColor(report.status), "shrink-0")}>
                 {getStatusIcon(report.status)}
-                {report.status.replace('_', ' ').toUpperCase()}
+                <span className="hidden sm:inline ml-1">{report.status.replace('_', ' ').toUpperCase()}</span>
               </Badge>
             </CardTitle>
-            <CardDescription className="flex items-center gap-4 text-sm">
+            <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {report.clients?.first_name} {report.clients?.last_name}
+                <User className="h-3 w-3 shrink-0" />
+                <span className="truncate">{report.clients?.first_name} {report.clients?.last_name}</span>
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {report.service_duration_minutes} minutes
+                <Clock className="h-3 w-3 shrink-0" />
+                {report.service_duration_minutes} min
               </span>
               <span className="text-xs text-muted-foreground">
                 Submitted: {format(new Date(report.submitted_at), 'MMM d, HH:mm')}
@@ -1026,16 +1105,16 @@ function ReportCard({
             </CardDescription>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto shrink-0">
             {onView && (
-              <Button onClick={onView} size="sm" variant="outline">
-                <Eye className="h-4 w-4 mr-1" />
-                View
+              <Button onClick={onView} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                <Eye className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">View</span>
               </Button>
             )}
-            {canEdit && onEdit && <Button onClick={onEdit} size="sm" variant="outline">
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
+            {canEdit && onEdit && <Button onClick={onEdit} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                <Edit className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Edit</span>
               </Button>}
           </div>
         </div>
@@ -1056,22 +1135,22 @@ function ReportCard({
           </div>
 
           {/* Key indicators */}
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span>{report.client_mood}</span>
+              <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+              <span className="truncate">{report.client_mood}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>{report.client_engagement}</span>
+              <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+              <span className="truncate">{report.client_engagement}</span>
             </div>
             {report.incident_occurred && <div className="flex items-center gap-1">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>Incident</span>
               </div>}
             {report.medication_administered && <div className="flex items-center gap-1">
-                <CheckCircle className="h-4 w-4 text-blue-500" />
-                <span>Medication</span>
+                <CheckCircle className="h-4 w-4 text-blue-500 shrink-0" />
+                <span>Meds</span>
               </div>}
           </div>
 
