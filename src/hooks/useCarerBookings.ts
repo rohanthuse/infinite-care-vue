@@ -123,7 +123,8 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
       )
     `)
     .eq('staff_id', carerId)
-    .order('start_time', { ascending: false });
+    .order('start_time', { ascending: true })
+    .limit(2000); // Explicit limit to ensure all past bookings are fetched
 
   if (error) {
     console.error('[fetchCarerBookings] Error:', error);
