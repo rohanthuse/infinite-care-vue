@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
-import { useCarerContext } from '@/hooks/useCarerContext';
+import { useCarerContext, clearCarerContextCache } from '@/hooks/useCarerContext';
 import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
 import { useCarerBookings } from '@/hooks/useCarerBookings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { getBookingStatusLabel } from '@/components/bookings/utils/bookingColors';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 export function CarerReportsTab() {
   const queryClient = useQueryClient();
   
@@ -41,15 +42,40 @@ export function CarerReportsTab() {
     refetch: refetchAllBookings
   } = useCarerBookings(carerContext?.staffProfile?.id);
 
-  // Force refetch bookings on mount to ensure fresh data (fixes "No Past Appointments" issue)
+  // Force refetch ALL carer data on mount to ensure fresh data (fixes missed appointments visibility)
   useEffect(() => {
     if (carerContext?.staffProfile?.id) {
-      console.log('[CarerReportsTab] Component mounted, invalidating bookings for fresh data');
-      queryClient.invalidateQueries({ 
-        queryKey: ['carer-bookings', carerContext.staffProfile.id] 
-      });
+      console.log('[CarerReportsTab] Component mounted, invalidating ALL carer data for fresh data');
+      
+      // Clear localStorage cache to prevent stale data issues
+      if (carerContext.staffProfile?.auth_user_id) {
+        clearCarerContextCache(carerContext.staffProfile.auth_user_id);
+      }
+      
+      // Invalidate all related queries for fresh data
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-context'] });
     }
   }, [carerContext?.staffProfile?.id, queryClient]);
+
+  // Handler for manual refresh
+  const handleForceRefresh = () => {
+    console.log('[CarerReportsTab] Manual refresh triggered');
+    
+    // Clear all caches
+    clearCarerContextCache();
+    
+    // Invalidate all queries
+    queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
+    queryClient.invalidateQueries({ queryKey: ['carer-context'] });
+    
+    // Refetch bookings
+    refetchAllBookings();
+    
+    toast.info('Refreshing appointments...');
+  };
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -188,10 +214,19 @@ export function CarerReportsTab() {
       }
     });
     
-    console.log('[CarerReportsTab] Past appointments filter:', {
+    // Enhanced diagnostic logging for debugging missed appointments visibility
+    console.log('[CarerReportsTab] Past appointments diagnostic:', {
+      staffId: carerContext?.staffProfile?.id,
+      authUserId: carerContext?.staffProfile?.auth_user_id,
       totalBookings: allBookings.length,
+      missedBookings: allBookings.filter(b => b.status === 'missed').length,
       pastCount: pastAppointments.length,
-      excludedCancelled: allBookings.filter(b => b.status === 'cancelled').length
+      pastMissedCount: pastAppointments.filter(b => b.status === 'missed').length,
+      excludedCancelled: allBookings.filter(b => b.status === 'cancelled').length,
+      statusBreakdown: allBookings.reduce((acc, b) => {
+        acc[b.status || 'unknown'] = (acc[b.status || 'unknown'] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
     });
 
     // Cross-reference with reports to get full report status
@@ -544,24 +579,34 @@ export function CarerReportsTab() {
 
         {/* Action Required Tab - Visits needing reports + Reports needing revision */}
         <TabsContent value="action-required" className="space-y-4">
-          {/* Search and Filter Controls */}
+          {/* Search and Filter Controls with Refresh Button */}
           <Card className="p-3 sm:p-4">
             <div className="flex flex-col gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by client name..."
-                  value={actionSearchQuery}
-                  onChange={(e) => setActionSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-                {actionSearchQuery && (
-                  <Button variant="ghost" size="icon" 
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                    onClick={() => setActionSearchQuery('')}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by client name..."
+                    value={actionSearchQuery}
+                    onChange={(e) => setActionSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                  {actionSearchQuery && (
+                    <Button variant="ghost" size="icon" 
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                      onClick={() => setActionSearchQuery('')}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleForceRefresh}
+                  title="Refresh appointments"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
