@@ -136,7 +136,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [listDateFrom, setListDateFrom] = useState("");
   const [listDateTo, setListDateTo] = useState("");
   const [listStatusFilter, setListStatusFilter] = useState("all");
-  const LIST_PAGE_SIZE = 100; // Fetch 100 per server page
+  // Dynamic page size: use larger batch when date filters are applied to show all on one page
+  const hasDateFilters = listDateFrom || listDateTo;
+  const LIST_PAGE_SIZE = hasDateFilters ? 5000 : 100;
 
   // Single handler for date changes - updates URL (single source of truth)
   const handleDateChange = (newDate: Date) => {
