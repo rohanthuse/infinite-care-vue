@@ -81,9 +81,9 @@ export const useLateArrivalsData = ({
           created_at,
           late_arrival_reason,
           arrival_delay_minutes,
-          booking:bookings!inner(start_time),
-          staff:staff!inner(id, first_name, last_name),
-          client:clients!inner(id, first_name, last_name)
+        booking:bookings(start_time),
+        staff(id, first_name, last_name),
+        client:clients(id, first_name, last_name)
         `)
         .eq('branch_id', branchId)
         .not('visit_start_time', 'is', null);

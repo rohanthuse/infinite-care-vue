@@ -79,8 +79,8 @@ export const useMissedCallsData = ({
           status,
           notes,
           cancellation_reason,
-          staff:staff!inner(id, first_name, last_name),
-          client:clients!inner(id, first_name, last_name)
+        staff(id, first_name, last_name),
+        client:clients(id, first_name, last_name)
         `)
         .eq('branch_id', branchId);
 
@@ -109,8 +109,8 @@ export const useMissedCallsData = ({
           status,
           notes,
           cancellation_reason,
-          staff:staff!inner(id, first_name, last_name),
-          client:clients!inner(id, first_name, last_name)
+        staff(id, first_name, last_name),
+        client:clients(id, first_name, last_name)
         `)
         .eq('branch_id', branchId)
         .in('status', ['cancelled', 'no-show']);
