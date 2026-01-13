@@ -130,7 +130,7 @@ export async function fetchBranchBookingsAll(
       )
     `, { count: 'exact' })
     .eq("branch_id", branchId)
-    .order("start_time", { ascending: false }) // Most recent first
+    .order("start_time", { ascending: true }) // Oldest first - ensures date filters work for historical data
     .range(from, to);
 
   if (error) {
@@ -169,7 +169,7 @@ export function useBranchBookingsAll(
   }
 ) {
   const page = options?.page || 1;
-  const pageSize = options?.pageSize || 500; // Fetch 500 at a time for list view
+  const pageSize = options?.pageSize || 2000; // Increased to handle larger date ranges
   const enabled = options?.enabled !== false && !!branchId;
   
   const result = useQuery({
