@@ -26,8 +26,13 @@ export default function WizardStep8Dietary({ form, clientId }: { form: UseFormRe
   // Get client info from form
   const clientName = form.getValues('basic_info.full_name') || form.getValues('basic_info.preferred_name') || 'Client';
   
-  // Fluid balance hooks
-  const today = format(new Date(), 'yyyy-MM-dd');
+  // Fluid balance hooks - safely format today's date
+  let today: string;
+  try {
+    today = format(new Date(), 'yyyy-MM-dd');
+  } catch {
+    today = new Date().toISOString().split('T')[0];
+  }
   const { data: fluidTarget } = useFluidBalanceTarget(clientId || '');
   const { data: todayIntake } = useFluidIntakeSummary(clientId || '', today);
   const { data: todayOutput } = useFluidOutputSummary(clientId || '', today);

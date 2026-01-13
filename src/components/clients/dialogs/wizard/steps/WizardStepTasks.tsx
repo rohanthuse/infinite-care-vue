@@ -71,7 +71,8 @@ export function WizardStepTasks({ form }: WizardStepTasksProps) {
     form.setValue("tasks", current.filter((_: any, i: number) => i !== index));
   };
 
-  const tasks = form.watch("tasks") || [];
+  const rawTasks = form.watch("tasks");
+  const tasks = Array.isArray(rawTasks) ? rawTasks : [];
 
   const getCategoryLabel = (value: string) => {
     return TASK_CATEGORIES.find(c => c.value === value)?.label || value;

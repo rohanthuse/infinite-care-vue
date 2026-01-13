@@ -111,7 +111,8 @@ export function WizardStepKeyContacts({ form, clientId }: WizardStepKeyContactsP
     isDeleting
   } = useClientKeyContacts(clientId || '');
 
-  const keyContacts: Contact[] = form.watch("key_contacts") || [];
+  const rawKeyContacts = form.watch("key_contacts");
+  const keyContacts: Contact[] = Array.isArray(rawKeyContacts) ? rawKeyContacts : [];
 
   // Initialize form with database contacts on first load
   useEffect(() => {
@@ -175,6 +176,11 @@ export function WizardStepKeyContacts({ form, clientId }: WizardStepKeyContactsP
 
   const openEditModal = (index: number) => {
     const contact = keyContacts[index];
+    // Guard against malformed data
+    if (!contact || typeof contact !== 'object') {
+      toast.error("Unable to edit contact - data may be corrupted");
+      return;
+    }
     contactForm.reset(contact);
     setEditingIndex(index);
     setIsViewMode(false);
@@ -183,6 +189,11 @@ export function WizardStepKeyContacts({ form, clientId }: WizardStepKeyContactsP
 
   const openViewModal = (index: number) => {
     const contact = keyContacts[index];
+    // Guard against malformed data
+    if (!contact || typeof contact !== 'object') {
+      toast.error("Unable to view contact - data may be corrupted");
+      return;
+    }
     contactForm.reset(contact);
     setEditingIndex(index);
     setIsViewMode(true);

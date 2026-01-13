@@ -51,7 +51,8 @@ export function WizardStep6Activities({ form }: WizardStep6ActivitiesProps) {
     form.setValue("activities", current.filter((_, i) => i !== index));
   };
 
-  const activities = form.watch("activities") || [];
+  const rawActivities = form.watch("activities");
+  const activities = Array.isArray(rawActivities) ? rawActivities : [];
 
   return (
     <div className="space-y-6">
