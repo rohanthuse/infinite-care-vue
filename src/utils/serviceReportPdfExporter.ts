@@ -457,7 +457,6 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     ],
     [
       { label: 'Staff Name', value: carerName },
-      { label: 'Contact', value: report.staff?.email || 'N/A' },
     ],
     currentY, SECTION_BG.light
   );
@@ -1304,6 +1303,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     
     // Client signature box (right)
     const rightBoxX = margin + sigBoxWidth + 5;
+    doc.setFillColor(SECTION_BG.signatures.r, SECTION_BG.signatures.g, SECTION_BG.signatures.b);
     doc.roundedRect(rightBoxX, currentY, sigBoxWidth, sigBoxHeight, 1, 1, 'F');
     
     doc.setFont(undefined, 'bold');
@@ -1312,7 +1312,24 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     if (visitRecord?.client_signature_data) {
       try {
         doc.addImage(visitRecord.client_signature_data, 'PNG', rightBoxX + 5, currentY + 6, 40, 12);
-      } catch (e) { console.error('Error adding client signature:', e); }
+      } catch (e) { 
+        console.error('Error adding client signature:', e);
+        // Fallback: show placeholder text if image fails
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'italic');
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.text('Signature not provided', rightBoxX + 5, currentY + 12);
+        doc.setFontSize(6);
+        doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      }
+    } else {
+      // Show placeholder when no signature data exists
+      doc.setFontSize(7);
+      doc.setFont(undefined, 'italic');
+      doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+      doc.text('Signature not provided', rightBoxX + 5, currentY + 12);
+      doc.setFontSize(6);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
     }
     
     doc.setFont(undefined, 'normal');
