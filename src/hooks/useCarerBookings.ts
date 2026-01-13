@@ -22,6 +22,14 @@ export interface CarerBooking {
   // Multiple services support
   service_ids?: string[];
   service_names?: string[];
+  // Visit records for detecting completed visits (critical for Service Reports parity)
+  visit_records?: {
+    id: string;
+    visit_start_time?: string;
+    visit_end_time?: string;
+    actual_duration_minutes?: number;
+    status?: string;
+  }[];
   // Unavailability request data
   unavailability_request?: {
     id: string;
@@ -59,6 +67,8 @@ export interface CarerBooking {
 const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
   console.log('[fetchCarerBookings] Fetching bookings for carer:', carerId);
   
+  // CRITICAL: Include visit_records to match CarerAppointments.tsx query
+  // This ensures Service Reports can detect completed visits for proper categorization
   const { data, error } = await supabase
     .from('bookings')
     .select(`
@@ -83,6 +93,13 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
         id,
         title,
         description
+      ),
+      visit_records (
+        id,
+        visit_start_time,
+        visit_end_time,
+        actual_duration_minutes,
+        status
       ),
       booking_unavailability_requests!booking_id (
         id,

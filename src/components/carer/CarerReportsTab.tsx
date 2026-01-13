@@ -193,28 +193,40 @@ export function CarerReportsTab() {
 
 
   // Derived state: Past appointments with report status
+  // ALIGNED with CarerAppointments.tsx categorization logic for data parity
   const pastAppointmentsWithReportStatus = useMemo(() => {
-    // Filter past appointments - match Appointments tab logic (only exclude cancelled)
+    const now = new Date();
+    
+    // Filter past appointments - MATCH CarerAppointments.tsx categorizeAppointments() logic
     const pastAppointments = allBookings.filter(booking => {
       if (!booking.start_time) return false;
       try {
         const startTime = new Date(booking.start_time);
         if (isNaN(startTime.getTime())) return false;
         
-        const isPastStartTime = startTime < new Date();
+        // Only exclude cancelled bookings (matching CarerAppointments.tsx line 296-300)
+        if (booking.status === 'cancelled') return false;
         
-        // Only exclude cancelled bookings to match Appointments → Past tab
-        // This ensures consistent counts between Appointments and Service Reports
-        const excludedStatuses = ['cancelled'];
+        // Check if visit is actually completed (visit_record status trumps booking status)
+        // This matches CarerAppointments.tsx lines 307-314
+        const visitRecords = booking.visit_records || [];
+        const isVisitCompleted = visitRecords.length > 0 && 
+          visitRecords[0]?.status === 'completed' &&
+          visitRecords[0]?.visit_end_time;
         
-        return isPastStartTime && !excludedStatuses.includes(booking.status || '');
+        const isPastStartTime = startTime < now;
+        const isCompleted = ['completed', 'done'].includes(booking.status || '') || isVisitCompleted;
+        
+        // Include if: past start time OR has completed visit record
+        // This ensures appointments with completed visits appear even if booking status isn't updated
+        return isPastStartTime || isCompleted;
       } catch (e) {
         console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
         return false;
       }
     });
     
-    // Enhanced diagnostic logging for debugging missed appointments visibility
+    // Enhanced diagnostic logging for debugging - now includes visit_records info
     console.log('[CarerReportsTab] Past appointments diagnostic:', {
       staffId: carerContext?.staffProfile?.id,
       authUserId: carerContext?.staffProfile?.auth_user_id,
@@ -223,6 +235,8 @@ export function CarerReportsTab() {
       pastCount: pastAppointments.length,
       pastMissedCount: pastAppointments.filter(b => b.status === 'missed').length,
       excludedCancelled: allBookings.filter(b => b.status === 'cancelled').length,
+      bookingsWithVisitRecords: allBookings.filter(b => b.visit_records && b.visit_records.length > 0).length,
+      completedVisitRecords: allBookings.filter(b => b.visit_records?.[0]?.status === 'completed').length,
       statusBreakdown: allBookings.reduce((acc, b) => {
         acc[b.status || 'unknown'] = (acc[b.status || 'unknown'] || 0) + 1;
         return acc;
@@ -244,7 +258,7 @@ export function CarerReportsTab() {
         report: latestReport
       };
     });
-  }, [allBookings, reports]);
+  }, [allBookings, reports, carerContext?.staffProfile?.id, carerContext?.staffProfile?.auth_user_id]);
 
   // Derived state: Filtered action required data
   const filteredActionRequiredData = useMemo(() => {
