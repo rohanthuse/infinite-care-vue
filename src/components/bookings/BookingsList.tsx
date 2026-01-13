@@ -717,7 +717,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                               </div>
                             );
                           }
-                          return booking.carerName || 'Not Assigned';
+                          const displayName = booking.carerName || 'Not Assigned';
+                          const isUnassigned = displayName === 'Not Assigned' || !booking.carerId;
+                          return (
+                            <span className={isUnassigned ? "text-amber-600 dark:text-amber-400 italic" : ""}>
+                              {displayName}
+                            </span>
+                          );
                         })()}
                       </div>
                     </TableCell>
