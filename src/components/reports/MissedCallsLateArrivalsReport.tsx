@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Download, TrendingDown, PhoneOff, Clock, Users } from "lucide-react";
+import { Loader2, Download, TrendingDown, CalendarX, Clock, Users } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -133,7 +133,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
       <div className="text-center py-8">
         <p className="text-destructive">Error loading reports</p>
         <div className="flex gap-2 justify-center mt-2">
-          <Button onClick={() => refetchMissed()}>Retry Missed Calls</Button>
+          <Button onClick={() => refetchMissed()}>Retry Missed Bookings</Button>
           <Button onClick={() => refetchLate()}>Retry Late Arrivals</Button>
         </div>
       </div>
@@ -173,11 +173,11 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
         </Popover>
       </div>
 
-      <Tabs defaultValue="missed-calls" className="space-y-6">
+      <Tabs defaultValue="missed-bookings" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="missed-calls">
-            <PhoneOff className="h-4 w-4 mr-2" />
-            Missed Calls
+          <TabsTrigger value="missed-bookings">
+            <CalendarX className="h-4 w-4 mr-2" />
+            Missed Bookings
           </TabsTrigger>
           <TabsTrigger value="late-arrivals">
             <Clock className="h-4 w-4 mr-2" />
@@ -185,12 +185,12 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
           </TabsTrigger>
         </TabsList>
 
-        {/* Missed Calls Tab */}
-        <TabsContent value="missed-calls" className="space-y-6">
+        {/* Missed Bookings Tab */}
+        <TabsContent value="missed-bookings" className="space-y-6">
           {isMissedLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Loading missed calls data...</span>
+              <span>Loading missed bookings data...</span>
             </div>
           ) : (
             <>
@@ -203,7 +203,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                         <p className="text-sm font-medium text-muted-foreground">Total Missed</p>
                         <p className="text-2xl font-bold text-destructive">{missedCallsData?.summary.totalMissedCalls || 0}</p>
                       </div>
-                      <PhoneOff className="h-8 w-8 text-destructive" />
+                      <CalendarX className="h-8 w-8 text-destructive" />
                     </div>
                   </CardContent>
                 </Card>
@@ -247,7 +247,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                   <DropdownMenuTrigger asChild>
                     <Button>
                       <Download className="h-4 w-4 mr-2" />
-                      Export Missed Calls
+                      Export Missed Bookings
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -274,7 +274,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Missed Calls Trend</CardTitle>
+                    <CardTitle>Missed Bookings Trend</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ChartContainer config={{}}>
@@ -328,7 +328,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
               {/* Staff Table with Drill-Down */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Missed Calls by Staff (Click to Expand)</CardTitle>
+                  <CardTitle>Missed Bookings by Staff (Click to Expand)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[500px]">
@@ -337,7 +337,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                         <TableRow>
                           <TableHead className="w-12"></TableHead>
                           <TableHead>Staff Member</TableHead>
-                          <TableHead className="text-center">Missed Calls</TableHead>
+                          <TableHead className="text-center">Missed Bookings</TableHead>
                           <TableHead className="text-center">Reliability Rate</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -381,7 +381,7 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                         ) : (
                           <TableRow>
                             <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                              No missed calls data available
+                              No missed bookings data available
                             </TableCell>
                           </TableRow>
                         )}
