@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Booking } from "./BookingTimeGrid";
 import { format } from "date-fns";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
@@ -60,6 +61,29 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
   const [relatedRecordsInfo, setRelatedRecordsInfo] = useState<BookingRelatedRecords | null>(null);
   const itemsPerPage = 10;
+  
+  // Convert string dates to Date objects for the enhanced picker
+  const dateFromObj = dateFrom ? new Date(dateFrom + 'T00:00:00') : undefined;
+  const dateToObj = dateTo ? new Date(dateTo + 'T00:00:00') : undefined;
+
+  // Handlers for date changes
+  const handleDateFromChange = (date: Date | undefined) => {
+    if (date) {
+      setDateFrom(format(date, 'yyyy-MM-dd'));
+    } else {
+      setDateFrom("");
+    }
+    setCurrentPage(1);
+  };
+
+  const handleDateToChange = (date: Date | undefined) => {
+    if (date) {
+      setDateTo(format(date, 'yyyy-MM-dd'));
+    } else {
+      setDateTo("");
+    }
+    setCurrentPage(1);
+  };
   
   const deleteBooking = useDeleteBooking(branchId);
   const deleteMultipleBookings = useDeleteMultipleBookings(branchId);
@@ -487,7 +511,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              "From Date" cannot be after "To Date". Please adjust your date range.
+              Invalid date range: "From Date" ({dateFrom}) cannot be after "To Date" ({dateTo}). 
+              Please adjust your date range or clear the filters.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* No results message */}
+        {filteredBookings.length === 0 && hasActiveFilters && isDateRangeValid && (
+          <Alert className="mb-4">
+            <AlertDescription>
+              No bookings found matching your filters. Try adjusting the date range or search criteria.
             </AlertDescription>
           </Alert>
         )}
@@ -509,31 +543,24 @@ export const BookingsList: React.FC<BookingsListProps> = ({
             </div>
           </div>
           
-          {/* Date From */}
-          <div className="w-[160px]">
-            <Input
-              type="date"
-              placeholder="From Date"
-              value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="py-2 rounded-md bg-background border-border"
+          {/* Date From - Enhanced with manual entry */}
+          <div className="w-[180px]">
+            <EnhancedDatePicker
+              value={dateFromObj}
+              onChange={handleDateFromChange}
+              placeholder="From (DD/MM/YYYY)"
+              className="w-full"
             />
           </div>
           
-          {/* Date To */}
-          <div className="w-[160px]">
-            <Input
-              type="date"
-              placeholder="To Date"
-              value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="py-2 rounded-md bg-background border-border"
+          {/* Date To - Enhanced with manual entry */}
+          <div className="w-[180px]">
+            <EnhancedDatePicker
+              value={dateToObj}
+              onChange={handleDateToChange}
+              placeholder="To (DD/MM/YYYY)"
+              disabled={(date) => dateFromObj ? date < dateFromObj : false}
+              className="w-full"
             />
           </div>
           
