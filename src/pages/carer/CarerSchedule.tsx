@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Calendar, Clock, User, MapPin, Phone, Filter, ChevronLeft, ChevronRight, Eye, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,15 +16,45 @@ import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmen
 import { CarerUnavailabilityDialog } from "@/components/carer/CarerUnavailabilityDialog";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useSubmitUnavailability } from "@/hooks/useCarerUnavailability";
+import { useSearchParams } from "react-router-dom";
 
 const CarerSchedule: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Parse view parameter or default to week - URL is SINGLE SOURCE OF TRUTH
+  const viewParam = searchParams.get('view');
+  const initialViewMode = useMemo(() => {
+    const validViews = ['day', 'week', 'month'];
+    if (viewParam && validViews.includes(viewParam)) {
+      return viewParam;
+    }
+    return 'week';
+  }, [viewParam]);
+  
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState("week"); // week, day, month
+  const [viewMode, setViewMode] = useState(initialViewMode);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const [showAllAppointments, setShowAllAppointments] = useState(false);
   const [showUnavailabilityDialog, setShowUnavailabilityDialog] = useState(false);
   const [selectedUnavailabilityAppointment, setSelectedUnavailabilityAppointment] = useState<any>(null);
+  
+  // Sync viewMode state when URL parameter changes
+  useEffect(() => {
+    if (initialViewMode !== viewMode) {
+      setViewMode(initialViewMode);
+    }
+  }, [initialViewMode]);
+  
+  // Handler for view mode changes - updates URL (single source of truth)
+  const handleViewModeChange = (newViewMode: string) => {
+    if (newViewMode !== viewMode) {
+      const params = new URLSearchParams(searchParams);
+      params.set('view', newViewMode);
+      setSearchParams(params, { replace: true });
+      setViewMode(newViewMode);
+    }
+  };
   
   const { user } = useCarerAuth();
   const { createCarerPath } = useCarerNavigation();
@@ -303,7 +333,7 @@ const CarerSchedule: React.FC = () => {
         <h1 className="text-xl md:text-2xl font-bold">My Schedule</h1>
         
         <div className="flex items-center gap-2">
-          <Select value={viewMode} onValueChange={setViewMode}>
+          <Select value={viewMode} onValueChange={handleViewModeChange}>
             <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
