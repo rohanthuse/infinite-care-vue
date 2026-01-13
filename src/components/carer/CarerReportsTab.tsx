@@ -218,7 +218,9 @@ export function CarerReportsTab() {
         
         const isPastStartTime = startTime < now;
         const isCompleted = ['completed', 'done'].includes(booking.status || '') || isVisitCompleted;
-        const isMissed = booking.status === 'missed'; // Include missed appointments regardless of time
+        // CRITICAL: Check BOTH status AND is_missed flag for consistent missed detection
+        // The is_missed flag is set by process-late-booking-alerts edge function
+        const isMissed = booking.status === 'missed' || booking.is_missed === true;
         
         // Include if: past start time OR has completed visit record OR is marked missed
         // This ensures missed appointments appear even if start_time hasn't passed in the UI's timezone
@@ -234,9 +236,9 @@ export function CarerReportsTab() {
       staffId: carerContext?.staffProfile?.id,
       authUserId: carerContext?.staffProfile?.auth_user_id,
       totalBookings: allBookings.length,
-      missedBookings: allBookings.filter(b => b.status === 'missed').length,
+      missedBookings: allBookings.filter(b => b.status === 'missed' || b.is_missed === true).length,
       pastCount: pastAppointments.length,
-      pastMissedCount: pastAppointments.filter(b => b.status === 'missed').length,
+      pastMissedCount: pastAppointments.filter(b => b.status === 'missed' || b.is_missed === true).length,
       excludedCancelled: allBookings.filter(b => b.status === 'cancelled').length,
       bookingsWithVisitRecords: allBookings.filter(b => b.visit_records && b.visit_records.length > 0).length,
       completedVisitRecords: allBookings.filter(b => b.visit_records?.[0]?.status === 'completed').length,
@@ -247,7 +249,7 @@ export function CarerReportsTab() {
     });
 
     // Track missed appointments breakdown for debugging
-    const missedInPast = pastAppointments.filter(b => b.status === 'missed');
+    const missedInPast = pastAppointments.filter(b => b.status === 'missed' || b.is_missed === true);
     console.log('[CarerReportsTab] Missed appointments breakdown:', {
       totalMissed: missedInPast.length,
       missedWithSubmittedReports: missedInPast.filter(b => 
@@ -292,7 +294,7 @@ export function CarerReportsTab() {
     console.log('[CarerReportsTab] Action Required filtered:', {
       totalPastAppointments: pastAppointmentsWithReportStatus.length,
       needingReports: filteredVisits.length,
-      missedNeedingReports: filteredVisits.filter(b => b.status === 'missed').length,
+      missedNeedingReports: filteredVisits.filter(b => b.status === 'missed' || b.is_missed === true).length,
       byStatus: filteredVisits.reduce((acc, b) => {
         acc[b.status || 'unknown'] = (acc[b.status || 'unknown'] || 0) + 1;
         return acc;

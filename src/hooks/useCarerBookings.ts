@@ -13,6 +13,10 @@ export interface CarerBooking {
   revenue?: number;
   status: string;
   created_at: string;
+  // Backend flags for late/missed detection (set by process-late-booking-alerts edge function)
+  is_missed?: boolean | null;
+  is_late_start?: boolean | null;
+  late_start_minutes?: number | null;
   // Extended fields for display
   client_name?: string;
   service_name?: string;
