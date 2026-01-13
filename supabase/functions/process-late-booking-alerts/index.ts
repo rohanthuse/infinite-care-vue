@@ -58,8 +58,8 @@ serve(async (req) => {
     console.log('[process-late-booking-alerts] Starting...');
     
     const now = new Date();
-    // Only process bookings from last 24 hours
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    // Process bookings from last 7 days to catch any missed during downtime
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
     const { data: lateBookings, error: bookingsError } = await supabase
       .from('bookings')
@@ -70,13 +70,13 @@ serve(async (req) => {
         staff:staff_id (id, first_name, last_name, late_arrival_count, missed_booking_count, auth_user_id),
         service:service_id (id, title)
       `)
-      .in('status', ['confirmed', 'assigned'])
-      .gte('start_time', twentyFourHoursAgo.toISOString())
+      .in('status', ['confirmed', 'assigned', 'unassigned'])
+      .gte('start_time', sevenDaysAgo.toISOString())
       .lt('start_time', now.toISOString())
       .is('cancelled_at', null)
       .or('cancellation_request_status.is.null,cancellation_request_status.neq.approved')
       .or('reschedule_request_status.is.null,reschedule_request_status.neq.approved')
-      .limit(50);
+      .limit(200);
 
     if (bookingsError) {
       console.error('[process-late-booking-alerts] Error:', bookingsError);
