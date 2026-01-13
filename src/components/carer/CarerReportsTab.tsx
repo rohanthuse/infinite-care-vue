@@ -218,10 +218,11 @@ export function CarerReportsTab() {
         
         const isPastStartTime = startTime < now;
         const isCompleted = ['completed', 'done'].includes(booking.status || '') || isVisitCompleted;
+        const isMissed = booking.status === 'missed'; // Include missed appointments regardless of time
         
-        // Include if: past start time OR has completed visit record
-        // This ensures appointments with completed visits appear even if booking status isn't updated
-        return isPastStartTime || isCompleted;
+        // Include if: past start time OR has completed visit record OR is marked missed
+        // This ensures missed appointments appear even if start_time hasn't passed in the UI's timezone
+        return isPastStartTime || isCompleted || isMissed;
       } catch (e) {
         console.warn('[CarerReportsTab] Invalid date for booking:', booking.id);
         return false;
