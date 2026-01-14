@@ -1,7 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { X, FileEdit, Download } from "lucide-react";
+import { X, FileEdit, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,17 @@ interface CarePlanHeaderProps {
     equipment?: any[];
     riskAssessments?: any[];
     serviceActions?: any[];
+    aboutMe?: any;
+    goals?: any[];
+    activities?: any[];
+    medications?: any[];
+    keyContacts?: any[];
+    consent?: any;
+    general?: any;
+    hobbies?: any[];
   };
   branchName?: string;
+  branchId?: string;
   onClose: () => void;
   onEdit: () => void;
 }
@@ -40,16 +49,22 @@ export const CarePlanHeader: React.FC<CarePlanHeaderProps> = ({
   carePlan,
   clientData,
   branchName = "Med-Infinite",
+  branchId,
   onClose,
   onEdit,
 }) => {
-  const handleExportCarePlan = () => {
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  const handleExportCarePlan = async () => {
+    setIsExporting(true);
     try {
-      generateCarePlanDetailPDF(carePlan, clientData || {}, branchName);
+      await generateCarePlanDetailPDF(carePlan, clientData || {}, branchName, branchId);
       toast.success("Care plan exported successfully");
     } catch (error) {
       console.error("Error exporting care plan:", error);
       toast.error("Failed to export care plan");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -72,9 +87,18 @@ export const CarePlanHeader: React.FC<CarePlanHeaderProps> = ({
       </div>
       
       <div className="flex items-center space-x-2">
-        <Button variant="outline" onClick={handleExportCarePlan} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          <span>Export</span>
+        <Button 
+          variant="outline" 
+          onClick={handleExportCarePlan} 
+          disabled={isExporting}
+          className="flex items-center gap-2"
+        >
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          <span>{isExporting ? 'Exporting...' : 'Export'}</span>
         </Button>
         <Button variant="outline" onClick={onEdit} className="flex items-center gap-2">
           <FileEdit className="h-4 w-4" />

@@ -125,7 +125,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     toast.info("Document upload functionality available in Documents tab");
   };
 
-  // Prepare client data for PDF export
+  // Prepare client data for PDF export - Include all available data
   const clientDataForPDF = {
     clientProfile,
     personalInfo,
@@ -136,6 +136,16 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     equipment,
     riskAssessments,
     serviceActions,
+    // Additional data from care plan
+    aboutMe: carePlanData?.about_me || aboutMeData,
+    goals: carePlanData?.goals,
+    activities: carePlanData?.activities,
+    medications: carePlanData?.medications,
+    keyContacts: carePlanData?.key_contacts,
+    consent: carePlanData?.consent,
+    general: carePlanData?.general,
+    hobbies: carePlanData?.hobbies,
+    reviewDate: carePlanData?.review_date,
   };
 
   return (
@@ -145,6 +155,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           carePlan={carePlan}
           clientData={clientDataForPDF}
           branchName={branchName}
+          branchId={branchId}
           onClose={handleClose}
           onEdit={handleEdit}
         />

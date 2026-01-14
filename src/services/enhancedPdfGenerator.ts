@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { fetchOrganizationSettings, getLogoForPDF, OrganizationSettings } from "@/lib/pdfExportHelpers";
 
 // Extend jsPDF type to include autotable
 declare module "jspdf" {
@@ -20,6 +21,22 @@ const BRAND_COLORS = {
   white: [255, 255, 255] as [number, number, number]
 };
 
+// Section background colors for visual distinction
+const SECTION_COLORS = {
+  patientInfo: { r: 239, g: 246, b: 255 },      // Light blue
+  carePlanDetails: { r: 240, g: 253, b: 244 },  // Light green  
+  medicalInfo: { r: 254, g: 242, b: 242 },      // Light red
+  personalCare: { r: 245, g: 243, b: 255 },     // Light purple
+  dietary: { r: 254, g: 252, b: 232 },          // Light yellow
+  riskAssessments: { r: 255, g: 247, b: 237 },  // Light orange
+  goals: { r: 236, g: 253, b: 245 },            // Light teal
+  keyContacts: { r: 240, g: 249, b: 255 },      // Light cyan
+  aboutMe: { r: 249, g: 250, b: 251 },          // Light gray
+  activities: { r: 243, g: 244, b: 246 },       // Gray
+  equipment: { r: 254, g: 249, b: 195 },        // Pale yellow
+  consent: { r: 237, g: 233, b: 254 },          // Light violet
+};
+
 interface OrganizationData {
   name?: string;
   logo_url?: string;
@@ -35,6 +52,7 @@ interface PdfOptions {
   includeWatermark?: boolean;
   confidential?: boolean;
   organization?: OrganizationData;
+  logoBase64?: string | null;
 }
 
 export class EnhancedPdfGenerator {
@@ -42,6 +60,7 @@ export class EnhancedPdfGenerator {
   private pageWidth: number;
   private pageHeight: number;
   private currentY: number = 20;
+  private logoBase64: string | null = null;
 
   constructor() {
     this.doc = new jsPDF();
@@ -49,68 +68,106 @@ export class EnhancedPdfGenerator {
     this.pageHeight = this.doc.internal.pageSize.getHeight();
   }
 
-  // Add organization header with branding
+  // Set logo for the PDF
+  setLogo(logoBase64: string | null): void {
+    this.logoBase64 = logoBase64;
+  }
+
+  // Helper to detect image format from base64
+  private getImageFormat(base64: string): 'PNG' | 'JPEG' | 'GIF' {
+    if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+    if (base64.includes('data:image/gif')) return 'GIF';
+    return 'PNG';
+  }
+
+  // Add organization header with branding - NEW LAYOUT: Logo LEFT, Org details RIGHT
   private addHeader(options: PdfOptions): number {
     const org = options.organization;
     const orgName = org?.name || 'Med-Infinite';
-    
-    // Header background
+    const margin = 15;
+    const rightX = this.pageWidth - margin;
+
+    // Thin blue top strip for branding
     this.doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.rect(0, 0, this.pageWidth, 50, 'F');
+    this.doc.rect(0, 0, this.pageWidth, 5, 'F');
 
-    let currentY = 15;
-    const leftMargin = 20;
-    const rightColumn = this.pageWidth - 20;
+    let headerContentY = 12;
 
-    // Organization name (large, white, left side)
-    this.doc.setFontSize(22);
-    this.doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    this.doc.text(orgName, leftMargin, currentY);
-    currentY += 10;
-
-    // Organization contact details (smaller, white, below name)
-    this.doc.setFontSize(9);
-    if (org?.address) {
-      this.doc.text(org.address, leftMargin, currentY);
-      currentY += 5;
+    // LEFT SIDE: Organization Logo
+    if (this.logoBase64 || options.logoBase64) {
+      try {
+        const logo = this.logoBase64 || options.logoBase64;
+        if (logo) {
+          const format = this.getImageFormat(logo);
+          this.doc.addImage(logo, format, margin, 8, 40, 22);
+        }
+      } catch (e) {
+        console.error('Error adding logo to header:', e);
+      }
     }
 
-    // Email and phone on same line
-    const contactParts: string[] = [];
-    if (org?.contact_email) contactParts.push(org.contact_email);
-    if (org?.contact_phone) contactParts.push(org.contact_phone);
-    if (contactParts.length > 0) {
-      this.doc.text(contactParts.join('  |  '), leftMargin, currentY);
-    }
+    // RIGHT SIDE: Organization details (right-aligned)
+    this.doc.setFontSize(12);
+    this.doc.setFont(undefined, 'bold');
+    this.doc.setTextColor(31, 41, 55); // gray-800
+    this.doc.text(orgName, rightX, headerContentY, { align: 'right' });
+    headerContentY += 5;
 
-    // Branch name on right side of header
-    this.doc.setFontSize(10);
-    this.doc.text(options.branchName, rightColumn, 15, { align: 'right' });
     this.doc.setFontSize(8);
-    this.doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, rightColumn, 22, { align: 'right' });
+    this.doc.setFont(undefined, 'normal');
+    this.doc.setTextColor(75, 85, 99); // gray-600
 
-    // "CARE PLAN" title - prominent, centered below header
-    let yPosition = 62;
-    this.doc.setFontSize(24);
+    // Branch name
+    if (options.branchName) {
+      this.doc.text(`Branch: ${options.branchName}`, rightX, headerContentY, { align: 'right' });
+      headerContentY += 4;
+    }
+
+    // Contact details
+    if (org?.contact_phone) {
+      this.doc.text(`Tel: ${org.contact_phone}`, rightX, headerContentY, { align: 'right' });
+      headerContentY += 4;
+    }
+    if (org?.contact_email) {
+      this.doc.text(`Email: ${org.contact_email}`, rightX, headerContentY, { align: 'right' });
+      headerContentY += 4;
+    }
+
+    // Generated date on right
+    this.doc.setFontSize(7);
+    this.doc.setTextColor(107, 114, 128); // gray-500
+    this.doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, rightX, headerContentY, { align: 'right' });
+
+    // Separator line below header content
+    let separatorY = 35;
+    this.doc.setDrawColor(229, 231, 235); // gray-200
+    this.doc.setLineWidth(0.5);
+    this.doc.line(margin, separatorY, this.pageWidth - margin, separatorY);
+
+    // "CARE PLAN" title - prominent, centered below separator
+    let yPosition = separatorY + 12;
+    this.doc.setFontSize(22);
+    this.doc.setFont(undefined, 'bold');
     this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
     this.doc.text("CARE PLAN", this.pageWidth / 2, yPosition, { align: 'center' });
 
     // Decorative line under title
-    yPosition += 5;
+    yPosition += 4;
     this.doc.setDrawColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.setLineWidth(0.5);
-    this.doc.line(this.pageWidth / 2 - 40, yPosition, this.pageWidth / 2 + 40, yPosition);
+    this.doc.setLineWidth(0.8);
+    this.doc.line(this.pageWidth / 2 - 30, yPosition, this.pageWidth / 2 + 30, yPosition);
 
     // Report subtitle
-    yPosition += 10;
-    this.doc.setFontSize(10);
+    yPosition += 8;
+    this.doc.setFontSize(9);
+    this.doc.setFont(undefined, 'normal');
     this.doc.setTextColor(BRAND_COLORS.accent[0], BRAND_COLORS.accent[1], BRAND_COLORS.accent[2]);
     if (options.reportType) {
       this.doc.text(options.reportType, this.pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 8;
+      yPosition += 6;
     }
 
-    return yPosition + 10;
+    return yPosition + 8;
   }
 
   // Add watermark
@@ -363,66 +420,84 @@ export class EnhancedPdfGenerator {
   generateCarePlanDetailPDF(carePlan: any, clientData: any, options: PdfOptions): void {
     this.currentY = this.addHeader(options);
 
-    if (options.includeWatermark) {
-      this.addWatermark();
-    }
-
-    // Patient Information Section
+    // Patient Information Section - Light Blue
     this.addSection("Patient Information", [
       ["Full Name", `${clientData.clientProfile?.first_name || ''} ${clientData.clientProfile?.last_name || ''}`],
       ["Date of Birth", clientData.clientProfile?.date_of_birth ? format(new Date(clientData.clientProfile.date_of_birth), "dd MMM yyyy") : 'N/A'],
+      ["Age Group", clientData.clientProfile?.age_group || 'N/A'],
       ["Address", clientData.clientProfile?.address || 'N/A'],
       ["Phone", clientData.clientProfile?.phone || 'N/A'],
-      ["Email", clientData.clientProfile?.email || 'N/A']
-    ]);
+      ["Email", clientData.clientProfile?.email || 'N/A'],
+      ["NHS Number", clientData.clientProfile?.nhs_number || 'N/A']
+    ], SECTION_COLORS.patientInfo);
 
-    // Care Plan Details Section
+    // Care Plan Details Section - Light Green
     this.addSection("Care Plan Details", [
+      ["Plan ID", carePlan.id || 'N/A'],
       ["Plan Title", carePlan.title || 'N/A'],
-      ["Provider", carePlan.assignedTo || 'N/A'],
+      ["Assigned Staff", carePlan.assignedTo || 'N/A'],
       ["Provider Type", carePlan.assignedToType || 'N/A'],
       ["Status", carePlan.status || 'N/A'],
-      ["Start Date", format(carePlan.dateCreated, "dd MMM yyyy")],
-      ["Last Updated", format(carePlan.lastUpdated, "dd MMM yyyy")]
-    ]);
+      ["Start Date", carePlan.dateCreated ? format(new Date(carePlan.dateCreated), "dd MMM yyyy") : 'N/A'],
+      ["Last Updated", carePlan.lastUpdated ? format(new Date(carePlan.lastUpdated), "dd MMM yyyy") : 'N/A'],
+      ["Review Date", clientData.reviewDate ? format(new Date(clientData.reviewDate), "dd MMM yyyy") : 'N/A']
+    ], SECTION_COLORS.carePlanDetails);
 
-    // Medical Information Section
+    // Key Contacts Section - Light Cyan
+    if (clientData.keyContacts && clientData.keyContacts.length > 0) {
+      this.addKeyContactsSection(clientData.keyContacts);
+    }
+
+    // Medical Information Section - Light Red
     if (clientData.medicalInfo) {
       const medicalData: [string, string][] = [
         ["Allergies", clientData.medicalInfo.allergies?.join(', ') || 'None recorded'],
         ["Medical Conditions", clientData.medicalInfo.medical_conditions?.join(', ') || 'None recorded'],
-        ["Current Diagnosis", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
+        ["Current Medications", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
         ["Mobility Status", clientData.medicalInfo.mobility_status || 'N/A'],
-        ["Communication Needs", clientData.medicalInfo.communication_needs || 'N/A']
+        ["Communication Needs", clientData.medicalInfo.communication_needs || 'N/A'],
+        ["Vision", clientData.medicalInfo.vision || 'N/A'],
+        ["Hearing", clientData.medicalInfo.hearing || 'N/A'],
+        ["Mental Health", clientData.medicalInfo.mental_health || 'N/A']
       ];
-      this.addSection("Medical Information", medicalData);
+      this.addSection("Medical Information", medicalData, SECTION_COLORS.medicalInfo);
     }
 
-    // Personal Care Information
+    // Personal Care Information - Light Purple
     if (clientData.personalCare) {
       const personalCareData: [string, string][] = [
         ["Personal Hygiene Needs", clientData.personalCare.personal_hygiene_needs || 'N/A'],
         ["Bathing Preferences", clientData.personalCare.bathing_preferences || 'N/A'],
         ["Dressing Assistance", clientData.personalCare.dressing_assistance_level || 'N/A'],
         ["Toileting Assistance", clientData.personalCare.toileting_assistance_level || 'N/A'],
-        ["Sleep Patterns", clientData.personalCare.sleep_patterns || 'N/A']
+        ["Continence Support", clientData.personalCare.continence_support || 'N/A'],
+        ["Sleep Patterns", clientData.personalCare.sleep_patterns || 'N/A'],
+        ["Skin Care", clientData.personalCare.skin_care || 'N/A']
       ];
-      this.addSection("Personal Care Requirements", personalCareData);
+      this.addSection("Personal Care Requirements", personalCareData, SECTION_COLORS.personalCare);
     }
 
-    // Dietary Requirements
+    // Dietary Requirements - Light Yellow
     if (clientData.dietaryRequirements) {
       const dietaryData: [string, string][] = [
         ["Dietary Restrictions", clientData.dietaryRequirements.dietary_restrictions?.join(', ') || 'None'],
         ["Food Allergies", clientData.dietaryRequirements.food_allergies?.join(', ') || 'None'],
         ["Food Preferences", clientData.dietaryRequirements.food_preferences?.join(', ') || 'None'],
+        ["Texture Modified Diet", clientData.dietaryRequirements.texture_modified || 'N/A'],
         ["Nutritional Needs", clientData.dietaryRequirements.nutritional_needs || 'N/A'],
-        ["Supplements", clientData.dietaryRequirements.supplements?.join(', ') || 'None']
+        ["Fluid Intake Target", clientData.dietaryRequirements.fluid_intake_target || 'N/A'],
+        ["Supplements", clientData.dietaryRequirements.supplements?.join(', ') || 'None'],
+        ["Feeding Assistance", clientData.dietaryRequirements.feeding_assistance || 'N/A']
       ];
-      this.addSection("Dietary Requirements", dietaryData);
+      this.addSection("Dietary Requirements", dietaryData, SECTION_COLORS.dietary);
     }
 
-    // Risk Assessments
+    // Medications Section - Enhanced
+    if (clientData.medications && clientData.medications.length > 0) {
+      this.addMedicationsTableSection(clientData.medications);
+    }
+
+    // Risk Assessments - Light Orange
     if (clientData.riskAssessments && clientData.riskAssessments.length > 0) {
       this.addRiskAssessmentsSection(clientData.riskAssessments);
     }
@@ -490,18 +565,26 @@ export class EnhancedPdfGenerator {
     this.doc.save(`Med-Infinite_Care_Plan_${patientName}_${dateStr}.pdf`);
   }
 
-  // Helper method to add a section with key-value pairs
-  private addSection(title: string, data: [string, string][]): void {
+  // Helper method to add a section with key-value pairs and optional colored background
+  private addSection(title: string, data: [string, string][], bgColor?: { r: number; g: number; b: number }): void {
     // Check if we need a new page
     if (this.currentY > this.pageHeight - 60) {
       this.doc.addPage();
       this.currentY = 20;
     }
 
-    this.doc.setFontSize(14);
+    // Section header with colored background
+    if (bgColor) {
+      this.doc.setFillColor(bgColor.r, bgColor.g, bgColor.b);
+      this.doc.rect(15, this.currentY - 6, this.pageWidth - 30, 12, 'F');
+    }
+
+    this.doc.setFontSize(13);
+    this.doc.setFont(undefined, 'bold');
     this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.text(title, 20, this.currentY);
-    this.currentY += 15;
+    this.doc.text(title, 18, this.currentY);
+    this.doc.setFont(undefined, 'normal');
+    this.currentY += 12;
 
     // Add data as a table with proper width and text wrapping
     autoTable(this.doc, {
@@ -509,25 +592,156 @@ export class EnhancedPdfGenerator {
       body: data,
       startY: this.currentY,
       tableWidth: this.pageWidth - 40,
-      theme: 'grid',
+      margin: { left: 20, right: 20 },
+      theme: 'striped',
       styles: {
         fontSize: 9,
         cellPadding: 4,
         overflow: 'linebreak',
-        cellWidth: 'wrap'
+        cellWidth: 'wrap',
+        lineColor: [229, 231, 235],
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 55, textColor: [55, 65, 81] },
+        1: { cellWidth: 'auto', overflow: 'linebreak' }
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // Helper method for key contacts section
+  private addKeyContactsSection(keyContacts: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    // Section header with colored background
+    this.doc.setFillColor(SECTION_COLORS.keyContacts.r, SECTION_COLORS.keyContacts.g, SECTION_COLORS.keyContacts.b);
+    this.doc.rect(15, this.currentY - 6, this.pageWidth - 30, 12, 'F');
+
+    this.doc.setFontSize(13);
+    this.doc.setFont(undefined, 'bold');
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Key Contacts", 18, this.currentY);
+    this.doc.setFont(undefined, 'normal');
+    this.currentY += 12;
+
+    const contactData = keyContacts.map(contact => [
+      contact.name || `${contact.first_name || ''} ${contact.surname || ''}`.trim() || 'N/A',
+      contact.relationship || 'N/A',
+      contact.phone || contact.mobile_number || 'N/A',
+      contact.email || 'N/A',
+      contact.is_emergency_contact ? 'Yes' : 'No'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Name", "Relationship", "Phone", "Email", "Emergency"]],
+      body: contactData,
+      startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
+      margin: { left: 20, right: 20 },
+      theme: 'striped',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap',
+        lineColor: [229, 231, 235],
+        lineWidth: 0.3,
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
       },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 50 },
-        1: { cellWidth: 'auto', overflow: 'linebreak' }
+        0: { cellWidth: 35 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 45 },
+        4: { cellWidth: 20 }
       }
     });
 
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // Helper method for medications table section
+  private addMedicationsTableSection(medications: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    // Section header with colored background
+    this.doc.setFillColor(SECTION_COLORS.medicalInfo.r, SECTION_COLORS.medicalInfo.g, SECTION_COLORS.medicalInfo.b);
+    this.doc.rect(15, this.currentY - 6, this.pageWidth - 30, 12, 'F');
+
+    this.doc.setFontSize(13);
+    this.doc.setFont(undefined, 'bold');
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Medications", 18, this.currentY);
+    this.doc.setFont(undefined, 'normal');
+    this.currentY += 12;
+
+    const medData = medications.map(med => [
+      med.name || med.medication_name || 'N/A',
+      med.dosage || 'N/A',
+      med.frequency || 'N/A',
+      Array.isArray(med.time_of_day) ? med.time_of_day.join(', ') : (med.time_of_day || 'N/A'),
+      med.instructions || 'N/A',
+      med.status || 'active'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Medication", "Dosage", "Frequency", "Time of Day", "Instructions", "Status"]],
+      body: medData,
+      startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
+      margin: { left: 20, right: 20 },
+      theme: 'striped',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap',
+        lineColor: [229, 231, 235],
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 'auto', overflow: 'linebreak' },
+        5: { cellWidth: 15 }
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 12;
   }
 
   // Helper method for risk assessments
@@ -977,20 +1191,44 @@ export const generateStaffReportPDF = (
   });
 };
 
-// Export convenience function for care plan detail
-export const generateCarePlanDetailPDF = (
+// Export convenience function for care plan detail - ASYNC to fetch org settings and logo
+export const generateCarePlanDetailPDF = async (
   carePlan: any,
   clientData: any,
   branchName: string,
-  organizationData?: OrganizationData
+  branchId?: string
 ) => {
+  // Fetch organization settings and logo if branchId is provided
+  let orgSettings: OrganizationSettings | null = null;
+  let logoBase64: string | null = null;
+
+  if (branchId) {
+    try {
+      orgSettings = await fetchOrganizationSettings(branchId);
+      logoBase64 = await getLogoForPDF(orgSettings);
+    } catch (error) {
+      console.error('Error fetching organization settings for PDF:', error);
+    }
+  }
+
   const generator = new EnhancedPdfGenerator();
+  
+  // Set the logo on the generator
+  generator.setLogo(logoBase64);
+
   generator.generateCarePlanDetailPDF(carePlan, clientData, {
     title: `Care Plan - ${carePlan.patientName}`,
     branchName,
     reportType: "Comprehensive Care Plan",
-    includeWatermark: true,
+    includeWatermark: false, // Clean look without watermark
     confidential: true,
-    organization: organizationData
+    organization: orgSettings ? {
+      name: orgSettings.name,
+      address: orgSettings.address || undefined,
+      contact_email: orgSettings.email || undefined,
+      contact_phone: orgSettings.telephone || undefined,
+      logo_url: orgSettings.logo_url || undefined,
+    } : undefined,
+    logoBase64
   });
 };
