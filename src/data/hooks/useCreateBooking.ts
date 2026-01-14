@@ -176,17 +176,28 @@ export function useCreateBooking(branchId?: string) {
           }
         };
 
+        // CRITICAL: Use predicate-based invalidation for branch-bookings and branch-bookings-range
+        // This ensures the Unified Schedule (which uses useBranchBookingsInRange) updates immediately
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const key = query.queryKey[0];
+            return key === "branch-bookings" || key === "branch-bookings-range";
+          }
+        });
+
         // Invalidate all relevant queries - CRITICAL: Include organization calendar
         const invalidationPromises = [
-          invalidateWithRetry(["branch-bookings", bookingBranchId]),
           invalidateWithRetry(["client-bookings", data.client_id]),
-          invalidateWithRetry(["organization-calendar"]), // FIX: Add organization calendar invalidation
-          invalidateWithRetry(["organization-bookings"]) // FIX: Add organization bookings invalidation
+          invalidateWithRetry(["organization-calendar"]),
+          invalidateWithRetry(["organization-bookings"])
         ];
         
-        // CRITICAL: Force immediate refetch to ensure calendar updates
+        // CRITICAL: Force immediate refetch of active range-based queries
         await queryClient.refetchQueries({ 
-          queryKey: ['organization-calendar'],
+          predicate: (query) => {
+            const key = query.queryKey[0];
+            return key === "branch-bookings" || key === "branch-bookings-range" || key === "organization-calendar";
+          },
           type: 'active'
         });
 
@@ -199,13 +210,8 @@ export function useCreateBooking(branchId?: string) {
         }
 
         await Promise.all(invalidationPromises);
-        
-        // Also invalidate with the provided branchId for backwards compatibility
-        if (branchId && branchId !== bookingBranchId) {
-          await invalidateWithRetry(["branch-bookings", branchId]);
-        }
 
-        console.log('[useCreateBooking] All query invalidations completed');
+        console.log('[useCreateBooking] All query invalidations completed including branch-bookings-range');
 
         // NEW: Auto-generate invoice for the booking
         console.log('[useCreateBooking] Auto-generating invoice for booking:', data.id);
