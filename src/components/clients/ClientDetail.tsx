@@ -26,6 +26,7 @@ import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { ClientRatesTab } from "./tabs/ClientRatesTab";
 import { ClientHobbiesTab } from "./tabs/ClientHobbiesTab";
 import { ReviewsTab } from "./tabs/ReviewsTab";
+import { HandoverSummaryTab } from "./tabs/HandoverSummaryTab";
 import { ClientMedicationsTab } from "./tabs/ClientMedicationsTab";
 import { ClientNews2Tab } from "./tabs/ClientNews2Tab";
 import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
@@ -330,6 +331,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="hobbies" className="p-6 m-0">
                   <ClientHobbiesTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="handover" className="p-6 m-0">
+                  <HandoverSummaryTab 
+                    clientId={client.id}
+                    clientName={displayName}
+                    clientPhone={realClientData?.phone || realClientData?.mobile_number || client?.phone || undefined}
+                    clientAddress={realClientData?.address || client?.location || undefined}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
