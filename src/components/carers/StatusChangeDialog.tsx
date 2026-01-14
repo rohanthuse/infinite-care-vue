@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useControlledDialog } from "@/hooks/useDialogManager";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Clock, UserX } from "lucide-react";
 import { CarerDB } from "@/data/hooks/useBranchCarers";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StatusChangeDialogProps {
   open: boolean;
@@ -31,9 +32,48 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
   
   const [newStatus, setNewStatus] = useState("");
   const [reason, setReason] = useState("");
+  const [futureBookingsCount, setFutureBookingsCount] = useState<number>(0);
+  const [isCheckingBookings, setIsCheckingBookings] = useState(false);
+
+  // Check for future bookings when "Inactive" is selected
+  useEffect(() => {
+    const checkFutureBookings = async () => {
+      if (newStatus !== "Inactive") {
+        setFutureBookingsCount(0);
+        return;
+      }
+      
+      setIsCheckingBookings(true);
+      try {
+        const carerIds = carers.map(c => c.id);
+        const now = new Date().toISOString();
+        
+        const { count, error } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .in('staff_id', carerIds)
+          .gte('start_time', now)
+          .neq('status', 'cancelled');
+        
+        if (!error) {
+          setFutureBookingsCount(count || 0);
+        }
+      } catch (err) {
+        console.error('Error checking future bookings:', err);
+      } finally {
+        setIsCheckingBookings(false);
+      }
+    };
+    
+    checkFutureBookings();
+  }, [newStatus, carers]);
 
   // Sync with parent state and ensure proper cleanup
   const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {
+      setFutureBookingsCount(0);
+      setIsCheckingBookings(false);
+    }
     controlledDialog.onOpenChange(newOpen);
     onOpenChange(newOpen);
   }, [controlledDialog, onOpenChange]);
@@ -159,6 +199,38 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
               rows={3}
             />
           </div>
+
+          {/* Future bookings warning for Inactive status */}
+          {newStatus === "Inactive" && isCheckingBookings && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+              Checking for future bookings...
+            </div>
+          )}
+          
+          {newStatus === "Inactive" && !isCheckingBookings && futureBookingsCount > 0 && (
+            <div className="p-3 border border-amber-300 rounded-md bg-amber-50">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">
+                    Warning: {futureBookingsCount} future booking{futureBookingsCount > 1 ? 's' : ''} assigned
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    These bookings will become orphaned in the Unified Schedule. 
+                    Consider reassigning them before marking this carer as inactive.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {newStatus === "Inactive" && !isCheckingBookings && futureBookingsCount === 0 && (
+            <div className="flex items-center gap-2 text-sm text-green-600 p-3 border border-green-200 rounded-md bg-green-50">
+              <CheckCircle className="h-4 w-4" />
+              No future bookings assigned
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
