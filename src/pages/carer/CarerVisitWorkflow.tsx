@@ -1830,6 +1830,8 @@ const CarerVisitWorkflow = () => {
         return true; // Goals are optional
       case "activities":
         return true; // Activities are optional
+      case "dietary":
+        return true; // Dietary is read-only/optional, always mark as completed when visited
       case "notes":
         return notes.trim().length >= 10; // Minimum note length
       case "sign-off":
@@ -1978,6 +1980,16 @@ const CarerVisitWorkflow = () => {
 
   // Helper function to determine why button is disabled
   const getButtonDisabledReason = () => {
+    // Check for long visit scenario first
+    if (visitRecord?.visit_start_time) {
+      const visitDuration = Date.now() - new Date(visitRecord.visit_start_time).getTime();
+      const durationMinutes = Math.floor(visitDuration / (1000 * 60));
+      
+      if (durationMinutes >= 60 && (visitLoading || authLoading || carerContextLoading) && !loadingStuckRecovery) {
+        return "Session may need refresh - use Refresh button above";
+      }
+    }
+    
     if (isCompletingVisit) return "Completing visit...";
     if (completeVisit.isPending) return "Saving visit...";
     if (createServiceReport.isPending) return "Creating report...";
@@ -4431,7 +4443,7 @@ const CarerVisitWorkflow = () => {
                     <Button 
                       onClick={handleNextStep}
                     >
-                      Complete Visit
+                      Next Step
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </>
@@ -4778,6 +4790,38 @@ const CarerVisitWorkflow = () => {
                       Back
                     </Button>
                     <div className="flex flex-col items-end gap-2">
+                      {/* Long visit duration warning - show after 45+ minutes */}
+                      {visitStarted && visitRecord?.visit_start_time && (() => {
+                        const visitDuration = Date.now() - new Date(visitRecord.visit_start_time).getTime();
+                        const durationMinutes = Math.floor(visitDuration / (1000 * 60));
+                        
+                        if (durationMinutes >= 45 && !loadingStuckRecovery) {
+                          return (
+                            <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg w-full">
+                              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                                  Long visit detected ({durationMinutes} minutes)
+                                </p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                  If the Complete button is unresponsive, click Refresh.
+                                </p>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleForceRecovery}
+                                className="border-blue-500 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                              >
+                                <RefreshCw className="w-4 h-4 mr-1" />
+                                Refresh
+                              </Button>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
                       {/* Stuck loading recovery banner */}
                       {loadingStuckRecovery && (
                         <div className="flex flex-col items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg w-full">
