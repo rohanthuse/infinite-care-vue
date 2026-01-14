@@ -189,7 +189,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         address: fullAddress, // Store reconstructed address
         branch_id: branchId,
         avatar_initials: generateAvatarInitials(formData.first_name, formData.last_name),
+        // Sanitize ALL date fields - convert empty strings to null for PostgreSQL
         date_of_birth: formData.date_of_birth || null,
+        active_from: formData.active_from || null,
+        active_until: formData.active_until || null,
         age_group: formData.age_group as "adult" | "child" | "young_person",
         // Remove individual address components (they don't exist in DB)
         house_no: undefined,
