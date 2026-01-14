@@ -7,9 +7,11 @@ interface SessionHealth {
   validateBeforeMutation: () => Promise<boolean>;
   markSessionRefreshed: () => void;
   markSessionUnhealthy: () => void;
+  silentRefresh: () => Promise<boolean>;
 }
 
-const SESSION_STALE_THRESHOLD = 20 * 60 * 1000; // 20 minutes
+// Increased from 20 minutes to 45 minutes to accommodate longer visits
+const SESSION_STALE_THRESHOLD = 45 * 60 * 1000;
 
 export const useSessionHealth = (navigateToLogin: () => void): SessionHealth => {
   const [isHealthy, setIsHealthy] = useState(true);
@@ -69,10 +71,30 @@ export const useSessionHealth = (navigateToLogin: () => void): SessionHealth => 
     setIsHealthy(false);
   }, []);
   
+  // Silent refresh - doesn't redirect on failure, useful for background refreshes
+  const silentRefresh = useCallback(async (): Promise<boolean> => {
+    try {
+      console.log('[useSessionHealth] Attempting silent session refresh...');
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.warn('[useSessionHealth] Silent refresh failed:', error);
+        return false;
+      }
+      lastRefreshTimeRef.current = Date.now();
+      setIsHealthy(true);
+      console.log('[useSessionHealth] Silent refresh successful');
+      return true;
+    } catch (err) {
+      console.warn('[useSessionHealth] Silent refresh error:', err);
+      return false;
+    }
+  }, []);
+  
   return {
     isHealthy,
     validateBeforeMutation,
     markSessionRefreshed,
     markSessionUnhealthy,
+    silentRefresh,
   };
 };

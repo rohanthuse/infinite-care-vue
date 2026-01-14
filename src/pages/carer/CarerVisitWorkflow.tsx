@@ -43,6 +43,7 @@ import {
   Calendar,
   Smile,
   Utensils,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1918,6 +1919,35 @@ const CarerVisitWorkflow = () => {
   // Ref to prevent double-clicks on Complete Visit button
   const completionInProgressRef = useRef(false);
 
+  // State and ref for stuck loading detection and recovery
+  const [loadingStuckRecovery, setLoadingStuckRecovery] = useState(false);
+  const loadingStuckTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Detect stuck loading states and offer recovery after 30 seconds
+  useEffect(() => {
+    const anyLoading = visitLoading || authLoading || carerContextLoading;
+    
+    if (anyLoading) {
+      // Start timer - if loading for more than 30s, trigger recovery option
+      loadingStuckTimerRef.current = setTimeout(() => {
+        console.warn('[CompleteVisit] Loading stuck for 30+ seconds, enabling recovery mode');
+        setLoadingStuckRecovery(true);
+      }, 30000);
+    } else {
+      // Clear timer and reset recovery state when loading completes
+      if (loadingStuckTimerRef.current) {
+        clearTimeout(loadingStuckTimerRef.current);
+      }
+      setLoadingStuckRecovery(false);
+    }
+
+    return () => {
+      if (loadingStuckTimerRef.current) {
+        clearTimeout(loadingStuckTimerRef.current);
+      }
+    };
+  }, [visitLoading, authLoading, carerContextLoading]);
+
   // Debug button state - helps identify why button is disabled
   useEffect(() => {
     console.log('[CompleteVisit Button] State Debug:', {
@@ -1936,13 +1966,15 @@ const CarerVisitWorkflow = () => {
       userEmail: user?.email,
       carerStaffId: carerContext?.staffId,
       hasCarerContext: !!carerContext,
+      loadingStuckRecovery,
       disabledReason: getButtonDisabledReason(),
       isDisabled: isCompletingVisit || completeVisit.isPending || createServiceReport.isPending || 
                   !carerSignature || !clientMood || !clientEngagement || 
-                  carerObservations.trim().length < 10 || visitLoading || authLoading || 
-                  carerContextLoading || !visitRecord || !user?.id || !carerContext?.staffId
+                  carerObservations.trim().length < 10 || 
+                  (!loadingStuckRecovery && (visitLoading || authLoading || carerContextLoading)) ||
+                  !visitRecord || !user?.id || !carerContext?.staffId
     });
-  }, [isCompletingVisit, carerSignature, clientMood, clientEngagement, carerObservations, visitLoading, authLoading, carerContextLoading, visitRecord, user, carerContext, completeVisit.isPending, createServiceReport.isPending]);
+  }, [isCompletingVisit, carerSignature, clientMood, clientEngagement, carerObservations, visitLoading, authLoading, carerContextLoading, visitRecord, user, carerContext, completeVisit.isPending, createServiceReport.isPending, loadingStuckRecovery]);
 
   // Helper function to determine why button is disabled
   const getButtonDisabledReason = () => {
@@ -1953,13 +1985,35 @@ const CarerVisitWorkflow = () => {
     if (!clientMood) return "Select client mood";
     if (!clientEngagement) return "Select client engagement";
     if (carerObservations.trim().length < 10) return "Add carer observations (min 10 characters)";
-    if (visitLoading) return "Loading visit data...";
-    if (authLoading) return "Loading user data...";
-    if (carerContextLoading) return "Loading staff profile...";
+    if (!loadingStuckRecovery && visitLoading) return "Loading visit data...";
+    if (!loadingStuckRecovery && authLoading) return "Loading user data...";
+    if (!loadingStuckRecovery && carerContextLoading) return "Loading staff profile...";
     if (!visitRecord) return "Visit record not found";
     if (!user?.id) return "User not authenticated";
     if (!carerContext?.staffId) return "Staff profile not linked";
     return null;
+  };
+
+  // Force recovery handler for stuck loading states
+  const handleForceRecovery = async () => {
+    console.log('[CompleteVisit] Force recovery triggered');
+    setLoadingStuckRecovery(false);
+    
+    // Force refresh session silently
+    try {
+      await supabase.auth.refreshSession();
+      markSessionRefreshed();
+      console.log('[CompleteVisit] Session refreshed during recovery');
+    } catch (error) {
+      console.error('[CompleteVisit] Session refresh failed during recovery:', error);
+    }
+    
+    // Invalidate and refetch critical queries
+    queryClient.invalidateQueries({ queryKey: ['visit-record', appointmentId] });
+    queryClient.invalidateQueries({ queryKey: ['appointment', appointmentId] });
+    queryClient.invalidateQueries({ queryKey: ['carer-context'] });
+    
+    toast.info('Data refreshed. Please try completing the visit again.');
   };
 
   const handleRefreshData = async () => {
@@ -4724,7 +4778,25 @@ const CarerVisitWorkflow = () => {
                       Back
                     </Button>
                     <div className="flex flex-col items-end gap-2">
-                      {(visitLoading || authLoading || !user?.id) && (
+                      {/* Stuck loading recovery banner */}
+                      {loadingStuckRecovery && (
+                        <div className="flex flex-col items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg w-full">
+                          <p className="text-sm text-amber-700 dark:text-amber-300">
+                            Loading is taking longer than expected
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleForceRecovery}
+                            className="border-amber-500 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                          >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Force Refresh & Retry
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {(visitLoading || authLoading || !user?.id) && !loadingStuckRecovery && (
                         <Button 
                           variant={!user?.id ? "default" : "ghost"}
                           size="sm"
@@ -4737,6 +4809,7 @@ const CarerVisitWorkflow = () => {
                       <Button 
                         onClick={() => handleCompleteVisit()} 
                         size="lg"
+                        className="transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-lg"
                         disabled={
                           isCompletingVisit || 
                           completeVisit.isPending ||
@@ -4745,9 +4818,8 @@ const CarerVisitWorkflow = () => {
                           !clientMood ||
                           !clientEngagement ||
                           carerObservations.trim().length < 10 ||
-                          visitLoading || 
-                          authLoading || 
-                          carerContextLoading ||
+                          // Allow bypass when recovery mode is active
+                          (!loadingStuckRecovery && (visitLoading || authLoading || carerContextLoading)) ||
                           !visitRecord || 
                           !user?.id ||
                           !carerContext?.staffId
@@ -4755,12 +4827,12 @@ const CarerVisitWorkflow = () => {
                       >
                         {isCompletingVisit ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Completing...
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                            <span className="animate-pulse">Completing Visit...</span>
                           </>
-                        ) : (visitLoading || authLoading || carerContextLoading || !visitRecord) ? (
+                        ) : (!loadingStuckRecovery && (visitLoading || authLoading || carerContextLoading)) || !visitRecord ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                             Loading...
                           </>
                         ) : (
