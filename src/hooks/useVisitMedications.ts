@@ -150,32 +150,44 @@ export const useVisitMedications = (visitRecordId?: string) => {
       
       console.log('[useVisitMedications] Visit time of day:', visitTimeOfDay, 'from:', visitStartTime || 'current time');
 
-      // Fetch active medications from client's care plan, including time_of_day
+      // Step 1: Get the client's care plan ID first (two-step approach for reliability)
+      const { data: carePlan, error: carePlanError } = await supabase
+        .from('client_care_plans')
+        .select('id')
+        .eq('client_id', clientId)
+        .in('status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (carePlanError) {
+        console.error('[useVisitMedications] Error fetching care plan:', carePlanError);
+        throw carePlanError;
+      }
+
+      if (!carePlan) {
+        console.log('[useVisitMedications] No care plan found for client:', clientId);
+        return [];
+      }
+
+      console.log('[useVisitMedications] Found care plan:', carePlan.id, 'for client:', clientId);
+
+      // Step 2: Fetch medications for this care plan
       const { data: clientMedications, error: medicationsError } = await supabase
         .from('client_medications')
-        .select(`
-          id,
-          name,
-          dosage,
-          frequency,
-          time_of_day,
-          care_plan_id,
-          client_care_plans!inner (
-            client_id,
-            status
-          )
-        `)
-        .eq('client_care_plans.client_id', clientId)
-        .in('client_care_plans.status', ['draft', 'pending_approval', 'pending_client_approval', 'active', 'approved'])
+        .select('id, name, dosage, frequency, time_of_day, care_plan_id')
+        .eq('care_plan_id', carePlan.id)
         .eq('status', 'active');
 
       if (medicationsError) {
-        console.error('Error fetching client medications:', medicationsError);
+        console.error('[useVisitMedications] Error fetching client medications:', medicationsError);
         throw medicationsError;
       }
 
+      console.log('[useVisitMedications] Found', clientMedications?.length || 0, 'active medications for care plan:', carePlan.id);
+
       if (!clientMedications || clientMedications.length === 0) {
-        console.log('No active medications found for client, skipping medication loading');
+        console.log('[useVisitMedications] No active medications found for client, skipping medication loading');
         return [];
       }
 
@@ -185,9 +197,13 @@ export const useVisitMedications = (visitRecordId?: string) => {
       );
 
       console.log(`[useVisitMedications] Filtered ${clientMedications.length} medications to ${filteredMedications.length} for ${visitTimeOfDay}`);
-
+      
+      // Debug logging when no medications match time of day
       if (filteredMedications.length === 0) {
-        console.log('No medications scheduled for this time of day');
+        console.log('[useVisitMedications] No medications for time of day:', visitTimeOfDay);
+        console.log('[useVisitMedications] All medications had time_of_day:', 
+          clientMedications.map(m => ({ name: m.name, time_of_day: m.time_of_day }))
+        );
         return [];
       }
 
