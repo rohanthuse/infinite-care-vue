@@ -25,6 +25,7 @@ import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { ClientNews2Tab } from "@/components/clients/tabs/ClientNews2Tab";
 import { ClientAccountingTab } from "@/components/clients/tabs/ClientAccountingTab";
 import { AppointmentsTab } from "@/components/clients/tabs/AppointmentsTab";
+import { HandoverSummaryTab } from "@/components/clients/tabs/HandoverSummaryTab";
 import { useClientBookings } from "@/hooks/useClientBookings";
 import { EntityDocumentsSection } from "@/components/documents/EntityDocumentsSection";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
@@ -1013,6 +1014,13 @@ export function AdminClientDetailsDialog({
                     <h3 className="text-lg font-medium text-muted-foreground">Client Notes</h3>
                     <p className="text-sm text-muted-foreground mt-2">Notes management coming soon...</p>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="handover" className="mt-0 p-6">
+                  <HandoverSummaryTab 
+                    clientId={client.id}
+                    clientName={`${client.first_name} ${client.last_name}`}
+                  />
                 </TabsContent>
 
                 <TabsContent value="documents" className="mt-0 p-6">
