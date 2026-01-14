@@ -117,10 +117,25 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId, clientName
   };
 
   const getProviderDisplay = (plan: any) => {
-    if (plan.staff && plan.staff_id) {
-      return `${plan.staff.first_name} ${plan.staff.last_name}`;
+    // Priority 1: Joined staff relation (from updated query)
+    if (plan.staff && (plan.staff.first_name || plan.staff.last_name)) {
+      return `${plan.staff.first_name || ''} ${plan.staff.last_name || ''}`.trim();
     }
-    return plan.provider_name || 'Unknown Provider';
+    
+    // Priority 2: staff_id exists but no joined data (fallback to branchStaff)
+    if (plan.staff_id && branchStaff && branchStaff.length > 0) {
+      const staffMember = branchStaff.find((s: any) => s.id === plan.staff_id);
+      if (staffMember) {
+        return `${staffMember.first_name} ${staffMember.last_name}`;
+      }
+    }
+    
+    // Priority 3: provider_name (external providers, but not "Not Assigned")
+    if (plan.provider_name && plan.provider_name !== 'Not Assigned') {
+      return plan.provider_name;
+    }
+    
+    return 'Not Assigned';
   };
 
   const isStaffProvider = (plan: any) => {
