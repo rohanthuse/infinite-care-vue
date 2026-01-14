@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -13,25 +14,40 @@ import {
   Pin,
   Clock,
   Phone,
-  MapPin
+  MapPin,
+  Download,
+  Mail
 } from "lucide-react";
 import { useHandoverData } from "@/hooks/useHandoverData";
 import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { format, formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  HandoverSummaryPdfData, 
+  generateHandoverSummaryPDF, 
+  downloadHandoverSummaryPDF 
+} from "@/utils/handoverSummaryPdfGenerator";
+import { ShareHandoverSummaryDialog } from "@/components/clients/dialogs/ShareHandoverSummaryDialog";
 
 interface HandoverSummaryTabProps {
   clientId: string;
   clientName?: string;
   clientPhone?: string;
   clientAddress?: string;
+  branchId?: string;
 }
 
 export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({ 
   clientId, 
   clientName,
   clientPhone,
-  clientAddress
+  clientAddress,
+  branchId
 }) => {
+  const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  
   const { 
     recentVisits, 
     moodReports, 
@@ -85,16 +101,74 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
   const hasAlerts = openEvents.length > 0 || warnings.length > 0;
 
   // Calculate mood summary
-  const moodSummary = moodReports.reduce((acc, report) => {
+  const moodSummary = useMemo(() => moodReports.reduce((acc, report) => {
     if (report.client_mood) {
       acc[report.client_mood] = (acc[report.client_mood] || 0) + 1;
     }
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [moodReports]);
+
+  // Prepare PDF data
+  const pdfData: HandoverSummaryPdfData = useMemo(() => ({
+    clientName: clientName || 'Unknown Client',
+    clientPhone,
+    clientAddress,
+    lastUpdated: recentVisits[0]?.visit_start_time ? new Date(recentVisits[0].visit_start_time) : undefined,
+    priorityAlerts: openEvents.map(e => ({
+      type: e.event_type,
+      severity: e.severity || 'normal',
+      description: e.description,
+      date: format(new Date(e.event_date), 'dd MMM yyyy')
+    })),
+    warnings,
+    instructions,
+    recentVisits: recentVisits.map(v => ({
+      carerName: v.staff ? `${v.staff.first_name} ${v.staff.last_name}` : 'Unknown Carer',
+      date: format(new Date(v.visit_start_time), 'dd MMM yyyy, HH:mm'),
+      notes: v.visit_notes,
+      summary: v.visit_summary
+    })),
+    moodSummary,
+    moodReportCount: moodReports.length,
+    clientNotes: clientNotes.map(n => ({
+      title: n.title,
+      content: n.content,
+      author: n.author,
+      date: formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
+    }))
+  }), [clientName, clientPhone, clientAddress, recentVisits, openEvents, warnings, instructions, moodSummary, moodReports.length, clientNotes]);
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    try {
+      const blob = await generateHandoverSummaryPDF(pdfData, branchId);
+      downloadHandoverSummaryPDF(blob, clientName || 'Client');
+      toast({ title: "PDF downloaded successfully" });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ title: "Failed to generate PDF", variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <ScrollArea className="h-[calc(100vh-350px)]">
       <div className="space-y-6 pr-4">
+        {/* Action Buttons */}
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={isDownloading}>
+            <Download className="h-4 w-4 mr-2" />
+            {isDownloading ? 'Generating...' : 'Download PDF'}
+          </Button>
+          {branchId && (
+            <Button variant="outline" size="sm" onClick={() => setShareDialogOpen(true)}>
+              <Mail className="h-4 w-4 mr-2" />
+              Share via Email
+            </Button>
+          )}
+        </div>
+
         {/* Client Basic Details */}
         <Card>
           <CardHeader className="pb-3">
@@ -387,5 +461,17 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
         )}
       </div>
     </ScrollArea>
+    
+    {/* Share Dialog */}
+    {branchId && (
+      <ShareHandoverSummaryDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        branchId={branchId}
+        pdfData={pdfData}
+        clientName={clientName || 'Client'}
+      />
+    )}
+    </>
   );
 };
