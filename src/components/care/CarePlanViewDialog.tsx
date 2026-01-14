@@ -486,7 +486,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
   const { organization } = useTenant();
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!carePlan) {
       toast({
         title: "Export Error",
@@ -499,16 +499,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     try {
       const { carePlanData, clientData } = transformCarePlanForPDF(carePlan);
       
-      // Pass organization data for PDF header
-      const orgData = organization ? {
-        name: organization.name,
-        logo_url: organization.logo_url,
-        address: organization.address,
-        contact_email: organization.contact_email,
-        contact_phone: organization.contact_phone
-      } : undefined;
-      
-      generateCarePlanDetailPDF(carePlanData, clientData, branchName || "Branch", orgData);
+      // Pass branchId for async org settings and logo fetch
+      await generateCarePlanDetailPDF(carePlanData, clientData, branchName || "Branch", branchId);
       toast({
         title: "Export Successful",
         description: "Care plan has been exported to PDF successfully.",
