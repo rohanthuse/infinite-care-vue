@@ -1022,6 +1022,7 @@ export function AdminClientDetailsDialog({
                     clientName={`${client.first_name} ${client.last_name}`}
                     clientPhone={client.phone || client.mobile_number || undefined}
                     clientAddress={client.address || undefined}
+                    branchId={client.branch_id}
                   />
                 </TabsContent>
 

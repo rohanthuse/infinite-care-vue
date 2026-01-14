@@ -153,6 +153,7 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
   };
 
   return (
+    <>
     <ScrollArea className="h-[calc(100vh-350px)]">
       <div className="space-y-6 pr-4">
         {/* Action Buttons */}

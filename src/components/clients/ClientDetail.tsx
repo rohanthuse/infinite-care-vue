@@ -339,6 +339,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                     clientName={displayName}
                     clientPhone={realClientData?.phone || realClientData?.mobile_number || client?.phone || undefined}
                     clientAddress={realClientData?.address || client?.location || undefined}
+                    branchId={branchId}
                   />
                 </TabsContent>
               </Tabs>
