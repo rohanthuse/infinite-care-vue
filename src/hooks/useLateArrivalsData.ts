@@ -81,9 +81,9 @@ export const useLateArrivalsData = ({
           created_at,
           late_arrival_reason,
           arrival_delay_minutes,
-        booking:bookings(start_time),
-        staff(id, first_name, last_name),
-        client:clients(id, first_name, last_name)
+          booking:bookings(start_time),
+          staff:staff!visit_records_staff_id_fkey(id, first_name, last_name),
+          client:clients(id, first_name, last_name)
         `)
         .eq('branch_id', branchId)
         .not('visit_start_time', 'is', null);
@@ -158,9 +158,9 @@ export const useLateArrivalsData = ({
 
       // Count all visits by staff
       visitsWithBookings.forEach((visit) => {
-        if (visit.staff && Array.isArray(visit.staff) && visit.staff.length > 0) {
-          const staffId = visit.staff[0].id;
-          const staffName = `${visit.staff[0].first_name} ${visit.staff[0].last_name}`;
+        if (visit.staff) {
+          const staffId = visit.staff.id;
+          const staffName = `${visit.staff.first_name} ${visit.staff.last_name}`;
           const current = staffMap.get(staffId) || { name: staffName, late: 0, total: 0, totalMinutesLate: 0 };
           current.total += 1;
           staffMap.set(staffId, current);
@@ -169,8 +169,8 @@ export const useLateArrivalsData = ({
 
       // Count late arrivals by staff
       lateArrivals.forEach((visit) => {
-        if (visit.staff && Array.isArray(visit.staff) && visit.staff.length > 0) {
-          const staffId = visit.staff[0].id;
+        if (visit.staff) {
+          const staffId = visit.staff.id;
           const current = staffMap.get(staffId);
           if (current) {
             current.late += 1;
@@ -294,8 +294,8 @@ export const useLateArrivalsData = ({
         const actual = new Date(visit.visit_start_time!);
         const minutesLate = visit.arrival_delay_minutes || Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
 
-        const staffData = Array.isArray(visit.staff) && visit.staff.length > 0 ? visit.staff[0] : null;
-        const clientData = Array.isArray(visit.client) && visit.client.length > 0 ? visit.client[0] : null;
+        const staffData = visit.staff || null;
+        const clientData = visit.client || null;
 
         return {
           id: visit.id,
