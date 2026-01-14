@@ -136,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with PDF attachment
     const emailResponse = await resend.emails.send({
-      from: "Med-Infinite <onboarding@resend.dev>",
+      from: "Med-Infinite <noreply@med-infinite.care>",
       to: [recipientEmail],
       subject: `Handover Summary - ${clientName}`,
       html: htmlContent,
