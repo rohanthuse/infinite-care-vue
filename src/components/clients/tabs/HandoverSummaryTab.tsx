@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,7 +11,9 @@ import {
   Smile, 
   AlertCircle,
   Pin,
-  Clock
+  Clock,
+  Phone,
+  MapPin
 } from "lucide-react";
 import { useHandoverData } from "@/hooks/useHandoverData";
 import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
@@ -20,21 +22,41 @@ import { format, formatDistanceToNow } from "date-fns";
 interface HandoverSummaryTabProps {
   clientId: string;
   clientName?: string;
+  clientPhone?: string;
+  clientAddress?: string;
 }
 
 export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({ 
   clientId, 
-  clientName 
+  clientName,
+  clientPhone,
+  clientAddress
 }) => {
   const { 
     recentVisits, 
     moodReports, 
     clientNotes, 
     openEvents, 
-    isLoading 
+    isLoading,
+    isError
   } = useHandoverData(clientId);
   
   const { data: personalInfo, isLoading: isLoadingPersonal } = useClientPersonalInfo(clientId);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[HandoverSummaryTab] Mounted for client:', clientId);
+    console.log('[HandoverSummaryTab] Data state:', { 
+      recentVisits: recentVisits.length, 
+      moodReports: moodReports.length,
+      clientNotes: clientNotes.length,
+      openEvents: openEvents.length,
+      personalInfo: !!personalInfo,
+      isLoading,
+      isLoadingPersonal,
+      isError
+    });
+  }, [clientId, recentVisits, moodReports, clientNotes, openEvents, personalInfo, isLoading, isLoadingPersonal, isError]);
 
   if (isLoading || isLoadingPersonal) {
     return (
@@ -42,6 +64,18 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-8">
+        <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-destructive">Error Loading Data</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          Failed to load handover information. Please try refreshing.
+        </p>
       </div>
     );
   }
@@ -59,7 +93,46 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
   }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-6">
+    <ScrollArea className="h-[calc(100vh-350px)]">
+      <div className="space-y-6 pr-4">
+        {/* Client Basic Details */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="h-4 w-4 text-primary" />
+              Client Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Name</p>
+                <p className="text-sm font-medium">{clientName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-3 w-3" /> Phone
+                </p>
+                <p className="text-sm">{clientPhone || 'N/A'}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" /> Address
+                </p>
+                <p className="text-sm">{clientAddress || 'N/A'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Last Update Timestamp */}
+        {recentVisits.length > 0 && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+            <Clock className="h-4 w-4" />
+            <span>Last updated: {format(new Date(recentVisits[0].visit_start_time), 'dd MMM yyyy, HH:mm')}</span>
+            <span className="text-xs">({formatDistanceToNow(new Date(recentVisits[0].visit_start_time), { addSuffix: true })})</span>
+          </div>
+        )}
       {/* Priority Alerts Section */}
       {hasAlerts && (
         <Card className="border-destructive/50 bg-destructive/5">
@@ -294,24 +367,25 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Empty State */}
-      {!hasAlerts && 
-       instructions.length === 0 && 
-       recentVisits.length === 0 && 
-       clientNotes.length === 0 && 
-       moodReports.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">
-              No Handover Information Available
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Visit records, notes, and alerts will appear here as care is provided.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {/* Empty State */}
+        {!hasAlerts && 
+         instructions.length === 0 && 
+         recentVisits.length === 0 && 
+         clientNotes.length === 0 && 
+         moodReports.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground">
+                No Handover Information Available
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Visit records, notes, and alerts will appear here as care is provided.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ScrollArea>
   );
 };

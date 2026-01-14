@@ -112,12 +112,14 @@ const fetchClientPersonalInfo = async (clientId: string): Promise<ClientPersonal
 
   if (!data) return null;
 
-  // Parse JSONB fields properly
+  // Parse JSONB fields properly - ensure arrays are always arrays
   return {
     ...data,
     important_occasions: Array.isArray(data.important_occasions) 
       ? data.important_occasions 
       : [],
+    warnings: Array.isArray(data.warnings) ? data.warnings : [],
+    instructions: Array.isArray(data.instructions) ? data.instructions : [],
   } as ClientPersonalInfo;
 };
 

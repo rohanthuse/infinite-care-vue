@@ -1020,6 +1020,8 @@ export function AdminClientDetailsDialog({
                   <HandoverSummaryTab 
                     clientId={client.id}
                     clientName={`${client.first_name} ${client.last_name}`}
+                    clientPhone={client.phone || client.mobile_number || undefined}
+                    clientAddress={client.address || undefined}
                   />
                 </TabsContent>
 

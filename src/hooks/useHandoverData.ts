@@ -40,10 +40,13 @@ export interface HandoverEvent {
 }
 
 export const useHandoverData = (clientId: string) => {
+  console.log('[useHandoverData] Hook called with clientId:', clientId);
+  
   // Fetch recent visit records with staff names
   const visitRecordsQuery = useQuery({
     queryKey: ['handover-visit-records', clientId],
     queryFn: async () => {
+      console.log('[useHandoverData] Fetching visit records for client:', clientId);
       const { data, error } = await supabase
         .from('visit_records')
         .select(`
@@ -54,7 +57,12 @@ export const useHandoverData = (clientId: string) => {
         .order('visit_start_time', { ascending: false })
         .limit(5);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useHandoverData] Visit records error:', error);
+        throw error;
+      }
+      
+      console.log('[useHandoverData] Visit records fetched:', data?.length || 0, 'records');
       
       // Fetch staff details separately if there are visits
       if (data && data.length > 0) {
@@ -83,6 +91,7 @@ export const useHandoverData = (clientId: string) => {
   const serviceReportsQuery = useQuery({
     queryKey: ['handover-service-reports', clientId],
     queryFn: async () => {
+      console.log('[useHandoverData] Fetching service reports for client:', clientId);
       const { data, error } = await supabase
         .from('client_service_reports')
         .select('client_mood, client_engagement, created_at')
@@ -90,7 +99,11 @@ export const useHandoverData = (clientId: string) => {
         .order('created_at', { ascending: false })
         .limit(5);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useHandoverData] Service reports error:', error);
+        throw error;
+      }
+      console.log('[useHandoverData] Service reports fetched:', data?.length || 0, 'records');
       return (data || []) as HandoverServiceReport[];
     },
     enabled: !!clientId,
@@ -100,6 +113,7 @@ export const useHandoverData = (clientId: string) => {
   const clientNotesQuery = useQuery({
     queryKey: ['handover-client-notes', clientId],
     queryFn: async () => {
+      console.log('[useHandoverData] Fetching client notes for client:', clientId);
       const { data, error } = await supabase
         .from('client_notes')
         .select('id, title, content, author, created_at')
@@ -107,7 +121,11 @@ export const useHandoverData = (clientId: string) => {
         .order('created_at', { ascending: false })
         .limit(5);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useHandoverData] Client notes error:', error);
+        throw error;
+      }
+      console.log('[useHandoverData] Client notes fetched:', data?.length || 0, 'records');
       return (data || []) as HandoverClientNote[];
     },
     enabled: !!clientId,
@@ -117,6 +135,7 @@ export const useHandoverData = (clientId: string) => {
   const eventsQuery = useQuery({
     queryKey: ['handover-events', clientId],
     queryFn: async () => {
+      console.log('[useHandoverData] Fetching events for client:', clientId);
       const { data, error } = await supabase
         .from('client_events_logs')
         .select('id, event_type, description, severity, status, reporter, event_date')
@@ -125,18 +144,27 @@ export const useHandoverData = (clientId: string) => {
         .order('event_date', { ascending: false })
         .limit(5);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useHandoverData] Events error:', error);
+        throw error;
+      }
+      console.log('[useHandoverData] Events fetched:', data?.length || 0, 'records');
       return (data || []) as HandoverEvent[];
     },
     enabled: !!clientId,
   });
+
+  const isLoading = visitRecordsQuery.isLoading || serviceReportsQuery.isLoading || clientNotesQuery.isLoading || eventsQuery.isLoading;
+  const isError = visitRecordsQuery.isError || serviceReportsQuery.isError || clientNotesQuery.isError || eventsQuery.isError;
+
+  console.log('[useHandoverData] Loading state:', isLoading, 'Error state:', isError);
 
   return {
     recentVisits: visitRecordsQuery.data || [],
     moodReports: serviceReportsQuery.data || [],
     clientNotes: clientNotesQuery.data || [],
     openEvents: eventsQuery.data || [],
-    isLoading: visitRecordsQuery.isLoading || serviceReportsQuery.isLoading || clientNotesQuery.isLoading || eventsQuery.isLoading,
-    isError: visitRecordsQuery.isError || serviceReportsQuery.isError || clientNotesQuery.isError || eventsQuery.isError,
+    isLoading,
+    isError,
   };
 };
