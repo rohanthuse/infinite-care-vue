@@ -1152,6 +1152,11 @@ const CarerVisitWorkflow = () => {
         visitRecordId: visitRecord.id, 
         clientId: currentAppointment.client_id,
         visitStartTime: currentAppointment.start_time
+      }, {
+        onError: () => {
+          // Reset ref so we can retry
+          medicationsInitializedRef.current = false;
+        }
       });
     }
   }, [visitRecord?.id, currentAppointment?.client_id, isViewOnly, medications?.length]);
@@ -3262,6 +3267,31 @@ const CarerVisitWorkflow = () => {
                                 )}
                               </div>
                             ))}
+                          </div>
+                        ) : !medicationsLoading && medications?.filter(med => med.medication_id).length === 0 && carePlanMedications.length === 0 ? (
+                          <div className="text-center py-6 space-y-3">
+                            <p className="text-muted-foreground">No medications loaded for this visit</p>
+                            {!isViewOnly && visitRecord && currentAppointment && (
+                              <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                  medicationsInitializedRef.current = false;
+                                  addCommonMedications.mutate({
+                                    visitRecordId: visitRecord.id,
+                                    clientId: currentAppointment.client_id,
+                                    visitStartTime: currentAppointment.start_time
+                                  });
+                                }}
+                                disabled={addCommonMedications.isPending}
+                              >
+                                {addCommonMedications.isPending ? (
+                                  <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                ) : (
+                                  <RefreshCw className="w-4 h-4 mr-2" />
+                                )}
+                                Reload Medications
+                              </Button>
+                            )}
                           </div>
                         ) : carePlanMedications.length > 0 ? (
                           <div className="space-y-3">
