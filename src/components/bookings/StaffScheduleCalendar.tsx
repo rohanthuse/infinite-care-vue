@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useBranchStaff } from "@/hooks/useBranchStaff";
+import { useBranchStaffWithInactive } from "@/hooks/useBranchStaffWithInactive";
 import { useLeaveRequests, useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
 import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
 import { useStaffScheduleEvents, StaffTrainingEvent, StaffAppointmentEvent } from "@/hooks/useStaffScheduleEvents";
@@ -155,7 +155,7 @@ export function StaffScheduleCalendar({
   const TOTAL_WIDTH = LEFT_COL_WIDTH + (SLOT_WIDTH * TOTAL_SLOTS);
 
   // Fetch staff and leave data
-  const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
+  const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaffWithInactive(branchId || '', date);
   const { data: leaveRequests = [], isLoading: isLoadingLeave } = useLeaveRequests(branchId);
   const { data: holidays = [], isLoading: isLoadingHolidays } = useAnnualLeave(branchId);
   
@@ -316,7 +316,8 @@ export function StaffScheduleCalendar({
         weekLeave,
         weekHolidays,
         totalWeekHours,
-        contractedHours: 40
+        contractedHours: 40,
+        isInactive: 'isInactive' in member ? (member as any).isInactive : false
       };
       });
       
@@ -720,7 +721,8 @@ export function StaffScheduleCalendar({
           schedule,
           bookingBlocks,
           totalHours,
-          contractedHours: 8
+          contractedHours: 8,
+          isInactive: 'isInactive' in member ? (member as any).isInactive : false
         };
       });
 
@@ -1143,7 +1145,7 @@ export function StaffScheduleCalendar({
             {staffSchedule.map((staffMember: any) => (
               <div 
                 key={staffMember.id} 
-                className="border-b last:border-b-0 flex"
+                className={`border-b last:border-b-0 flex ${staffMember.isInactive ? 'bg-muted/30 opacity-80' : ''}`}
                 style={{ 
                   width: TOTAL_WIDTH,
                   minHeight: '80px',
@@ -1157,7 +1159,14 @@ export function StaffScheduleCalendar({
                   style={{ width: LEFT_COL_WIDTH }}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <div className="font-medium text-sm">{staffMember.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="font-medium text-sm">{staffMember.name}</div>
+                      {staffMember.isInactive && (
+                        <Badge variant="outline" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0 h-4">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
