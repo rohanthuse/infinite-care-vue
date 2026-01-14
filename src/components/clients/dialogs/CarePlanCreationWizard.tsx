@@ -33,6 +33,8 @@ const carePlanSchema = z.object({
   staff_id: z.string().nullable().optional(),
   staff_ids: z.array(z.string()).optional().default([]),
   start_date: z.string().optional(),
+  end_date: z.string().optional(),
+  review_date: z.string().optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   care_plan_type: z.string().optional(),
   personal_info: z.any().optional(),
@@ -52,6 +54,19 @@ const carePlanSchema = z.object({
         date: z.string().optional().default(""),
       })
     ).optional().default([]),
+  }).optional(),
+  gp_info: z.object({
+    gp_name: z.string().optional(),
+    gp_phone: z.string().optional(),
+    gp_email: z.string().optional(),
+    gp_address: z.string().optional(),
+    nhs_number: z.string().optional(),
+  }).optional(),
+  pharmacy_info: z.object({
+    pharmacy_name: z.string().optional(),
+    pharmacy_phone: z.string().optional(),
+    pharmacy_email: z.string().optional(),
+    pharmacy_address: z.string().optional(),
   }).optional(),
   // ... keep existing medical, dietary, risk, equipment, service, consent fields ...
   medical_info: z.any().optional(),
@@ -248,11 +263,15 @@ export function CarePlanCreationWizard({
       staff_id: null,
       staff_ids: [],
       start_date: new Date().toISOString().split('T')[0],
+      end_date: "",
+      review_date: "",
       priority: "medium" as const,
       care_plan_type: "standard",
       personal_info: {},
       about_me: {},
       general: {},
+      gp_info: {},
+      pharmacy_info: {},
       medical_info: {
         medication_manager: {
           medications: [],
@@ -332,12 +351,17 @@ export function CarePlanCreationWizard({
         provider_name: "",
         provider_type: "staff",
         staff_id: null,
+        staff_ids: [],
         start_date: new Date().toISOString().split('T')[0],
+        end_date: "",
+        review_date: "",
         priority: "medium" as const,
         care_plan_type: "standard",
         personal_info: {},
         about_me: {},
         general: {},
+        gp_info: {},
+        pharmacy_info: {},
         medical_info: {
           medication_manager: {
             medications: [],
@@ -488,7 +512,7 @@ export function CarePlanCreationWizard({
               }
             }
             // Handle object fields with safety checks
-            else if (['personal_info', 'about_me', 'general', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food', 'risk_warning_instructions', 'risk_choking', 'risk_pressure_damage', 'consent'].includes(key)) {
+            else if (['personal_info', 'about_me', 'general', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food', 'risk_warning_instructions', 'risk_choking', 'risk_pressure_damage', 'consent', 'gp_info', 'pharmacy_info'].includes(key)) {
               value = initializeObjectField(value);
             }
             
