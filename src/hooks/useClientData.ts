@@ -217,7 +217,11 @@ const fetchClientCarePlans = async (clientId: string): Promise<ClientCarePlan[]>
   
   const { data, error } = await supabase
     .from('client_care_plans')
-    .select('*')
+    .select(`
+      *,
+      staff:staff(id, first_name, last_name),
+      goals:client_care_plan_goals(id, progress, status)
+    `)
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });
 
@@ -226,7 +230,21 @@ const fetchClientCarePlans = async (clientId: string): Promise<ClientCarePlan[]>
     throw error;
   }
 
-  return data || [];
+  // Calculate goals_progress dynamically if goals exist
+  return (data || []).map(plan => {
+    const goals = (plan as any).goals || [];
+    let calculatedProgress = plan.goals_progress || 0;
+    
+    if (goals.length > 0) {
+      const totalProgress = goals.reduce((sum: number, goal: any) => sum + (goal.progress || 0), 0);
+      calculatedProgress = Math.round(totalProgress / goals.length);
+    }
+    
+    return {
+      ...plan,
+      goals_progress: calculatedProgress
+    };
+  });
 };
 
 const fetchClientAppointments = async (clientId: string): Promise<ClientAppointment[]> => {
