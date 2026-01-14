@@ -5,14 +5,8 @@ import { CarePlanViewDialog } from '@/components/care/CarePlanViewDialog';
 export function CarePlanView() {
   const { carePlanId } = useParams<{ carePlanId: string }>();
   const navigate = useNavigate();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // Open the dialog when the component mounts and we have an ID
-  useEffect(() => {
-    if (carePlanId) {
-      setIsDialogOpen(true);
-    }
-  }, [carePlanId]);
+  // Initialize dialog as open immediately when carePlanId exists
+  const [isDialogOpen, setIsDialogOpen] = useState(!!carePlanId);
 
   // Handle dialog close - navigate back
   const handleDialogClose = (open: boolean) => {
@@ -22,7 +16,7 @@ export function CarePlanView() {
     }
   };
 
-  // Handle missing carePlanId in useEffect to avoid navigation during render
+  // Handle missing carePlanId - navigate back
   useEffect(() => {
     if (!carePlanId) {
       navigate(-1);
