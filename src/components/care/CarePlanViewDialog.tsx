@@ -411,7 +411,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   const { tenantSlug } = useTenant();
   const [currentStep, setCurrentStep] = useState(1);
   const [isOpeningWizard, setIsOpeningWizard] = useState(false);
-  const { data: carePlan, isLoading } = useCarePlanData(carePlanId);
+  const { data: carePlan, isLoading, error } = useCarePlanData(carePlanId);
   const { toast } = useToast();
   
   const carePlanWithDetails = carePlan as CarePlanWithDetails;
@@ -679,8 +679,30 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     );
   }
 
-  if (!carePlanWithDetails) {
-    return null;
+  // Show error UI instead of returning null (which causes "Page Not Found")
+  if (error || (!isLoading && !carePlanWithDetails)) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogPortal>
+          <DialogOverlay className="z-[60]" />
+          <DialogContent className="z-[70] max-w-md">
+            <DialogHeader>
+              <DialogTitle>Care Plan Not Found</DialogTitle>
+              <DialogDescription>
+                {error 
+                  ? "There was an error loading this care plan. Please try again."
+                  : "The care plan you're looking for doesn't exist or you don't have permission to view it."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => handleClose(false)}>
+                Go Back
+              </Button>
+            </div>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
+    );
   }
 
   return (
