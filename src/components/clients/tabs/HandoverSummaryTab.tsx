@@ -59,48 +59,12 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
   
   const { data: personalInfo, isLoading: isLoadingPersonal } = useClientPersonalInfo(clientId);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[HandoverSummaryTab] Mounted for client:', clientId);
-    console.log('[HandoverSummaryTab] Data state:', { 
-      recentVisits: recentVisits.length, 
-      moodReports: moodReports.length,
-      clientNotes: clientNotes.length,
-      openEvents: openEvents.length,
-      personalInfo: !!personalInfo,
-      isLoading,
-      isLoadingPersonal,
-      isError
-    });
-  }, [clientId, recentVisits, moodReports, clientNotes, openEvents, personalInfo, isLoading, isLoadingPersonal, isError]);
-
-  if (isLoading || isLoadingPersonal) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="text-center py-8">
-        <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-destructive">Error Loading Data</h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          Failed to load handover information. Please try refreshing.
-        </p>
-      </div>
-    );
-  }
-
+  // Derived values (needed for useMemo hooks)
   const warnings = personalInfo?.warnings || [];
   const instructions = personalInfo?.instructions || [];
   const hasAlerts = openEvents.length > 0 || warnings.length > 0;
 
-  // Calculate mood summary
+  // Calculate mood summary - MUST be before early returns (Rules of Hooks)
   const moodSummary = useMemo(() => moodReports.reduce((acc, report) => {
     if (report.client_mood) {
       acc[report.client_mood] = (acc[report.client_mood] || 0) + 1;
@@ -108,7 +72,7 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
     return acc;
   }, {} as Record<string, number>), [moodReports]);
 
-  // Prepare PDF data
+  // Prepare PDF data - MUST be before early returns (Rules of Hooks)
   const pdfData: HandoverSummaryPdfData = useMemo(() => ({
     clientName: clientName || 'Unknown Client',
     clientPhone,
@@ -137,6 +101,44 @@ export const HandoverSummaryTab: React.FC<HandoverSummaryTabProps> = ({
       date: formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
     }))
   }), [clientName, clientPhone, clientAddress, recentVisits, openEvents, warnings, instructions, moodSummary, moodReports.length, clientNotes]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[HandoverSummaryTab] Mounted for client:', clientId);
+    console.log('[HandoverSummaryTab] Data state:', { 
+      recentVisits: recentVisits.length, 
+      moodReports: moodReports.length,
+      clientNotes: clientNotes.length,
+      openEvents: openEvents.length,
+      personalInfo: !!personalInfo,
+      isLoading,
+      isLoadingPersonal,
+      isError
+    });
+  }, [clientId, recentVisits, moodReports, clientNotes, openEvents, personalInfo, isLoading, isLoadingPersonal, isError]);
+
+  // Early returns AFTER all hooks
+  if (isLoading || isLoadingPersonal) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-8">
+        <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-destructive">Error Loading Data</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          Failed to load handover information. Please try refreshing.
+        </p>
+      </div>
+    );
+  }
 
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
