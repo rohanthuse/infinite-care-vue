@@ -445,3 +445,44 @@ export const useAdoptSystemMedicalConditions = () => {
     },
   });
 };
+
+// Hooks to fetch existing titles/letters to prevent duplicate key violations
+export const useExistingServiceTitles = () => {
+  const { organization } = useTenant();
+  
+  return useQuery({
+    queryKey: ['existing_service_titles', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('services')
+        .select('title')
+        .eq('organization_id', organization.id);
+      
+      if (error) throw error;
+      return (data || []).map(item => item.title.toLowerCase());
+    },
+    enabled: !!organization?.id,
+  });
+};
+
+export const useExistingBodyMapLetters = () => {
+  const { organization } = useTenant();
+  
+  return useQuery({
+    queryKey: ['existing_body_map_letters', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('body_map_points')
+        .select('letter')
+        .eq('organization_id', organization.id);
+      
+      if (error) throw error;
+      return (data || []).map(item => item.letter.toLowerCase());
+    },
+    enabled: !!organization?.id,
+  });
+};

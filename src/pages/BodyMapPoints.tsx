@@ -10,7 +10,7 @@ import { EditBodyMapPointDialog } from "@/components/EditBodyMapPointDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
-import { useAvailableSystemBodyMapPoints, useAdoptedTemplates, useAdoptSystemBodyMapPoints } from "@/hooks/useAdoptSystemTemplates";
+import { useAvailableSystemBodyMapPoints, useAdoptedTemplates, useAdoptSystemBodyMapPoints, useExistingBodyMapLetters } from "@/hooks/useAdoptSystemTemplates";
 import { CustomButton } from "@/components/ui/CustomButton";
 import {
   AlertDialog,
@@ -48,6 +48,12 @@ const BodyMapPoints = () => {
   const { data: systemBodyMapPoints = [], isLoading: isLoadingSystem } = useAvailableSystemBodyMapPoints();
   const { data: adoptedIds = [] } = useAdoptedTemplates('body_map_points');
   const { mutate: adoptBodyMapPoints, isPending: isAdopting } = useAdoptSystemBodyMapPoints();
+  const { data: existingLetters = [] } = useExistingBodyMapLetters();
+  
+  // Filter out system body map points that match existing letters (case-insensitive)
+  const filteredBodyMapPoints = systemBodyMapPoints.filter(
+    point => !existingLetters.includes(point.letter.toLowerCase())
+  );
   const { data: bodyMapPoints, isLoading, error } = useQuery({
       queryKey: ['body_map_points', organization?.id],
       queryFn: () => fetchBodyMapPoints(organization?.id),
@@ -217,7 +223,7 @@ const BodyMapPoints = () => {
           onClose={() => setShowAdoptDialog(false)}
           title="Import System Body Map Points"
           description="Select body map points from the system library to add to your organization."
-          templates={systemBodyMapPoints.map(p => ({ id: p.id, letter: p.letter, title: p.title, color: p.color, status: p.status }))}
+          templates={filteredBodyMapPoints.map(p => ({ id: p.id, letter: p.letter, title: p.title, color: p.color, status: p.status }))}
           adoptedIds={adoptedIds}
           isLoading={isLoadingSystem}
           isAdopting={isAdopting}
