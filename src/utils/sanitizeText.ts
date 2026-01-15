@@ -28,6 +28,12 @@ export const sanitizeAny = (value: unknown): unknown => {
     return value;
   }
   
+  // Handle Date objects - convert to ISO string to preserve the value
+  // This prevents dates from being converted to {} during sanitization
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  
   // Handle strings
   if (typeof value === 'string') {
     return sanitizeText(value);
