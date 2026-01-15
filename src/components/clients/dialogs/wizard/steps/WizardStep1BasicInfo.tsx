@@ -205,7 +205,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Care Plan Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || "standard"}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -251,7 +251,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                       <Calendar
                         mode="single"
                         selected={parsedDate}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : "")}
                         initialFocus
                         className="pointer-events-auto"
                       />
@@ -290,7 +290,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                       <Calendar
                         mode="single"
                         selected={parsedDate}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : "")}
                         disabled={(date) => date < new Date()}
                         initialFocus
                         className="pointer-events-auto"
@@ -330,7 +330,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                       <Calendar
                         mode="single"
                         selected={parsedDate}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : "")}
                         disabled={(date) => date < new Date()}
                         initialFocus
                         className="pointer-events-auto"

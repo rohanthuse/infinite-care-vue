@@ -465,6 +465,13 @@ export function CarePlanCreationWizard({
       
       console.log('Loading draft data:', savedData, 'initialDraftLoaded:', initialDraftLoadedRef.current);
       
+      // CRITICAL: Only apply draft data on initial load, not on auto-save refetches
+      // This prevents overwriting the user's in-progress form state
+      if (initialDraftLoadedRef.current) {
+        console.log('[Draft Loading] Skipping - draft already loaded, preserving current form state');
+        return;
+      }
+      
       try {
         // Safely set form values from saved data with proper type handling
         Object.keys(savedData).forEach((key) => {
