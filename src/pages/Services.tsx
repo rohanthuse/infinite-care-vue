@@ -8,7 +8,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { AddServiceDialog } from "@/components/AddServiceDialog";
 import { AdoptSystemTemplatesDialog } from "@/components/system-templates/AdoptSystemTemplatesDialog";
-import { useAvailableSystemServices, useAdoptedTemplates, useAdoptSystemServices } from "@/hooks/useAdoptSystemTemplates";
+import { useAvailableSystemServices, useAdoptedTemplates, useAdoptSystemServices, useExistingServiceTitles } from "@/hooks/useAdoptSystemTemplates";
 
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,6 +19,12 @@ const Services = () => {
   const { data: systemServices = [], isLoading: isLoadingSystem } = useAvailableSystemServices();
   const { data: adoptedIds = [] } = useAdoptedTemplates('services');
   const { mutate: adoptServices, isPending: isAdopting } = useAdoptSystemServices();
+  const { data: existingTitles = [] } = useExistingServiceTitles();
+  
+  // Filter out system services that match existing titles (case-insensitive)
+  const filteredSystemServices = systemServices.filter(
+    service => !existingTitles.includes(service.title.toLowerCase())
+  );
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   
   useEffect(() => {
@@ -145,7 +151,7 @@ const Services = () => {
           onClose={() => setShowAdoptDialog(false)}
           title="Import Services from System Templates"
           description="Select system services to add to your organization. These will be copied as your own services that you can customize."
-          templates={systemServices}
+          templates={filteredSystemServices}
           adoptedIds={adoptedIds}
           isLoading={isLoadingSystem}
           isAdopting={isAdopting}
