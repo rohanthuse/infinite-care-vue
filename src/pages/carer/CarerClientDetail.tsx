@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCarerClientDetail } from "@/hooks/useCarerClientData";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { format, parseISO } from "date-fns";
-
+import { HandoverSummaryTab } from "@/components/clients/tabs/HandoverSummaryTab";
 const CarerClientDetail: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
@@ -214,6 +214,21 @@ const CarerClientDetail: React.FC = () => {
             >
               Contact Client
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Handover Summary Section */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-lg">Handover Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <HandoverSummaryTab 
+              clientId={clientId!}
+              clientName={client.preferred_name || `${client.first_name} ${client.last_name}`}
+              clientPhone={client.phone || client.mobile_number}
+              clientAddress={client.address}
+            />
           </CardContent>
         </Card>
       </div>
