@@ -240,8 +240,8 @@ const CarerRoutes = () => [
     <Route path="service-reports" element={<ServiceReportsErrorBoundary><CarerReportsTab /></ServiceReportsErrorBoundary>} />
     <Route path="payments" element={<CarerPayments />} />
     <Route path="training" element={<CarerTraining />} />
-    <Route path="clients" element={<Navigate to=".." replace />} />
-    <Route path="clients/:clientId" element={<Navigate to=".." replace />} />
+    <Route path="clients" element={<CarerClients />} />
+    <Route path="clients/:clientId" element={<CarerClientDetail />} />
     <Route path="attendance" element={<CarerAttendance />} />
     <Route path="documents" element={<CarerDocuments />} />
     <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />

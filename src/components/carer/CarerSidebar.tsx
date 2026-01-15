@@ -91,6 +91,11 @@ export const CarerSidebar: React.FC = () => {
       label: "Clients",
       items: [
         { 
+          name: "My Clients", 
+          path: getCarerMenuItems().find(item => item.name === "My Clients")?.path || "/carer-dashboard/clients", 
+          icon: Users 
+        },
+        { 
           name: "Care Plans", 
           path: getCarerMenuItems().find(item => item.name === "Care Plans")?.path || "/carer-dashboard/careplans", 
           icon: FileText 
