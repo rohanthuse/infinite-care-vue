@@ -6,6 +6,7 @@ import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity, AlertCi
 import { format } from "date-fns";
 import { CarePlanPreviewSection } from "@/components/care/CarePlanPreviewSection";
 import { getClientPostcodeWithFallback, getClientDisplayAddress } from "@/utils/postcodeUtils";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 interface CarerAppointmentDetailDialogProps {
   appointment: any;
@@ -26,6 +27,8 @@ export const CarerAppointmentDetailDialog = ({
   onViewSummary,
   onRequestUnavailability
 }: CarerAppointmentDetailDialogProps) => {
+  const { navigateToCarerPage } = useCarerNavigation();
+  
   if (!appointment) return null;
 
   // Helper to normalize status for display and logic
@@ -180,6 +183,23 @@ export const CarerAppointmentDetailDialog = ({
                   </div>
                 ) : null;
               })()}
+              
+              {/* View Client Profile Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3"
+                onClick={() => {
+                  const clientId = appointment.client_id || appointment.clients?.id;
+                  if (clientId) {
+                    navigateToCarerPage(`/clients/${clientId}`);
+                    onOpenChange(false);
+                  }
+                }}
+              >
+                <User className="h-4 w-4 mr-2" />
+                View Client Profile
+              </Button>
             </div>
           </div>
 
