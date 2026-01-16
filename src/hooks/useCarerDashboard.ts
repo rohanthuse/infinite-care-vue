@@ -35,14 +35,18 @@ export const useCarerDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Get upcoming appointments (next 7 days)
+  // Get upcoming appointments (next 7 days) - optimized with ISO timestamps and cancelled exclusion
   const { data: upcomingAppointments = [], isLoading: upcomingLoading } = useQuery({
     queryKey: ['carer-upcoming-appointments', carerContext?.staffId],
     queryFn: async () => {
       if (!carerContext?.staffId) return [];
       
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const nextWeek = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      // Use ISO timestamps to avoid timezone boundary issues
+      const now = new Date();
+      const nowISO = now.toISOString();
+      const nextWeekISO = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      console.log('[useCarerDashboard] Fetching upcoming appointments - now:', nowISO, 'nextWeek:', nextWeekISO);
       
       const { data, error } = await supabase
         .from('bookings')
@@ -52,17 +56,23 @@ export const useCarerDashboard = () => {
           services(title)
         `)
         .eq('staff_id', carerContext.staffId)
-        .gte('start_time', `${today}T00:00:00`)
-        .lte('start_time', `${nextWeek}T23:59:59`)
-        .order('start_time')
-        .limit(5);
+        .gte('start_time', nowISO)
+        .lte('start_time', nextWeekISO)
+        .neq('status', 'cancelled') // Exclude cancelled to save row quota
+        .order('start_time', { ascending: true })
+        .limit(10); // Increased from 5 to show more upcoming
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCarerDashboard] Error fetching upcoming appointments:', error);
+        throw error;
+      }
+      
+      console.log('[useCarerDashboard] Fetched', data?.length || 0, 'upcoming appointments');
       return data || [];
     },
     enabled: !!carerContext?.staffId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Enable refetch on focus for better visibility
   });
 
   // Get carer's tasks

@@ -69,13 +69,20 @@ const CarerAppointments: React.FC = () => {
     clearLateArrivalDialog,
   } = useLateArrivalDetection();
 
-  // Get appointments from database with force refetch configuration
+  // Get appointments from database with optimized split query strategy
+  // This prevents the Supabase 1000-row limit from hiding future appointments
   const { data: appointments = [], isLoading, isFetching } = useQuery({
     queryKey: ['carer-appointments-full', carerContext?.staffId, statusFilter],
     queryFn: async () => {
       if (!carerContext?.staffId) return [];
       
-      console.log('[CarerAppointments] Fetching appointments for staffId:', carerContext.staffId, 'statusFilter:', statusFilter);
+      const now = new Date();
+      const nowISO = now.toISOString();
+      // Past window: 90 days lookback for history
+      const pastWindowStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      
+      console.log('[CarerAppointments] Fetching appointments for staffId:', carerContext.staffId);
+      console.log('[CarerAppointments] Query boundaries - now:', nowISO, 'pastWindowStart:', pastWindowStart);
       
       // Map UI status labels to database values
       const statusMapping: { [key: string]: string } = {
@@ -85,41 +92,98 @@ const CarerAppointments: React.FC = () => {
         'completed': 'completed',
         'cancelled': 'cancelled'
       };
-      
-      let query = supabase
+
+      const selectQuery = `
+        *,
+        clients(id, first_name, last_name, phone, address, pin_code, client_addresses(*)),
+        services(title, description),
+        booking_services(
+          service_id,
+          services(id, title)
+        ),
+        visit_records(
+          id,
+          visit_start_time,
+          visit_end_time,
+          actual_duration_minutes,
+          status
+        )
+      `;
+
+      // Build status filter - exclude cancelled unless explicitly requested
+      const shouldExcludeCancelled = statusFilter !== 'cancelled';
+      const specificStatusFilter = statusFilter !== 'all' && statusFilter !== 'cancelled' 
+        ? statusMapping[statusFilter] || statusFilter 
+        : null;
+
+      // Query 1: Future bookings (prioritized - these must always be visible)
+      let futureQuery = supabase
         .from('bookings')
-        .select(`
-          *,
-          clients(id, first_name, last_name, phone, address, pin_code, client_addresses(*)),
-          services(title, description),
-          booking_services(
-            service_id,
-            services(id, title)
-          ),
-          visit_records(
-            id,
-            visit_start_time,
-            visit_end_time,
-            actual_duration_minutes,
-            status
-          )
-        `)
+        .select(selectQuery)
         .eq('staff_id', carerContext.staffId)
-        .order('start_time');
+        .gte('start_time', nowISO)
+        .order('start_time', { ascending: true })
+        .limit(500);
 
-      if (statusFilter !== 'all') {
-        const dbStatus = statusMapping[statusFilter] || statusFilter;
-        query = query.eq('status', dbStatus);
+      if (shouldExcludeCancelled) {
+        futureQuery = futureQuery.neq('status', 'cancelled');
+      }
+      if (specificStatusFilter) {
+        futureQuery = futureQuery.eq('status', specificStatusFilter);
       }
 
-      const { data, error } = await query;
-      if (error) {
-        console.error('[CarerAppointments] Error fetching appointments:', error);
-        throw error;
+      // Query 2: Past bookings (last 90 days for history)
+      let pastQuery = supabase
+        .from('bookings')
+        .select(selectQuery)
+        .eq('staff_id', carerContext.staffId)
+        .lt('start_time', nowISO)
+        .gte('start_time', pastWindowStart)
+        .order('start_time', { ascending: false })
+        .limit(500);
+
+      if (shouldExcludeCancelled) {
+        pastQuery = pastQuery.neq('status', 'cancelled');
       }
+      if (specificStatusFilter) {
+        pastQuery = pastQuery.eq('status', specificStatusFilter);
+      }
+
+      // Execute both queries in parallel
+      const [futureResult, pastResult] = await Promise.all([futureQuery, pastQuery]);
+
+      if (futureResult.error) {
+        console.error('[CarerAppointments] Error fetching future appointments:', futureResult.error);
+        throw futureResult.error;
+      }
+      if (pastResult.error) {
+        console.error('[CarerAppointments] Error fetching past appointments:', pastResult.error);
+        throw pastResult.error;
+      }
+
+      // Combine results (future first for logging, then merge and dedupe)
+      const futureData = futureResult.data || [];
+      const pastData = pastResult.data || [];
+      
+      console.log('[CarerAppointments] Future appointments fetched:', futureData.length);
+      console.log('[CarerAppointments] Past appointments fetched:', pastData.length);
+      
+      // Log earliest/latest for diagnostics
+      if (futureData.length > 0) {
+        console.log('[CarerAppointments] Earliest future:', futureData[0]?.start_time);
+        console.log('[CarerAppointments] Latest future:', futureData[futureData.length - 1]?.start_time);
+      }
+      if (pastData.length > 0) {
+        console.log('[CarerAppointments] Most recent past:', pastData[0]?.start_time);
+        console.log('[CarerAppointments] Oldest past:', pastData[pastData.length - 1]?.start_time);
+      }
+
+      // Merge and dedupe by ID
+      const allData = [...futureData, ...pastData];
+      const uniqueData = Array.from(new Map(allData.map(item => [item.id, item])).values());
       
       // Transform data to include service_names array from booking_services junction
-      const transformedData = (data || []).map(booking => {
+      const transformedData = uniqueData.map(booking => {
         const bookingServices = booking.booking_services || [];
         const serviceNames = bookingServices
           .map((bs: any) => bs.services?.title)
@@ -136,7 +200,7 @@ const CarerAppointments: React.FC = () => {
         };
       });
       
-      console.log('[CarerAppointments] Fetched', transformedData.length, 'appointments for staff ID:', carerContext.staffId);
+      console.log('[CarerAppointments] Total unique appointments:', transformedData.length, 'for staff ID:', carerContext.staffId);
       return transformedData;
     },
     enabled: !!carerContext?.staffId && !isContextLoading,
