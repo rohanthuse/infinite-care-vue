@@ -452,7 +452,7 @@ export function FutureBookingPlanDialog({
                 <p className="text-sm text-muted-foreground mt-2">Loading bookings...</p>
               </div>
             ) : filteredBookings.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -464,7 +464,7 @@ export function FutureBookingPlanDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBookings.slice(0, 10).map((booking) => {
+                    {filteredBookings.map((booking) => {
                       const bookingDate = parseISO(booking.date);
 
                       return (
@@ -485,11 +485,9 @@ export function FutureBookingPlanDialog({
                     })}
                   </TableBody>
                 </Table>
-                {filteredBookings.length > 10 && (
-                  <div className="p-3 text-center text-sm text-muted-foreground border-t">
-                    Showing 10 of {filteredBookings.length} bookings. Download PDF for full list.
-                  </div>
-                )}
+                <div className="p-3 text-center text-sm text-muted-foreground border-t">
+                  Total: {filteredBookings.length} bookings
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
