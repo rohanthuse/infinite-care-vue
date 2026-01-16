@@ -29,12 +29,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Calendar, Download, Clock, Users, Loader2, Mail, AlertCircle } from "lucide-react";
-import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isAfter, parseISO } from "date-fns";
+import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { generateFutureBookingPlanPDF, generateFutureBookingPlanPDFAsBase64, FutureBookingData } from "@/services/futureBookingPdfGenerator";
 import { Booking } from "../BookingTimeGrid";
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useFutureCarerBookings } from "@/hooks/useFutureCarerBookings";
 
 interface Carer {
   id: string;
@@ -157,31 +158,56 @@ export function FutureBookingPlanDialog({
     }
   }, [dateRangePreset, customStartDate, customEndDate]);
 
+  // Fetch bookings directly from database based on selected carer and date range
+  const { 
+    data: fetchedBookings, 
+    isLoading: isLoadingBookings,
+  } = useFutureCarerBookings(
+    branchId,
+    selectedCarerId || undefined,
+    dateRange.from,
+    dateRange.to
+  );
+
+  // Transform database format to display format
   const filteredBookings = useMemo(() => {
-    if (!selectedCarerId) return [];
-
-    return bookings.filter((booking) => {
-      // Must be assigned to selected carer
-      if (booking.carerId !== selectedCarerId) return false;
-
-      // Must be a future booking (from today onwards)
-      const bookingDate = parseISO(booking.date);
+    if (!fetchedBookings || !selectedCarerId) return [];
+    
+    return fetchedBookings.map(booking => {
+      const bookingDate = new Date(booking.start_time);
+      const endDate = new Date(booking.end_time);
+      const clientName = booking.clients 
+        ? `${booking.clients.first_name} ${booking.clients.last_name}`
+        : 'Unknown Client';
       
-      if (!isAfter(bookingDate, addDays(today, -1))) return false;
-
-      // Must be within selected date range
-      if (bookingDate < dateRange.from || bookingDate > dateRange.to) return false;
-
-      // Exclude cancelled bookings
-      if (booking.status === "cancelled") return false;
-
-      return true;
+      // Get client address
+      let clientAddress = '';
+      if (booking.clients?.client_addresses?.length) {
+        const addr = booking.clients.client_addresses.find(a => a.is_default) 
+                     || booking.clients.client_addresses[0];
+        if (addr) {
+          clientAddress = [addr.address_line_1, addr.city, addr.postcode]
+            .filter(Boolean).join(', ');
+        }
+      }
+      
+      return {
+        id: booking.id,
+        date: format(bookingDate, 'yyyy-MM-dd'),
+        startTime: format(bookingDate, 'HH:mm'),
+        endTime: format(endDate, 'HH:mm'),
+        clientName,
+        clientAddress,
+        location_address: booking.location_address || clientAddress,
+        status: booking.status || 'scheduled',
+        carerId: booking.staff_id,
+      };
     }).sort((a, b) => {
       const dateA = parseISO(a.date);
       const dateB = parseISO(b.date);
       return dateA.getTime() - dateB.getTime();
     });
-  }, [bookings, selectedCarerId, dateRange, today]);
+  }, [fetchedBookings, selectedCarerId]);
 
   const totalHours = useMemo(() => {
     return filteredBookings.reduce((total, booking) => {
@@ -420,7 +446,12 @@ export function FutureBookingPlanDialog({
 
           {/* Bookings Preview Table */}
           {selectedCarerId ? (
-            filteredBookings.length > 0 ? (
+            isLoadingBookings ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mt-2">Loading bookings...</p>
+              </div>
+            ) : filteredBookings.length > 0 ? (
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
