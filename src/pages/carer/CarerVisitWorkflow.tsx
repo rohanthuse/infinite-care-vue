@@ -61,6 +61,7 @@ import VisitCarePlanUpdate from "@/components/carer/VisitCarePlanUpdate";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { VisitPhotoCapture } from "@/components/carer/VisitPhotoCapture";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
@@ -4296,60 +4297,14 @@ const CarerVisitWorkflow = () => {
                     </p>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <input
-                        ref={photoInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        disabled={uploading}
-                        onClick={() => photoInputRef.current?.click()}
-                      >
-                        <Camera className="w-4 h-4" />
-                        {uploading ? "Uploading..." : "Add Photos"}
-                      </Button>
-                      
-                      {uploadedPhotos.length > 0 && (
-                        <div className="flex items-center gap-2 text-green-600">
-                          <CheckCircle className="w-4 h-4" />
-                          <span className="text-sm">{uploadedPhotos.length} photo(s) added</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Photo Gallery */}
-                    {uploadedPhotos.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Visit Photos</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {uploadedPhotos.map((photoUrl, index) => (
-                            <div key={index} className="relative group">
-                              <img
-                                src={photoUrl}
-                                alt={`Visit photo ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border"
-                              />
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
-                                onClick={() => handleDeletePhoto(photoUrl)}
-                              >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Photo Capture Section - Uses native camera on mobile */}
+                  <VisitPhotoCapture
+                    clientId={currentAppointment?.client_id || ''}
+                    uploadedPhotos={uploadedPhotos}
+                    onPhotoUploaded={(photoUrl) => setUploadedPhotos(prev => [...prev, photoUrl])}
+                    onPhotoDeleted={(photoUrl) => setUploadedPhotos(prev => prev.filter(url => url !== photoUrl))}
+                    disabled={isViewOnly}
+                  />
                 </div>
               </CardContent>
               
