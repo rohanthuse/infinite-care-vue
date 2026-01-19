@@ -2,6 +2,15 @@
 
 This guide explains how to set up the native mobile app for the Carer module.
 
+## Installed Native Plugins
+
+| Plugin | Purpose | Hook |
+|--------|---------|------|
+| `@capacitor/camera` | Photo capture for visit documentation | `useCamera()` |
+| `@capacitor/geolocation` | GPS for check-in/out verification | `useGeolocation()` |
+| `@capacitor/push-notifications` | Real-time alerts and messages | `usePushNotifications()` |
+| `@capacitor/haptics` | Tactile feedback for interactions | `useHaptics()` |
+
 ## Generated Assets
 
 The following branded assets have been created:
@@ -143,3 +152,161 @@ For production builds, comment out the `server.url` in `capacitor.config.ts` to 
 ### Icons not updating
 - Clean build in Xcode/Android Studio
 - Delete app from device and reinstall
+
+---
+
+## Using Native Plugins
+
+### Camera - Photo Documentation
+
+```tsx
+import { useCamera } from '@/hooks/useCamera';
+
+function VisitPhotoCapture() {
+  const { takePhoto, photo, isLoading, error } = useCamera();
+
+  const handleCapture = async () => {
+    const result = await takePhoto();
+    if (result) {
+      // Upload photo to storage
+      console.log('Photo captured:', result.dataUrl);
+    }
+  };
+
+  return (
+    <button onClick={handleCapture} disabled={isLoading}>
+      {isLoading ? 'Capturing...' : 'Take Photo'}
+    </button>
+  );
+}
+```
+
+### Geolocation - Check-In Verification
+
+```tsx
+import { useGeolocation, isWithinRadius } from '@/hooks/useGeolocation';
+
+function CheckInButton({ clientLat, clientLon }: Props) {
+  const { getCurrentLocation, isLoading } = useGeolocation();
+
+  const handleCheckIn = async () => {
+    const location = await getCurrentLocation(true);
+    if (location) {
+      // Verify within 100 meters of client location
+      const isValid = isWithinRadius(
+        location.latitude,
+        location.longitude,
+        clientLat,
+        clientLon,
+        100 // meters
+      );
+      
+      if (isValid) {
+        // Proceed with check-in
+      } else {
+        // Show warning: too far from client
+      }
+    }
+  };
+
+  return (
+    <button onClick={handleCheckIn} disabled={isLoading}>
+      Check In
+    </button>
+  );
+}
+```
+
+### Push Notifications - Real-time Alerts
+
+```tsx
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useEffect } from 'react';
+
+function NotificationSetup() {
+  const { register, token, addNotificationListener, isNativePush } = usePushNotifications();
+
+  useEffect(() => {
+    if (isNativePush) {
+      register();
+      
+      addNotificationListener((notification) => {
+        console.log('New notification:', notification);
+        // Handle notification (show toast, update UI, etc.)
+      });
+    }
+  }, [isNativePush]);
+
+  // Send token to backend for server-side push
+  useEffect(() => {
+    if (token) {
+      // Save token to user profile in database
+      console.log('Push token:', token);
+    }
+  }, [token]);
+
+  return null;
+}
+```
+
+### Haptics - Tactile Feedback
+
+```tsx
+import { useHaptics } from '@/hooks/useHaptics';
+import { ImpactStyle, NotificationType } from '@capacitor/haptics';
+
+function ActionButton() {
+  const { impact, notification } = useHaptics();
+
+  const handleSuccess = async () => {
+    await notification(NotificationType.Success);
+    // Proceed with action
+  };
+
+  const handleButtonPress = async () => {
+    await impact(ImpactStyle.Light);
+  };
+
+  return (
+    <button 
+      onClick={handleSuccess}
+      onMouseDown={handleButtonPress}
+    >
+      Complete Visit
+    </button>
+  );
+}
+```
+
+---
+
+## Platform Permissions
+
+### iOS (Info.plist)
+
+Add these entries to `ios/App/App/Info.plist`:
+
+```xml
+<!-- Camera -->
+<key>NSCameraUsageDescription</key>
+<string>We need camera access to take photos during visits</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>We need photo library access to select visit documentation</string>
+
+<!-- Location -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>We need location access to verify check-in at client locations</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>We need location access for accurate check-in verification</string>
+```
+
+### Android (AndroidManifest.xml)
+
+Permissions are auto-added by Capacitor plugins in `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.VIBRATE" />
+```
