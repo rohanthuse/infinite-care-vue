@@ -9,9 +9,11 @@ import { TaskProvider } from "@/contexts/TaskContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { AuthoritiesProvider } from "@/contexts/AuthoritiesContext";
+import { NativeAppProvider } from "@/contexts/NativeAppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
+import { NativeCarerRedirector } from "@/components/native/NativeCarerRedirector";
 import Index from "./pages/Index";
 import UnifiedLogin from "./components/UnifiedLogin";
 import ResetPassword from "./pages/ResetPassword";
@@ -232,6 +234,7 @@ const AppContent = () => {
       <BrowserRouter>
         <LoginNavigationInterceptor />
         <NavigationProvider>
+          <NativeCarerRedirector>
           <AuthoritiesProvider>
           <TaskProvider>
             <ErrorBoundary fallback={(error, errorInfo) => <RoutingErrorFallback error={error} errorInfo={errorInfo} />}>
@@ -363,6 +366,7 @@ const AppContent = () => {
           </ErrorBoundary>
         </TaskProvider>
           </AuthoritiesProvider>
+          </NativeCarerRedirector>
       </NavigationProvider>
       </BrowserRouter>
     </AuthErrorBoundary>
@@ -378,11 +382,13 @@ function App() {
         enableSystem
         disableTransitionOnChange={false}
       >
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AppContent />
-        </TooltipProvider>
+        <NativeAppProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppContent />
+          </TooltipProvider>
+        </NativeAppProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
