@@ -8266,6 +8266,7 @@ export type Database = {
           consecutive_hours: number | null
           created_at: string
           created_by: string
+          created_by_name: string | null
           currency: string
           description: string | null
           effective_from: string
@@ -8301,6 +8302,7 @@ export type Database = {
           consecutive_hours?: number | null
           created_at?: string
           created_by: string
+          created_by_name?: string | null
           currency?: string
           description?: string | null
           effective_from?: string
@@ -8336,6 +8338,7 @@ export type Database = {
           consecutive_hours?: number | null
           created_at?: string
           created_by?: string
+          created_by_name?: string | null
           currency?: string
           description?: string | null
           effective_from?: string
