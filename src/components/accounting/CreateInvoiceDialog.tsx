@@ -40,6 +40,8 @@ interface InvoiceLineItem {
   serviceEndTime?: string;
   durationMinutes?: number;
   visitRecordId?: string;
+  isVatable?: boolean;
+  vatRate?: number; // VAT percentage from rate configuration
 }
 
 type InvoiceStatus = 'draft' | 'ready_to_charge' | 'confirmed' | 'deleted';
@@ -101,11 +103,13 @@ export function CreateInvoiceDialog({
     }));
   }, [formData.paymentTerms, formData.invoiceDate]);
 
-  // Calculate summary
+  // Calculate summary - use rate's VAT configuration instead of hardcoded 20%
   const netAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
   const vatAmount = lineItems.reduce((sum, item) => {
-    // Assume 20% VAT for now - this should come from rate configuration
-    return sum + (item.total * 0.20);
+    // Only apply VAT if item is vatable, use configured rate or default to 20%
+    if (item.isVatable === false) return sum;
+    const vatRate = item.vatRate ?? 20; // Default to 20% if not specified
+    return sum + (item.total * (vatRate / 100));
   }, 0);
   const totalInvoicedMinutes = lineItems.reduce((sum, item) => sum + (item.durationMinutes || 0), 0);
   const totalDue = netAmount + vatAmount;
@@ -129,7 +133,9 @@ export function CreateInvoiceDialog({
       serviceStartTime: visit.serviceStartTime,
       serviceEndTime: visit.serviceEndTime,
       durationMinutes: visit.durationMinutes,
-      visitRecordId: visit.visitRecordId
+      visitRecordId: visit.visitRecordId,
+      isVatable: visit.isVatable ?? true, // Default to vatable if not specified
+      vatRate: visit.vatRate // Use rate's VAT percentage
     }));
 
     setLineItems(prev => [...prev, ...newLineItems]);

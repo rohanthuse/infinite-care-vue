@@ -120,8 +120,9 @@ export class VisitBillingCalculator {
       lineTotal = (unitRate * adjustedBillingMinutes / 60) * bankHolidayMultiplier;
     }
 
-    // Calculate VAT - use database is_vatable column value
-    const vatAmount = rate.is_vatable ? lineTotal * 0.2 : 0;
+    // Calculate VAT - use rate's vat_rate if available, otherwise default to 20%
+    const vatRate = rate.vat_rate ?? 20; // Default to 20% if not specified
+    const vatAmount = rate.is_vatable ? lineTotal * (vatRate / 100) : 0;
 
     return {
       visit_id: visit.id,
