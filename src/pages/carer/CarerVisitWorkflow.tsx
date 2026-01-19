@@ -62,6 +62,8 @@ import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { VisitPhotoCapture } from "@/components/carer/VisitPhotoCapture";
+import { LocationVerification } from "@/components/carer/LocationVerification";
+import { LocationData } from "@/hooks/useGeolocation";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
@@ -940,6 +942,10 @@ const CarerVisitWorkflow = () => {
   const [completionError, setCompletionError] = useState<string | undefined>();
   const [nextBooking, setNextBooking] = useState<NextBookingInfo | null>(null);
   
+  // Location verification state for check-in
+  const [verifiedLocation, setVerifiedLocation] = useState<LocationData | null>(null);
+  const [locationWithinRange, setLocationWithinRange] = useState<boolean | null>(null);
+  
   const { uploadPhoto, deletePhoto, uploading } = usePhotoUpload();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [eventCategory, setEventCategory] = useState("incident");
@@ -1418,6 +1424,18 @@ const CarerVisitWorkflow = () => {
     return score;
   };
   
+  // Handle location verification callback
+  const handleLocationVerified = useCallback((location: LocationData, isWithinRange: boolean) => {
+    console.log('[CarerVisitWorkflow] Location verified:', { 
+      lat: location.latitude, 
+      lng: location.longitude, 
+      accuracy: location.accuracy,
+      isWithinRange 
+    });
+    setVerifiedLocation(location);
+    setLocationWithinRange(isWithinRange);
+  }, []);
+
   const handleStartVisit = async () => {
     // Use carerContext.staffId (staff table PK) instead of user.id (auth UID)
     const staffId = carerContext?.staffId;
@@ -1431,16 +1449,29 @@ const CarerVisitWorkflow = () => {
     }
     
     try {
+      // Build location object from verified GPS coordinates
+      const locationData = verifiedLocation 
+        ? {
+            latitude: verifiedLocation.latitude,
+            longitude: verifiedLocation.longitude
+          }
+        : undefined;
+
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
         staffId: staffId, // Use staff.id, not auth.uid
         branchId: currentAppointment.clients?.branch_id || '',
         action: 'start_visit',
-        location: undefined // Could get geolocation here if needed
+        location: locationData
       };
 
       await bookingAttendance.mutateAsync(attendanceData);
       setVisitStarted(true);
+      
+      // Show warning if location was out of range
+      if (locationWithinRange === false) {
+        toast.warning('Visit started. Note: You checked in outside the expected location.');
+      }
     } catch (error) {
       console.error('Error starting visit:', error);
       // Error already handled in the hook
@@ -2946,19 +2977,75 @@ const CarerVisitWorkflow = () => {
                 </div>
 
                 {!visitStarted && !isViewOnly ? (
-                  <div className="text-center py-8">
-                    <div className="space-y-4">
-                      <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto">
-                        <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  <div className="space-y-6 py-4">
+                    {/* Location Verification Section */}
+                    <div className="border rounded-lg p-4 bg-card">
+                      <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Location Check-In
+                      </h4>
+                      <LocationVerification
+                        clientAddress={(() => {
+                          const client = currentAppointment.clients;
+                          if (!client) return 'No address available';
+                          if (client.client_addresses && client.client_addresses.length > 0) {
+                            const defaultAddress = client.client_addresses.find((a: any) => a.is_default) || client.client_addresses[0];
+                            if (defaultAddress) {
+                              const parts = [
+                                defaultAddress.address_line_1,
+                                defaultAddress.address_line_2,
+                                defaultAddress.city,
+                                defaultAddress.postcode
+                              ].filter(Boolean);
+                              return parts.join(', ');
+                            }
+                          }
+                          return client.address || 'No address available';
+                        })()}
+                        onLocationVerified={handleLocationVerified}
+                        requireVerification={false}
+                        isCheckingIn={bookingAttendance.isPending}
+                      />
+                    </div>
+
+                    {/* Start Visit Button */}
+                    <div className="text-center">
+                      <div className="space-y-4">
+                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto">
+                          <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-medium text-foreground">Ready to start your visit?</h3>
+                          <p className="text-muted-foreground mt-1">
+                            {verifiedLocation 
+                              ? 'Location verified. Click below to begin.'
+                              : 'Verify your location first, then start the visit.'}
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleStartVisit} 
+                          size="lg" 
+                          className="mt-4"
+                          disabled={bookingAttendance.isPending}
+                        >
+                          {bookingAttendance.isPending ? (
+                            <>
+                              <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                              Starting...
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-5 h-5 mr-2" />
+                              Start Visit
+                            </>
+                          )}
+                        </Button>
+                        {!verifiedLocation && (
+                          <p className="text-xs text-muted-foreground">
+                            💡 Tip: Verify your location for accurate attendance tracking
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-foreground">Ready to start your visit?</h3>
-                        <p className="text-muted-foreground mt-1">Click the button below to begin the visit timer and workflow.</p>
-                      </div>
-                      <Button onClick={handleStartVisit} size="lg" className="mt-4">
-                        <UserCheck className="w-5 h-5 mr-2" />
-                        Start Visit
-                      </Button>
                     </div>
                   </div>
                 ) : isViewOnly ? (
