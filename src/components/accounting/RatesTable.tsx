@@ -88,14 +88,22 @@ const RatesTable: React.FC<RatesTableProps> = ({
     });
   };
 
-  // Get creator name from staff map
-  const getCreatorName = (createdBy: string | undefined) => {
-    if (!createdBy) return "System";
-    const staff = staffMap.get(createdBy);
-    if (staff) {
-      return `${staff.first_name} ${staff.last_name}`;
+  // Get creator name - prioritize stored name, fallback to staff map for historical records
+  const getCreatorName = (rate: ServiceRate) => {
+    // First priority: use the stored name from when the rate was created
+    if (rate.created_by_name) {
+      return rate.created_by_name;
     }
-    return "Admin";
+    
+    // Fallback for historical records: check staff map
+    if (rate.created_by) {
+      const staff = staffMap.get(rate.created_by);
+      if (staff) {
+        return `${staff.first_name} ${staff.last_name}`;
+      }
+    }
+    
+    return "System";
   };
 
   // Get authority name from map
@@ -147,7 +155,7 @@ const RatesTable: React.FC<RatesTableProps> = ({
                   <span className="text-sm">{formatDate(rate.created_at)}</span>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm">{getCreatorName(rate.created_by)}</span>
+                  <span className="text-sm">{getCreatorName(rate)}</span>
                 </TableCell>
                 <TableCell>{renderStatusBadge(rate.status)}</TableCell>
                 <TableCell>

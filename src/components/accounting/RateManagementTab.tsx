@@ -126,24 +126,19 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       return;
     }
 
-    // Determine the creator staff ID
-    let creatorStaffId: string;
-    
-    if (currentUser.staffId) {
-      creatorStaffId = currentUser.staffId;
-    } else if (staffList.length > 0) {
-      creatorStaffId = staffList[0].id;
-    } else {
-      toast.error('No staff members found in this branch. Please add at least one staff member before creating rates.');
-      return;
-    }
+    // Get the creator's name for display purposes
+    const creatorName = currentUser.fullName || 
+      `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 
+      currentUser.email || 
+      'Unknown';
 
     try {
       // Clean the payload - remove auto-generated fields
       const cleanRateData = {
         ...rateData,
         branch_id: branchId,
-        created_by: creatorStaffId,
+        created_by: currentUser.id,
+        created_by_name: creatorName,
         effective_to: rateData.effective_to || null,
       };
 

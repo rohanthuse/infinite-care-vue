@@ -119,6 +119,7 @@ export interface ServiceRate {
   status: string;
   description?: string;
   created_by: string;
+  created_by_name?: string;
   created_at: string;
   updated_at: string;
   // Extended rate fields
