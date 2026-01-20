@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Infinite Care - Carer</string>
+    <string name="title_activity_main">Infinite Care - Carer</string>
+    <string name="package_name">app.lovable.bbc802f7ef784e8cb6d09b852b32ed2b</string>
+    <string name="custom_url_scheme">app.lovable.bbc802f7ef784e8cb6d09b852b32ed2b</string>
+</resources>
