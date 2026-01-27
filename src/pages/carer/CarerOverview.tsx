@@ -16,6 +16,7 @@ import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 import { ReadyToStartSection } from "@/components/carer/ReadyToStartSection";
 import { ServiceReportsDashboardWidget } from "@/components/carer/ServiceReportsDashboardWidget";
 import { ImprovementAreasCard } from "@/components/carer/ImprovementAreasCard";
+import { CarePlanReviewAlerts } from "@/components/carer/CarePlanReviewAlerts";
 import { useCarerPagePrefetch } from "@/hooks/useCarerPagePrefetch";
 
 const CarerOverview: React.FC = () => {
@@ -100,6 +101,9 @@ const CarerOverview: React.FC = () => {
 
       {/* Active Visit Banner */}
       <ActiveVisitBanner />
+
+      {/* Care Plan Review Alerts */}
+      <CarePlanReviewAlerts />
 
       {/* Ready to Start Section */}
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />

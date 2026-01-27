@@ -2,9 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Clock, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-react';
 import { useCarerAssignedCarePlansOptimized } from '@/hooks/useCarePlanData';
 import { useCarerContext } from '@/hooks/useCarerContext';
+import { useCarePlansNeedingReviewCount } from '@/hooks/useCarePlansNeedingReview';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -14,6 +15,7 @@ export const CarePlanStatusWidget: React.FC = () => {
   const staffId = carerContext?.staffId || '';
   const branchId = carerContext?.branchInfo?.id || '';
   const { data: carePlans, isLoading } = useCarerAssignedCarePlansOptimized(staffId, branchId);
+  const { total: needsReviewCount, overdue: overdueCount } = useCarePlansNeedingReviewCount(staffId);
 
   if (isLoading) {
     return (
@@ -108,20 +110,54 @@ export const CarePlanStatusWidget: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-green-50 p-3 rounded-lg">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-green-700">Active</span>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-xs font-medium text-green-700 dark:text-green-300">Active</span>
             </div>
-            <div className="text-xl font-bold text-green-800">{activePlans.length}</div>
+            <div className="text-xl font-bold text-green-800 dark:text-green-200">{activePlans.length}</div>
           </div>
-          <div className="bg-orange-50 p-3 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-600" />
-              <span className="text-sm font-medium text-orange-700">Pending</span>
+          <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Pending</span>
             </div>
-            <div className="text-xl font-bold text-orange-800">{pendingClientApproval.length}</div>
+            <div className="text-xl font-bold text-orange-800 dark:text-orange-200">{pendingClientApproval.length}</div>
+          </div>
+          <div 
+            className={`p-3 rounded-lg cursor-pointer transition-shadow hover:shadow-md ${
+              overdueCount > 0 
+                ? 'bg-red-50 dark:bg-red-950/30' 
+                : needsReviewCount > 0 
+                  ? 'bg-amber-50 dark:bg-amber-950/30'
+                  : 'bg-gray-50 dark:bg-gray-800/50'
+            }`}
+            onClick={() => needsReviewCount > 0 && navigate('/carer-dashboard/careplans?filter=needs-review')}
+          >
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className={`h-4 w-4 ${
+                overdueCount > 0 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : needsReviewCount > 0 
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-gray-500 dark:text-gray-400'
+              }`} />
+              <span className={`text-xs font-medium ${
+                overdueCount > 0 
+                  ? 'text-red-700 dark:text-red-300' 
+                  : needsReviewCount > 0 
+                    ? 'text-amber-700 dark:text-amber-300'
+                    : 'text-gray-600 dark:text-gray-400'
+              }`}>Review</span>
+            </div>
+            <div className={`text-xl font-bold ${
+              overdueCount > 0 
+                ? 'text-red-800 dark:text-red-200' 
+                : needsReviewCount > 0 
+                  ? 'text-amber-800 dark:text-amber-200'
+                  : 'text-gray-700 dark:text-gray-300'
+            }`}>{needsReviewCount}</div>
           </div>
         </div>
 
