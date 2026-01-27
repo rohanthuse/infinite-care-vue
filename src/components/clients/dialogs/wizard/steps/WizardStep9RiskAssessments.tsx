@@ -45,23 +45,6 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
       mitigation_strategies: [],
       review_date: null,
       assessed_by: "",
-      // Risk section
-      rag_status: "",
-      has_pets: false,
-      fall_risk: "",
-      risk_to_staff: [],
-      adverse_weather_plan: "",
-      // Personal Risk section
-      lives_alone: false,
-      rural_area: false,
-      cared_in_bed: false,
-      smoker: false,
-      can_call_for_assistance: false,
-      communication_needs: "",
-      social_support: "",
-      fallen_past_six_months: false,
-      has_assistance_device: false,
-      arrange_assistance_device: false,
     }]);
   };
 
@@ -104,6 +87,114 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
 
       <Form {...form}>
         <div className="space-y-6">
+          {/* General Client Risk Section - Appears ONCE at top */}
+          <div className="border rounded-lg p-6 space-y-4 bg-orange-50/50">
+            <h3 className="text-lg font-semibold text-gray-800">General Client Risk</h3>
+            <p className="text-sm text-gray-600">Client-level risk information that applies across all assessments.</p>
+            
+            <FormField
+              control={form.control}
+              name="client_risk_info.rag_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>RAG Status</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                      className="flex flex-wrap gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="" id="rag-none" />
+                        <FormLabel htmlFor="rag-none" className="text-sm">None</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="green" id="rag-green" />
+                        <FormLabel htmlFor="rag-green" className="text-sm text-green-600">Green</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="amber" id="rag-amber" />
+                        <FormLabel htmlFor="rag-amber" className="text-sm text-amber-600">Amber</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="red" id="rag-red" />
+                        <FormLabel htmlFor="rag-red" className="text-sm text-red-600">Red</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="client_risk_info.has_pets"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Has Pets</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={(value) => field.onChange(value === "yes")}
+                      value={field.value ? "yes" : "no"}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="has-pets-yes" />
+                        <FormLabel htmlFor="has-pets-yes" className="text-sm">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="has-pets-no" />
+                        <FormLabel htmlFor="has-pets-no" className="text-sm">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="client_risk_info.fall_risk"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fall Risk</FormLabel>
+                  <FormControl>
+                    <AutoExpandingTextarea 
+                      placeholder="Describe fall risk factors..." 
+                      minRows={2} 
+                      maxHeight={150} 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="client_risk_info.adverse_weather_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adverse Weather Plan</FormLabel>
+                  <FormControl>
+                    <AutoExpandingTextarea 
+                      placeholder="Describe adverse weather contingency plan..." 
+                      minRows={2} 
+                      maxHeight={150} 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Risk Assessments</h3>
             <Button type="button" onClick={addRiskAssessment} size="sm">
@@ -316,365 +407,262 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
                 ))}
               </div>
 
-              {/* Risk Section */}
-              <div className="space-y-4 pt-6 border-t">
-                <h4 className="text-lg font-semibold text-gray-800">Risk</h4>
-                
-                <FormField
-                  control={form.control}
-                  name={`risk_assessments.${assessmentIndex}.rag_status`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>RAG Status</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-wrap gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="" id={`rag-none-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`rag-none-${assessmentIndex}`} className="text-sm">None</FormLabel>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="green" id={`rag-green-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`rag-green-${assessmentIndex}`} className="text-sm text-green-600">Green</FormLabel>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="amber" id={`rag-amber-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`rag-amber-${assessmentIndex}`} className="text-sm text-amber-600">Amber</FormLabel>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="red" id={`rag-red-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`rag-red-${assessmentIndex}`} className="text-sm text-red-600">Red</FormLabel>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name={`risk_assessments.${assessmentIndex}.has_pets`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Has Pets</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={(value) => field.onChange(value === "yes")}
-                          defaultValue={field.value ? "yes" : "no"}
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="yes" id={`has-pets-yes-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`has-pets-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="no" id={`has-pets-no-${assessmentIndex}`} />
-                            <FormLabel htmlFor={`has-pets-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name={`risk_assessments.${assessmentIndex}.fall_risk`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fall Risk</FormLabel>
-                      <FormControl>
-                        <AutoExpandingTextarea 
-                          placeholder="Describe fall risk factors..." 
-                          minRows={2} 
-                          maxHeight={150} 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name={`risk_assessments.${assessmentIndex}.adverse_weather_plan`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Adverse Weather Plan</FormLabel>
-                      <FormControl>
-                        <AutoExpandingTextarea 
-                          placeholder="Describe adverse weather contingency plan..." 
-                          minRows={2} 
-                          maxHeight={150} 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Personal Risk Section */}
-              <div className="space-y-4 pt-6 border-t">
-                <h4 className="text-lg font-semibold text-gray-800">Personal Risk</h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.lives_alone`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lives Alone</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`lives-alone-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`lives-alone-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`lives-alone-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`lives-alone-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.rural_area`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lives in Rural Area</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`rural-area-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`rural-area-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`rural-area-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`rural-area-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.cared_in_bed`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cared in Bed</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`cared-in-bed-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`cared-in-bed-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`cared-in-bed-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`cared-in-bed-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.smoker`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Smoker</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`smoker-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`smoker-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`smoker-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`smoker-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.can_call_for_assistance`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Can Call for Assistance</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`can-call-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`can-call-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`can-call-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`can-call-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.fallen_past_six_months`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fallen in Past Six Months</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`fallen-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`fallen-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`fallen-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`fallen-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.has_assistance_device`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Has Assistance Device</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`has-device-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`has-device-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`has-device-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`has-device-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.arrange_assistance_device`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Arrange Assistance Device</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "yes")}
-                            defaultValue={field.value ? "yes" : "no"}
-                            className="flex gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`arrange-device-yes-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`arrange-device-yes-${assessmentIndex}`} className="text-sm">Yes</FormLabel>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`arrange-device-no-${assessmentIndex}`} />
-                              <FormLabel htmlFor={`arrange-device-no-${assessmentIndex}`} className="text-sm">No</FormLabel>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.communication_needs`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Communication Needs</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Describe communication needs..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`risk_assessments.${assessmentIndex}.social_support`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Social Support</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Describe social support network..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
             </div>
           ))}
+
+          {/* Personal Risk Factors Section - Appears ONCE at bottom */}
+          <div className="border rounded-lg p-6 space-y-4 bg-blue-50/50">
+            <h3 className="text-lg font-semibold text-gray-800">Personal Risk Factors</h3>
+            <p className="text-sm text-gray-600">Client-level personal risk information that applies across all assessments.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="client_personal_risk.lives_alone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lives Alone</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="lives-alone-yes" />
+                          <FormLabel htmlFor="lives-alone-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="lives-alone-no" />
+                          <FormLabel htmlFor="lives-alone-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.rural_area"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lives in Rural Area</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="rural-area-yes" />
+                          <FormLabel htmlFor="rural-area-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="rural-area-no" />
+                          <FormLabel htmlFor="rural-area-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.cared_in_bed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cared in Bed</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="cared-in-bed-yes" />
+                          <FormLabel htmlFor="cared-in-bed-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="cared-in-bed-no" />
+                          <FormLabel htmlFor="cared-in-bed-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.smoker"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Smoker</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="smoker-yes" />
+                          <FormLabel htmlFor="smoker-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="smoker-no" />
+                          <FormLabel htmlFor="smoker-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.can_call_for_assistance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Can Call for Assistance</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="can-call-yes" />
+                          <FormLabel htmlFor="can-call-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="can-call-no" />
+                          <FormLabel htmlFor="can-call-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.fallen_past_six_months"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fallen in Past Six Months</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="fallen-yes" />
+                          <FormLabel htmlFor="fallen-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="fallen-no" />
+                          <FormLabel htmlFor="fallen-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.has_assistance_device"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Has Assistance Device</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="has-device-yes" />
+                          <FormLabel htmlFor="has-device-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="has-device-no" />
+                          <FormLabel htmlFor="has-device-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.arrange_assistance_device"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Arrange Assistance Device</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        value={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="arrange-device-yes" />
+                          <FormLabel htmlFor="arrange-device-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="arrange-device-no" />
+                          <FormLabel htmlFor="arrange-device-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="client_personal_risk.communication_needs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Communication Needs</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Describe communication needs..." {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_personal_risk.social_support"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Social Support</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Describe social support network..." {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
           {/* Equipment & Dietary Risk Section */}
           <div className="space-y-4 pt-6 border-t">
