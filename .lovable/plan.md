@@ -1,107 +1,87 @@
 
-# Plan: Fix Repeated Risk Columns in Risk Assessments
+# Plan: Add Follow-Up Assignment to Communication Messages
 
 ## Problem Statement
-When adding multiple risk assessments (Risk 1, Risk 2, etc.), the following sections are repeated for each assessment:
-- **Risk Section**: RAG Status, Has Pets, Fall Risk, Risk to Staff, Adverse Weather Plan
-- **Personal Risk Section**: Lives Alone, Rural Area, Cared in Bed, Smoker, etc.
+When composing a message and ticking "Action Required", there is no way to specify:
+- **Who** should take the action (assigned staff member)
+- **When** the action is due (follow-up date)
+- **What** specific notes describe the required action
 
-These are **client-level** risk factors that should only appear **once** on the page, not duplicated per risk assessment.
+The Events/Logs module already has this functionality, but the Communications module only has the basic checkbox without the follow-up fields.
 
-## Current Structure (Problematic)
-```
-Risk Assessment 1
-├── Risk Type, Level, Factors, Mitigation
-├── Risk Section (RAG, Pets, Fall Risk, Weather)     ← DUPLICATE
-└── Personal Risk Section                              ← DUPLICATE
+---
 
-Risk Assessment 2
-├── Risk Type, Level, Factors, Mitigation
-├── Risk Section (RAG, Pets, Fall Risk, Weather)     ← DUPLICATE
-└── Personal Risk Section                              ← DUPLICATE
-```
+## Current State vs Desired State
 
-## Proposed Structure (Fixed)
-```
-┌─────────────────────────────────────────────────────┐
-│ General Client Risk                                  │
-│ (RAG Status, Has Pets, Fall Risk, Adverse Weather)  │
-│ Appears ONCE at top                                  │
-└─────────────────────────────────────────────────────┘
+| Current (Communication) | Desired (Like Events/Logs) |
+|------------------------|---------------------------|
+| Action Required checkbox only | Action Required checkbox |
+| No assignee selection | + Assigned To (staff dropdown) |
+| No date field | + Follow-up Date |
+| No notes field | + Follow-up Notes |
 
-Risk Assessment 1
-├── Risk Type, Level, Factors, Mitigation
+---
 
-Risk Assessment 2  
-├── Risk Type, Level, Factors, Mitigation
+## Solution Overview
 
-┌─────────────────────────────────────────────────────┐
-│ Personal Risk Factors                                │
-│ (Lives Alone, Rural Area, Smoker, etc.)             │
-│ Appears ONCE at bottom                               │
-└─────────────────────────────────────────────────────┘
-```
+### 1. Database Changes
+Add three new columns to the `messages` table to store follow-up information.
+
+### 2. UI Changes
+When "Action Required" is ticked in the MessageComposer, reveal additional fields for:
+- Assigned To (staff member dropdown)
+- Follow-up Date (date picker)
+- Follow-up Notes (text area)
+
+### 3. Display Changes
+Update MessageView and MessageList to show follow-up assignment details when viewing messages.
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Update Form Data Structure
+### Step 1: Database Migration
+Add the follow-up columns to the `messages` table.
 
-Change how the Risk and Personal Risk fields are stored - move them from per-assessment to top-level form fields.
-
-**File:** `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx`
-
-| Change | Description |
-|--------|-------------|
-| Move Risk fields to form root | Use `form.setValue("client_risk_info.rag_status", ...)` instead of per-assessment |
-| Move Personal Risk fields to form root | Use `form.setValue("client_personal_risk.lives_alone", ...)` |
-| Remove from addRiskAssessment() | Remove Risk/Personal Risk fields from the new assessment template |
-
-### Step 2: Restructure the Component Layout
-
-**File:** `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx`
-
-| Section | Location | Contains |
-|---------|----------|----------|
-| General Client Risk | Top of page (outside loop) | RAG Status, Has Pets, Fall Risk, Risk to Staff, Adverse Weather Plan |
-| Risk Assessments Loop | Middle | Risk Type, Level, Assessed By, Review Date, Risk Factors, Mitigation Strategies |
-| Personal Risk Factors | Bottom of page (outside loop) | Lives Alone, Rural Area, Cared in Bed, Smoker, etc. |
-
-### Step 3: Update Display Components
-
-**Files to update:**
-- `src/components/care/tabs/RiskAssessmentsTab.tsx`
-- `src/components/care/tabs/RiskTab.tsx`
-
-Move the "General Risk" and "Personal Risk" display sections outside the assessment loop so they only appear once.
-
-### Step 4: Update Form Schema/Defaults
-
-**File:** Care plan wizard schema/defaults
-
-Ensure the wizard schema includes the new top-level fields:
-```typescript
-client_risk_info: {
-  rag_status: "",
-  has_pets: false,
-  fall_risk: "",
-  risk_to_staff: [],
-  adverse_weather_plan: ""
-},
-client_personal_risk: {
-  lives_alone: false,
-  rural_area: false,
-  cared_in_bed: false,
-  smoker: false,
-  can_call_for_assistance: false,
-  communication_needs: "",
-  social_support: "",
-  fallen_past_six_months: false,
-  has_assistance_device: false,
-  arrange_assistance_device: false
-}
+```sql
+ALTER TABLE public.messages 
+ADD COLUMN IF NOT EXISTS follow_up_assigned_to UUID REFERENCES staff(id),
+ADD COLUMN IF NOT EXISTS follow_up_date DATE,
+ADD COLUMN IF NOT EXISTS follow_up_notes TEXT;
 ```
+
+### Step 2: Update MessageComposer.tsx
+Add the follow-up fields that appear when "Action Required" is checked.
+
+**New state variables:**
+- `followUpAssignedTo` (string)
+- `followUpDate` (string)
+- `followUpNotes` (string)
+
+**New UI section (after the Action Required checkbox):**
+When `actionRequired` is true, show:
+- Staff member dropdown using the available contacts or a dedicated staff hook
+- Date input for follow-up date
+- Textarea for follow-up notes
+
+### Step 3: Update Message Sending Logic
+Modify `useUnifiedMessaging.ts` to include the new fields when sending messages.
+
+**Files to modify:**
+- `useUnifiedCreateThread` mutation - add follow-up parameters
+- `useUnifiedSendMessage` mutation - add follow-up parameters
+
+### Step 4: Update Message Display
+Modify `MessageView.tsx` to display follow-up information when viewing a message.
+
+**Display format (similar to EventFollowUpView):**
+- Yellow/amber highlighted section showing:
+  - Assigned To: [Staff Name]
+  - Due Date: [Date]
+  - Notes: [Text]
+
+### Step 5: Update Message Types
+Update the `UnifiedMessage` interface in `useUnifiedMessaging.ts` to include the new fields.
 
 ---
 
@@ -111,55 +91,77 @@ client_personal_risk: {
 
 | File | Change |
 |------|--------|
-| `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx` | Move Risk & Personal Risk sections outside the assessment loop |
-| `src/components/care/tabs/RiskAssessmentsTab.tsx` | Display General Risk and Personal Risk once, not per-assessment |
-| `src/components/care/tabs/RiskTab.tsx` | Same change - display once at client level |
-| Care plan wizard schema | Add top-level client_risk_info and client_personal_risk objects |
+| SQL Migration | Add `follow_up_assigned_to`, `follow_up_date`, `follow_up_notes` columns to messages table |
+| `src/components/communications/MessageComposer.tsx` | Add follow-up fields UI when action required is checked |
+| `src/hooks/useUnifiedMessaging.ts` | Add follow-up fields to message mutations and interfaces |
+| `src/components/communications/MessageView.tsx` | Display follow-up assignment details |
+| `src/integrations/supabase/types.ts` | Will auto-update after migration |
 
-### Data Migration Consideration
-Existing risk assessments may have these fields stored per-assessment. The fix should:
-1. Read from the **first** risk assessment for backwards compatibility
-2. Save to the new top-level structure going forward
-3. Display view components should check both locations
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/communications/MessageFollowUpSection.tsx` | Reusable follow-up fields component for message composer |
+| `src/components/communications/MessageFollowUpView.tsx` | Display component for follow-up info in message view |
 
 ---
 
-## Visual Summary
+## UI Layout in MessageComposer
 
-**Before (Repeating):**
-| Risk 1 | Risk 2 |
-|--------|--------|
-| Fall Risk: ... | Fall Risk: ... |
-| Weather Plan: ... | Weather Plan: ... |
-| Lives Alone: Yes | Lives Alone: Yes |
+```text
+┌─────────────────────────────────────────┐
+│ [x] Action Required?                    │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Assigned To: [Select staff member ▼]│ │
+│ │ Follow-up Date: [Date picker      ] │ │
+│ │ Notes: [Describe the required       │ │
+│ │        actions...]                  │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ [ ] Admin Eyes Only                     │
+└─────────────────────────────────────────┘
+```
 
-**After (Single Entry):**
-| General Risk (Top) |
-|-------------------|
-| Fall Risk: ... |
-| Weather Plan: ... |
+---
 
-| Risk Assessment 1 | Risk Assessment 2 |
-|-------------------|-------------------|
-| Type: Falls | Type: Medication |
-| Level: High | Level: Low |
+## Data Flow
 
-| Personal Risk (Bottom) |
-|------------------------|
-| Lives Alone: Yes |
-| Smoker: No |
+```text
+MessageComposer
+    │
+    ├── actionRequired: true
+    ├── followUpAssignedTo: "staff-uuid"
+    ├── followUpDate: "2026-02-15"
+    └── followUpNotes: "Follow up with client..."
+         │
+         v
+useUnifiedSendMessage / useUnifiedCreateThread
+         │
+         v
+messages table (with new columns)
+         │
+         v
+MessageView displays follow-up info
+```
+
+---
+
+## Staff List Source
+The component will use `useStaffList` from `src/hooks/useAccountingData.ts` to populate the staff dropdown, filtered by the current branch context. This provides a consistent staff list already used elsewhere in the application.
 
 ---
 
 ## Impact Assessment
 
-**Low Risk:**
-- UI restructuring only
-- No database schema changes required
-- Backwards compatible with existing data
-- Per your instructions, no visual styling changes
+**Low-Medium Risk:**
+- Database migration adds nullable columns (non-breaking)
+- UI changes are additive (existing checkbox behavior unchanged)
+- Follows existing pattern from Events/Logs module
+- No changes to existing data
 
 **Benefits:**
-- Eliminates confusing duplicate fields
-- Client-level risk info appears only once
-- Each risk assessment focuses on specific risk type/level/factors
+- Clear accountability for who needs to take action
+- Deadline tracking for follow-ups
+- Detailed notes for context
+- Consistent with Events/Logs follow-up system
