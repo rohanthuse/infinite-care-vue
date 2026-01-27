@@ -1,167 +1,172 @@
 
-# Plan: Add Follow-Up Assignment to Communication Messages
+# Plan: Download Blank Care Plan Feature
 
-## Problem Statement
-When composing a message and ticking "Action Required", there is no way to specify:
-- **Who** should take the action (assigned staff member)
-- **When** the action is due (follow-up date)
-- **What** specific notes describe the required action
+## Overview
+Add functionality to download a blank care plan PDF template that includes only the client's name with all other care plan fields empty. This allows staff to print blank forms for manual completion or use as a paper-based assessment template.
 
-The Events/Logs module already has this functionality, but the Communications module only has the basic checkbox without the follow-up fields.
+## Current State
+- The `generateCarePlanDetailPDF` function in `src/services/enhancedPdfGenerator.ts` generates a fully populated care plan PDF
+- It conditionally renders sections only if data exists (using `if (clientData.medicalInfo)` etc.)
+- There is no existing feature to download a blank template
 
----
-
-## Current State vs Desired State
-
-| Current (Communication) | Desired (Like Events/Logs) |
-|------------------------|---------------------------|
-| Action Required checkbox only | Action Required checkbox |
-| No assignee selection | + Assigned To (staff dropdown) |
-| No date field | + Follow-up Date |
-| No notes field | + Follow-up Notes |
-
----
-
-## Solution Overview
-
-### 1. Database Changes
-Add three new columns to the `messages` table to store follow-up information.
-
-### 2. UI Changes
-When "Action Required" is ticked in the MessageComposer, reveal additional fields for:
-- Assigned To (staff member dropdown)
-- Follow-up Date (date picker)
-- Follow-up Notes (text area)
-
-### 3. Display Changes
-Update MessageView and MessageList to show follow-up assignment details when viewing messages.
+## Proposed Solution
+Create a new function `generateBlankCarePlanPDF` that generates all care plan sections with empty field values, showing the client name but leaving all other fields as blank placeholders for manual completion.
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Database Migration
-Add the follow-up columns to the `messages` table.
+### Step 1: Add New PDF Generation Method
 
-```sql
-ALTER TABLE public.messages 
-ADD COLUMN IF NOT EXISTS follow_up_assigned_to UUID REFERENCES staff(id),
-ADD COLUMN IF NOT EXISTS follow_up_date DATE,
-ADD COLUMN IF NOT EXISTS follow_up_notes TEXT;
+**File:** `src/services/enhancedPdfGenerator.ts`
+
+Add a new method `generateBlankCarePlanPDF` to the `EnhancedPdfGenerator` class that:
+- Renders all care plan sections unconditionally
+- Shows client name from the provided data
+- Uses empty string placeholders (`"_________________"`) for all other fields
+- Includes all standard sections: Patient Information, Care Plan Details, Key Contacts, Medical Information, Personal Care, Dietary Requirements, Medications, Risk Assessments, Equipment, Goals, Activities, Consent
+
+### Step 2: Add Export Convenience Function
+
+**File:** `src/services/enhancedPdfGenerator.ts`
+
+Add a new async export function:
+```typescript
+export const generateBlankCarePlanPDF = async (
+  clientName: string,
+  clientId: string,
+  branchName: string,
+  branchId?: string
+) => { ... }
 ```
 
-### Step 2: Update MessageComposer.tsx
-Add the follow-up fields that appear when "Action Required" is checked.
+### Step 3: Add "Download Blank" Button to CarePlansTab
 
-**New state variables:**
-- `followUpAssignedTo` (string)
-- `followUpDate` (string)
-- `followUpNotes` (string)
+**File:** `src/components/clients/tabs/CarePlansTab.tsx`
 
-**New UI section (after the Action Required checkbox):**
-When `actionRequired` is true, show:
-- Staff member dropdown using the available contacts or a dedicated staff hook
-- Date input for follow-up date
-- Textarea for follow-up notes
+Add a new button in the header section alongside the "Create Plan" button:
+- Icon: `FileDown` (or `Download`)
+- Label: "Download Blank"
+- onClick: Calls the new `generateBlankCarePlanPDF` function with client data
 
-### Step 3: Update Message Sending Logic
-Modify `useUnifiedMessaging.ts` to include the new fields when sending messages.
+### Step 4: Add Client Data Fetching (if needed)
 
-**Files to modify:**
-- `useUnifiedCreateThread` mutation - add follow-up parameters
-- `useUnifiedSendMessage` mutation - add follow-up parameters
-
-### Step 4: Update Message Display
-Modify `MessageView.tsx` to display follow-up information when viewing a message.
-
-**Display format (similar to EventFollowUpView):**
-- Yellow/amber highlighted section showing:
-  - Assigned To: [Staff Name]
-  - Due Date: [Date]
-  - Notes: [Text]
-
-### Step 5: Update Message Types
-Update the `UnifiedMessage` interface in `useUnifiedMessaging.ts` to include the new fields.
+The `CarePlansTab` already has access to `clientId` and `clientName` props. We'll use the existing `useParams` hook for `branchId`.
 
 ---
 
 ## Technical Details
 
-### Files to Modify
+### New Method Structure in EnhancedPdfGenerator
 
-| File | Change |
-|------|--------|
-| SQL Migration | Add `follow_up_assigned_to`, `follow_up_date`, `follow_up_notes` columns to messages table |
-| `src/components/communications/MessageComposer.tsx` | Add follow-up fields UI when action required is checked |
-| `src/hooks/useUnifiedMessaging.ts` | Add follow-up fields to message mutations and interfaces |
-| `src/components/communications/MessageView.tsx` | Display follow-up assignment details |
-| `src/integrations/supabase/types.ts` | Will auto-update after migration |
+```typescript
+generateBlankCarePlanPDF(clientName: string, options: PdfOptions): void {
+  this.currentY = this.addHeader(options);
 
-### Files to Create
+  // Patient Information Section - with client name, rest blank
+  this.addSection("Patient Information", [
+    ["Full Name", clientName],
+    ["Date of Birth", "_________________"],
+    ["Age Group", "_________________"],
+    ["Address", "_________________"],
+    ["Phone", "_________________"],
+    ["Email", "_________________"],
+    ["NHS Number", "_________________"]
+  ], SECTION_COLORS.patientInfo);
 
-| File | Purpose |
-|------|---------|
-| `src/components/communications/MessageFollowUpSection.tsx` | Reusable follow-up fields component for message composer |
-| `src/components/communications/MessageFollowUpView.tsx` | Display component for follow-up info in message view |
+  // Care Plan Details Section - all blank
+  this.addSection("Care Plan Details", [
+    ["Plan ID", "_________________"],
+    ["Plan Title", "_________________"],
+    ["Assigned Staff", "_________________"],
+    ...
+  ], SECTION_COLORS.carePlanDetails);
+
+  // Continue with all other sections using blank placeholders...
+}
+```
+
+### Sections to Include in Blank Template
+
+| Section | Fields |
+|---------|--------|
+| Patient Information | Full Name (populated), DOB, Age Group, Address, Phone, Email, NHS Number |
+| Care Plan Details | Plan ID, Title, Assigned Staff, Provider Type, Status, Start Date, Review Date |
+| Key Contacts | Empty table with headers: Name, Relationship, Phone, Email, Emergency |
+| Medical Information | Allergies, Conditions, Medications, Mobility, Communication, Vision, Hearing, Mental Health |
+| Personal Care | Hygiene, Bathing, Dressing, Toileting, Continence, Sleep, Skin Care |
+| Dietary Requirements | Restrictions, Allergies, Preferences, Texture, Nutrition, Fluids, Supplements, Feeding |
+| Medications | Empty table with headers: Medication, Dosage, Frequency, Time of Day, Instructions, Status |
+| Risk Assessments | Empty table with headers: Risk Type, Level, Factors, Assessed By, Date |
+| Equipment | Empty table with headers: Name, Type, Manufacturer, Status, Location |
+| Goals | Empty table with headers: Goal, Target Date, Status, Priority |
+| Activities | Empty table with headers: Activity, Frequency, Duration, Notes |
+| Consent | Capacity Assessment, Given By, Date, Notes |
+| Additional Notes | Large blank area for handwritten notes |
 
 ---
 
-## UI Layout in MessageComposer
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/services/enhancedPdfGenerator.ts` | Add `generateBlankCarePlanPDF` method and export function |
+| `src/components/clients/tabs/CarePlansTab.tsx` | Add "Download Blank" button with click handler |
+
+---
+
+## UI Placement
 
 ```text
-┌─────────────────────────────────────────┐
-│ [x] Action Required?                    │
-│                                         │
-│ ┌─────────────────────────────────────┐ │
-│ │ Assigned To: [Select staff member ▼]│ │
-│ │ Follow-up Date: [Date picker      ] │ │
-│ │ Notes: [Describe the required       │ │
-│ │        actions...]                  │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ [ ] Admin Eyes Only                     │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ Care Plans                                                   │
+│ Care plans and treatment programs for [Client Name]          │
+│                                                              │
+│                    [📥 Download Blank]  [+ Create Plan]      │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+The "Download Blank" button will:
+- Use `FileDown` icon from lucide-react
+- Use `variant="outline"` to differentiate from the primary "Create Plan" button
+- Be positioned to the left of the "Create Plan" button
 
 ---
 
 ## Data Flow
 
 ```text
-MessageComposer
-    │
-    ├── actionRequired: true
-    ├── followUpAssignedTo: "staff-uuid"
-    ├── followUpDate: "2026-02-15"
-    └── followUpNotes: "Follow up with client..."
+User clicks "Download Blank"
          │
          v
-useUnifiedSendMessage / useUnifiedCreateThread
+CarePlansTab.handleDownloadBlank()
+         │
+         ├── clientName (from props)
+         ├── branchId (from useParams)
          │
          v
-messages table (with new columns)
+generateBlankCarePlanPDF(clientName, clientId, branchName, branchId)
          │
          v
-MessageView displays follow-up info
+EnhancedPdfGenerator.generateBlankCarePlanPDF()
+         │
+         v
+PDF downloads with filename:
+"Blank_Care_Plan_[ClientName]_[Date].pdf"
 ```
-
----
-
-## Staff List Source
-The component will use `useStaffList` from `src/hooks/useAccountingData.ts` to populate the staff dropdown, filtered by the current branch context. This provides a consistent staff list already used elsewhere in the application.
 
 ---
 
 ## Impact Assessment
 
-**Low-Medium Risk:**
-- Database migration adds nullable columns (non-breaking)
-- UI changes are additive (existing checkbox behavior unchanged)
-- Follows existing pattern from Events/Logs module
-- No changes to existing data
+**Low Risk:**
+- No database changes required
+- No changes to existing PDF generation logic
+- New standalone function that doesn't affect current exports
+- UI change is additive (new button alongside existing)
 
 **Benefits:**
-- Clear accountability for who needs to take action
-- Deadline tracking for follow-ups
-- Detailed notes for context
-- Consistent with Events/Logs follow-up system
+- Provides paper-based assessment option
+- Useful for initial client assessments
+- Can be completed manually and then digitized
+- Professional branded template with all required sections
