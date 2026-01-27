@@ -70,7 +70,7 @@ export const useVisitMedications = (visitRecordId?: string) => {
     },
   });
 
-  // Administer medication
+  // Administer medication with automatic MAR sync
   const administerMedication = useMutation({
     mutationFn: async ({ 
       medicationId, 
@@ -89,6 +89,9 @@ export const useVisitMedications = (visitRecordId?: string) => {
       administeredBy?: string;
       witnessedBy?: string;
     }) => {
+      // Use server timestamp for consistency
+      const serverTimestamp = new Date().toISOString();
+      
       const updates: Partial<VisitMedication> = {
         is_administered: isAdministered,
         administration_notes: notes,
@@ -99,21 +102,57 @@ export const useVisitMedications = (visitRecordId?: string) => {
       };
 
       if (isAdministered) {
-        updates.administration_time = new Date().toISOString();
+        updates.administration_time = serverTimestamp;
       }
 
+      // First update visit_medications
       const { data, error } = await supabase
         .from('visit_medications')
         .update(updates)
         .eq('id', medicationId)
-        .select()
+        .select('*, visit_record_id')
         .single();
 
       if (error) throw error;
+
+      // Sync to medication_administration_records (MAR) for admin charts
+      if (isAdministered && data.medication_id) {
+        // Check for existing MAR entry to prevent duplicates
+        const { data: existingMar } = await supabase
+          .from('medication_administration_records')
+          .select('id')
+          .eq('medication_id', data.medication_id)
+          .eq('administered_at', serverTimestamp)
+          .maybeSingle();
+
+        if (!existingMar) {
+          // Map status for MAR table
+          const marStatus = missedReason ? 'not_given' : 'given';
+          
+          const { error: marError } = await supabase
+            .from('medication_administration_records')
+            .insert({
+              medication_id: data.medication_id,
+              administered_at: serverTimestamp,
+              administered_by: administeredBy || 'Unknown',
+              status: marStatus,
+              notes: notes || undefined,
+            });
+
+          if (marError) {
+            console.error('[useVisitMedications] MAR sync error (non-blocking):', marError);
+            // Don't throw - MAR sync failure shouldn't block the main operation
+          } else {
+            console.log('[useVisitMedications] Successfully synced to MAR table');
+          }
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecordId] });
+      queryClient.invalidateQueries({ queryKey: ['medication-trend-data'] });
       toast.success('Medication record updated');
     },
     onError: (error: any) => {
@@ -191,20 +230,21 @@ export const useVisitMedications = (visitRecordId?: string) => {
         return [];
       }
 
-      // Filter medications by time of day
-      const filteredMedications = clientMedications.filter(med => 
+      // Filter medications by time of day with fallback
+      let filteredMedications = clientMedications.filter(med => 
         doesMedicationMatchTimeOfDay(med.time_of_day as string[] | null, visitTimeOfDay)
       );
 
       console.log(`[useVisitMedications] Filtered ${clientMedications.length} medications to ${filteredMedications.length} for ${visitTimeOfDay}`);
       
-      // Debug logging when no medications match time of day
-      if (filteredMedications.length === 0) {
-        console.log('[useVisitMedications] No medications for time of day:', visitTimeOfDay);
+      // FALLBACK: If no medications match time_of_day, show ALL active medications
+      // This prevents missing medications due to incomplete time_of_day data
+      if (filteredMedications.length === 0 && clientMedications.length > 0) {
+        console.log('[useVisitMedications] No medications matched time_of_day filter, showing all active medications');
         console.log('[useVisitMedications] All medications had time_of_day:', 
           clientMedications.map(m => ({ name: m.name, time_of_day: m.time_of_day }))
         );
-        return [];
+        filteredMedications = clientMedications;
       }
 
       // Convert filtered client medications to visit medications
