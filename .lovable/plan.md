@@ -1,254 +1,165 @@
 
-# Plan: Fix Medication Recording Inaccuracies
+# Plan: Fix Repeated Risk Columns in Risk Assessments
 
-## Problem Analysis
+## Problem Statement
+When adding multiple risk assessments (Risk 1, Risk 2, etc.), the following sections are repeated for each assessment:
+- **Risk Section**: RAG Status, Has Pets, Fall Risk, Risk to Staff, Adverse Weather Plan
+- **Personal Risk Section**: Lives Alone, Rural Area, Cared in Bed, Smoker, etc.
 
-After thorough investigation, I've identified **four interconnected issues** causing medication recording inaccuracies in the Admin/Staff Portal:
+These are **client-level** risk factors that should only appear **once** on the page, not duplicated per risk assessment.
 
-### Root Cause: Data Fragmentation
-The system has two separate tables for medication records that **do not synchronize**:
+## Current Structure (Problematic)
+```
+Risk Assessment 1
+├── Risk Type, Level, Factors, Mitigation
+├── Risk Section (RAG, Pets, Fall Risk, Weather)     ← DUPLICATE
+└── Personal Risk Section                              ← DUPLICATE
 
-| Table | Purpose | Updated By | Shows In |
-|-------|---------|------------|----------|
-| `visit_medications` | Records medications during carer visits | Carers via visit workflow | Service Reports, Visit Details |
-| `medication_administration_records` | Historical MAR chart data | Admin portal only | MAR Charts, Trend Analytics |
+Risk Assessment 2
+├── Risk Type, Level, Factors, Mitigation
+├── Risk Section (RAG, Pets, Fall Risk, Weather)     ← DUPLICATE
+└── Personal Risk Section                              ← DUPLICATE
+```
 
-**Result:** Carers record medications during visits, but this data **never flows** to the MAR chart in the Admin Portal.
+## Proposed Structure (Fixed)
+```
+┌─────────────────────────────────────────────────────┐
+│ General Client Risk                                  │
+│ (RAG Status, Has Pets, Fall Risk, Adverse Weather)  │
+│ Appears ONCE at top                                  │
+└─────────────────────────────────────────────────────┘
 
----
+Risk Assessment 1
+├── Risk Type, Level, Factors, Mitigation
 
-## Issues to Fix
+Risk Assessment 2  
+├── Risk Type, Level, Factors, Mitigation
 
-### Issue 1: Missing in MAR Chart
-**Cause:** The `useVisitMedications.administerMedication` mutation only updates `visit_medications`. There is no code to also insert into `medication_administration_records`.
-
-**Location:** `src/hooks/useVisitMedications.ts` lines 74-114
-
-### Issue 2: Missing Medications During Visits
-**Cause:** Medications are filtered by `time_of_day` when loading into visits. If the care plan medication doesn't have a matching time slot OR has incorrect `time_of_day` data, the medication won't appear.
-
-**Location:** `src/hooks/useVisitMedications.ts` lines 194-197
-
-### Issue 3: Wrong Timestamps
-**Cause:** Timestamps are generated client-side using `new Date().toISOString()`. If the device clock is incorrect or timezone handling varies, timestamps will be inaccurate.
-
-**Location:** `src/hooks/useVisitMedications.ts` line 102
-
-### Issue 4: Duplicate Records
-**Cause:** When syncing draft medications (`handleDraftMedicationToggle`), there's no deduplication check. A carer could add the same medication multiple times if they click rapidly or if the UI doesn't properly track synced meds.
-
-**Location:** `src/pages/carer/CarerVisitWorkflow.tsx` lines 1617-1637
-
----
-
-## Solution Overview
-
-### 1. Create MAR Sync Function
-Add logic to automatically create a `medication_administration_records` entry whenever a medication is administered during a visit.
-
-### 2. Improve Time-of-Day Filtering
-Make the time-of-day filter more lenient and add fallback logic to show all medications if none match.
-
-### 3. Use Server-Side Timestamps
-Replace client-side timestamps with database `NOW()` for accuracy.
-
-### 4. Add Deduplication Logic
-Check for existing visit medications before inserting and prevent duplicate MAR entries.
+┌─────────────────────────────────────────────────────┐
+│ Personal Risk Factors                                │
+│ (Lives Alone, Rural Area, Smoker, etc.)             │
+│ Appears ONCE at bottom                               │
+└─────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Sync Visit Medications to MAR Table
+### Step 1: Update Form Data Structure
 
-**File:** `src/hooks/useVisitMedications.ts`
+Change how the Risk and Personal Risk fields are stored - move them from per-assessment to top-level form fields.
 
-Modify the `administerMedication` mutation to also create a MAR entry when a medication is marked as administered.
+**File:** `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx`
 
+| Change | Description |
+|--------|-------------|
+| Move Risk fields to form root | Use `form.setValue("client_risk_info.rag_status", ...)` instead of per-assessment |
+| Move Personal Risk fields to form root | Use `form.setValue("client_personal_risk.lives_alone", ...)` |
+| Remove from addRiskAssessment() | Remove Risk/Personal Risk fields from the new assessment template |
+
+### Step 2: Restructure the Component Layout
+
+**File:** `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx`
+
+| Section | Location | Contains |
+|---------|----------|----------|
+| General Client Risk | Top of page (outside loop) | RAG Status, Has Pets, Fall Risk, Risk to Staff, Adverse Weather Plan |
+| Risk Assessments Loop | Middle | Risk Type, Level, Assessed By, Review Date, Risk Factors, Mitigation Strategies |
+| Personal Risk Factors | Bottom of page (outside loop) | Lives Alone, Rural Area, Cared in Bed, Smoker, etc. |
+
+### Step 3: Update Display Components
+
+**Files to update:**
+- `src/components/care/tabs/RiskAssessmentsTab.tsx`
+- `src/components/care/tabs/RiskTab.tsx`
+
+Move the "General Risk" and "Personal Risk" display sections outside the assessment loop so they only appear once.
+
+### Step 4: Update Form Schema/Defaults
+
+**File:** Care plan wizard schema/defaults
+
+Ensure the wizard schema includes the new top-level fields:
 ```typescript
-// In administerMedication mutation, after updating visit_medications
-if (isAdministered && medication.medication_id) {
-  // Create corresponding MAR entry
-  await supabase.from('medication_administration_records').insert({
-    medication_id: medication.medication_id,
-    administered_at: new Date().toISOString(),
-    administered_by: administeredBy || 'Unknown',
-    status: 'given',
-    notes: notes,
-    visit_record_id: visitRecordId // Link to visit for traceability
-  });
+client_risk_info: {
+  rag_status: "",
+  has_pets: false,
+  fall_risk: "",
+  risk_to_staff: [],
+  adverse_weather_plan: ""
+},
+client_personal_risk: {
+  lives_alone: false,
+  rural_area: false,
+  cared_in_bed: false,
+  smoker: false,
+  can_call_for_assistance: false,
+  communication_needs: "",
+  social_support: "",
+  fallen_past_six_months: false,
+  has_assistance_device: false,
+  arrange_assistance_device: false
 }
 ```
-
-### Step 2: Create Database Trigger (Alternative Approach)
-
-Create a database trigger that automatically syncs `visit_medications` to `medication_administration_records` whenever a medication is marked as administered.
-
-```sql
-CREATE OR REPLACE FUNCTION sync_visit_medication_to_mar()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Only sync when medication is marked as administered
-  IF NEW.is_administered = true AND OLD.is_administered = false 
-     AND NEW.medication_id IS NOT NULL THEN
-    
-    -- Check for existing MAR entry to prevent duplicates
-    IF NOT EXISTS (
-      SELECT 1 FROM medication_administration_records 
-      WHERE medication_id = NEW.medication_id 
-        AND visit_record_id = NEW.visit_record_id
-    ) THEN
-      INSERT INTO medication_administration_records (
-        medication_id,
-        administered_at,
-        administered_by,
-        status,
-        notes,
-        visit_record_id
-      ) VALUES (
-        NEW.medication_id,
-        COALESCE(NEW.administration_time, NOW()),
-        COALESCE(NEW.administered_by, 'Unknown'),
-        'given',
-        NEW.administration_notes,
-        NEW.visit_record_id
-      );
-    END IF;
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER trigger_sync_visit_medication_to_mar
-AFTER UPDATE ON visit_medications
-FOR EACH ROW
-EXECUTE FUNCTION sync_visit_medication_to_mar();
-```
-
-### Step 3: Add `visit_record_id` Column to MAR Table
-
-Add a nullable column to link MAR entries back to their source visit.
-
-```sql
-ALTER TABLE medication_administration_records 
-ADD COLUMN IF NOT EXISTS visit_record_id UUID REFERENCES visit_records(id);
-
-CREATE INDEX idx_mar_visit_record ON medication_administration_records(visit_record_id);
-```
-
-### Step 4: Fix Time-of-Day Filter Logic
-
-**File:** `src/hooks/useVisitMedications.ts`
-
-Make the filter more flexible:
-
-```typescript
-// Current behavior: strict filter
-const filteredMedications = clientMedications.filter(med => 
-  doesMedicationMatchTimeOfDay(med.time_of_day as string[] | null, visitTimeOfDay)
-);
-
-// New behavior: show all if none match time slot
-let filteredMedications = clientMedications.filter(med => 
-  doesMedicationMatchTimeOfDay(med.time_of_day as string[] | null, visitTimeOfDay)
-);
-
-// Fallback: if no medications match time_of_day, show all active medications
-if (filteredMedications.length === 0 && clientMedications.length > 0) {
-  console.log('[useVisitMedications] No medications matched time_of_day filter, showing all');
-  filteredMedications = clientMedications;
-}
-```
-
-### Step 5: Add Deduplication Check
-
-**File:** `src/pages/carer/CarerVisitWorkflow.tsx`
-
-Before adding a draft medication, check if it already exists:
-
-```typescript
-// Check if this medication already exists in visit_medications
-const { data: existingMed } = await supabase
-  .from('visit_medications')
-  .select('id')
-  .eq('visit_record_id', visitRecord.id)
-  .eq('medication_name', med.name)
-  .maybeSingle();
-
-if (existingMed) {
-  toast.info(`${med.name} is already in the medication tracker`);
-  return;
-}
-```
-
-### Step 6: Update MAR Chart Query to Include Visit Data
-
-**File:** `src/hooks/useMedicationChartData.ts`
-
-Optionally, update the trend chart to also query `visit_medications` as a supplementary data source until all historical data is synced.
 
 ---
 
-## Files to Modify
+## Technical Details
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useVisitMedications.ts` | Add MAR sync on administration, fix time filter fallback, use server timestamp |
-| `src/pages/carer/CarerVisitWorkflow.tsx` | Add deduplication check for draft medications |
-| SQL Migration | Add trigger for automatic sync, add `visit_record_id` column to MAR table |
-| `src/hooks/useMedicationChartData.ts` | (Optional) Add visit_medications as secondary data source |
+| `src/components/clients/dialogs/wizard/steps/WizardStep9RiskAssessments.tsx` | Move Risk & Personal Risk sections outside the assessment loop |
+| `src/components/care/tabs/RiskAssessmentsTab.tsx` | Display General Risk and Personal Risk once, not per-assessment |
+| `src/components/care/tabs/RiskTab.tsx` | Same change - display once at client level |
+| Care plan wizard schema | Add top-level client_risk_info and client_personal_risk objects |
 
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| SQL Migration | Database trigger and schema changes |
-
----
-
-## Data Flow After Fix
-
-```text
-Carer Visit Workflow
-        |
-        v
-visit_medications (UPDATE)
-        |
-        v
-[Database Trigger]
-        |
-        v
-medication_administration_records (INSERT)
-        |
-        v
-MAR Chart & Admin Portal
-        (Shows all data from both sources)
-```
+### Data Migration Consideration
+Existing risk assessments may have these fields stored per-assessment. The fix should:
+1. Read from the **first** risk assessment for backwards compatibility
+2. Save to the new top-level structure going forward
+3. Display view components should check both locations
 
 ---
 
-## Testing Checklist
+## Visual Summary
 
-- [ ] Record a medication during a carer visit
-- [ ] Verify the medication appears in `visit_medications` table
-- [ ] Verify a corresponding entry is created in `medication_administration_records`
-- [ ] Check the MAR chart in Admin portal shows the administered medication
-- [ ] Test with medications that have no `time_of_day` set (should still appear)
-- [ ] Test rapid clicking on medication toggle (should not create duplicates)
-- [ ] Verify timestamps are accurate across different timezones
-- [ ] Test that unadministering a medication does NOT remove the MAR entry (historical record)
+**Before (Repeating):**
+| Risk 1 | Risk 2 |
+|--------|--------|
+| Fall Risk: ... | Fall Risk: ... |
+| Weather Plan: ... | Weather Plan: ... |
+| Lives Alone: Yes | Lives Alone: Yes |
+
+**After (Single Entry):**
+| General Risk (Top) |
+|-------------------|
+| Fall Risk: ... |
+| Weather Plan: ... |
+
+| Risk Assessment 1 | Risk Assessment 2 |
+|-------------------|-------------------|
+| Type: Falls | Type: Medication |
+| Level: High | Level: Low |
+
+| Personal Risk (Bottom) |
+|------------------------|
+| Lives Alone: Yes |
+| Smoker: No |
 
 ---
 
 ## Impact Assessment
 
-**Medium Risk:**
-- Adds database trigger which could impact performance (mitigated by targeted WHERE clause)
-- Changes to medication flow require careful testing
-- No data loss - only adds new records
+**Low Risk:**
+- UI restructuring only
+- No database schema changes required
+- Backwards compatible with existing data
+- Per your instructions, no visual styling changes
 
 **Benefits:**
-- MAR chart will accurately reflect all carer-administered medications
-- Single source of truth for medication administration history
-- Eliminates data fragmentation between portals
+- Eliminates confusing duplicate fields
+- Client-level risk info appears only once
+- Each risk assessment focuses on specific risk type/level/factors
