@@ -1,26 +1,38 @@
 
-import React, { useState } from "react";
-import { Search, Filter, FileText, User, Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, Filter, FileText, User, Calendar, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { format } from "date-fns";
+import { format, differenceInDays, addDays } from "date-fns";
 import { CarePlanViewDialog } from "@/components/care/CarePlanViewDialog";
 import { useCarerAssignedCarePlans } from "@/hooks/useCarePlanData";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarePlansNeedingReviewCount } from "@/hooks/useCarePlansNeedingReview";
 
 const CarerCarePlans: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCarePlanId, setSelectedCarePlanId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(searchParams.get('filter') || "all");
   
   const { user, isAuthenticated, loading } = useCarerAuth();
   const { data: carerProfile } = useCarerProfile();
   const { data: carePlans, isLoading, error } = useCarerAssignedCarePlans(user?.id || '');
+  const { total: needsReviewCount } = useCarePlansNeedingReviewCount(carerProfile?.id || '');
+  
+  // Update tab from URL params
+  useEffect(() => {
+    const filterParam = searchParams.get('filter');
+    if (filterParam === 'needs-review') {
+      setActiveTab('needs-review');
+    }
+  }, [searchParams]);
 
   // Show loading state while checking authentication or loading care plans
   if (loading || isLoading) {
@@ -54,23 +66,46 @@ const CarerCarePlans: React.FC = () => {
     );
   }
 
+  // Helper to check if a care plan needs review (within 7 days or overdue)
+  const carePlanNeedsReview = (reviewDate: string | null) => {
+    if (!reviewDate) return false;
+    const now = new Date();
+    const review = new Date(reviewDate);
+    const sevenDaysFromNow = addDays(now, 7);
+    return review <= sevenDaysFromNow;
+  };
+
   // Transform Supabase data to match the expected format
-  const transformedCarePlans = carePlans?.map(plan => ({
-    id: plan.id,
-    clientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : 'Unknown Client',
-    dateCreated: new Date(plan.created_at),
-    lastUpdated: new Date(plan.updated_at),
-    status: plan.status === 'active' ? 'Active' : plan.status,
-    type: plan.care_plan_type || 'Standard Care',
-    alerts: plan.status === 'rejected' ? 1 : 0, // Show alert if rejected
-    isDirectlyAssigned: plan.isDirectlyAssigned || false,
-    assignmentType: plan.isDirectlyAssigned ? 'Direct' : 'Branch',
-    tasks: plan.activities?.map(activity => ({
-      id: activity.id,
-      name: activity.name,
-      completed: activity.status === 'completed'
-    })) || []
-  })) || [];
+  const transformedCarePlans = carePlans?.map(plan => {
+    const needsReview = carePlanNeedsReview(plan.review_date);
+    const daysUntilReview = plan.review_date 
+      ? differenceInDays(new Date(plan.review_date), new Date())
+      : null;
+    
+    return {
+      id: plan.id,
+      clientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : 'Unknown Client',
+      dateCreated: new Date(plan.created_at),
+      lastUpdated: new Date(plan.updated_at),
+      status: plan.status === 'active' ? 'Active' : plan.status,
+      type: plan.care_plan_type || 'Standard Care',
+      alerts: plan.status === 'rejected' ? 1 : 0,
+      isDirectlyAssigned: plan.isDirectlyAssigned || false,
+      assignmentType: plan.isDirectlyAssigned ? 'Direct' : 'Branch',
+      reviewDate: plan.review_date,
+      needsReview,
+      daysUntilReview,
+      isOverdue: daysUntilReview !== null && daysUntilReview < 0,
+      tasks: plan.activities?.map(activity => ({
+        id: activity.id,
+        name: activity.name,
+        completed: activity.status === 'completed'
+      })) || []
+    };
+  }) || [];
+
+  // Count care plans needing review
+  const carePlansNeedingReview = transformedCarePlans.filter(p => p.needsReview);
 
   const filteredCarePlans = transformedCarePlans.filter(carePlan => {
     const searchMatches = 
@@ -80,7 +115,8 @@ const CarerCarePlans: React.FC = () => {
     const tabMatches = 
       activeTab === "all" || 
       (activeTab === "active" && (carePlan.status === 'Active' || carePlan.status === 'active' || carePlan.status === 'approved')) ||
-      (activeTab === "alerts" && carePlan.alerts > 0);
+      (activeTab === "alerts" && carePlan.alerts > 0) ||
+      (activeTab === "needs-review" && carePlan.needsReview);
     
     return searchMatches && tabMatches;
   });
@@ -107,9 +143,18 @@ const CarerCarePlans: React.FC = () => {
         </div>
         
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all">All Care Plans ({transformedCarePlans.length})</TabsTrigger>
-            <TabsTrigger value="active">Active ({transformedCarePlans.filter(plan => plan.status === 'active' || plan.status === 'approved').length})</TabsTrigger>
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="all">All ({transformedCarePlans.length})</TabsTrigger>
+            <TabsTrigger value="active">Active ({transformedCarePlans.filter(plan => plan.status === 'active' || plan.status === 'approved' || plan.status === 'Active').length})</TabsTrigger>
+            <TabsTrigger value="needs-review" className="relative">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Needs Review
+              {carePlansNeedingReview.length > 0 && (
+                <span className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {carePlansNeedingReview.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="alerts" className="relative">
               Requires Attention
               {transformedCarePlans.filter(plan => plan.alerts > 0).length > 0 && (
@@ -134,12 +179,27 @@ const CarerCarePlans: React.FC = () => {
                     </div>
                     <CardTitle className="text-lg">{carePlan.clientName}</CardTitle>
                   </div>
-                  {carePlan.alerts > 0 && (
-                    <Badge variant="destructive" className="flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      <span>{carePlan.alerts}</span>
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {carePlan.needsReview && (
+                      <Badge 
+                        variant="outline" 
+                        className={`flex items-center gap-1 ${
+                          carePlan.isOverdue 
+                            ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800' 
+                            : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800'
+                        }`}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        <span>{carePlan.isOverdue ? 'Overdue' : 'Review Due'}</span>
+                      </Badge>
+                    )}
+                    {carePlan.alerts > 0 && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{carePlan.alerts}</span>
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>

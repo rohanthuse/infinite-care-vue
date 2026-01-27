@@ -48,6 +48,16 @@ serve(async (req) => {
       console.log('[process-system-notifications] Subscription expiry processed:', processData);
     }
 
+    // 4. Process care plan review alerts for carers
+    console.log('[process-system-notifications] Processing care plan review alerts...');
+    const { data: reviewAlertData, error: reviewAlertError } = await supabase.rpc('process_care_plan_review_alerts');
+    
+    if (reviewAlertError) {
+      console.error('[process-system-notifications] Care plan review alert error:', reviewAlertError);
+    } else {
+      console.log('[process-system-notifications] Care plan review alerts processed:', reviewAlertData);
+    }
+
     console.log('[process-system-notifications] All notification processing complete');
 
     return new Response(
@@ -56,6 +66,7 @@ serve(async (req) => {
         subscription_expiry_notifications: expiryData,
         pending_agreement_notifications: agreementData,
         subscription_expiry_processed: processData,
+        care_plan_review_alerts: reviewAlertData,
         timestamp: new Date().toISOString()
       }),
       { 
