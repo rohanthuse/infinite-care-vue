@@ -15,6 +15,7 @@ import { useClientServiceReports } from "@/hooks/useClientServiceReports";
 import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { useClientServiceActions } from "@/hooks/useClientServiceActions";
 import { useClientAuth } from "@/hooks/useClientAuth";
+import { ServiceReportsTab } from "@/components/service-reports/ServiceReportsTab";
 import { format } from "date-fns";
 
 const ClientServiceReports = () => {
@@ -161,6 +162,7 @@ const ClientServiceReports = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="details">Service Details</TabsTrigger>
+            <TabsTrigger value="visit-reports">Visit Reports</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
@@ -375,6 +377,10 @@ const ClientServiceReports = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="visit-reports">
+            <ServiceReportsTab clientId={clientId || ''} />
           </TabsContent>
         </Tabs>
       </div>
