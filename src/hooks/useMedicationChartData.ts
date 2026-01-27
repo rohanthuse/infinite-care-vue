@@ -22,6 +22,7 @@ export interface TimeOfDayData {
 }
 
 // Hook to fetch medication administration trends for the last 7 days
+// Combines data from both medication_administration_records AND visit_medications for accuracy
 export function useMedicationTrendData(branchId?: string) {
   return useQuery({
     queryKey: ['medication-trend-data', branchId],
@@ -38,7 +39,8 @@ export function useMedicationTrendData(branchId?: string) {
 
       const trendData: MedicationTrendData[] = await Promise.all(
         days.map(async (day) => {
-          let query = supabase
+          // Query 1: medication_administration_records (primary source)
+          let marQuery = supabase
             .from('medication_administration_records')
             .select(`
               status,
@@ -52,30 +54,54 @@ export function useMedicationTrendData(branchId?: string) {
             .lte('administered_at', day.end);
 
           if (branchId) {
-            query = query.eq('client_medications.client_care_plans.clients.branch_id', branchId);
+            marQuery = marQuery.eq('client_medications.client_care_plans.clients.branch_id', branchId);
           }
 
-          const { data, error } = await query;
+          // Query 2: visit_medications (secondary source for data not synced to MAR)
+          let visitMedQuery = supabase
+            .from('visit_medications')
+            .select(`
+              is_administered,
+              missed_reason,
+              medication_id,
+              visit_records!inner(
+                client_id,
+                clients!inner(branch_id)
+              )
+            `)
+            .gte('administration_time', day.start)
+            .lte('administration_time', day.end)
+            .eq('is_administered', true);
+
+          if (branchId) {
+            visitMedQuery = visitMedQuery.eq('visit_records.clients.branch_id', branchId);
+          }
+
+          const [marResult, visitMedResult] = await Promise.all([marQuery, visitMedQuery]);
           
-          if (error) {
-            console.error('Error fetching trend data:', error);
-            return {
-              date: day.date,
-              administered: 0,
-              missed: 0,
-              refused: 0
-            };
+          if (marResult.error) {
+            console.error('Error fetching MAR trend data:', marResult.error);
+          }
+          if (visitMedResult.error) {
+            console.error('Error fetching visit medication trend data:', visitMedResult.error);
           }
 
-          const administered = data?.filter(record => record.status === 'given').length || 0;
-          const missed = data?.filter(record => record.status === 'not_given').length || 0;
-          const refused = data?.filter(record => record.status === 'refused').length || 0;
+          // Count from MAR records
+          const marData = marResult.data || [];
+          const marAdministered = marData.filter(record => record.status === 'given').length;
+          const marMissed = marData.filter(record => record.status === 'not_given').length;
+          const marRefused = marData.filter(record => record.status === 'refused').length;
+
+          // Count additional from visit_medications that don't have medication_id (not synced to MAR)
+          const visitMedData = visitMedResult.data || [];
+          const visitOnlyAdministered = visitMedData.filter(vm => !vm.medication_id && vm.is_administered).length;
+          const visitOnlyMissed = visitMedData.filter(vm => !vm.medication_id && !vm.is_administered && vm.missed_reason).length;
 
           return {
             date: day.date,
-            administered,
-            missed,
-            refused
+            administered: marAdministered + visitOnlyAdministered,
+            missed: marMissed + visitOnlyMissed,
+            refused: marRefused
           };
         })
       );

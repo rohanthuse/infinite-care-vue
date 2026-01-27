@@ -1615,8 +1615,25 @@ const CarerVisitWorkflow = () => {
     }, MUTATION_TIMEOUT_MS);
 
     try {
+      // DEDUPLICATION CHECK: Prevent adding same medication twice
+      const { data: existingMed } = await supabase
+        .from('visit_medications')
+        .select('id')
+        .eq('visit_record_id', visitRecord.id)
+        .eq('medication_name', med.name)
+        .maybeSingle();
+
+      if (existingMed) {
+        clearTimeout(timeoutId);
+        setSyncingDraftMedId(null);
+        toast.info(`${med.name} is already in the medication tracker`);
+        setAdministeredDraftMeds(prev => new Set([...prev, med.id]));
+        return;
+      }
+
       // Add medication to visit_medications table
       // Only set medication_id if it's a valid UUID (not temp IDs like "med-", "json-medication-", etc.)
+      const serverTimestamp = new Date().toISOString();
       const newMedData = {
         visit_record_id: visitRecord.id,
         medication_id: isValidUUID(med.id) ? med.id : undefined,
@@ -1631,10 +1648,27 @@ const CarerVisitWorkflow = () => {
           ? `Medication administered at ${format(new Date(), 'HH:mm')}` 
           : ''),
         administered_by: markAsAdministered ? user?.id : undefined,
-        administration_time: markAsAdministered ? new Date().toISOString() : undefined,
+        administration_time: markAsAdministered ? serverTimestamp : undefined,
       };
 
-      await addMedication.mutateAsync(newMedData);
+      const result = await addMedication.mutateAsync(newMedData);
+
+      // Sync to MAR table if administered and has valid medication_id
+      if (markAsAdministered && isValidUUID(med.id)) {
+        const { error: marError } = await supabase
+          .from('medication_administration_records')
+          .insert({
+            medication_id: med.id,
+            administered_at: serverTimestamp,
+            administered_by: user?.id || 'Unknown',
+            status: 'given',
+            notes: draftMedicationNotes[med.id] || undefined,
+          });
+
+        if (marError) {
+          console.error('[handleDraftMedicationToggle] MAR sync error (non-blocking):', marError);
+        }
+      }
       clearTimeout(timeoutId);
       
       // Track which draft meds have been synced
