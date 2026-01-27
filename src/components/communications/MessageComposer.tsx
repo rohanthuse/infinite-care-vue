@@ -20,6 +20,8 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationTypeSelector } from "@/components/messaging/CommunicationTypeSelector";
 import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
+import { MessageFollowUpSection } from "./MessageFollowUpSection";
+import { useStaffList } from "@/hooks/useAccountingData";
 
 interface ClientMessageRecipient {
   id: string;
@@ -67,6 +69,11 @@ export const MessageComposer = ({
     otherEmail: false
   });
   const [otherEmailAddress, setOtherEmailAddress] = useState("");
+  
+  // Follow-up assignment fields
+  const [followUpAssignedTo, setFollowUpAssignedTo] = useState("");
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
+  const [followUpNotes, setFollowUpNotes] = useState("");
 
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<{
@@ -103,6 +110,9 @@ export const MessageComposer = ({
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   const { uploadFile, uploading: uploadingFiles } = useFileUpload();
+  
+  // Get staff list for follow-up assignment
+  const { data: staffList = [], isLoading: isLoadingStaff } = useStaffList(branchId);
   
   const isReply = !!selectedThreadId;
 
@@ -285,7 +295,10 @@ export const MessageComposer = ({
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
             .map(([method, _]) => method),
-          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined
+          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined,
+          followUpAssignedTo: actionRequired ? followUpAssignedTo || undefined : undefined,
+          followUpDate: actionRequired && followUpDate ? format(followUpDate, 'yyyy-MM-dd') : undefined,
+          followUpNotes: actionRequired ? followUpNotes || undefined : undefined
         });
       } else {
         // Create new thread - validate subject and recipients for new messages only
@@ -369,7 +382,10 @@ export const MessageComposer = ({
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
             .map(([method, _]) => method),
-          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined
+          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined,
+          followUpAssignedTo: actionRequired ? followUpAssignedTo || undefined : undefined,
+          followUpDate: actionRequired && followUpDate ? format(followUpDate, 'yyyy-MM-dd') : undefined,
+          followUpNotes: actionRequired ? followUpNotes || undefined : undefined
         });
         
         // Show informational toast for admin-only messages to unregistered clients
@@ -992,10 +1008,32 @@ export const MessageComposer = ({
               <Checkbox 
                 id="actionRequired"
                 checked={actionRequired}
-                onCheckedChange={(checked) => setActionRequired(checked as boolean)}
+                onCheckedChange={(checked) => {
+                  setActionRequired(checked as boolean);
+                  // Clear follow-up fields when unchecked
+                  if (!checked) {
+                    setFollowUpAssignedTo("");
+                    setFollowUpDate(undefined);
+                    setFollowUpNotes("");
+                  }
+                }}
               />
               <Label htmlFor="actionRequired">Action Required?</Label>
             </div>
+            
+            {/* Follow-up Assignment Section - shown when Action Required is checked */}
+            {actionRequired && (
+              <MessageFollowUpSection
+                followUpAssignedTo={followUpAssignedTo}
+                followUpDate={followUpDate}
+                followUpNotes={followUpNotes}
+                onAssignedToChange={setFollowUpAssignedTo}
+                onDateChange={setFollowUpDate}
+                onNotesChange={setFollowUpNotes}
+                staffList={staffList}
+                isLoadingStaff={isLoadingStaff}
+              />
+            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox 

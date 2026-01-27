@@ -36,6 +36,11 @@ export interface UnifiedMessage {
   adminEyesOnly?: boolean;
   notificationMethods?: string[];
   isEdited?: boolean;
+  // Follow-up assignment fields
+  followUpAssignedTo?: string;
+  followUpAssignedToName?: string;
+  followUpDate?: string;
+  followUpNotes?: string;
 }
 
 export interface UnifiedMessageThread {
@@ -464,6 +469,9 @@ export const useUnifiedThreadMessages = (threadId: string) => {
           .eq('thread_id', threadId)
           .eq('is_deleted', false)
           .order('created_at', { ascending: true });
+        
+        // Note: follow_up_assigned_to, follow_up_date, follow_up_notes columns 
+        // will be available after running the database migration
 
       if (error) {
         console.error('Error fetching thread messages:', error);
@@ -526,7 +534,10 @@ export const useUnifiedSendMessage = () => {
       adminEyesOnly = false,
       attachments = [],
       notificationMethods = [],
-      otherEmailAddress
+      otherEmailAddress,
+      followUpAssignedTo,
+      followUpDate,
+      followUpNotes
     }: { 
       threadId: string; 
       content: string;
@@ -537,27 +548,38 @@ export const useUnifiedSendMessage = () => {
       attachments?: any[];
       notificationMethods?: string[];
       otherEmailAddress?: string;
+      followUpAssignedTo?: string;
+      followUpDate?: string;
+      followUpNotes?: string;
     }) => {
       if (!currentUser) throw new Error('Not authenticated');
 
+      // Build message data - follow-up fields are optional and may not exist in DB yet
+      const messageData: Record<string, any> = {
+        thread_id: threadId,
+        sender_id: currentUser.id,
+        sender_type: currentUser.role === 'client' ? 'client' : 
+                    currentUser.role === 'carer' ? 'carer' : 
+                    currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
+        content,
+        has_attachments: attachments.length > 0,
+        attachments: attachments,
+        message_type: messageType,
+        priority,
+        action_required: actionRequired,
+        admin_eyes_only: adminEyesOnly,
+        notification_methods: notificationMethods,
+        other_email_address: otherEmailAddress
+      };
+      
+      // Add follow-up fields if provided (these columns need to exist in DB)
+      if (followUpAssignedTo) messageData.follow_up_assigned_to = followUpAssignedTo;
+      if (followUpDate) messageData.follow_up_date = followUpDate;
+      if (followUpNotes) messageData.follow_up_notes = followUpNotes;
+
       const { data, error } = await supabase
         .from('messages')
-        .insert({
-          thread_id: threadId,
-          sender_id: currentUser.id,
-          sender_type: currentUser.role === 'client' ? 'client' : 
-                      currentUser.role === 'carer' ? 'carer' : 
-                      currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
-          content,
-          has_attachments: attachments.length > 0,
-          attachments: attachments,
-          message_type: messageType,
-          priority,
-          action_required: actionRequired,
-          admin_eyes_only: adminEyesOnly,
-          notification_methods: notificationMethods,
-          other_email_address: otherEmailAddress
-        })
+        .insert(messageData as any)
         .select()
         .single();
 
@@ -649,7 +671,10 @@ export const useUnifiedCreateThread = () => {
       adminEyesOnly = false,
       attachments = [],
       notificationMethods = [],
-      otherEmailAddress
+      otherEmailAddress,
+      followUpAssignedTo,
+      followUpDate,
+      followUpNotes
      }: { 
       recipientIds: string[];
       recipientNames: string[];
@@ -666,6 +691,9 @@ export const useUnifiedCreateThread = () => {
       attachments?: any[];
       notificationMethods?: string[];
       otherEmailAddress?: string;
+      followUpAssignedTo?: string;
+      followUpDate?: string;
+      followUpNotes?: string;
     }) => {
       console.log('[useUnifiedCreateThread] Starting thread creation...');
       
@@ -791,25 +819,32 @@ export const useUnifiedCreateThread = () => {
         throw new Error(`Failed to add participants: ${participantsError.message}`);
       }
 
-      // Send initial message
+      // Send initial message - build message data with optional follow-up fields
+      const initialMessageData: Record<string, any> = {
+        thread_id: thread.id,
+        sender_id: currentUser.id,
+        sender_type: currentUser.role === 'client' ? 'client' : 
+                    currentUser.role === 'carer' ? 'carer' : 
+                    currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
+        content: initialMessage,
+        has_attachments: attachments.length > 0,
+        attachments: attachments,
+        message_type: messageType,
+        priority,
+        action_required: actionRequired,
+        admin_eyes_only: adminEyesOnly,
+        notification_methods: notificationMethods,
+        other_email_address: otherEmailAddress
+      };
+      
+      // Add follow-up fields if provided (these columns need to exist in DB)
+      if (followUpAssignedTo) initialMessageData.follow_up_assigned_to = followUpAssignedTo;
+      if (followUpDate) initialMessageData.follow_up_date = followUpDate;
+      if (followUpNotes) initialMessageData.follow_up_notes = followUpNotes;
+      
       const { error: messageError } = await supabase
         .from('messages')
-        .insert({
-          thread_id: thread.id,
-          sender_id: currentUser.id,
-          sender_type: currentUser.role === 'client' ? 'client' : 
-                      currentUser.role === 'carer' ? 'carer' : 
-                      currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
-          content: initialMessage,
-          has_attachments: attachments.length > 0,
-          attachments: attachments,
-          message_type: messageType,
-          priority,
-          action_required: actionRequired,
-          admin_eyes_only: adminEyesOnly,
-          notification_methods: notificationMethods,
-          other_email_address: otherEmailAddress
-        });
+        .insert(initialMessageData as any);
 
       if (messageError) {
         console.error('[useUnifiedCreateThread] Initial message failed:', messageError);
