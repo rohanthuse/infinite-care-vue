@@ -1,146 +1,135 @@
-# Plan: Fix NEWS2 Health Monitoring Completion Indicator
 
-## Issue Summary
-The NEWS2 Health Monitoring tab in Create Care Plan does not show a completion checkmark after data entry, unlike other tabs.
+# Plan: Display Staff Service Reports in Client Portal
+
+## Problem Statement
+Service reports created by carers in the staff portal are not visible to clients in the client portal. The client portal's "Service Reports" page only shows aggregated statistics from care plans and appointments, but never displays the actual detailed service reports from the `client_service_reports` table.
 
 ## Root Cause
-There is a **data path mismatch** between where the wizard stores NEWS2 data and where the completion utility looks for it:
+The client portal uses a different hook (`useClientServiceReports` from `src/hooks/useClientServiceReports.ts`) that only aggregates care plan goal progress and appointment statistics. It does not query the `client_service_reports` table where carers store their visit reports.
 
-- **Wizard Form** saves fields at the root level: `news2_monitoring_enabled`, `news2_monitoring_frequency`, `news2_monitoring_notes`
-- **Completion Utility** (`hasNews2Monitoring`) checks for data at: `medicalInfo.news2_monitoring` (nested object)
-
-Since the nested path doesn't exist, `hasNews2Monitoring()` always returns `false`.
+## Solution Overview
+Add a new tab or section to the client portal's Service Reports page that displays the actual service reports from carers. We will reuse the existing `ServiceReportsTab` component which is already designed for this purpose.
 
 ---
 
-## Implementation
+## Implementation Steps
 
-### Step 1: Update `hasNews2Monitoring` Function
+### Step 1: Add a "Visit Reports" Tab to Client Service Reports Page
 
-**File:** `src/utils/carePlanCompletionUtils.ts`
+**File:** `src/pages/client/ClientServiceReports.tsx`
 
-**Change:** Modify the function to check root-level fields instead of nested path.
+**Changes:**
+1. Import the `ServiceReportsTab` component from `@/components/service-reports/ServiceReportsTab`
+2. Add a new tab called "Visit Reports" to the existing tab structure
+3. Render the `ServiceReportsTab` component in this new tab, passing the `clientId`
 
-**Current code (lines 126-134):**
-```typescript
-export const hasNews2Monitoring = (medicalInfo: any): boolean => {
-  if (!medicalInfo || typeof medicalInfo !== 'object') return false;
-  
-  const news2 = medicalInfo.news2_monitoring;
-  if (!news2 || typeof news2 !== 'object') return false;
-  
-  // Check if any NEWS2 field has a meaningful value
-  return hasAnyValue(news2);
-};
+This will add a fourth tab alongside "Overview", "Progress", and "Service Details" that shows the actual carer-submitted reports.
+
+### Step 2: Ensure RLS Policy Compatibility (Verification Only)
+
+The existing RLS policy is correctly configured:
+```sql
+CREATE POLICY "Clients can view their approved service reports"
+ON public.client_service_reports
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.clients c
+    WHERE c.auth_user_id = auth.uid()
+    AND c.id = client_service_reports.client_id
+  ) AND visible_to_client = true AND status = 'approved'
+);
 ```
 
-**New code:**
-```typescript
-// Check if NEWS2 health monitoring has been configured
-// Handles both root-level fields (wizard) and legacy nested format
-export const hasNews2Monitoring = (formData: any): boolean => {
-  if (!formData || typeof formData !== 'object') return false;
-  
-  // Check root-level fields (current wizard format)
-  if (formData.news2_monitoring_enabled === true) return true;
-  
-  // Also check root-level fields with any meaningful value
-  if (isNonEmptyString(formData.news2_monitoring_frequency) || 
-      isNonEmptyString(formData.news2_monitoring_notes)) return true;
-  
-  // Legacy fallback: check nested path under medical_info
-  const news2 = formData.medical_info?.news2_monitoring;
-  if (news2 && typeof news2 === 'object') {
-    return hasAnyValue(news2);
-  }
-  
-  return false;
-};
-```
+The `useApprovedServiceReports` hook correctly filters by:
+- `client_id` matching the logged-in client
+- `status = 'approved'`
+- `visible_to_client = true`
+
+No database changes are required.
+
+### Step 3: Rename Tab for Clarity (Optional Enhancement)
+
+Consider renaming tabs for better user understanding:
+- "Overview" → Keep as is (charts and distribution)
+- "Progress" → Keep as is (care plan goal progress)
+- "Service Details" → Rename to "Appointment Summary" (appointments with goal counts)
+- "Visit Reports" → New tab (actual carer observations and notes)
 
 ---
 
-### Step 2: Update Function Call in `getCompletedStepIds`
+## Technical Details
 
-**File:** `src/utils/carePlanCompletionUtils.ts`
+### Files to Modify
 
-**Change:** Pass the full `formData` to `hasNews2Monitoring` instead of just `medInfo`.
+| File | Change |
+|------|--------|
+| `src/pages/client/ClientServiceReports.tsx` | Add import for `ServiceReportsTab`, add new tab with the component |
 
-**Current code (line 292):**
+### Code Changes
+
+**In `ClientServiceReports.tsx` (around line 159-163):**
+
+Add import at top:
 ```typescript
-// Step 4 - NEWS2 Health Monitoring
-if (hasNews2Monitoring(medInfo)) completedSteps.push(4);
+import { ServiceReportsTab } from '@/components/service-reports/ServiceReportsTab';
 ```
 
-**New code:**
+Add new tab trigger and content:
 ```typescript
-// Step 4 - NEWS2 Health Monitoring (checks root-level fields)
-if (hasNews2Monitoring(formData)) completedSteps.push(4);
+<TabsList className="mb-4">
+  <TabsTrigger value="overview">Overview</TabsTrigger>
+  <TabsTrigger value="progress">Progress</TabsTrigger>
+  <TabsTrigger value="details">Service Details</TabsTrigger>
+  <TabsTrigger value="visit-reports">Visit Reports</TabsTrigger>  {/* NEW */}
+</TabsList>
+
+{/* ... existing tab contents ... */}
+
+<TabsContent value="visit-reports">
+  <ServiceReportsTab clientId={clientId || ''} />
+</TabsContent>
 ```
-
----
-
-### Step 3: Update Review Step (Optional - for consistency)
-
-**File:** `src/components/clients/dialogs/wizard/steps/WizardStep14Review.tsx`
-
-**Change:** Update the section status check at line 89-90 to pass full `formData`.
-
-**Current code:**
-```typescript
-case "news2_monitoring":
-  return hasNews2Monitoring(formData.medical_info) ? "completed" : "empty";
-```
-
-**New code:**
-```typescript
-case "news2_monitoring":
-  return hasNews2Monitoring(formData) ? "completed" : "empty";
-```
-
----
-
-## Summary of Changes
-
-| File | Lines | Change |
-|------|-------|--------|
-| `src/utils/carePlanCompletionUtils.ts` | 126-134 | Rewrite `hasNews2Monitoring` to check root-level fields |
-| `src/utils/carePlanCompletionUtils.ts` | 292 | Pass `formData` instead of `medInfo` |
-| `src/components/clients/dialogs/wizard/steps/WizardStep14Review.tsx` | 89-90 | Pass `formData` instead of `formData.medical_info` |
-
----
-
-## Testing Checklist
-
-- [ ] Enable NEWS2 monitoring checkbox - checkmark appears on sidebar
-- [ ] Select monitoring frequency - checkmark persists
-- [ ] Add monitoring notes - checkmark persists  
-- [ ] Navigate to another step and back - checkmark remains
-- [ ] Review step shows NEWS2 as completed
-- [ ] Existing care plans with legacy nested data still work
-- [ ] No impact on other tab completion indicators
 
 ---
 
 ## Data Flow After Fix
 
+```text
++------------------+     +-------------------------+     +-------------------+
+|  Carer Portal    | --> | client_service_reports  | --> |  Client Portal    |
+|  (Creates report)|     | (Database table)        |     | (Displays report) |
++------------------+     +-------------------------+     +-------------------+
+        |                         |                              |
+        v                         v                              v
+ CarerVisitWorkflow       status: 'approved'              ServiceReportsTab
+ CarerReportsTab          visible_to_client: true         (View Details, Share)
 ```
-Wizard Form (root level)
-    |
-    v
-news2_monitoring_enabled = true
-news2_monitoring_frequency = "daily"
-news2_monitoring_notes = "..."
-    |
-    v
-hasNews2Monitoring(formData) 
-    |
-    v
-Checks: formData.news2_monitoring_enabled === true? 
-    |
-    v
-Returns TRUE -> Step 4 added to completedSteps
-    |
-    v
-Checkmark appears in sidebar
-```
+
+---
+
+## Testing Checklist
+
+- [ ] Create a service report from the carer portal (via visit workflow or reports tab)
+- [ ] Log in as the client in the client portal
+- [ ] Navigate to Service Reports page
+- [ ] Verify the new "Visit Reports" tab appears
+- [ ] Click on "Visit Reports" tab
+- [ ] Verify the carer's service report appears in the list
+- [ ] Click "View Details" to see full report information
+- [ ] Verify carer name, date, services provided, mood, observations are visible
+- [ ] Test the "Share" functionality works correctly
+
+---
+
+## Impact Assessment
+
+**Low Risk:**
+- Reuses existing, tested components (`ServiceReportsTab`, `useApprovedServiceReports`)
+- No database schema changes required
+- No changes to existing functionality or UI in other tabs
+- RLS policies already correctly configured
+
+**UI Impact:**
+- Adds one new tab to the client Service Reports page
+- No changes to existing tab content or layout
