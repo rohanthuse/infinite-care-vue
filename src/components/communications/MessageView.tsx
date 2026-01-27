@@ -22,6 +22,7 @@ import { MessageReadReceipt } from "./MessageReadReceipt";
 import { MessageInfoSheet } from "./MessageInfoSheet";
 import { EditMessageDialog } from "./EditMessageDialog";
 import { useEditMessage } from "@/hooks/useEditMessage";
+import { MessageFollowUpView } from "./MessageFollowUpView";
 
 interface MessageViewProps {
   messageId: string;
@@ -486,6 +487,15 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                             />
                           </div>
                         )}
+                        
+                        {/* Follow-up Information */}
+                        <MessageFollowUpView
+                          actionRequired={message.actionRequired}
+                          followUpDate={message.followUpDate}
+                          followUpAssignedTo={message.followUpAssignedTo}
+                          followUpAssignedToName={message.followUpAssignedToName}
+                          followUpNotes={message.followUpNotes}
+                        />
                       
                       {isCurrentUser && (
                         <div className="flex items-center justify-end mt-1 space-x-2">
